@@ -264,6 +264,18 @@ textarea.input{min-height:76px;resize:vertical}
 .login-form .head{display:flex;flex-direction:column;align-items:center;gap:var(--space-2);text-align:center}
 .login-err{min-height:22px;margin:0;text-align:center;color:var(--danger-ink);font-size:var(--fs-sm)}
 @media (max-width:900px){.login{grid-template-columns:minmax(0,1fr)}.login-hero{display:none}}
+.count-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:var(--space-4);align-items:start}
+.count-pad{position:sticky;top:0;display:flex;flex-direction:column;gap:var(--space-3)}
+.big-val{display:block;text-align:center;font:700 40px/1.2 var(--font-display);font-variant-numeric:tabular-nums;padding:var(--space-2);border-radius:var(--radius-md);background:var(--surface-2)}
+.big-val small{font:500 var(--fs-sm) var(--font-body)}
+.dt tr.active td{background:var(--primary-soft)}
+.dt tr.active td:first-child{box-shadow:inset 3px 0 0 var(--primary)}
+.loc-h{display:flex;align-items:baseline;gap:var(--space-2)}
+.sup-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:var(--space-3)}
+.today-hero{display:flex;align-items:center;gap:var(--space-4);flex-wrap:wrap}
+.hero-v{font:700 30px/1.25 var(--font-display);font-variant-numeric:tabular-nums}
+a.pill{text-decoration:none}
+@media (max-width:860px){.count-layout{grid-template-columns:minmax(0,1fr)}.count-pad{position:static}}
 .lines-edit{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:end}
 @media (max-width:600px){.lines-edit{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 </style>
@@ -305,6 +317,13 @@ const roundQty = (n, unit) => COUNT_UNITS.includes(unit) ? Math.round(n) : Math.
 const ROLE = { owner: 'เจ้าของร้าน', manager: 'ผู้จัดการ', cashier: 'แคชเชียร์' };
 const PAY_TYPE = { cash: 'เงินสด', qr: 'QR พร้อมเพย์', transfer: 'โอนเงิน', card: 'บัตร' };
 const VAT_MODE = { none: 'ไม่จด VAT', included: 'ราคารวม VAT 7% แล้ว', excluded: 'บวก VAT 7% เพิ่ม' };
+const LOCATION = { fridge: 'ตู้เย็น', freezer: 'ตู้แช่แข็ง', dry: 'ชั้นแห้ง / ห้องเก็บของ' };
+const COUNT_FREQ = { daily: 'นับทุกวัน', weekly: 'นับสัปดาห์ละครั้ง' };
+const COST_METHOD = { avg: 'ต้นทุนเฉลี่ยถ่วงน้ำหนัก', last: 'ราคาซื้อล่าสุด' };
+const ROUNDING = { down: 'ปัดสตางค์ลงเป็นบาทเต็ม', none: 'ไม่ปัดเศษ' };
+const DOW = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+/* ค่าตั้งต้นชั่วคราวของสูตรกำไร (docs/llms/figma-ui-plan.md ข้อ 5.2) — รอยืนยันกับร้าน */
+const SHOP_DEFAULTS = { costMethod: 'avg', showNetProfit: true, childHeadWeight: 0.5, openDaysPerMonth: 30, weeklyCountDow: 1, rounding: 'down' };
 function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
 /* PromptPay (EMVCo) payload — สำหรับเดโม QR */
@@ -327,10 +346,11 @@ function calcOrder(shop, pkg, a, c, f, addonLines) {
   const subtotal = r2(sum(lines, l => l.qty * l.price));
   const service = r2(subtotal * (+shop.servicePct || 0) / 100);
   const base = r2(subtotal + service);
-  let vat = 0, total = base;
-  if (shop.vatMode === 'included') vat = r2(base * 7 / 107);
-  else if (shop.vatMode === 'excluded') { vat = r2(base * 0.07); total = r2(base + vat); }
-  return { lines, subtotal, service, vat, total, heads: { a, c, f } };
+  let vat = 0, total = base, rounding = 0;
+  if (shop.vatMode === 'excluded') { vat = r2(base * 0.07); total = r2(base + vat); }
+  if (shop.rounding === 'down' && total % 1) { const t = Math.floor(total + 1e-9); rounding = r2(t - total); total = t; }   // ปัดสตางค์ลง
+  if (shop.vatMode === 'included') vat = r2(total * 7 / 107);
+  return { lines, subtotal, service, vat, rounding, total, heads: { a, c, f } };
 }
 const openShiftOf = s => s.shifts.find(x => !x.closedAt);
 
@@ -350,51 +370,80 @@ function makeBill(s, { id, at, tableId, staffId, shiftId, packageId, order, meth
   return bill;
 }
 
-/* ต้นทุนวัตถุดิบ = ยอดยกมา + ซื้อเข้า − นับคงเหลือ (มูลค่าใช้ต้นทุนเฉลี่ยถ่วงน้ำหนัก — สมมติฐานรอยืนยัน) */
+/* ต้นทุนวัตถุดิบ = ยอดยกมา + ซื้อเข้า − นับคงเหลือ
+   - มูลค่าต่อหน่วย: shop.costMethod = avg (เฉลี่ยถ่วงน้ำหนัก) | last (ราคาซื้อล่าสุด)
+   - ของนับรายสัปดาห์ (countFreq = weekly): วันที่ปิดยอดแต่ไม่ได้นับ ใช้ค่าประมาณ = อัตราใช้ต่อหัว × หัววันนั้น
+     วันที่นับจริง "ปรับยอด" ส่วนต่าง (ติดลบได้) ทำให้ผลรวมทั้งช่วงเท่ากับที่ใช้จริง และอัปเดตอัตราใช้ต่อหัวใหม่
+   - กำไรขั้นต้น = ยอดขายก่อน VAT − ต้นทุนวัตถุดิบ − ต้นทุนเครื่องดื่ม
+   - กำไรสุทธิ (ประมาณ) = กำไรขั้นต้น − ค่าใช้จ่ายรายวัน − ค่าคงที่รายเดือน ÷ วันเปิดร้านต่อเดือน (คิดเฉพาะวันที่มีการขาย)
+   - หัวสำหรับต้นทุนต่อหัว = ผู้ใหญ่ + เด็ก × childHeadWeight (เด็กเล็กทานฟรีไม่นับ)
+   ทุกสูตรเป็นค่าตั้งต้นชั่วคราว รอยืนยันกับร้าน */
 function computeLedger(s) {
-  const tk = todayKey();
-  const salesBy = {}, purchBy = {};
+  const tk = todayKey(), sh = { ...SHOP_DEFAULTS, ...s.shop };
+  const w = +sh.childHeadWeight;
+  const fixedPerDay = sum((s.fixedCosts || []).filter(x => x.active !== false), x => +x.amount || 0) / Math.max(1, +sh.openDaysPerMonth || 30);
+  const salesBy = {}, purchBy = {}, expBy = {};
   for (const b of s.sales) (salesBy[b.date] = salesBy[b.date] || []).push(b);
   for (const p of s.purchases) (purchBy[p.date] = purchBy[p.date] || []).push(p);
+  for (const e of s.expenses || []) (expBy[e.date] = expBy[e.date] || []).push(e);
   const st = {};
-  for (const ing of s.ingredients) { const i0 = s.initialStock[ing.id]; st[ing.id] = { qty: i0 ? i0.qty : 0, avg: i0 ? i0.cost : ing.lastCost }; }
+  for (const ing of s.ingredients) { const i0 = s.initialStock[ing.id], c0 = i0 ? i0.cost : ing.lastCost; st[ing.id] = { qty: i0 ? i0.qty : 0, avg: c0, last: c0, rate: null, sinceUsed: 0, sinceHeads: 0 }; }
   const days = [], byDate = {};
   for (let d = parseKey(s.startDate); dkey(d) <= tk; d = addDays(d, 1)) {
-    const k = dkey(d), cnt = s.counts[k], purch = purchBy[k] || [];
+    const k = dkey(d), cnt = s.counts[k], purch = purchBy[k] || [], closed = !!cnt;
+    // ยอดขาย (คำนวณก่อน เพราะใช้จำนวนหัวประมาณการใช้ของ)
+    const sales = (salesBy[k] || []).filter(b => !b.voided);
+    let buffetNet = 0, addonNet = 0, addonCost = 0, gross = 0, net = 0, a = 0, c = 0, f = 0;
+    for (const b of sales) {
+      gross += b.total; net += b.total - b.vat;
+      a += b.heads.a; c += b.heads.c; f += b.heads.f;
+      const k2 = b.subtotal ? (b.total - b.vat) / b.subtotal : 0;   // แบ่งยอดก่อน VAT ตามสัดส่วนราคา (รวมค่าบริการ/ปัดเศษแล้ว)
+      for (const l of b.lines) {
+        const v = l.qty * l.price * k2;
+        if (l.type === 'addon') { addonNet += v; addonCost += l.qty * (l.cost || 0); } else buffetNet += v;
+      }
+    }
+    const headsW = a + c * w;
     const rows = []; let ingCost = 0;
     for (const ing of s.ingredients) {
-      const cur = st[ing.id] || { qty: 0, avg: ing.lastCost };
+      const cur = st[ing.id] || { qty: 0, avg: ing.lastCost, last: ing.lastCost, rate: null, sinceUsed: 0, sinceHeads: 0 };
       let pq = 0, pv = 0;
       for (const p of purch) for (const l of p.lines) if (l.ingId === ing.id) { pq += +l.qty || 0; pv += +l.total || 0; }
       const avail = cur.qty + pq;
       const avg = avail > 0 ? (Math.max(cur.qty, 0) * cur.avg + pv) / avail : (pq ? pv / pq : cur.avg);
-      let closing = null, used = null, cost = null;
-      if (cnt && cnt[ing.id] != null && cnt[ing.id] !== '') {
-        closing = +cnt[ing.id]; used = Math.max(0, avail - closing); cost = used * avg; ingCost += cost;
-        st[ing.id] = { qty: closing, avg };
-      } else st[ing.id] = { qty: avail, avg };
-      rows.push({ ing, opening: cur.qty, pq, pv, avail, avg, closing, used, cost });
-    }
-    const sales = (salesBy[k] || []).filter(b => !b.voided);
-    let buffetNet = 0, addonNet = 0, addonCost = 0, gross = 0, net = 0, a = 0, c = 0, f = 0;
-    for (const b of sales) {
-      const nf = b.total > 0 ? (b.total - b.vat) / b.total : 1;
-      gross += b.total; net += b.total - b.vat;
-      a += b.heads.a; c += b.heads.c; f += b.heads.f;
-      for (const l of b.lines) {
-        const v = l.qty * l.price * (b.subtotal ? (b.subtotal + b.service) / b.subtotal : 1) * nf;
-        if (l.type === 'addon') { addonNet += v; addonCost += l.qty * (l.cost || 0); } else buffetNet += v;
+      const last = pq > 0 ? pv / pq : cur.last;
+      const unit = sh.costMethod === 'last' ? last : avg;
+      const weekly = ing.countFreq === 'weekly';
+      const has = cnt && cnt[ing.id] != null && cnt[ing.id] !== '';
+      let closing = null, used = null, cost = null, est = false;
+      let next = { ...cur, qty: avail, avg, last, sinceHeads: cur.sinceHeads + headsW };
+      if (has) {
+        closing = +cnt[ing.id];
+        used = avail - closing;
+        if (!weekly) used = Math.max(0, used);                       // ของนับทุกวัน: นับได้เกินที่มี ถือว่าใช้ 0
+        const tu = cur.sinceUsed + used, th = cur.sinceHeads + headsW; // ใช้จริงทั้งช่วงตั้งแต่นับครั้งก่อน
+        next = { qty: closing, avg, last, rate: th > 0 ? Math.max(0, tu) / th : cur.rate, sinceUsed: 0, sinceHeads: 0 };
+      } else if (closed && weekly) {
+        est = true;
+        used = cur.rate == null ? 0 : Math.min(Math.max(avail, 0), cur.rate * headsW);
+        closing = avail - used;
+        next = { ...next, qty: closing, sinceUsed: cur.sinceUsed + used };
       }
+      if (used != null) { cost = used * unit; ingCost += cost; }
+      st[ing.id] = next;
+      rows.push({ ing, opening: cur.qty, pq, pv, avail, avg, unit, closing, used, cost, est, weekly, rate: cur.rate });
     }
-    const closed = !!cnt;
-    const heads = a + c;
+    const expenses = sum(expBy[k] || [], e => +e.amount || 0);
+    const fixed = sales.length ? fixedPerDay : 0;
+    const profit = closed ? net - ingCost - addonCost : null;
     const day = {
-      date: k, closed, isToday: k === tk, bills: sales.length, a, c, f, heads, gross, net, buffetNet, addonNet, addonCost,
-      purchases: sum(purch, p => sum(p.lines, l => +l.total)),
-      ingCost: closed ? ingCost : null,
-      profit: closed ? net - ingCost - addonCost : null,
-      costPerHead: closed && heads ? ingCost / heads : null,
+      date: k, closed, isToday: k === tk, bills: sales.length, a, c, f, heads: a + c, headsW, gross, net, buffetNet, addonNet, addonCost,
+      purchases: sum(purch, p => sum(p.lines, l => +l.total)), expenses, fixed,
+      ingCost: closed ? ingCost : null, profit,
+      netProfit: closed ? profit - expenses - fixed : null,
+      costPerHead: closed && headsW ? ingCost / headsW : null,
       foodPct: closed && buffetNet ? ingCost / buffetNet * 100 : null,
+      estItems: rows.filter(r => r.est).length,
       rows
     };
     days.push(day); byDate[k] = day;
@@ -407,7 +456,7 @@ function seed() {
   const R = rng(20261103), now = new Date(), tk = dkey(now);
   const start = addDays(now, -30);
   const M = JSON.parse(JSON.stringify(window.KEPTOH_MOCK));   // ฐานร้านจาก data/mock-data.js (แก้ข้อมูลตัวอย่างที่ไฟล์นั้น)
-  const s = { version: 1, startDate: dkey(start), seq: {}, counts: {}, sales: [], purchases: [], shifts: [], openTables: {}, initialStock: {}, ...M };
+  const s = { version: 2, startDate: dkey(start), seq: {}, counts: {}, sales: [], purchases: [], shifts: [], openTables: {}, initialStock: {}, expenses: [], ...M };
   const sim = {};
   for (const ing of s.ingredients) { const q = roundQty(ing.par * .25, ing.unit); s.initialStock[ing.id] = { qty: q, cost: ing.lastCost }; sim[ing.id] = q; }
   const pick = arr => arr[Math.floor(R() * arr.length)];
@@ -428,6 +477,8 @@ function seed() {
       sim[ing.id] += qty;
     }
     Object.entries(bySup).forEach(([sup, lines], j) => s.purchases.push({ id: uid('p'), date: k, at: at(day, 9 + j * .6).toISOString(), supplierId: sup, lines, note: '' }));
+    // ค่าใช้จ่ายรายวัน (ตัวอย่าง): น้ำแข็งใช้ในร้าน + ค่าขนส่งทุกวัน, แก๊สทุก 3 วัน
+    [['et2', 60], ['et3', 40]].concat(i % 3 === 0 ? [['et1', 420]] : []).forEach(([typeId, amount], j) => s.expenses.push({ id: uid('e'), date: k, at: at(day, 10 + j * .2).toISOString(), typeId, amount, note: '' }));
     // กะ
     const cashier = pick(['st3', 'st4']);
     const shiftOpen = isToday ? new Date(now.getTime() - 4.5 * 3600e3) : at(day, 16);
@@ -463,7 +514,7 @@ function seed() {
       for (const ing of s.ingredients) {
         const used = eq * ing.use * (.88 + R() * .25);
         sim[ing.id] = roundQty(Math.max(0, sim[ing.id] - used), ing.unit);
-        cnt[ing.id] = sim[ing.id];
+        if (ing.countFreq !== 'weekly' || dow === +s.shop.weeklyCountDow) cnt[ing.id] = sim[ing.id];   // ของรายสัปดาห์นับเฉพาะวันที่กำหนด
       }
       s.counts[k] = cnt;
       const cash = sum(s.sales.filter(b => b.shiftId === shift.id && b.methodType === 'cash'), b => b.total);
@@ -476,8 +527,22 @@ function seed() {
 
 /* ---------- storage ---------- */
 const LS_KEY = 'keptoh-proto-v1';
+/* อัปเกรดข้อมูลรุ่นเก่า (v1 จาก prototype ก่อนหน้า) ให้มีฟิลด์ใหม่ โดยไม่ลบข้อมูลเดิม */
+function migrate(o) {
+  const M = window.KEPTOH_MOCK, copy = x => JSON.parse(JSON.stringify(x));
+  if (o.version === 1) {
+    const mi = Object.fromEntries(M.ingredients.map(i => [i.id, i]));
+    for (const i of o.ingredients) { const m = mi[i.id] || {}; if (!i.location) i.location = m.location || 'dry'; if (!i.countFreq) i.countFreq = m.countFreq || 'daily'; }
+    if (!o.expenses) o.expenses = [];
+    if (!o.expenseTypes) o.expenseTypes = copy(M.expenseTypes);
+    if (!o.fixedCosts) o.fixedCosts = copy(M.fixedCosts);
+    o.version = 2;
+  }
+  o.shop = { ...SHOP_DEFAULTS, ...o.shop };
+  return o;
+}
 function loadState() {
-  try { const raw = localStorage.getItem(LS_KEY); if (raw) { const o = JSON.parse(raw); if (o && o.version === 1) return o; } } catch (e) { }
+  try { const raw = localStorage.getItem(LS_KEY); if (raw) { const o = JSON.parse(raw); if (o && (o.version === 1 || o.version === 2)) return migrate(o); } } catch (e) { }
   return seed();
 }
 function saveState(s) { try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch (e) { } }
@@ -585,13 +650,13 @@ function Dropdown({ value, options, onChange, label, placeholder = 'เลือ
 }
 /* ---- ข้อมูล ---- */
 /* ตารางกลาง: columns [{ key, label, align:'r'|'c', render(row), className(row) }] · footer = <tr> ใน tfoot · head=false ซ่อนหัวตาราง */
-function DataTable({ columns, rows, rowKey = r => r.id, onRowClick, footer, head = true, empty, label }) {
+function DataTable({ columns, rows, rowKey = r => r.id, onRowClick, rowClass, footer, head = true, empty, label }) {
   if (!rows.length && empty) return empty;
   const al = c => c.align === 'r' ? 'r' : c.align === 'c' ? 'c' : '';
   const key = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } };
   return html`<div class="scroll"><table class="dt" aria-label=${label}>
     ${head && html`<thead><tr>${columns.map(c => html`<th scope="col" class=${al(c)}>${c.label}</th>`)}</tr></thead>`}
-    <tbody>${rows.map(r => html`<tr key=${rowKey(r)} class=${onRowClick ? 'click' : ''} tabindex=${onRowClick ? 0 : null} onKeyDown=${onRowClick && key} onClick=${onRowClick && (() => onRowClick(r))}>
+    <tbody>${rows.map(r => html`<tr key=${rowKey(r)} class=${((onRowClick ? 'click ' : '') + (rowClass ? rowClass(r) : '')).trim()} tabindex=${onRowClick ? 0 : null} onKeyDown=${onRowClick && key} onClick=${onRowClick && (() => onRowClick(r))}>
       ${columns.map(c => html`<td class=${(al(c) + ' ' + (c.className ? c.className(r) : '')).trim()}>${c.render ? c.render(r) : r[c.key]}</td>`)}</tr>`)}</tbody>
     ${footer && html`<tfoot>${footer}</tfoot>`}</table></div>`;
 }
@@ -614,10 +679,10 @@ function NumPad({ value, onChange, maxLen = 12, decimal = false, keyboard = fals
     const k = e => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const tag = e.target && e.target.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if ((tag === 'INPUT' && !['checkbox', 'radio', 'button'].includes(e.target.type)) || tag === 'TEXTAREA' || tag === 'SELECT') return;   // ช่องพิมพ์ข้อความใช้แป้นพิมพ์เอง
       if (/^[0-9]$/.test(e.key) || e.key === '.') { push(e.key); e.preventDefault(); }
       else if (e.key === 'Backspace') { back(); e.preventDefault(); }
-      else if (e.key === 'Enter' && live.current.onEnter && tag !== 'BUTTON') { live.current.onEnter(cur.current); e.preventDefault(); }
+      else if (e.key === 'Enter' && live.current.onEnter && !(e.target.closest && e.target.closest('button,a,[tabindex]'))) { live.current.onEnter(cur.current); e.preventDefault(); }
     };
     addEventListener('keydown', k); return () => removeEventListener('keydown', k);
   }, [keyboard]);
@@ -654,6 +719,7 @@ function Receipt({ bill, shop }) {
     <div class="line"><span>รวม</span><span>${fmt(bill.subtotal, 2)}</span></div>
     ${bill.service > 0 && html`<div class="line"><span>ค่าบริการ ${shop.servicePct}%</span><span>${fmt(bill.service, 2)}</span></div>`}
     ${shop.vatMode === 'excluded' && html`<div class="line"><span>VAT 7%</span><span>${fmt(bill.vat, 2)}</span></div>`}
+    ${bill.rounding ? html`<div class="line"><span>ปัดเศษ</span><span>${fmt(bill.rounding, 2)}</span></div>` : null}
     <div class="line big"><span>ยอดสุทธิ</span><span>${fmt(bill.total, 2)}</span></div>
     ${shop.vatMode === 'included' && html`<div class="line" style="font-size:12px"><span>มูลค่าก่อน VAT / VAT 7%</span><span>${fmt(bill.total - bill.vat, 2)} / ${fmt(bill.vat, 2)}</span></div>`}
     <div class="rule"></div>
@@ -772,6 +838,7 @@ function OrderSheet({ s, update, table, mode, me, onClose, onPaid }) {
     ${order.lines.length ? order.lines.map(l => html`<div class="line"><span>${l.name} <span class="q">× ${l.qty}</span></span><span>${fmt(l.qty * l.price)}</span></div>`) : html`<span class="sub">ยังไม่มีรายการ</span>`}
     ${order.service > 0 && html`<div class="line"><span>ค่าบริการ ${s.shop.servicePct}%</span><span>${fmt(order.service, 2)}</span></div>`}
     ${s.shop.vatMode === 'excluded' && html`<div class="line"><span>VAT 7%</span><span>${fmt(order.vat, 2)}</span></div>`}
+    ${order.rounding ? html`<div class="line"><span>ปัดเศษ</span><span>${fmt(order.rounding, 2)}</span></div>` : null}
     <div class="line" style="align-items:baseline;border-top:1px dashed var(--line);padding-top:8px"><span>ยอดชำระ</span><span class="total">${baht(order.total, order.total % 1 ? 2 : 0)}</span></div>
     ${step === 'order' && html`<${Btn} kind="primary" size="lg" block disabled=${!canNext} onClick=${() => setStep('pay')}>ไปชำระเงิน (จ่ายก่อนทาน)<//>`}
   </div>`;
@@ -976,135 +1043,259 @@ function PurchaseModal({ s, initial, onSave, onClose }) {
     </div><//>`;
 }
 
-function StockView({ s, update, ledger, toast }) {
-  const [tab, setTab] = useState('count');
-  const [date, setDate] = useState(todayKey());
-  const day = ledger.byDate[date];
+const byLocation = ings => Object.keys(LOCATION).map(l => [l, ings.filter(i => (LOCATION[i.location] ? i.location : 'dry') === l)]).filter(([, a]) => a.length);
+const isDue = (s, ing, date) => ing.countFreq !== 'weekly' || parseKey(date).getDay() === +s.shop.weeklyCountDow;
+
+/* นับของเหลือ: เดินนับตามที่เก็บ · แตะรายการ → กดตัวเลข → Enter ไปรายการถัดไป */
+function StockCount({ s, update, ledger, date, toast }) {
   const [draft, setDraft] = useState(null);
+  const [showAll, setShowAll] = useState(false);
+  const [active, setActive] = useState(null);
+  useEffect(() => { setDraft(null); setActive(null); setShowAll(false); }, [date]);
+  const day = ledger.byDate[date];
+  if (!day) return null;
+  const saved = s.counts[date] || {};
+  const vals = draft || Object.fromEntries(s.ingredients.map(i => [i.id, saved[i.id] != null ? String(saved[i.id]) : '']));
+  const due = s.ingredients.filter(i => isDue(s, i, date));
+  const groups = byLocation(showAll ? s.ingredients : s.ingredients.filter(i => isDue(s, i, date) || vals[i.id] !== ''));
+  const order = groups.flatMap(([, a]) => a);
+  const prevKeys = Object.keys(s.counts).filter(k => k < date).sort().reverse();
+  const prevOf = id => { for (const k of prevKeys) { const v = s.counts[k][id]; if (v != null && v !== '') return v; } return null; };
+  const rowOf = id => day.rows.find(r => r.ing.id === id);
+  const calc = ing => {
+    const r = rowOf(ing.id), v = vals[ing.id];
+    if (v === '' || v == null) return { used: null, cost: null };
+    const weekly = ing.countFreq === 'weekly', raw = r.avail - +v, used = weekly ? raw : Math.max(0, raw);
+    return { used, cost: used * r.unit, over: !weekly && raw < 0 };
+  };
+  const cur = active && order.some(i => i.id === active) ? active : (order.find(i => vals[i.id] === '') || order[0] || {}).id;
+  const curIng = s.ingredients.find(i => i.id === cur);
+  const next = () => { const i = order.findIndex(x => x.id === cur); const n = order.slice(i + 1).find(x => vals[x.id] === '') || order[i + 1]; if (n) setActive(n.id); };
+  const setVal = v => { if (active !== cur) setActive(cur); setDraft(d => ({ ...(d || vals), [cur]: v })); };   // ล็อกรายการที่กำลังพิมพ์ ไม่ให้กระโดดเมื่อช่องไม่ว่างแล้ว
+  const doneDue = due.filter(i => vals[i.id] !== '').length;
+  const save = () => { update(st => { st.counts[date] = Object.fromEntries(s.ingredients.filter(i => vals[i.id] !== '').map(i => [i.id, +vals[i.id]])); }); setDraft(null); toast('บันทึกยอดคงเหลือและปิดวันแล้ว'); };
+  const cols = [
+    { key: 'name', label: 'วัตถุดิบ', render: i => { const pv = prevOf(i.id); return html`<strong>${i.name}</strong><div class="sub">${i.unit}${pv != null ? ' · ครั้งก่อน ' + fmtQ(pv) : ''}${i.countFreq === 'weekly' ? ' · นับรายสัปดาห์' : ''}</div>`; } },
+    { key: 'avail', label: 'มีทั้งหมด', align: 'r', render: i => fmtQ(rowOf(i.id).avail) },
+    { key: 'val', label: 'เหลือจริง', align: 'r', render: i => vals[i.id] === '' ? html`<span class="m">—</span>` : html`<strong>${vals[i.id]}</strong>` },
+    { key: 'used', label: 'ใช้ไป', align: 'r', render: i => { const c = calc(i), r = rowOf(i.id); return c.over ? html`<span class="rd">เกินที่มี</span>` : c.used != null ? fmtQ(c.used) : r.est ? html`<span class="m" title="ค่าประมาณจากอัตราใช้ต่อหัว">≈ ${fmtQ(r.used)}</span>` : '–'; } },
+    { key: 'cost', label: 'มูลค่า', align: 'r', render: i => { const c = calc(i); return c.cost == null ? '–' : fmt(c.cost); } }];
+  return html`<div class="count-layout">
+    <div class="stack">
+      <div class=${'banner ' + (day.closed ? 'info' : '')}><span class="grow">${day.closed ? 'วันนี้ปิดยอดแล้ว แก้ตัวเลขแล้วกดบันทึกได้ ระบบคำนวณใหม่ให้ทั้งหมด' : 'เดินนับตามที่เก็บ ตู้เย็น → ตู้แช่ → ชั้นแห้ง · แตะรายการแล้วกดตัวเลข · Enter = รายการถัดไป'}</span>
+        <label class="toggle"><input id="count-all" type="checkbox" checked=${showAll} onChange=${e => setShowAll(e.target.checked)}/><span>แสดงทุกรายการ</span></label></div>
+      ${due.length < s.ingredients.length && html`<p class="sub" style="margin:0">ของนับรายสัปดาห์ (นับวัน${DOW[+s.shop.weeklyCountDow]}) ${s.ingredients.length - due.length} รายการ ระบบใช้ค่าประมาณจากอัตราใช้ต่อหัว</p>`}
+      ${groups.map(([loc, items]) => html`<div class="stack" style="gap:8px"><h3 class="loc-h">${LOCATION[loc]}<span class="sub">${items.length} รายการ</span></h3>
+        <${DataTable} label=${'นับของเหลือ ' + LOCATION[loc]} columns=${cols} rows=${items} onRowClick=${i => setActive(i.id)} rowClass=${i => i.id === cur ? 'active' : ''}/></div>`)}
+    </div>
+    <aside class="count-pad card" aria-label="ใส่จำนวนที่เหลือ">
+      ${curIng ? html`<div><div class="eyebrow">${LOCATION[curIng.location] || ''}</div><h2>${curIng.name}</h2>
+          <div class="sub">มีทั้งหมด ${fmtQ(rowOf(cur).avail)} ${curIng.unit}${prevOf(cur) != null ? ' · ครั้งก่อน ' + fmtQ(prevOf(cur)) : ''}</div></div>
+        <output class="big-val" aria-live="polite">${vals[cur] || html`<span class="m">0</span>`} <small class="sub">${curIng.unit}</small></output>
+        <${NumPad} value=${vals[cur] || ''} onChange=${setVal} decimal keyboard maxLen=${7} onEnter=${next}/>
+        <${Btn} block onClick=${next}>รายการถัดไป<//>` : html`<${Empty} title="ไม่มีรายการให้นับวันนี้"/>`}
+      <div class="line"><span>นับแล้ว</span><strong>${doneDue}/${due.length}</strong></div>
+      <div class="line"><span>ต้นทุนจากที่นับ</span><strong class="num">${baht(sum(order, i => calc(i).cost))}</strong></div>
+      <${Btn} kind="primary" size="lg" block icon="check" disabled=${doneDue !== due.length} title=${doneDue !== due.length ? 'ใส่ให้ครบทุกรายการที่ต้องนับ (ไม่มีของเหลือใส่ 0)' : ''} onClick=${save}>บันทึกและปิดวัน<//>
+      ${draft && html`<${Btn} kind="ghost" block onClick=${() => setDraft(null)}>ยกเลิกที่แก้<//>`}
+      ${day.closed && !draft && html`<${Btn} kind="ghost" block onClick=${() => { update(st => { delete st.counts[date]; }); toast('ยกเลิกการปิดวันแล้ว'); }}>ยกเลิกการปิดวัน<//>`}
+    </aside></div>`;
+}
+
+/* รับของเข้า: แต่ละแหล่งซื้อมีปุ่ม "เหมือนครั้งก่อน" เปิดบิลที่กรอกรายการเดิมไว้ให้ แก้เฉพาะตัวเลขที่เปลี่ยน */
+function StockPurchase({ s, update, date, toast }) {
   const [pur, setPur] = useState(null);
   const [del, setDel] = useState(null);
-  useEffect(() => { setDraft(null); }, [date]);
-  const counts = draft || Object.fromEntries(s.ingredients.map(i => [i.id, s.counts[date] && s.counts[date][i.id] != null ? s.counts[date][i.id] : '']));
-  const preview = day ? day.rows.map(r => { const v = counts[r.ing.id]; const used = v === '' || v == null ? null : Math.max(0, r.avail - +v); return { ...r, input: v, used, cost: used == null ? null : used * r.avg }; }) : [];
-  const filled = preview.filter(r => r.used != null);
   const supName = id => (s.suppliers.find(x => x.id === id) || {}).name || '-';
+  const lastOf = supId => s.purchases.filter(x => x.supplierId === supId).sort((a, b) => b.at.localeCompare(a.at))[0];
+  const blank = supId => ({ id: uid('p'), isNew: true, date, supplierId: supId, note: '', lines: [{ ingId: '', qty: '', total: '' }] });
   const dayPurch = s.purchases.filter(p => p.date === date).sort((a, b) => a.at.localeCompare(b.at));
   const savePur = p => { update(st => { const { isNew, ...clean } = p; const i = st.purchases.findIndex(x => x.id === p.id); if (i >= 0) st.purchases[i] = clean; else st.purchases.push({ ...clean, at: new Date().toISOString() }); }); setPur(null); toast('บันทึกการรับของแล้ว'); };
   return html`<div class="stack">
-    <div class="row between"><${Seg} label="เมนูสต็อก" value=${tab} onChange=${setTab} items=${[['count', 'นับของเหลือ (ปิดวัน)'], ['purchase', 'รับของเข้า'], ['balance', 'คงเหลือและสั่งซื้อ']]}/>
-      ${tab !== 'balance' && html`<${Field} label="วันที่"><input id="stock-date" class="input" type="date" value=${date} min=${s.startDate} max=${todayKey()} onInput=${e => e.target.value && setDate(e.target.value)}/><//>`}</div>
-
-    ${tab === 'count' && day && html`<div class="stack">
-      <div class=${'banner ' + (day.closed ? 'info' : '')}><span class="grow">${day.closed ? 'วันนี้ปิดยอดแล้ว แก้ตัวเลขแล้วกดบันทึกได้ ระบบคำนวณใหม่ให้ทั้งหมด' : 'ตอนปิดร้าน ให้ชั่งหรือนับของที่เหลือ แล้วใส่ตัวเลขช่อง เหลือจริง ระบบหักสต็อกและคิดต้นทุนให้เอง'}</span>
-        <strong class="num">ต้นทุนที่ใช้ไป ${baht(sum(filled, r => r.cost))}</strong></div>
-      <div class="scroll"><table class="dt"><thead><tr><th>วัตถุดิบ</th><th class="r">ยกมา</th><th class="r">ซื้อเข้า</th><th class="r">มีทั้งหมด</th><th class="r">เหลือจริง</th><th class="r">ใช้ไป</th><th class="r">ต้นทุน/หน่วย</th><th class="r">มูลค่าที่ใช้</th></tr></thead><tbody>
-        ${preview.map(r => html`<tr><td><strong>${r.ing.name}</strong><div class="sub">${r.ing.unit}</div></td><td class="r">${fmtQ(r.opening)}</td><td class="r">${r.pq ? fmtQ(r.pq) : '–'}</td><td class="r">${fmtQ(r.avail)}</td>
-          <td class="r"><input id=${'cnt-' + r.ing.id} class="input num" type="number" inputmode="decimal" step="any" min="0" value=${r.input} aria-label=${'เหลือจริง ' + r.ing.name} onInput=${e => setDraft({ ...counts, [r.ing.id]: e.target.value })}/></td>
-          <td class=${'r ' + (r.input !== '' && +r.input > r.avail ? 'rd' : '')}>${r.input !== '' && +r.input > r.avail ? 'เกินที่มี' : fmtQ(r.used)}</td><td class="r">${fmt(r.avg, 2)}</td><td class="r">${r.cost == null ? '–' : fmt(r.cost)}</td></tr>`)}
-      </tbody><tfoot><tr><td colspan="7">รวมต้นทุนวัตถุดิบที่ใช้</td><td class="r">${baht(sum(filled, r => r.cost))}</td></tr></tfoot></table></div>
-      <div class="row" style="justify-content:flex-end">
-        ${day.closed && html`<${Btn} kind="ghost" onClick=${() => { update(st => { delete st.counts[date]; }); setDraft(null); toast('ยกเลิกการปิดวันแล้ว'); }}>ยกเลิกการปิดวัน<//>`}
-        <${Btn} onClick=${() => setDraft(Object.fromEntries(preview.map(r => [r.ing.id, r.closing != null ? r.closing : ''])))}>คืนค่าที่บันทึกไว้<//>
-        <${Btn} kind="primary" size="lg" icon="check" disabled=${filled.length !== preview.length} title=${filled.length !== preview.length ? 'ใส่ให้ครบทุกรายการ (ไม่มีของเหลือใส่ 0)' : ''} onClick=${() => { update(st => { st.counts[date] = Object.fromEntries(preview.map(r => [r.ing.id, +r.input])); }); setDraft(null); toast('บันทึกยอดคงเหลือและปิดวันแล้ว'); }}>บันทึกและปิดวัน (${filled.length}/${preview.length})<//>
-      </div></div>`}
-
-    ${tab === 'purchase' && html`<div class="stack">
-      <div class="row between"><div class="sub">ซื้อเข้าวันนี้ ${dayPurch.length} บิล · รวม ${baht(sum(dayPurch, p => sum(p.lines, l => l.total)))}</div>
-        <${Btn} kind="primary" icon="plus" onClick=${() => setPur({ id: uid('p'), isNew: true, date, supplierId: s.suppliers[0] && s.suppliers[0].id, note: '', lines: [{ ingId: '', qty: '', total: '' }] })}>รับของเข้า<//></div>
-      ${dayPurch.length ? dayPurch.map(p => html`<div class="card stack" style="gap:8px">
-        <div class="row between"><div><strong>${supName(p.supplierId)}</strong><div class="sub">${thTime(p.at)} · ${p.lines.length} รายการ${p.note ? ' · ' + p.note : ''}</div></div>
-          <div class="row"><strong class="num">${baht(sum(p.lines, l => l.total))}</strong><${Btn} size="sm" icon="edit" aria-label="แก้ไข" onClick=${() => setPur({ ...p, lines: p.lines.map(l => ({ ...l })) })}/><${Btn} size="sm" kind="danger" icon="trash" aria-label="ลบ" onClick=${() => setDel(p)}/></div></div>
-        <div class="row" style="gap:6px">${p.lines.map(l => { const ing = s.ingredients.find(x => x.id === l.ingId); return html`<${Pill}>${ing ? ing.name : '?'} ${fmtQ(l.qty)} ${ing ? ing.unit : ''} · ${fmt(l.total)}฿<//>`; })}</div></div>`)
-        : html`<div class="card"><${Empty} title="ยังไม่มีการรับของเข้าวันนี้" text="กด รับของเข้า แล้วใช้ปุ่ม ใช้รายการเดิมจากครั้งก่อน เพื่อคีย์ให้เร็วขึ้น"/></div>`}
-    </div>`}
-
-    ${tab === 'balance' && html`<div class="stack">
-      <div class="banner info">คงเหลือล่าสุด = นับครั้งล่าสุด + ซื้อเข้าหลังจากนั้น · แนะนำสั่งซื้อ = ระดับที่ควรมี − คงเหลือ (ตั้งค่าระดับได้ที่ ตั้งค่า › วัตถุดิบ)</div>
-      <div class="scroll"><table class="dt"><thead><tr><th>วัตถุดิบ</th><th>ซื้อจาก</th><th class="r">คงเหลือ</th><th class="r">ต้นทุนเฉลี่ย</th><th class="r">มูลค่าคงเหลือ</th><th class="r">ระดับที่ควรมี</th><th class="r">แนะนำสั่งซื้อ</th></tr></thead><tbody>
-        ${s.ingredients.map(i => { const c = ledger.current[i.id] || { qty: 0, avg: i.lastCost }, need = Math.max(0, (+i.par || 0) - c.qty); return html`<tr><td><strong>${i.name}</strong></td><td class="sub">${supName(i.supplierId)}</td><td class="r">${fmtQ(c.qty)} ${i.unit}</td><td class="r">${fmt(c.avg, 2)}</td><td class="r">${fmt(c.qty * c.avg)}</td><td class="r">${fmtQ(i.par)}</td><td class="r">${need > 0 ? html`<${Pill} tone="orange">${fmtQ(roundQty(need, i.unit))} ${i.unit}<//>` : html`<span class="g">พอ</span>`}</td></tr>`; })}
-      </tbody><tfoot><tr><td colspan="4">มูลค่าวัตถุดิบคงเหลือรวม</td><td class="r">${baht(sum(s.ingredients, i => { const c = ledger.current[i.id]; return c ? c.qty * c.avg : 0; }))}</td><td colspan="2"></td></tr></tfoot></table></div>
-    </div>`}
-
+    <${PageHeader} level=${3} title="รับของเข้า" desc="แตะ เหมือนครั้งก่อน แล้วแก้เฉพาะตัวเลขที่เปลี่ยน"/>
+    <div class="sup-grid">${s.suppliers.map(sup => { const l = lastOf(sup.id); return html`<div class="card stack" style="gap:10px">
+      <div><strong>${sup.name}</strong><div class="sub">${l ? 'ครั้งก่อน ' + thDateShort(l.date) + ' · ' + l.lines.length + ' รายการ · ' + baht(sum(l.lines, x => +x.total)) : 'ยังไม่เคยซื้อจากที่นี่'}</div></div>
+      <div class="row"><${Btn} kind="primary" icon="copy" disabled=${!l} onClick=${() => setPur({ ...blank(sup.id), lines: l.lines.map(x => ({ ...x })) })}>เหมือนครั้งก่อน<//><${Btn} icon="plus" onClick=${() => setPur(blank(sup.id))}>รายการใหม่<//></div></div>`; })}</div>
+    <${PageHeader} level=${3} title=${'ซื้อเข้าวันที่ ' + thDateShort(date)} desc=${dayPurch.length + ' บิล · รวม ' + baht(sum(dayPurch, p => sum(p.lines, l => +l.total)))}/>
+    ${dayPurch.length ? dayPurch.map(p => html`<div class="card stack" style="gap:8px">
+      <div class="row between"><div><strong>${supName(p.supplierId)}</strong><div class="sub">${thTime(p.at)} · ${p.lines.length} รายการ${p.note ? ' · ' + p.note : ''}</div></div>
+        <div class="row"><strong class="num">${baht(sum(p.lines, l => l.total))}</strong><${Btn} size="sm" icon="edit" aria-label="แก้ไข" onClick=${() => setPur({ ...p, lines: p.lines.map(l => ({ ...l })) })}/><${Btn} size="sm" kind="danger" icon="trash" aria-label="ลบ" onClick=${() => setDel(p)}/></div></div>
+      <div class="row" style="gap:6px">${p.lines.map(l => { const ing = s.ingredients.find(x => x.id === l.ingId); return html`<${Pill}>${ing ? ing.name : '?'} ${fmtQ(l.qty)} ${ing ? ing.unit : ''} · ${fmt(l.total)}฿<//>`; })}</div></div>`)
+      : html`<div class="card"><${Empty} title="ยังไม่มีการรับของเข้าวันนี้" text="เลือกแหล่งซื้อด้านบน แล้วกด เหมือนครั้งก่อน"/></div>`}
     ${pur && html`<${PurchaseModal} s=${s} initial=${pur} onClose=${() => setPur(null)} onSave=${savePur}/>`}
     ${del && html`<${Confirm} title="ลบบิลซื้อของนี้?" text=${supName(del.supplierId) + ' · ' + baht(sum(del.lines, l => l.total))} yes="ลบ" danger onNo=${() => setDel(null)} onYes=${() => { update(st => { st.purchases = st.purchases.filter(x => x.id !== del.id); }); setDel(null); toast('ลบแล้ว'); }}/>`}
   </div>`;
 }
 
+/* ค่าใช้จ่ายรายวัน (ไม่เข้าสต็อก) เช่น แก๊ส น้ำแข็งใช้ในร้าน */
+function ExpenseModal({ s, initial, onSave, onClose }) {
+  const [lines, setLines] = useState(initial.lines);
+  const [err, setErr] = useState('');
+  const setLine = (i, k, v) => setLines(x => x.map((l, j) => j === i ? { ...l, [k]: v } : l));
+  const save = () => { const ok = lines.filter(l => l.typeId && +l.amount > 0); if (!ok.length) return setErr('ใส่อย่างน้อย 1 รายการที่มียอดมากกว่า 0'); onSave(ok.map(l => ({ typeId: l.typeId, amount: +l.amount, note: l.note || '' }))); };
+  return html`<${Modal} title=${initial.editId ? 'แก้ไขค่าใช้จ่าย' : 'บันทึกค่าใช้จ่าย · ' + thDateShort(initial.date)} sub="ค่าใช้จ่ายที่ไม่เข้าสต็อก ใช้หักกำไรสุทธิ" onClose=${onClose}
+    footer=${html`<span class="grow num" style="font-weight:700;font-size:18px">รวม ${baht(sum(lines, l => +l.amount || 0))}</span><${Btn} onClick=${onClose}>ยกเลิก<//><${Btn} kind="primary" icon="check" onClick=${save}>บันทึก<//>`}>
+    <div class="stack">${lines.map((l, i) => html`<div class="lines-edit">
+      <${Field} label=${i ? '' : 'รายการ'}><select id=${'ex-t-' + i} class="input" value=${l.typeId} onChange=${e => setLine(i, 'typeId', e.target.value)}><option value="">เลือกประเภท</option>${s.expenseTypes.map(x => html`<option value=${x.id}>${x.name}</option>`)}</select><//>
+      <${Field} label=${i ? '' : 'ยอดเงิน (บาท)'}><input id=${'ex-a-' + i} class="input num" type="number" inputmode="decimal" step="any" min="0" value=${l.amount} onInput=${e => setLine(i, 'amount', e.target.value)}/><//>
+      <${Field} label=${i ? '' : 'หมายเหตุ'}><input id=${'ex-n-' + i} class="input" value=${l.note} onInput=${e => setLine(i, 'note', e.target.value)}/><//>
+      <${Btn} kind="ghost" icon="trash" aria-label="ลบบรรทัด" onClick=${() => setLines(x => x.filter((_, j) => j !== i))}/></div>`)}
+      ${!initial.editId && html`<div><${Btn} icon="plus" onClick=${() => setLines(x => [...x, { typeId: '', amount: '', note: '' }])}>เพิ่มบรรทัด<//></div>`}
+      ${err && html`<p class="rd" style="margin:0">${err}</p>`}</div><//>`;
+}
+function StockExpense({ s, update, date, toast }) {
+  const [ed, setEd] = useState(null);
+  const [del, setDel] = useState(null);
+  const typeName = id => (s.expenseTypes.find(x => x.id === id) || {}).name || '-';
+  const rows = s.expenses.filter(e => e.date === date).sort((a, b) => a.at.localeCompare(b.at));
+  const prevDate = [...new Set(s.expenses.filter(e => e.date < date).map(e => e.date))].sort().pop();
+  const save = lines => {
+    update(st => { if (ed.editId) Object.assign(st.expenses.find(e => e.id === ed.editId), lines[0]); else for (const l of lines) st.expenses.push({ id: uid('e'), date, at: new Date().toISOString(), ...l }); });
+    setEd(null); toast('บันทึกค่าใช้จ่ายแล้ว');
+  };
+  return html`<div class="stack">
+    <${PageHeader} level=${3} title=${'ค่าใช้จ่ายวันที่ ' + thDateShort(date)} desc="ไม่เข้าสต็อก · ใช้หักกำไรสุทธิ"
+      actions=${html`<${Btn} icon="copy" disabled=${!prevDate} onClick=${() => setEd({ date, lines: s.expenses.filter(e => e.date === prevDate).map(e => ({ typeId: e.typeId, amount: e.amount, note: e.note || '' })) })}>เหมือนครั้งก่อน<//><${Btn} kind="primary" icon="plus" onClick=${() => setEd({ date, lines: [{ typeId: '', amount: '', note: '' }] })}>เพิ่มค่าใช้จ่าย<//>`}/>
+    <${DataTable} label="ค่าใช้จ่ายรายวัน" rows=${rows} empty=${html`<div class="card"><${Empty} title="ยังไม่มีค่าใช้จ่ายวันนี้" text=${prevDate ? 'กด เหมือนครั้งก่อน เพื่อคัดลอกจากวันที่ ' + thDateShort(prevDate) : ''}/></div>`}
+      columns=${[{ key: 'typeId', label: 'รายการ', render: e => typeName(e.typeId) }, { key: 'note', label: 'หมายเหตุ', render: e => e.note || '–' }, { key: 'amount', label: 'ยอด', align: 'r', render: e => baht(e.amount) },
+        { key: '_act', label: 'จัดการ', align: 'r', render: e => html`<div class="row" style="justify-content:flex-end;flex-wrap:nowrap"><${Btn} size="sm" icon="edit" aria-label=${'แก้ไข ' + typeName(e.typeId)} onClick=${() => setEd({ date, editId: e.id, lines: [{ typeId: e.typeId, amount: e.amount, note: e.note || '' }] })}/><${Btn} size="sm" kind="danger" icon="trash" aria-label=${'ลบ ' + typeName(e.typeId)} onClick=${() => setDel(e)}/></div>` }]}
+      footer=${html`<tr><td colspan="2">รวม</td><td class="r">${baht(sum(rows, e => e.amount))}</td><td></td></tr>`}/>
+    ${ed && html`<${ExpenseModal} s=${s} initial=${ed} onSave=${save} onClose=${() => setEd(null)}/>`}
+    ${del && html`<${Confirm} title="ลบค่าใช้จ่ายนี้?" text=${typeName(del.typeId) + ' · ' + baht(del.amount)} yes="ลบ" danger onNo=${() => setDel(null)} onYes=${() => { update(st => { st.expenses = st.expenses.filter(x => x.id !== del.id); }); setDel(null); toast('ลบแล้ว'); }}/>`}
+  </div>`;
+}
+
+function StockBalance({ s, ledger }) {
+  const supName = id => (s.suppliers.find(x => x.id === id) || {}).name || '-';
+  const rows = s.ingredients.map(i => { const c = ledger.current[i.id] || { qty: 0, avg: i.lastCost }; return { id: i.id, i, qty: c.qty, avg: c.avg, val: c.qty * c.avg, need: Math.max(0, (+i.par || 0) - c.qty) }; });
+  return html`<div class="stack">
+    <div class="banner info">คงเหลือล่าสุด = นับครั้งล่าสุด + ซื้อเข้าหลังจากนั้น (ของนับรายสัปดาห์หักค่าประมาณแล้ว) · แนะนำสั่งซื้อ = ระดับที่ควรมี − คงเหลือ</div>
+    <${DataTable} label="คงเหลือและแนะนำสั่งซื้อ" rows=${rows} columns=${[
+      { key: 'n', label: 'วัตถุดิบ', render: r => html`<strong>${r.i.name}</strong><div class="sub">${LOCATION[r.i.location] || '-'} · ${COUNT_FREQ[r.i.countFreq] || '-'}</div>` },
+      { key: 'sup', label: 'ซื้อจาก', render: r => html`<span class="sub">${supName(r.i.supplierId)}</span>` },
+      { key: 'qty', label: 'คงเหลือ', align: 'r', render: r => fmtQ(r.qty) + ' ' + r.i.unit },
+      { key: 'avg', label: 'ต้นทุนเฉลี่ย', align: 'r', render: r => fmt(r.avg, 2) },
+      { key: 'val', label: 'มูลค่าคงเหลือ', align: 'r', render: r => fmt(r.val) },
+      { key: 'par', label: 'ระดับที่ควรมี', align: 'r', render: r => fmtQ(r.i.par) },
+      { key: 'need', label: 'แนะนำสั่งซื้อ', align: 'r', render: r => r.need > 0 ? html`<${Pill} tone="orange">${fmtQ(roundQty(r.need, r.i.unit))} ${r.i.unit}<//>` : html`<span class="g">พอ</span>` }]}
+      footer=${html`<tr><td colspan="4">มูลค่าวัตถุดิบคงเหลือรวม</td><td class="r">${baht(sum(rows, r => r.val))}</td><td colspan="2"></td></tr>`}/>
+  </div>`;
+}
+
+function StockView({ s, update, ledger, toast }) {
+  const [tab, setTab] = useState('count');
+  const [date, setDate] = useState(todayKey());
+  const p = { s, update, ledger, date, toast };
+  return html`<div class="stack">
+    <${Toolbar} end=${tab !== 'balance' && html`<${Field} label="วันที่"><input id="stock-date" class="input" type="date" value=${date} min=${s.startDate} max=${todayKey()} onInput=${e => e.target.value && setDate(e.target.value)}/><//>`}>
+      <${Seg} label="เมนูสต็อก" value=${tab} onChange=${setTab} items=${[['count', 'นับของเหลือ (ปิดวัน)'], ['purchase', 'รับของเข้า'], ['expense', 'ค่าใช้จ่าย'], ['balance', 'คงเหลือและสั่งซื้อ']]}/>
+    <//>
+    ${tab === 'count' ? html`<${StockCount} ...${p}/>` : tab === 'purchase' ? html`<${StockPurchase} ...${p}/>` : tab === 'expense' ? html`<${StockExpense} ...${p}/>` : html`<${StockBalance} ...${p}/>`}
+  </div>`;
+}
+
 /* ===== ภาพรวม ===== */
-function ProfitChart({ days }) {
+function ProfitChart({ days, field = 'profit' }) {
   const W = Math.max(days.length * 26, 260), H = 200, top = 16, bottom = 28, left = 8;
-  const vals = days.map(d => d.profit == null ? 0 : d.profit);
+  const vals = days.map(d => d[field] == null ? 0 : d[field]);
   const max = Math.max(1, ...vals), min = Math.min(0, ...vals);
   const y = v => top + (max - v) / (max - min) * (H - top - bottom);
   const bw = (W - left * 2) / days.length;
   return html`<div style="overflow-x:auto"><svg class="chart" viewBox=${`0 0 ${W} ${H}`} width="100%" style=${`min-width:${Math.min(W, 520)}px;height:auto`} role="img" aria-label="กราฟกำไรรายวัน">
     <line class="axis" x1="0" x2=${W} y1=${y(max)} y2=${y(max)}/>
     <text x=${W - 4} y=${y(max) - 4} text-anchor="end">${fmt(max)}</text>
-    ${days.map((d, i) => { const x = left + i * bw + bw * .18, w = bw * .64; if (d.profit == null) return html`<rect class="open" x=${x} y=${y(0) - 4} width=${w} height="4" rx="1"><title>${thDateShort(d.date)} ยังไม่ปิดยอด</title></rect>`;
-      const y0 = y(Math.max(0, d.profit)), hgt = Math.max(1, Math.abs(y(d.profit) - y(0)));
-      return html`<rect class=${d.profit >= 0 ? 'pos' : 'neg'} x=${x} y=${y0} width=${w} height=${hgt} rx="2"><title>${thDateShort(d.date)} กำไร ${baht(d.profit)}</title></rect>`; })}
+    ${days.map((d, i) => { const x = left + i * bw + bw * .18, w = bw * .64; if (d[field] == null) return html`<rect class="open" x=${x} y=${y(0) - 4} width=${w} height="4" rx="1"><title>${thDateShort(d.date)} ยังไม่ปิดยอด</title></rect>`;
+      const y0 = y(Math.max(0, d[field])), hgt = Math.max(1, Math.abs(y(d[field]) - y(0)));
+      return html`<rect class=${d[field] >= 0 ? 'pos' : 'neg'} x=${x} y=${y0} width=${w} height=${hgt} rx="2"><title>${thDateShort(d.date)} กำไร ${baht(d[field])}</title></rect>`; })}
     <line class="zero" x1="0" x2=${W} y1=${y(0)} y2=${y(0)}/>
     ${days.map((d, i) => (i % Math.ceil(days.length / 10) === 0 || i === days.length - 1) && html`<text x=${left + i * bw + bw / 2} y=${H - 8} text-anchor="middle">${parseKey(d.date).getDate()}</text>`)}
   </svg></div>`;
 }
 
+const PendingBadge = () => html`<a class="pill orange" href="#setup/costing" title="สูตรเป็นค่าตั้งต้นชั่วคราว แตะเพื่อดู/ปรับ">ค่าตั้งต้น · รอยืนยันกับร้าน</a>`;
+
 function DashboardView({ s, ledger }) {
   const [range, setRange] = useState('30');
-  const tk = todayKey();
+  const tk = todayKey(), sh = { ...SHOP_DEFAULTS, ...s.shop }, showNet = sh.showNetProfit !== false;
+  const field = showNet ? 'netProfit' : 'profit', fieldName = showNet ? 'กำไรสุทธิ' : 'กำไรขั้นต้น';
   const all = ledger.days;
   const days = range === 'today' ? all.filter(d => d.date === tk) : range === 'month' ? all.filter(d => d.date.slice(0, 7) === tk.slice(0, 7)) : all.slice(-(+range));
   const closed = days.filter(d => d.closed);
   const net = sum(days, d => d.net), heads = sum(days, d => d.heads);
   const ingCost = sum(closed, d => d.ingCost), addonCost = sum(closed, d => d.addonCost);
-  const profit = sum(closed, d => d.profit);
-  const cHeads = sum(closed, d => d.heads), cBuffet = sum(closed, d => d.buffetNet);
+  const profit = sum(closed, d => d.profit), netProfit = sum(closed, d => d.netProfit), spend = sum(closed, d => d.expenses + d.fixed);
+  const cHeadsW = sum(closed, d => d.headsW), cBuffet = sum(closed, d => d.buffetNet);
   const todayOpen = days.some(d => d.isToday && !d.closed);
-  const ingShare = s.ingredients.map(i => ({ i, v: sum(closed, d => { const r = d.rows.find(x => x.ing.id === i.id); return r && r.cost || 0; }) })).sort((a, b) => b.v - a.v);
+  const last = all.slice().reverse().find(d => d.closed);
+  const ingShare = s.ingredients.map(i => ({ id: i.id, i, v: sum(closed, d => { const r = d.rows.find(x => x.ing.id === i.id); return r && r.cost || 0; }) })).sort((a, b) => b.v - a.v);
   const addonAgg = {};
-  for (const b of s.sales) if (!b.voided && days.some(d => d.date === b.date)) for (const l of b.lines) if (l.type === 'addon') { const a = addonAgg[l.name] = addonAgg[l.name] || { q: 0, rev: 0, cost: 0 }; a.q += l.qty; a.rev += l.qty * l.price; a.cost += l.qty * (l.cost || 0); }
-  const best = closed.length ? closed.reduce((a, b) => b.profit > a.profit ? b : a) : null;
-  const worst = closed.length ? closed.reduce((a, b) => b.profit < a.profit ? b : a) : null;
+  for (const b of s.sales) if (!b.voided && days.some(d => d.date === b.date)) for (const l of b.lines) if (l.type === 'addon') { const a = addonAgg[l.name] = addonAgg[l.name] || { id: l.name, name: l.name, q: 0, rev: 0, cost: 0 }; a.q += l.qty; a.rev += l.qty * l.price; a.cost += l.qty * (l.cost || 0); }
+  const best = closed.length ? closed.reduce((a, b) => b[field] > a[field] ? b : a) : null;
+  const worst = closed.length ? closed.reduce((a, b) => b[field] < a[field] ? b : a) : null;
   return html`<div class="stack">
-    <div class="row between"><${Seg} label="ช่วงเวลา" value=${range} onChange=${setRange} items=${[['today', 'วันนี้'], ['7', '7 วัน'], ['month', 'เดือนนี้'], ['30', '30 วัน']]}/>
-      <span class="sub">${days.length ? thDate(days[0].date) + ' – ' + thDate(days[days.length - 1].date) : ''}</span></div>
+    <${Toolbar} end=${html`<span class="sub">${days.length ? thDate(days[0].date) + ' – ' + thDate(days[days.length - 1].date) : ''}</span>`}>
+      <${Seg} label="ช่วงเวลา" value=${range} onChange=${setRange} items=${[['today', 'วันนี้'], ['7', '7 วัน'], ['month', 'เดือนนี้'], ['30', '30 วัน']]}/><//>
+    ${last && html`<div class="card today-hero"><div class="grow">
+        <div class="eyebrow">ปิดยอดล่าสุด · ${thDate(last.date)}${last.isToday ? ' (วันนี้)' : ''}</div>
+        <div class=${'hero-v ' + (last[field] >= 0 ? 'g' : 'rd')}>${last[field] >= 0 ? 'กำไร' : 'ขาดทุน'} ${baht(Math.abs(last[field]))}</div>
+        <div class="sub">${fieldName} · ขาย ${baht(last.net)} − วัตถุดิบ ${baht(last.ingCost)} − เครื่องดื่ม ${baht(last.addonCost)}${showNet ? ' − ค่าใช้จ่าย ' + baht(last.expenses + last.fixed) : ''}${last.estItems ? ' · มีของประมาณการ ' + last.estItems + ' รายการ' : ''}</div></div>
+      <${PendingBadge}/></div>`}
     ${todayOpen && html`<div class="banner"><span class="grow">วันนี้ยังไม่ได้นับของเหลือ กำไรของวันนี้จึงยังไม่รวมในตัวเลขด้านล่าง</span><a class="btn btn-primary" href="#stock">ไปนับของเหลือ</a></div>`}
     <div class="stats">
+      ${showNet && html`<${Stat} label="กำไรสุทธิ (ประมาณ)" value=${closed.length ? baht(netProfit) : '–'} tone=${netProfit >= 0 ? 'green' : 'red'} sub=${'หักค่าใช้จ่าย ' + baht(spend)}/>`}
       <${Stat} label="กำไรขั้นต้น" value=${closed.length ? baht(profit) : '–'} tone=${profit >= 0 ? 'green' : 'red'} sub=${closed.length + ' วันที่ปิดยอดแล้ว'}/>
       <${Stat} label="ยอดขาย (ก่อน VAT)" value=${baht(net)} sub=${sum(days, d => d.bills) + ' บิล'}/>
       <${Stat} label="ต้นทุนวัตถุดิบที่ใช้" value=${closed.length ? baht(ingCost) : '–'} sub=${'ต้นทุนเครื่องดื่ม ' + baht(addonCost)}/>
       <${Stat} label="ลูกค้า" value=${fmt(heads) + ' หัว'} sub=${days.length ? 'เฉลี่ย ' + fmt(heads / days.length) + ' หัว/วัน' : ''}/>
-      <${Stat} label="ต้นทุนวัตถุดิบต่อหัว" value=${cHeads ? baht(ingCost / cHeads, 2) : '–'} sub=${s.packages[0] ? 'เทียบราคา ' + s.packages[0].name + ' ' + baht(s.packages[0].adultPrice) : ''}/>
+      <${Stat} label="ต้นทุนวัตถุดิบต่อหัว" value=${cHeadsW ? baht(ingCost / cHeadsW, 2) : '–'} sub=${'เด็กนับ ' + sh.childHeadWeight + ' หัว' + (s.packages[0] ? ' · ราคา ' + baht(s.packages[0].adultPrice) : '')}/>
       <${Stat} label="Food cost บุฟเฟต์" value=${cBuffet ? fmt(ingCost / cBuffet * 100, 1) + '%' : '–'} tone=${cBuffet && ingCost / cBuffet > .4 ? 'red' : ''} sub="ต้นทุนวัตถุดิบ ÷ ยอดขายบุฟเฟต์"/>
     </div>
-    ${days.length > 1 && html`<div class="card stack" style="gap:8px"><div class="row between"><h2>กำไรรายวัน</h2><span class="sub">เขียว = กำไร · แดง = ขาดทุน · เทา = ยังไม่ปิดยอด</span></div><${ProfitChart} days=${days}/>
-      ${best && html`<div class="row"><${Pill} tone="green">ดีที่สุด ${thDateShort(best.date)} ${baht(best.profit)}<//><${Pill} tone=${worst.profit < 0 ? 'red' : ''}>ต่ำสุด ${thDateShort(worst.date)} ${baht(worst.profit)}<//></div>`}</div>`}
+    ${days.length > 1 && html`<div class="card stack" style="gap:8px"><div class="row between"><h2>${fieldName}รายวัน</h2><span class="sub">เขียว = กำไร · แดง = ขาดทุน · เทา = ยังไม่ปิดยอด</span></div><${ProfitChart} days=${days} field=${field}/>
+      ${best && html`<div class="row"><${Pill} tone="green">ดีที่สุด ${thDateShort(best.date)} ${baht(best[field])}<//><${Pill} tone=${worst[field] < 0 ? 'red' : ''}>ต่ำสุด ${thDateShort(worst.date)} ${baht(worst[field])}<//></div>`}</div>`}
     <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:start">
       <div class="card stack" style="gap:10px"><h2>ต้นทุนวัตถุดิบแยกรายการ</h2>
-        ${ingCost ? html`<table class="dt"><tbody>${ingShare.filter(x => x.v > 0).slice(0, 8).map(x => html`<tr><td>${x.i.name}</td><td style="width:35%"><div class="share"><i style=${'width:' + (x.v / ingShare[0].v * 100) + '%'}></i></div></td><td class="r">${fmt(x.v)}</td><td class="r m">${fmt(x.v / ingCost * 100, 0)}%</td></tr>`)}</tbody></table>` : html`<${Empty} title="ยังไม่มีวันที่ปิดยอดในช่วงนี้"/>`}</div>
+        <${DataTable} label="ต้นทุนวัตถุดิบแยกรายการ" head=${false} rows=${ingShare.filter(x => x.v > 0).slice(0, 8)} empty=${html`<${Empty} title="ยังไม่มีวันที่ปิดยอดในช่วงนี้"/>`} columns=${[
+          { key: 'n', label: 'วัตถุดิบ', render: x => x.i.name }, { key: 'bar', label: 'สัดส่วน', render: x => html`<div class="share"><i style=${'width:' + (x.v / ingShare[0].v * 100) + '%'}></i></div>` },
+          { key: 'v', label: 'บาท', align: 'r', render: x => fmt(x.v) }, { key: 'p', label: '%', align: 'r', className: () => 'm', render: x => fmt(x.v / ingCost * 100, 0) + '%' }]}/></div>
       <div class="card stack" style="gap:10px"><h2>ขายเสริม · เครื่องดื่ม</h2>
-        ${Object.keys(addonAgg).length ? html`<table class="dt"><thead><tr><th>สินค้า</th><th class="r">จำนวน</th><th class="r">ยอดขาย</th><th class="r">กำไร</th></tr></thead><tbody>${Object.entries(addonAgg).sort((a, b) => b[1].rev - a[1].rev).map(([k, v]) => html`<tr><td>${k}</td><td class="r">${fmt(v.q)}</td><td class="r">${fmt(v.rev)}</td><td class="r g">${fmt(v.rev - v.cost)}</td></tr>`)}</tbody></table>` : html`<${Empty} title="ยังไม่มีการขายเสริม"/>`}</div>
+        <${DataTable} label="ขายเสริม" rows=${Object.values(addonAgg).sort((a, b) => b.rev - a.rev)} empty=${html`<${Empty} title="ยังไม่มีการขายเสริม"/>`} columns=${[
+          { key: 'name', label: 'สินค้า' }, { key: 'q', label: 'จำนวน', align: 'r', render: v => fmt(v.q) }, { key: 'rev', label: 'ยอดขาย', align: 'r', render: v => fmt(v.rev) },
+          { key: 'gp', label: 'กำไร', align: 'r', className: () => 'g', render: v => fmt(v.rev - v.cost) }]}/></div>
     </div>
-    <p class="sub" style="margin:0">กำไรขั้นต้น = ยอดขายก่อน VAT − ต้นทุนวัตถุดิบที่ใช้ − ต้นทุนเครื่องดื่ม · ยังไม่รวมค่าแก๊ส ค่าแรง ค่าเช่า (รอยืนยันกับร้าน) · ต้นทุนต่อหน่วยใช้วิธีเฉลี่ยถ่วงน้ำหนัก (รอยืนยัน)</p>
+    <p class="sub" style="margin:0">กำไรขั้นต้น = ยอดขายก่อน VAT − ต้นทุนวัตถุดิบที่ใช้ − ต้นทุนเครื่องดื่ม${showNet ? ' · กำไรสุทธิ = กำไรขั้นต้น − ค่าใช้จ่ายรายวัน − ค่าคงที่รายเดือน ÷ ' + sh.openDaysPerMonth + ' วัน' : ''} · มูลค่าวัตถุดิบ: ${COST_METHOD[sh.costMethod] || '-'} · ทุกสูตรเป็นค่าตั้งต้น รอยืนยันกับร้าน</p>
   </div>`;
 }
 
 /* ===== รายงาน ===== */
-function ReportsView({ ledger }) {
+function ReportsView({ s, ledger }) {
   const months = [...new Set(ledger.days.map(d => d.date.slice(0, 7)))].reverse();
   const [m, setM] = useState(months[0]);
+  const showNet = s.shop.showNetProfit !== false;
   const days = ledger.days.filter(d => d.date.slice(0, 7) === m);
   const closed = days.filter(d => d.closed);
-  const T = k => sum(days, d => d[k]);
-  const TC = k => sum(closed, d => d[k]);
+  const T = k => sum(days, d => d[k]), TC = k => sum(closed, d => d[k]);
+  const tone = v => v == null ? '' : v >= 0 ? 'g' : 'rd';
+  const cols = [
+    { key: 'date', label: 'วันที่', render: d => html`${thDate(d.date)} ${!d.closed && html`<${Pill} tone="orange">ยังไม่ปิด<//>`}` },
+    { key: 'bills', label: 'บิล', align: 'r' }, { key: 'heads', label: 'หัว', align: 'r' },
+    { key: 'buffetNet', label: 'บุฟเฟต์', align: 'r', render: d => fmt(d.buffetNet) }, { key: 'addonNet', label: 'ขายเสริม', align: 'r', render: d => fmt(d.addonNet) },
+    { key: 'net', label: 'รวมขาย', align: 'r', render: d => fmt(d.net) }, { key: 'purchases', label: 'ซื้อเข้า', align: 'r', render: d => fmt(d.purchases) },
+    { key: 'ingCost', label: 'ต้นทุนวัตถุดิบ', align: 'r', render: d => fmt(d.ingCost) }, { key: 'addonCost', label: 'ต้นทุนเครื่องดื่ม', align: 'r', render: d => fmt(d.addonCost) },
+    { key: 'profit', label: 'กำไรขั้นต้น', align: 'r', className: d => tone(d.profit), render: d => html`<strong>${fmt(d.profit)}</strong>` },
+    ...(showNet ? [{ key: 'spend', label: 'ค่าใช้จ่าย', align: 'r', render: d => fmt(d.expenses + d.fixed) },
+      { key: 'netProfit', label: 'กำไรสุทธิ', align: 'r', className: d => tone(d.netProfit), render: d => html`<strong>${fmt(d.netProfit)}</strong>` }] : []),
+    { key: 'cph', label: 'ต้นทุน/หัว', align: 'r', render: d => fmt(d.costPerHead, 2) },
+    { key: 'fc', label: 'Food cost', align: 'r', render: d => d.foodPct == null ? '–' : fmt(d.foodPct, 1) + '%' }];
+  const foot = html`<tr><td>รวม</td><td class="r">${T('bills')}</td><td class="r">${T('heads')}</td><td class="r">${fmt(T('buffetNet'))}</td><td class="r">${fmt(T('addonNet'))}</td><td class="r">${fmt(T('net'))}</td><td class="r">${fmt(T('purchases'))}</td><td class="r">${fmt(TC('ingCost'))}</td><td class="r">${fmt(TC('addonCost'))}</td><td class="r">${fmt(TC('profit'))}</td>
+    ${showNet && html`<td class="r">${fmt(TC('expenses') + TC('fixed'))}</td><td class="r">${fmt(TC('netProfit'))}</td>`}<td class="r">${TC('headsW') ? fmt(TC('ingCost') / TC('headsW'), 2) : '–'}</td><td class="r">${TC('buffetNet') ? fmt(TC('ingCost') / TC('buffetNet') * 100, 1) + '%' : '–'}</td></tr>`;
   return html`<div class="stack">
-    <div class="row between"><${Field} label="เดือน"><select id="rep-month" class="input" value=${m} onChange=${e => setM(e.target.value)}>${months.map(x => html`<option value=${x}>${thMonth(x)}</option>`)}</select><//>
-      <span class="sub">ปิดยอดแล้ว ${closed.length}/${days.length} วัน</span></div>
-    <div class="stats"><${Stat} label="ยอดขายทั้งเดือน" value=${baht(T('net'))}/><${Stat} label="ต้นทุนวัตถุดิบ" value=${baht(TC('ingCost'))}/><${Stat} label="กำไรขั้นต้น" value=${baht(TC('profit'))} tone=${TC('profit') >= 0 ? 'green' : 'red'}/><${Stat} label="ซื้อของเข้า" value=${baht(T('purchases'))} sub="เงินที่จ่ายออกจริง"/></div>
-    <div class="scroll"><table class="dt"><thead><tr><th>วันที่</th><th class="r">บิล</th><th class="r">หัว</th><th class="r">บุฟเฟต์</th><th class="r">ขายเสริม</th><th class="r">รวมขาย</th><th class="r">ซื้อเข้า</th><th class="r">ต้นทุนวัตถุดิบ</th><th class="r">ต้นทุนเครื่องดื่ม</th><th class="r">กำไร</th><th class="r">ต้นทุน/หัว</th><th class="r">Food cost</th></tr></thead><tbody>
-      ${days.slice().reverse().map(d => html`<tr><td>${thDate(d.date)} ${!d.closed && html`<${Pill} tone="orange">ยังไม่ปิด<//>`}</td><td class="r">${d.bills}</td><td class="r">${d.heads}</td><td class="r">${fmt(d.buffetNet)}</td><td class="r">${fmt(d.addonNet)}</td><td class="r">${fmt(d.net)}</td><td class="r">${fmt(d.purchases)}</td><td class="r">${fmt(d.ingCost)}</td><td class="r">${fmt(d.addonCost)}</td>
-        <td class=${'r ' + (d.profit == null ? '' : d.profit >= 0 ? 'g' : 'rd')}><strong>${fmt(d.profit)}</strong></td><td class="r">${fmt(d.costPerHead, 2)}</td><td class="r">${d.foodPct == null ? '–' : fmt(d.foodPct, 1) + '%'}</td></tr>`)}
-    </tbody><tfoot><tr><td>รวม</td><td class="r">${T('bills')}</td><td class="r">${T('heads')}</td><td class="r">${fmt(T('buffetNet'))}</td><td class="r">${fmt(T('addonNet'))}</td><td class="r">${fmt(T('net'))}</td><td class="r">${fmt(T('purchases'))}</td><td class="r">${fmt(TC('ingCost'))}</td><td class="r">${fmt(TC('addonCost'))}</td><td class="r">${fmt(TC('profit'))}</td><td class="r">${TC('heads') ? fmt(TC('ingCost') / TC('heads'), 2) : '–'}</td><td class="r">${TC('buffetNet') ? fmt(TC('ingCost') / TC('buffetNet') * 100, 1) + '%' : '–'}</td></tr></tfoot></table></div>
-    <p class="sub" style="margin:0">ซื้อเข้า ≠ ต้นทุน: ซื้อเข้าคือเงินที่จ่ายออกวันนั้น ส่วนต้นทุนคือมูลค่าวัตถุดิบที่ใช้ไปจริง (ยกมา + ซื้อเข้า − เหลือ)</p>
+    <${Toolbar} end=${html`<span class="sub">ปิดยอดแล้ว ${closed.length}/${days.length} วัน</span><${PendingBadge}/>`}>
+      <${Field} label="เดือน"><select id="rep-month" class="input" value=${m} onChange=${e => setM(e.target.value)}>${months.map(x => html`<option value=${x}>${thMonth(x)}</option>`)}</select><//><//>
+    <div class="stats"><${Stat} label="ยอดขายทั้งเดือน" value=${baht(T('net'))}/><${Stat} label="ต้นทุนวัตถุดิบ" value=${baht(TC('ingCost'))}/><${Stat} label="กำไรขั้นต้น" value=${baht(TC('profit'))} tone=${TC('profit') >= 0 ? 'green' : 'red'}/>
+      ${showNet && html`<${Stat} label="กำไรสุทธิ (ประมาณ)" value=${baht(TC('netProfit'))} tone=${TC('netProfit') >= 0 ? 'green' : 'red'} sub=${'ค่าใช้จ่าย ' + baht(TC('expenses') + TC('fixed'))}/>`}
+      <${Stat} label="ซื้อของเข้า" value=${baht(T('purchases'))} sub="เงินที่จ่ายออกจริง"/></div>
+    <${DataTable} label=${'รายงาน ' + thMonth(m)} rows=${days.slice().reverse()} rowKey=${d => d.date} columns=${cols} footer=${foot}/>
+    <p class="sub" style="margin:0">ซื้อเข้า ≠ ต้นทุน: ซื้อเข้าคือเงินที่จ่ายออกวันนั้น ส่วนต้นทุนคือมูลค่าวัตถุดิบที่ใช้ไปจริง (ยกมา + ซื้อเข้า − เหลือ) · ค่าใช้จ่าย = รายวัน + ค่าคงที่รายเดือนเฉลี่ยต่อวันที่เปิดร้าน</p>
   </div>`;
 }
 
@@ -1132,9 +1323,10 @@ function ShopForm({ s, update, toast }) {
   </div>`;
 }
 
-const STATE_ARRAYS = ['packages', 'addons', 'suppliers', 'ingredients', 'tables', 'staff', 'payments', 'sales', 'purchases', 'shifts'];
+const STATE_ARRAYS = ['packages', 'addons', 'suppliers', 'ingredients', 'tables', 'staff', 'payments', 'sales', 'purchases', 'shifts', 'expenses', 'expenseTypes', 'fixedCosts'];
 function validateState(o) {
-  if (!o || typeof o !== 'object' || o.version !== 1) throw new Error('ไม่ใช่ไฟล์ข้อมูล KepToh (version 1)');
+  if (!o || typeof o !== 'object' || (o.version !== 1 && o.version !== 2)) throw new Error('ไม่ใช่ไฟล์ข้อมูล KepToh (version 1–2)');
+  if (o.version === 1 && Array.isArray(o.ingredients) && o.shop) migrate(o);
   for (const k of STATE_ARRAYS) if (!Array.isArray(o[k])) throw new Error('ไฟล์ขาดข้อมูล ' + k);
   for (const k of ['shop', 'openTables', 'counts', 'initialStock', 'seq']) if (!o[k] || typeof o[k] !== 'object') throw new Error('ไฟล์ขาดข้อมูล ' + k);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(o.startDate || '')) throw new Error('startDate ไม่ถูกต้อง');
@@ -1148,8 +1340,30 @@ function ThemeSettings() {
     <div class="field"><span>ธีมสี</span><${Seg} label="ธีมสี" value=${p.brand} onChange=${v => set({ brand: v })} items=${[['figma', 'Figma'], ['team', 'ทีม']]}/><small>ค่าสีทั้งหมดแก้ที่ไฟล์ theme.css ที่เดียว</small></div>
     <div class="field"><span>โหมด</span><${Seg} label="โหมด" value=${p.mode} onChange=${v => set({ mode: v })} items=${[['light', 'สว่าง'], ['dark', 'มืด'], ['system', 'ตามเครื่อง']]}/></div></div>`;
 }
-function SetupView({ s, update, toast, me }) {
-  const [sec, setSec] = useState('shop');
+function CostingForm({ s, update, toast }) {
+  const [v, setV] = useState({ ...SHOP_DEFAULTS, ...s.shop });
+  const schema = [
+    { key: 'costMethod', label: 'วิธีคิดมูลค่าวัตถุดิบ', type: 'select', options: () => Object.entries(COST_METHOD) },
+    { key: 'childHeadWeight', label: 'เด็กนับเป็นกี่หัว (ต้นทุนต่อหัว)', type: 'number', hint: '0–1 · 0.5 = ครึ่งหัว · เด็กเล็กที่ทานฟรีนับ 0' },
+    { key: 'openDaysPerMonth', label: 'วันที่เปิดร้านต่อเดือน', type: 'number', hint: 'ใช้เฉลี่ยค่าคงที่รายเดือนเป็นรายวัน' },
+    { key: 'weeklyCountDow', label: 'วันนับของรายสัปดาห์', type: 'select', options: () => DOW.map((d, i) => [String(i), 'วัน' + d]) },
+    { key: 'rounding', label: 'การปัดเศษยอดชำระ', type: 'select', options: () => Object.entries(ROUNDING) },
+    { key: 'showNetProfit', label: 'แสดงกำไรสุทธิ (หักค่าใช้จ่ายรายวัน + ค่าคงที่รายเดือน)', type: 'toggle' }];
+  const save = () => {
+    const w = +v.childHeadWeight, d = +v.openDaysPerMonth;
+    if (v.childHeadWeight === '' || !(w >= 0 && w <= 1)) return toast('ค่าเด็กต้องอยู่ระหว่าง 0–1');
+    if (!(d >= 1 && d <= 31)) return toast('วันที่เปิดร้านต้องอยู่ระหว่าง 1–31');
+    update(st => { st.shop = { ...st.shop, costMethod: v.costMethod, childHeadWeight: w, openDaysPerMonth: d, weeklyCountDow: +v.weeklyCountDow, rounding: v.rounding, showNetProfit: !!v.showNetProfit }; });
+    toast('บันทึกสูตรแล้ว ตัวเลขทุกหน้าคำนวณใหม่');
+  };
+  return html`<div class="card stack"><${PageHeader} title="สูตรกำไรและต้นทุน" desc="ค่าตั้งต้นชั่วคราวตามบริบทร้านไทย ปรับได้เมื่อยืนยันกับร้าน" actions=${html`<${Pill} tone="orange">รอยืนยันกับร้าน<//>`}/>
+    <${FormFields} schema=${schema} val=${{ ...v, weeklyCountDow: String(v.weeklyCountDow) }} set=${(k, x) => setV(o => ({ ...o, [k]: x }))}/>
+    <div><${Btn} kind="primary" icon="check" onClick=${save}>บันทึก<//></div>
+    <p class="sub" style="margin:0">VAT และค่าบริการ (service charge) ตั้งที่ ข้อมูลร้าน · ค่าปรับอาหารเหลือ เปิดใช้ที่ สินค้าขายเสริม · ค่าคงที่รายเดือน ตั้งที่ ค่าใช้จ่ายคงที่รายเดือน</p></div>`;
+}
+function SetupView({ s, update, toast, me, initial }) {
+  const [sec, setSec] = useState(initial || 'shop');
+  useEffect(() => { if (initial) setSec(initial); }, [initial]);
   const [reset, setReset] = useState(false);
   const exportJson = () => {
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(s, null, 2)], { type: 'application/json' }));
@@ -1166,7 +1380,7 @@ function SetupView({ s, update, toast, me }) {
   const crud = (key, title, desc, schema, blank, guard) => html`<${CrudSection} title=${title} desc=${desc} items=${s[key]} schema=${schema} blank=${blank} guard=${guard}
     onSave=${it => { update(st => { const i = st[key].findIndex(x => x.id === it.id); if (i >= 0) st[key][i] = it; else st[key].push(it); }); toast('บันทึกแล้ว'); }}
     onDelete=${id => { update(st => { st[key] = st[key].filter(x => x.id !== id); }); toast('ลบแล้ว'); }}/>`;
-  const SECS = [['shop', 'ข้อมูลร้าน'], ['packages', 'แพ็กเกจบุฟเฟต์'], ['addons', 'สินค้าขายเสริม'], ['ingredients', 'วัตถุดิบ'], ['suppliers', 'แหล่งซื้อของ'], ['tables', 'โต๊ะ'], ['staff', 'พนักงานและสิทธิ์'], ['payments', 'ช่องทางชำระเงิน'], ['theme', 'ธีมและการแสดงผล'], ['demo', 'ข้อมูลตัวอย่าง']];
+  const SECS = [['shop', 'ข้อมูลร้าน'], ['packages', 'แพ็กเกจบุฟเฟต์'], ['addons', 'สินค้าขายเสริม'], ['ingredients', 'วัตถุดิบ'], ['suppliers', 'แหล่งซื้อของ'], ['tables', 'โต๊ะ'], ['staff', 'พนักงานและสิทธิ์'], ['payments', 'ช่องทางชำระเงิน'], ['costing', 'สูตรกำไรและต้นทุน'], ['fixedCosts', 'ค่าใช้จ่ายคงที่รายเดือน'], ['expenseTypes', 'ประเภทค่าใช้จ่ายรายวัน'], ['theme', 'ธีมและการแสดงผล'], ['demo', 'ข้อมูลตัวอย่าง']];
   let body;
   if (sec === 'shop') body = html`<${ShopForm} s=${s} update=${update} toast=${toast}/>`;
   if (sec === 'packages') body = crud('packages', 'แพ็กเกจบุฟเฟต์', 'ราคาต่อหัว แยกผู้ใหญ่/เด็ก', [
@@ -1182,9 +1396,11 @@ function SetupView({ s, update, toast, me }) {
   if (sec === 'ingredients') body = crud('ingredients', 'วัตถุดิบ', 'ของสดที่นับเหลือทุกวันเพื่อคิดต้นทุน', [
     { key: 'name', label: 'ชื่อวัตถุดิบ', req: true, list: true }, { key: 'unit', label: 'หน่วยนับ', type: 'select', options: opts(['กก.', 'กรัม', 'ลิตร', 'แพ็ค', 'ฟอง', 'ถุง', 'ชิ้น', 'ขวด'].map(x => [x, x])), list: true },
     { key: 'category', label: 'หมวด', type: 'select', options: opts([['วัตถุดิบ', 'วัตถุดิบ'], ['วัสดุสิ้นเปลือง', 'วัสดุสิ้นเปลือง']]), list: true },
+    { key: 'location', label: 'ที่เก็บ (ลำดับเดินนับ)', type: 'select', options: () => Object.entries(LOCATION), list: true, show: v => LOCATION[v] || '-' },
+    { key: 'countFreq', label: 'ความถี่การนับ', type: 'select', options: () => Object.entries(COUNT_FREQ), list: true, show: v => COUNT_FREQ[v] || '-', hint: 'รายสัปดาห์: วันอื่นใช้ค่าประมาณจากอัตราใช้ต่อหัว' },
     { key: 'lastCost', label: 'ราคาตั้งต้น/หน่วย', type: 'number', hint: 'ใช้เมื่อยังไม่เคยรับของเข้า' }, { key: 'par', label: 'ระดับที่ควรมี', type: 'number', list: true, hint: 'ใช้คำนวณแนะนำสั่งซื้อ' },
     { key: 'supplierId', label: 'ซื้อจาก', type: 'select', options: () => s.suppliers.map(x => [x.id, x.name]), list: true, show: v => (s.suppliers.find(x => x.id === v) || {}).name || '-' }],
-    () => ({ id: uid('i'), name: '', unit: 'กก.', category: 'วัตถุดิบ', lastCost: '', par: '', supplierId: s.suppliers[0] && s.suppliers[0].id, use: 0 }));
+    () => ({ id: uid('i'), name: '', unit: 'กก.', category: 'วัตถุดิบ', location: 'fridge', countFreq: 'daily', lastCost: '', par: '', supplierId: s.suppliers[0] && s.suppliers[0].id, use: 0 }));
   if (sec === 'suppliers') body = crud('suppliers', 'แหล่งซื้อของ', 'ตลาด ร้านค้า ผู้ส่งของ', [
     { key: 'name', label: 'ชื่อ', req: true, list: true }, { key: 'phone', label: 'โทร', inputmode: 'tel', list: true }, { key: 'note', label: 'หมายเหตุ', type: 'textarea', list: true }],
     () => ({ id: uid('s'), name: '', phone: '', note: '' }),
@@ -1201,6 +1417,12 @@ function SetupView({ s, update, toast, me }) {
   if (sec === 'payments') body = crud('payments', 'ช่องทางชำระเงิน', 'ช่องทางที่เปิดใช้จะแสดงตอนรับเงิน', [
     { key: 'name', label: 'ชื่อที่แสดง', req: true, list: true }, { key: 'type', label: 'ประเภท', type: 'select', options: () => Object.entries(PAY_TYPE), list: true, show: v => PAY_TYPE[v] }, { key: 'active', label: 'เปิดใช้', type: 'toggle', list: true }],
     () => ({ id: uid('pm'), name: '', type: 'cash', active: true }));
+  if (sec === 'costing') body = html`<${CostingForm} s=${s} update=${update} toast=${toast}/>`;
+  if (sec === 'fixedCosts') body = crud('fixedCosts', 'ค่าใช้จ่ายคงที่รายเดือน', 'ยอดรวมต่อเดือน ÷ วันที่เปิดร้านต่อเดือน แล้วหักทุกวันที่มีการขาย (ใช้คิดกำไรสุทธิ)', [
+    { key: 'name', label: 'รายการ', req: true, list: true }, { key: 'amount', label: 'ยอดต่อเดือน (บาท)', type: 'number', req: true, list: true }, { key: 'active', label: 'นำมาคิด', type: 'toggle', list: true }],
+    () => ({ id: uid('fc'), name: '', amount: '', active: true }));
+  if (sec === 'expenseTypes') body = crud('expenseTypes', 'ประเภทค่าใช้จ่ายรายวัน', 'ตัวเลือกตอนบันทึกค่าใช้จ่าย (สต็อก › ค่าใช้จ่าย)', [{ key: 'name', label: 'ชื่อ', req: true, list: true }],
+    () => ({ id: uid('et'), name: '' }), it => s.expenses.some(e => e.typeId === it.id) ? 'มีค่าใช้จ่ายที่ใช้ประเภทนี้อยู่ แก้ชื่อแทนการลบได้' : null);
   if (sec === 'theme') body = html`<${ThemeSettings}/>`;
   if (sec === 'demo') body = html`<div class="card stack"><${PageHeader} title="ข้อมูลตัวอย่าง" desc="ข้อมูลเก็บในเครื่องนี้เท่านั้น"/>
     <p style="margin:0">ร้าน "${s.shop.name}" และตัวเลขทั้งหมดเป็นข้อมูลจำลองย้อนหลัง 30 วัน (ฐานข้อมูลอยู่ที่ <code>data/mock-data.js</code>) ราคาอ้างอิงช่วงราคาตลาดจากการค้นข้อมูล</p>
@@ -1256,14 +1478,14 @@ const VIEWS = [
   { id: 'reports', label: 'รายงาน', icon: 'list', title: 'รายงานรายวัน', roles: ['owner', 'manager'] },
   { id: 'setup', label: 'ตั้งค่า', icon: 'gear', title: 'ตั้งค่าร้าน', roles: ['owner', 'manager'] }
 ];
-const readHash = () => { const h = location.hash.replace('#', ''); return VIEWS.some(v => v.id === h) ? h : 'tables'; };
+const readHash = () => { const h = location.hash.replace('#', ''); return VIEWS.some(v => v.id === h.split('/')[0]) ? h : 'tables'; };   // #setup/costing = เปิดหมวดย่อย
 
 function NavDrawer({ s, me, shift, view, go, allowed, onClose, onLogout }) {
   const who = shift && (s.staff.find(x => x.id === shift.staffId) || {}).name;
   return html`<${Drawer} label="เมนูหลัก" onClose=${onClose}>
     <div class="dr-head"><div class="brand-row"><span class="brand-mark sm"><${Icon} n="flame" s=${20}/></span>KepToh</div><${Btn} kind="ghost" icon="sidebar" aria-label="ปิดเมนู" onClick=${onClose}/></div>
     <div class="dr-user"><${Avatar} name=${me.name} size=${44}/><div class="grow"><strong>${me.name}</strong><span class="sub">${ROLE[me.role]} · ${shift ? 'กะเปิด ' + thTime(shift.openedAt) + ' น. (' + who + ')' : 'ยังไม่เปิดกะ'}</span></div></div>
-    <nav class="dr-nav" aria-label="เมนู">${VIEWS.filter(allowed).map(v => html`<button type="button" class="dr-link" aria-current=${view === v.id ? 'page' : null} onClick=${() => go(v.id)}><${Icon} n=${v.icon} s=${22}/>${v.label}</button>`)}</nav>
+    <nav class="dr-nav" aria-label="เมนู">${VIEWS.filter(allowed).map(v => html`<button type="button" class="dr-link" aria-current=${view.split('/')[0] === v.id ? 'page' : null} onClick=${() => go(v.id)}><${Icon} n=${v.icon} s=${22}/>${v.label}</button>`)}</nav>
     <div class="dr-foot"><${Btn} block icon="logout" onClick=${onLogout}>ออกจากระบบ<//></div>
   <//>`;
 }
@@ -1284,14 +1506,14 @@ function App() {
   const logout = () => { writeSession(null); setMenuOpen(false); setShiftAsk(false); setUid(null); };
   if (!me) return html`<${Login} s=${s} onLogin=${login}/>`;
   const allowed = v => !v.roles || v.roles.includes(me.role);
-  const cur = VIEWS.find(v => v.id === view);
+  const base = view.split('/')[0], cur = VIEWS.find(v => v.id === base);
   const shift = openShiftOf(s);
   const props = { s, update, me, ledger, toast: setToast };
-  const go = id => { setMenuOpen(false); if (location.hash !== '#' + id) location.hash = id; else setView(id); };
+  const go = id => { setMenuOpen(false); if (location.hash !== '#' + id) location.hash = id; else setView(id); };   // id อาจเป็น view/section
   return html`<div class="app">
     <nav class="side" aria-label="เมนูหลัก">
       <div class="brand"><span class="brand-mark"><${Icon} n="flame" s=${26}/></span>KepToh</div>
-      ${VIEWS.filter(allowed).map(v => html`<button type="button" class="nav-btn" aria-current=${view === v.id ? 'page' : null} onClick=${() => go(v.id)}><${Icon} n=${v.icon} s=${22}/>${v.label}</button>`)}
+      ${VIEWS.filter(allowed).map(v => html`<button type="button" class="nav-btn" aria-current=${base === v.id ? 'page' : null} onClick=${() => go(v.id)}><${Icon} n=${v.icon} s=${22}/>${v.label}</button>`)}
     </nav>
     <main class="main">
       <header class="topbar">
@@ -1304,8 +1526,8 @@ function App() {
       </header>
       <section class="content">
         ${!allowed(cur) ? html`<div class="card"><${Empty} title="ไม่มีสิทธิ์เข้าหน้านี้" text=${ROLE[me.role] + ' เข้าหน้านี้ไม่ได้'}><${Btn} kind="primary" onClick=${logout}>ออกจากระบบเพื่อเปลี่ยนผู้ใช้<//><//></div>`
-          : view === 'tables' ? html`<${TablesView} ...${props}/>` : view === 'bills' ? html`<${BillsView} ...${props}/>` : view === 'stock' ? html`<${StockView} ...${props}/>`
-          : view === 'shift' ? html`<${ShiftView} ...${props}/>` : view === 'dashboard' ? html`<${DashboardView} ...${props}/>` : view === 'reports' ? html`<${ReportsView} ...${props}/>` : html`<${SetupView} ...${props}/>`}
+          : base === 'tables' ? html`<${TablesView} ...${props}/>` : base === 'bills' ? html`<${BillsView} ...${props}/>` : base === 'stock' ? html`<${StockView} ...${props}/>`
+          : base === 'shift' ? html`<${ShiftView} ...${props}/>` : base === 'dashboard' ? html`<${DashboardView} ...${props}/>` : base === 'reports' ? html`<${ReportsView} ...${props}/>` : html`<${SetupView} ...${props} initial=${view.split('/')[1]}/>`}
       </section>
     </main>
     ${menuOpen && html`<${NavDrawer} s=${s} me=${me} shift=${shift} view=${view} go=${go} allowed=${allowed} onClose=${() => setMenuOpen(false)} onLogout=${logout}/>`}
