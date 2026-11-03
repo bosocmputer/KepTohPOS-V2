@@ -1,4 +1,4 @@
-# แผน: ใช้ UI จาก Figma 100% (Prototype) — v1.0
+# แผน: ปรับ UI Prototype ตาม Figma — v1.1
 
 > อ่านคู่กับ `keptoh-blueprint.md` · สถานะ: **อนุมัติแล้ว รอลงมือ** · ทำทีละ PR แล้วให้ทีมรีวิว
 > ความคืบหน้าจดใน `TASK_STATE.md` (ใช้ skill `handoff`) เพื่อส่งต่องานข้ามโมเดล/session
@@ -7,6 +7,26 @@
 - ยังเป็น **prototype** (Preact + htm จาก CDN, เก็บข้อมูลใน localStorage) ยังไม่ต่อ database
 - เปิดได้ด้วยการดับเบิลคลิก `prototype/index.html` (file://) ต้องใช้งานได้เสมอ
 - ไม่เพิ่ม dependency ใหม่ · เปลี่ยน UI ตาม Figma + เปลี่ยน logic เท่าที่ระบุในข้อ 3 เท่านั้น
+- เป้าหมาย: **กดเล่นได้ครบ flow + ใช้ mock JSON + หน้าตาใกล้เคียง Figma ที่สุด** (ไม่ต้อง 100%) เพื่อส่งให้ทีม/ร้านลอง
+- จุดเน้นของ product: **กำไรขาดทุน / ต้นทุน** และ **บันทึกของให้เร็วที่สุด** (ไม่ให้ร้านเสียเวลาคีย์)
+- เรื่อง stack ของตัวจริง (Flutter web / cloud) **พักไว้ก่อน** ไม่อยู่ในขอบเขตนี้
+
+## 0.1 หลักการ components กลาง (บังคับ)
+- **แก้ต่อจากโค้ดเดิม ห้ามเขียนใหม่ทั้งไฟล์** · ทุกหน้าประกอบจาก components ในตารางนี้
+- ต้องการหน้าตาใหม่ → เพิ่ม prop/variant ให้ component เดิม ห้ามก๊อปไปแก้เป็นอีกตัว
+- หน้าที่ Figma ไม่มี → ประกอบจาก components ชุดนี้ให้ style เข้าชุด
+- ฟังก์ชันธุรกิจและ util ใช้ตัวเดิม (`calcOrder`, `makeBill`, ledger, `fmt`/`baht`/วันที่) ห้ามเขียนซ้ำ
+- component ใหม่วางไว้ในส่วน `shared components` ของไฟล์ ไม่ซ่อนไว้ในหน้าใดหน้าหนึ่ง
+
+| กลุ่ม | components (มีแล้ว → ปรับ / ใหม่) |
+|---|---|
+| Layout | `AppShell`, `Sidebar`*, `Header`*, `PageHeader`* (หัวข้อ+คำอธิบาย+ปุ่ม), `Toolbar`* (ค้นหา/ตัวกรอง/สลับมุมมอง), `.card` |
+| Input | `Btn`, `Field`, `.input`/select, `.toggle`, `Stepper`, `Seg`, `CategoryTab`*, `SearchBox`*, **`NumPad`*** (ใช้ร่วมกัน: PIN, รับเงินสด, นับสต็อก) |
+| Display | `Pill` (เพิ่ม tone สถานะ), `Stat`, **`DataTable`*** (ตาราง generic ใช้ร่วม: บิล/รายงาน/สต็อก/CRUD), `Pagination`, `Empty`, `ResultState`, `Banner`, toast, `.share`, `ProfitChart` |
+| Overlay | `Modal`, `Confirm`, **`Drawer`*** (ใช้ร่วม: Sidebar + แผงตัวกรอง) |
+| Domain | `TableCard`*, `ProductCard`*, `OrderPanel`* + `OrderLine`*, `PaymentPicker`*, `Receipt`, `PromptPayQR`, `CrudSection`/`FormFields` |
+
+`*` = ใหม่ หรือแยกออกมาจากโค้ดเดิมให้เป็นตัวกลาง
 
 ## 1. Figma
 - File key `zWOF0W01I3hFtoKNXAFmVZ` (Makaryo POS kit) · ทุกจอเป็น iPad แนวนอน 1366×1024
@@ -62,10 +82,12 @@
 - เผื่อความยาวข้อความไทย · โลโก้/ชื่อ Makaryo → KepToh · การ์ดสินค้าไม่มีรูป → ไอคอนบนพื้นเทา
 - แถว Order List ของ Figma → การ์ด "โต๊ะที่เปิดอยู่" (ไม่ใช้ป้ายสถานะครัว)
 
-## 5. ลำดับงาน (3 PR)
-1. **PR 1:** theme.css + mock-data.js + import/export → Sidebar/Header → Login
-2. **PR 2:** โต๊ะ → หน้าขาย + แผงออเดอร์ → จ่ายก่อน/กินก่อน → ชำระเงิน + จอสำเร็จ/ล้มเหลว → Dropdown / โน้ต
-3. **PR 3:** บิล → รายงาน → สต็อก → Empty state → กะ / ภาพรวม / ตั้งค่า
+## 5. ลำดับงาน (3 PR — เรียงตามจุดเน้นของ product)
+1. **PR 1:** theme.css + mock-data.js + import/export → components กลาง (`NumPad`, `DataTable`, `Drawer`, `PageHeader`, `Toolbar`) → Sidebar/Header → Login
+2. **PR 2 (หัวใจ):** สต็อก — รับของเข้า ("เหมือนครั้งก่อน" แตะเดียว), นับของเหลือ (เรียงตามที่เก็บ + `NumPad` + Enter ไปตัวถัดไป), คงเหลือ/แนะนำสั่งซื้อ → ภาพรวมกำไรขาดทุน / ต้นทุนต่อหัว / Food cost % → รายงาน
+3. **PR 3:** โต๊ะ → หน้าขาย + แผงออเดอร์ → จ่ายก่อน/กินก่อน → ชำระเงิน + จอสำเร็จ/ล้มเหลว → บิล → กะ / ตั้งค่า / Empty state
+
+สูตรกำไรใช้ตามที่ prototype มีอยู่ (สถานะ ⚠️ ใน blueprint ข้อ 3) และแสดงป้าย "สูตรรอยืนยัน" ในหน้าภาพรวม จนกว่าร้านจะตอบ
 
 ## 6. Skill ที่ต้องใช้
 | ขั้น | Skill |
@@ -81,5 +103,7 @@
 
 ## 7. ตรวจผลทุก PR
 - ภาพเทียบ Figma (`get_screenshot`) กับ prototype (Playwright 1366×1024) ทีละจอ · ทั้ง 2 ธีม × 2 โหมด
-- flow: เข้าระบบ PIN → เปิดโต๊ะ (จ่ายก่อน และ กินก่อน) → สั่งเพิ่ม → รับเงิน → ดูบิล → ยกเลิกบิล → นับสต็อก → ปิดกะ · ไม่มี error ใน console
+- flow: เข้าระบบ PIN → เปิดโต๊ะ (จ่ายก่อน และ กินก่อน) → สั่งเพิ่ม → รับเงิน → ดูบิล → ยกเลิกบิล → รับของ → นับสต็อก → ดูกำไร → ปิดกะ · ไม่มี error ใน console
+- วัดเวลาบันทึกของ: รับของ (เหมือนครั้งก่อน) + นับของเหลือ 15 รายการ ควรจบได้ในไม่กี่นาที
+- ตรวจ reuse: ค้นในไฟล์ว่าไม่มี markup/สไตล์ซ้ำของ component กลาง (เช่น ตารางที่ไม่ได้ใช้ `DataTable`)
 - `node --check` สคริปต์ผ่าน · ไฟล์ที่แก้ต่อรอบไม่เกิน 5 ไฟล์
