@@ -1,0 +1,13 @@
+# Local agent overrides & auto-handoff state (do not commit)
+CLAUDE.local.md
+.claude/settings.local.json
+TASK_STATE.md
+.agent-last-state.log
+node_modules/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.sqlite
+*.db

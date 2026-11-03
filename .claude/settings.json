@@ -1,0 +1,111 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --test*)",
+      "Bash(npm test*)",
+      "Bash(npm run build*)",
+      "Bash(npm run lint*)",
+      "Bash(npx tsc --noEmit*)",
+      "Bash(npx vitest*)",
+      "Bash(npx jest*)",
+      "Bash(pnpm test*)",
+      "Bash(bun test*)",
+      "Bash(go test*)",
+      "Bash(go vet*)",
+      "Bash(go build*)",
+      "Bash(golangci-lint*)",
+      "Bash(flutter test*)",
+      "Bash(flutter analyze*)",
+      "Bash(dart test*)",
+      "Bash(dart analyze*)",
+      "Bash(pytest*)",
+      "Bash(python -m pytest*)",
+      "Bash(python3 -m pytest*)",
+      "Bash(uv run pytest*)",
+      "Bash(ruff check*)",
+      "Bash(mypy*)",
+      "Bash(cargo test*)",
+      "Bash(cargo check*)",
+      "Bash(cargo clippy*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)",
+      "Read(./**/*.p12)",
+      "Read(./**/*.keystore)",
+      "Read(./**/*.jks)",
+      "Edit(./.env)",
+      "Edit(./.env.*)",
+      "Edit(./**/*.pem)",
+      "Edit(./**/*.key)",
+      "Edit(./**/*.p12)",
+      "Edit(./**/*.keystore)",
+      "Edit(./**/*.jks)",
+      "Write(./.env)",
+      "Write(./.env.*)",
+      "Write(./**/*.pem)",
+      "Write(./**/*.key)",
+      "Write(./**/*.p12)",
+      "Write(./**/*.keystore)",
+      "Write(./**/*.jks)",
+      "Bash(rm -rf *)",
+      "Bash(git push --force*)",
+      "Bash(git checkout *)",
+      "Bash(git restore *)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean *)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/auto-resume.sh\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/validate-bash.sh\""
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/loop-circuit-breaker.sh\""
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/protect-sensitive-files.sh\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/post-edit-format.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}

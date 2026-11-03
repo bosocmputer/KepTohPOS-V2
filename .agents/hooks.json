@@ -1,0 +1,49 @@
+{
+  "auto-handoff-resume": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "bash ../.claude/hooks/auto-resume.sh"
+      }
+    ]
+  },
+  "command-and-loop-guards": {
+    "PreToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ../.claude/hooks/validate-bash.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash ../.claude/hooks/loop-circuit-breaker.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "edit_file|write_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ../.claude/hooks/protect-sensitive-files.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "post-edit-checkpoint-and-format": {
+    "PostToolUse": [
+      {
+        "matcher": "edit_file|write_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ../.claude/hooks/post-edit-format.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
