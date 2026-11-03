@@ -3,6 +3,8 @@
    - ไม่ใช้ไฟล์ .json ตรงๆ เพราะเปิด index.html แบบดับเบิลคลิก (file://) แล้วเบราว์เซอร์อ่าน .json ไม่ได้
    - ข้อมูลที่นี่คือ "ฐาน" ของร้านสมมติ ส่วนยอดขาย/ซื้อของย้อนหลัง 30 วัน
      index.html สร้างจากฐานนี้ทุกครั้งที่รีเซ็ต (เพื่อให้วันที่อิงวันนี้เสมอ)
+   - shop.costMethod/childHeadWeight/rounding/... และ fixedCosts คือ "ค่าตั้งต้นชั่วคราว" รอยืนยันกับร้าน
+     (ดู docs/llms/figma-ui-plan.md ข้อ 5.2) · ingredient.location: fridge|freezer|dry · countFreq: daily|weekly
    - ราคา/ปริมาณทั้งหมดเป็นข้อมูลจำลองสำหรับทดสอบ ไม่ใช่ตัวเลขจริงของร้าน
    ===================================================================== */
 window.KEPTOH_MOCK = {
@@ -18,7 +20,13 @@ window.KEPTOH_MOCK = {
     "servicePct": 0,
     "defaultFloat": 1000,
     "receiptFooter": "ขอบคุณที่อุดหนุน ทานให้อร่อย ไม่เหลือทิ้งนะคะ",
-    "useTimer": true
+    "useTimer": true,
+    "costMethod": "avg",
+    "showNetProfit": true,
+    "childHeadWeight": 0.5,
+    "openDaysPerMonth": 30,
+    "weeklyCountDow": 1,
+    "rounding": "down"
   },
   "packages": [
     {"id":"pk1","name":"บุฟเฟต์หมูกระทะ","adultPrice":199,"childPrice":99,"childRule":"เด็กสูง 100–130 ซม.","freeRule":"ต่ำกว่า 100 ซม. ทานฟรี","timeLimit":0,"active":true},
@@ -31,7 +39,8 @@ window.KEPTOH_MOCK = {
     {"id":"ad4","name":"โซดา","price":20,"cost":9,"stock":48,"active":true},
     {"id":"ad5","name":"เบียร์ช้าง ขวดใหญ่","price":80,"cost":56,"stock":60,"active":true},
     {"id":"ad6","name":"เบียร์ลีโอ ขวดใหญ่","price":80,"cost":55,"stock":60,"active":true},
-    {"id":"ad7","name":"เบียร์สิงห์ ขวดใหญ่","price":90,"cost":63,"stock":36,"active":true}
+    {"id":"ad7","name":"เบียร์สิงห์ ขวดใหญ่","price":90,"cost":63,"stock":36,"active":true},
+    {"id":"adFine","name":"ค่าปรับอาหารเหลือ (ต่อ 100 กรัม)","price":20,"cost":0,"stock":999,"active":false}
   ],
   "suppliers": [
     {"id":"s1","name":"แม็คโคร สาขาขอนแก่น","phone":"","note":"ซื้อเนื้อสัตว์แช่แข็ง ซีฟู้ด ของแห้ง"},
@@ -40,21 +49,21 @@ window.KEPTOH_MOCK = {
     {"id":"s4","name":"ร้านถ่านลุงชัย","phone":"089-000-0003","note":"ส่งถึงร้าน"}
   ],
   "ingredients": [
-    {"id":"i1","name":"หมูสามชั้นสไลซ์","unit":"กก.","lastCost":185,"par":14,"supplierId":"s1","category":"วัตถุดิบ","use":0.11},
-    {"id":"i2","name":"สันคอหมูสไลซ์","unit":"กก.","lastCost":170,"par":8,"supplierId":"s1","category":"วัตถุดิบ","use":0.06},
-    {"id":"i3","name":"หมูหมักนุ่ม","unit":"กก.","lastCost":150,"par":9,"supplierId":"s2","category":"วัตถุดิบ","use":0.07},
-    {"id":"i4","name":"ไก่หมัก","unit":"กก.","lastCost":85,"par":6,"supplierId":"s2","category":"วัตถุดิบ","use":0.05},
-    {"id":"i5","name":"ตับหมู","unit":"กก.","lastCost":90,"par":2,"supplierId":"s2","category":"วัตถุดิบ","use":0.015},
-    {"id":"i6","name":"กุ้งขาว","unit":"กก.","lastCost":220,"par":4,"supplierId":"s1","category":"วัตถุดิบ","use":0.03},
-    {"id":"i7","name":"ปลาหมึก","unit":"กก.","lastCost":180,"par":3,"supplierId":"s1","category":"วัตถุดิบ","use":0.025},
-    {"id":"i8","name":"ลูกชิ้นรวม","unit":"กก.","lastCost":95,"par":5,"supplierId":"s1","category":"วัตถุดิบ","use":0.04},
-    {"id":"i9","name":"ผักรวม (กาด/บุ้ง/กะหล่ำ)","unit":"กก.","lastCost":35,"par":12,"supplierId":"s3","category":"วัตถุดิบ","use":0.09},
-    {"id":"i10","name":"เห็ดเข็มทอง","unit":"แพ็ค","lastCost":10,"par":10,"supplierId":"s3","category":"วัตถุดิบ","use":0.06},
-    {"id":"i11","name":"วุ้นเส้น","unit":"กก.","lastCost":60,"par":2,"supplierId":"s1","category":"วัตถุดิบ","use":0.012},
-    {"id":"i12","name":"ไข่ไก่","unit":"ฟอง","lastCost":3.8,"par":60,"supplierId":"s3","category":"วัตถุดิบ","use":0.3},
-    {"id":"i13","name":"น้ำจิ้มสุกี้ (ทำเอง)","unit":"ลิตร","lastCost":70,"par":4,"supplierId":"s1","category":"วัตถุดิบ","use":0.03},
-    {"id":"i14","name":"มันหมูทาเตา","unit":"กก.","lastCost":40,"par":1.5,"supplierId":"s2","category":"วัตถุดิบ","use":0.01},
-    {"id":"i15","name":"ถ่าน","unit":"กก.","lastCost":18,"par":30,"supplierId":"s4","category":"วัสดุสิ้นเปลือง","use":0.25}
+    {"id":"i1","name":"หมูสามชั้นสไลซ์","unit":"กก.","lastCost":185,"par":14,"supplierId":"s1","category":"วัตถุดิบ","use":0.11,"location":"fridge","countFreq":"daily"},
+    {"id":"i2","name":"สันคอหมูสไลซ์","unit":"กก.","lastCost":170,"par":8,"supplierId":"s1","category":"วัตถุดิบ","use":0.06,"location":"fridge","countFreq":"daily"},
+    {"id":"i3","name":"หมูหมักนุ่ม","unit":"กก.","lastCost":150,"par":9,"supplierId":"s2","category":"วัตถุดิบ","use":0.07,"location":"fridge","countFreq":"daily"},
+    {"id":"i4","name":"ไก่หมัก","unit":"กก.","lastCost":85,"par":6,"supplierId":"s2","category":"วัตถุดิบ","use":0.05,"location":"fridge","countFreq":"daily"},
+    {"id":"i5","name":"ตับหมู","unit":"กก.","lastCost":90,"par":2,"supplierId":"s2","category":"วัตถุดิบ","use":0.015,"location":"fridge","countFreq":"daily"},
+    {"id":"i6","name":"กุ้งขาว","unit":"กก.","lastCost":220,"par":4,"supplierId":"s1","category":"วัตถุดิบ","use":0.03,"location":"freezer","countFreq":"daily"},
+    {"id":"i7","name":"ปลาหมึก","unit":"กก.","lastCost":180,"par":3,"supplierId":"s1","category":"วัตถุดิบ","use":0.025,"location":"freezer","countFreq":"daily"},
+    {"id":"i8","name":"ลูกชิ้นรวม","unit":"กก.","lastCost":95,"par":5,"supplierId":"s1","category":"วัตถุดิบ","use":0.04,"location":"freezer","countFreq":"daily"},
+    {"id":"i9","name":"ผักรวม (กาด/บุ้ง/กะหล่ำ)","unit":"กก.","lastCost":35,"par":12,"supplierId":"s3","category":"วัตถุดิบ","use":0.09,"location":"fridge","countFreq":"daily"},
+    {"id":"i10","name":"เห็ดเข็มทอง","unit":"แพ็ค","lastCost":10,"par":10,"supplierId":"s3","category":"วัตถุดิบ","use":0.06,"location":"fridge","countFreq":"daily"},
+    {"id":"i11","name":"วุ้นเส้น","unit":"กก.","lastCost":60,"par":2,"supplierId":"s1","category":"วัตถุดิบ","use":0.012,"location":"dry","countFreq":"weekly"},
+    {"id":"i12","name":"ไข่ไก่","unit":"ฟอง","lastCost":3.8,"par":60,"supplierId":"s3","category":"วัตถุดิบ","use":0.3,"location":"dry","countFreq":"daily"},
+    {"id":"i13","name":"น้ำจิ้มสุกี้ (ทำเอง)","unit":"ลิตร","lastCost":70,"par":4,"supplierId":"s1","category":"วัตถุดิบ","use":0.03,"location":"fridge","countFreq":"weekly"},
+    {"id":"i14","name":"มันหมูทาเตา","unit":"กก.","lastCost":40,"par":1.5,"supplierId":"s2","category":"วัตถุดิบ","use":0.01,"location":"fridge","countFreq":"weekly"},
+    {"id":"i15","name":"ถ่าน","unit":"กก.","lastCost":18,"par":30,"supplierId":"s4","category":"วัสดุสิ้นเปลือง","use":0.25,"location":"dry","countFreq":"weekly"}
   ],
   "tables": [
     {"id":"t1","name":"A1","seats":4,"zone":"ในร้าน"},
@@ -81,5 +90,17 @@ window.KEPTOH_MOCK = {
     {"id":"pm2","name":"พร้อมเพย์ (QR)","type":"qr","active":true},
     {"id":"pm3","name":"โอนเข้าบัญชีร้าน","type":"transfer","active":true},
     {"id":"pm4","name":"บัตรเครดิต","type":"card","active":false}
+  ],
+  "expenseTypes": [
+    {"id":"et1","name":"แก๊สหุงต้ม"},
+    {"id":"et2","name":"น้ำแข็ง (ใช้ในร้าน)"},
+    {"id":"et3","name":"ค่าขนส่ง / น้ำมัน"},
+    {"id":"et4","name":"อื่นๆ"}
+  ],
+  "fixedCosts": [
+    {"id":"fc1","name":"ค่าเช่าร้าน","amount":15000,"active":true},
+    {"id":"fc2","name":"ค่าแรงพนักงาน (2 คน)","amount":24000,"active":true},
+    {"id":"fc3","name":"ค่าน้ำ-ไฟ","amount":6500,"active":true},
+    {"id":"fc4","name":"อินเทอร์เน็ต / แอป","amount":600,"active":true}
   ]
 };
