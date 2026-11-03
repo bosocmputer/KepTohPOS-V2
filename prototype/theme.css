@@ -1,0 +1,103 @@
+/* =====================================================================
+   KepToh POS — Theme tokens (แก้ที่นี่ที่เดียว เปลี่ยนทั้งระบบ)
+
+   โครงสร้าง 2 ชั้น
+   1) สีดิบ (raw)      --figma-* / --team-*     ค่าจาก Figma kit และชุดสีทีม ห้ามใช้ใน component โดยตรง
+   2) ความหมาย (semantic) --primary, --surface, --ink ...   component ใช้เฉพาะชั้นนี้
+
+   สลับธีม:   <html data-brand="figma|team">         (ค่าเริ่มต้น figma)
+   สลับโหมด:  <html data-theme="light|dark">          (ตั้งค่าโดย inline script ใน index.html
+                                                       ซึ่งแปลง "ตามเครื่อง" เป็น light/dark ให้)
+   โหมดมืด override เฉพาะชั้นความหมาย จึงใช้ได้กับทุกธีม
+   ===================================================================== */
+
+/* ---------- ชั้นที่ 1: สีดิบ ---------- */
+:root {
+  /* Figma · Makaryo POS kit (ชื่อตาม variable ใน Figma) */
+  --figma-orange-50: #FFF4ED; --figma-orange-100: #FFE6D4; --figma-orange-500: #FE4E10; --figma-orange-600: #EF3408;
+  --figma-orange-ink: #B42A08;                       /* ข้อความสีส้มบนพื้นส้มอ่อน (5.9:1) — เพิ่มเอง Figma ไม่มี */
+  --figma-neutral-50: #F8F8F8; --figma-neutral-100: #E7E7E7; --figma-neutral-300: #B0B0B0; --figma-neutral-400: #888888;
+  --figma-neutral-500: #6D6D6D; --figma-neutral-600: #5D5D5D; --figma-neutral-900: #3D3D3D; --figma-neutral-950: #000000;
+  --figma-gray-100: #F2F4F7; --figma-gray-200: #E4E7EC;
+  --figma-green-50: #F0FDF4; --figma-green-100: #DCFCE7; --figma-green-600: #16A34A; --figma-green-700: #15803D;
+  --figma-red-50: #FEF2F2; --figma-red-600: #DC2626; --figma-red-700: #B91C1C;   /* red-50/700 เพิ่มเอง */
+  --figma-dark: #141B34;
+
+  /* ชุดสีทีม */
+  --team-orange: #FF7A00; --team-orange-600: #E56D00; --team-orange-soft: #FFF1E4; --team-orange-ink: #B35300;
+  --team-charcoal: #20242C; --team-gray: #F4F4F5; --team-navy: #172033;
+  --team-green: #16A36A; --team-green-soft: #E6F6EE; --team-green-ink: #0F7A52;
+  --team-red: #E5484D; --team-red-soft: #FDECEC; --team-red-ink: #B42328;
+  --team-muted: #5B6475; --team-line: #E2E3E8;
+
+  /* คงที่ทุกธีม: ใบเสร็จ (กระดาษขาวเสมอ) · QR ต้องดำบนขาว · สีแบรนด์ PromptPay */
+  --paper: #FFFFFF; --paper-ink: #172033; --paper-rule: #A3A9B5; --paper-muted: #5B6475; --paper-danger: #B91C1C;
+  --qr-bg: #FFFFFF; --qr-ink: #172033; --promptpay-blue: #113566;
+  --scrim: rgba(14, 16, 21, .55);
+}
+
+/* ---------- ชั้นที่ 2: ความหมาย — ส่วนที่ไม่ขึ้นกับธีม ---------- */
+:root {
+  --font-display: "Anuphan", "IBM Plex Sans Thai", system-ui, sans-serif;     /* Figma ใช้ SF Pro ซึ่งไม่มีตัวอักษรไทย */
+  --font-body: "IBM Plex Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fs-xs: 12px; --fs-sm: 14px; --fs-md: 16px; --fs-base: 15px;               /* สเกล 12/14/16 จาก Figma */
+  --radius-xs: 4px; --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --r: var(--radius-md);
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px;
+  --tap: 44px;                                                                 /* พื้นที่กดขั้นต่ำสำหรับนิ้ว */
+  --rail-w: 96px; --drawer-w: 365px;
+  --shadow: 0 1px 2px rgba(23, 32, 51, .06), 0 8px 24px rgba(23, 32, 51, .06);
+  --shadow-pop: 0 20px 60px rgba(0, 0, 0, .3);
+  color-scheme: light;
+}
+
+/* ---------- ชั้นที่ 2: ความหมาย — ธีม Figma (ค่าเริ่มต้น) ---------- */
+:root, :root[data-brand="figma"] {
+  --primary: var(--figma-orange-500); --primary-hover: var(--figma-orange-600);
+  --primary-soft: var(--figma-orange-50); --primary-soft-2: var(--figma-orange-100); --primary-ink: var(--figma-orange-ink);
+  --on-primary: #FFFFFF;                           /* ขาวบนส้ม 3.3:1 ผ่านเฉพาะตัวหนา/ใหญ่ — เป็นไปตาม Figma */
+  --bg: var(--figma-neutral-50); --surface: #FFFFFF; --surface-2: var(--figma-gray-100);
+  --ink: var(--figma-neutral-950);
+  --muted: var(--figma-neutral-500);               /* Figma ใช้ #888 (3.5:1 ไม่ผ่าน AA) จึงใช้ Neutral/500 แทน */
+  --line: var(--figma-neutral-100);
+  --success: var(--figma-green-600); --success-soft: var(--figma-green-100); --success-ink: var(--figma-green-700);
+  --danger: var(--figma-red-600); --danger-soft: var(--figma-red-50); --danger-ink: var(--figma-red-700);
+  --dark: var(--figma-dark); --on-dark: #FFFFFF;
+  --side: #FFFFFF; --side-ink: var(--figma-neutral-500); --side-ink-strong: var(--figma-neutral-950);
+  --side-hover: var(--figma-neutral-50); --side-line: var(--figma-neutral-100);
+}
+
+/* ---------- ชั้นที่ 2: ความหมาย — ธีมทีม ---------- */
+:root[data-brand="team"] {
+  --primary: var(--team-orange); --primary-hover: var(--team-orange-600);
+  --primary-soft: var(--team-orange-soft); --primary-soft-2: #FFE2C7; --primary-ink: var(--team-orange-ink);
+  --on-primary: var(--team-charcoal);              /* ตัวอักษรเข้มบนส้ม 5.9:1 */
+  --bg: var(--team-gray); --surface: #FFFFFF; --surface-2: #FAFAFB;
+  --ink: var(--team-navy); --muted: var(--team-muted); --line: var(--team-line);
+  --success: var(--team-green); --success-soft: var(--team-green-soft); --success-ink: var(--team-green-ink);
+  --danger: var(--team-red); --danger-soft: var(--team-red-soft); --danger-ink: var(--team-red-ink);
+  --dark: var(--team-charcoal); --on-dark: #FFFFFF;
+  --side: var(--team-charcoal); --side-ink: #C7CAD2; --side-ink-strong: #FFFFFF;
+  --side-hover: rgba(255, 255, 255, .06); --side-line: transparent;
+}
+
+/* ---------- โหมดมืด: override เฉพาะชั้นความหมาย (ใช้ได้กับทุกธีม) ---------- */
+:root[data-theme="dark"] {
+  --bg: #121419; --surface: #1C1F26; --surface-2: #22262E;
+  --ink: #ECEEF3; --muted: #9BA2AF; --line: #30343D;
+  --primary-soft: color-mix(in srgb, var(--primary) 20%, var(--surface));
+  --primary-soft-2: color-mix(in srgb, var(--primary) 32%, var(--surface));
+  --primary-ink: color-mix(in srgb, var(--primary) 60%, #FFFFFF);
+  --success-soft: color-mix(in srgb, var(--success) 18%, var(--surface));
+  --success-ink: color-mix(in srgb, var(--success) 55%, #FFFFFF);
+  --danger-soft: color-mix(in srgb, var(--danger) 18%, var(--surface));
+  --danger-ink: color-mix(in srgb, var(--danger) 55%, #FFFFFF);
+  --dark: #2A2F3A; --on-dark: #ECEEF3;
+  --side: var(--surface); --side-ink: var(--muted); --side-ink-strong: var(--ink);
+  --side-hover: var(--surface-2); --side-line: var(--line);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+  color-scheme: dark;
+}
+:root[data-theme="dark"][data-brand="team"] {
+  --side: #0C0E12; --side-ink: #AEB3BE; --side-ink-strong: #FFFFFF;
+  --side-hover: rgba(255, 255, 255, .06); --side-line: transparent;
+}
