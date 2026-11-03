@@ -21,6 +21,7 @@ window.KEPTOH_MOCK = {
     "defaultFloat": 1000,
     "receiptFooter": "ขอบคุณที่อุดหนุน ทานให้อร่อย ไม่เหลือทิ้งนะคะ",
     "useTimer": true,
+    "payTiming": "before",
     "costMethod": "avg",
     "showNetProfit": true,
     "childHeadWeight": 0.5,
@@ -33,14 +34,14 @@ window.KEPTOH_MOCK = {
     {"id":"pk2","name":"หมูกระทะ + ทะเล","adultPrice":279,"childPrice":139,"childRule":"เด็กสูง 100–130 ซม.","freeRule":"ต่ำกว่า 100 ซม. ทานฟรี","timeLimit":120,"active":true}
   ],
   "addons": [
-    {"id":"ad1","name":"น้ำเปล่า 600 มล.","price":15,"cost":6,"stock":96,"active":true},
-    {"id":"ad2","name":"น้ำแข็งถัง","price":20,"cost":6,"stock":999,"active":true},
-    {"id":"ad3","name":"โค้ก 325 มล.","price":25,"cost":13,"stock":72,"active":true},
-    {"id":"ad4","name":"โซดา","price":20,"cost":9,"stock":48,"active":true},
-    {"id":"ad5","name":"เบียร์ช้าง ขวดใหญ่","price":80,"cost":56,"stock":60,"active":true},
-    {"id":"ad6","name":"เบียร์ลีโอ ขวดใหญ่","price":80,"cost":55,"stock":60,"active":true},
-    {"id":"ad7","name":"เบียร์สิงห์ ขวดใหญ่","price":90,"cost":63,"stock":36,"active":true},
-    {"id":"adFine","name":"ค่าปรับอาหารเหลือ (ต่อ 100 กรัม)","price":20,"cost":0,"stock":999,"active":false}
+    {"id":"ad1","name":"น้ำเปล่า 600 มล.","category":"เครื่องดื่ม","price":15,"cost":6,"stock":96,"active":true},
+    {"id":"ad2","name":"น้ำแข็งถัง","category":"เครื่องดื่ม","price":20,"cost":6,"stock":999,"active":true},
+    {"id":"ad3","name":"โค้ก 325 มล.","category":"เครื่องดื่ม","price":25,"cost":13,"stock":72,"active":true},
+    {"id":"ad4","name":"โซดา","category":"เครื่องดื่ม","price":20,"cost":9,"stock":48,"active":true},
+    {"id":"ad5","name":"เบียร์ช้าง ขวดใหญ่","category":"เครื่องดื่ม","price":80,"cost":56,"stock":60,"active":true},
+    {"id":"ad6","name":"เบียร์ลีโอ ขวดใหญ่","category":"เครื่องดื่ม","price":80,"cost":55,"stock":60,"active":true},
+    {"id":"ad7","name":"เบียร์สิงห์ ขวดใหญ่","category":"เครื่องดื่ม","price":90,"cost":63,"stock":36,"active":true},
+    {"id":"adFine","name":"ค่าปรับอาหารเหลือ (ต่อ 100 กรัม)","category":"อื่นๆ","price":20,"cost":0,"stock":999,"active":false}
   ],
   "suppliers": [
     {"id":"s1","name":"แม็คโคร สาขาขอนแก่น","phone":"","note":"ซื้อเนื้อสัตว์แช่แข็ง ซีฟู้ด ของแห้ง"},
