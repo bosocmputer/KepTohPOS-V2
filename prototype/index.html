@@ -14,7 +14,10 @@
   --shadow:0 1px 2px rgba(23,32,51,.06),0 8px 24px rgba(23,32,51,.06);
   --font-display:"Anuphan","IBM Plex Sans Thai",system-ui,sans-serif;
   --font-body:"IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --r:14px;
+  /* Scale จาก Figma (Makaryo POS kit) — สีใช้ธีมทีม */
+  --orange-600:#E56D00; --orange-50:#FFF8F1;
+  --radius-xs:4px; --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --r:var(--radius-md);
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --orange-ink:#FF9B42; --orange-soft:#3A2412; --bg:#121419; --surface:#1C1F26; --surface-2:#22262E; --ink:#ECEEF3; --muted:#9BA2AF; --line:#30343D;
@@ -36,8 +39,8 @@ button{font:inherit;color:inherit}
 .app{display:grid;grid-template-columns:96px minmax(0,1fr);height:100%}
 .side{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;gap:4px;padding-block:14px;padding-left:env(safe-area-inset-left,0px);overflow-y:auto}
 .brand{display:flex;flex-direction:column;align-items:center;gap:2px;margin-bottom:12px;color:#fff;font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:.02em}
-.brand-mark{width:44px;height:44px;border-radius:12px;background:var(--orange);color:var(--charcoal);display:grid;place-items:center}
-.nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px;border:0;background:none;font-size:12.5px;border-radius:12px;margin-inline:10px;cursor:pointer;color:var(--side-ink)}
+.brand-mark{width:44px;height:44px;border-radius:var(--radius-md);background:var(--orange);color:var(--charcoal);display:grid;place-items:center}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px;border:0;background:none;font-size:12.5px;border-radius:var(--radius-md);margin-inline:10px;cursor:pointer;color:var(--side-ink)}
 .nav-btn:hover{background:rgba(255,255,255,.06)}
 .nav-btn[aria-current="page"]{background:var(--orange);color:var(--charcoal);font-weight:600}
 .main{display:flex;flex-direction:column;min-width:0;height:100%;overflow:hidden}
@@ -57,15 +60,15 @@ button{font:inherit;color:inherit}
   .topbar,.content{padding-left:max(16px,env(safe-area-inset-left,0px))}
 }
 
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 16px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;font-weight:500;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 16px;border-radius:var(--radius-md);border:1.5px solid var(--line);background:var(--surface);cursor:pointer;font-weight:500;white-space:nowrap}
 .btn:hover{border-color:var(--muted)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn-primary{background:var(--orange);border-color:var(--orange);color:var(--charcoal);font-weight:600}
-.btn-primary:hover{border-color:var(--orange-ink)}
+.btn-primary:hover{background:var(--orange-600);border-color:var(--orange-600)}
 .btn-dark{background:var(--charcoal);border-color:var(--charcoal);color:#fff}
 .btn-danger{color:var(--red);border-color:var(--red-soft);background:var(--red-soft)}
 .btn-ghost{border-color:transparent;background:transparent}
-.btn-sm{min-height:36px;padding:0 12px;font-size:14px;border-radius:10px}
+.btn-sm{min-height:36px;padding:0 12px;font-size:14px;border-radius:var(--radius-sm)}
 .btn-lg{min-height:56px;font-size:17px;padding:0 22px}
 .btn-block{width:100%}
 .icon-btn{min-height:40px;width:40px;padding:0}
@@ -84,19 +87,19 @@ button{font:inherit;color:inherit}
 .stat .v.green{color:var(--green)} .stat .v.red{color:var(--red)}
 
 .tables{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
-.tcard{border:1.5px solid var(--line);background:var(--surface);border-radius:16px;padding:14px;text-align:left;min-height:128px;display:flex;flex-direction:column;gap:4px;cursor:pointer;transition:transform .08s}
+.tcard{border:1.5px solid var(--line);background:var(--surface);border-radius:var(--radius-lg);padding:14px;text-align:left;min-height:128px;display:flex;flex-direction:column;gap:4px;cursor:pointer;transition:transform .08s}
 .tcard:active{transform:scale(.98)}
 .tcard .tname{font-family:var(--font-display);font-size:26px;font-weight:700;line-height:1.1}
 .tcard.busy{border-color:var(--orange);background:var(--orange-soft)}
 .tcard.late{border-color:var(--red);background:var(--red-soft)}
 .tcard .free{color:var(--muted);font-size:13px;margin-top:auto}
 
-.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px;flex-wrap:wrap}
-.seg button{border:0;background:none;padding:7px 14px;border-radius:9px;cursor:pointer;font-size:14px;color:var(--muted);font-weight:500}
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-md);padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:none;padding:7px 14px;border-radius:var(--radius-sm);cursor:pointer;font-size:14px;color:var(--muted);font-weight:500}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow);font-weight:600}
 
 .overlay{position:fixed;inset:0;background:rgba(14,16,21,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
-.modal{background:var(--surface);border-radius:18px;width:min(560px,100%);max-height:100%;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal{background:var(--surface);border-radius:var(--radius-lg);width:min(560px,100%);max-height:100%;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .modal.wide{width:min(1000px,100%)}
 .modal-h{display:flex;align-items:center;gap:10px;padding:14px 16px 14px 20px;border-bottom:1px solid var(--line)}
 .modal-b{padding:20px;overflow-y:auto;flex:1;min-height:0}
@@ -106,38 +109,38 @@ button{font:inherit;color:inherit}
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}
 .field>span{font-size:13.5px;font-weight:600;color:var(--muted)}
 .field small{color:var(--muted);font-size:12.5px}
-.input,select.input,textarea.input{width:100%;min-height:44px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:8px 12px;font:inherit}
+.input,select.input,textarea.input{width:100%;min-height:44px;border:1.5px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);color:var(--ink);padding:8px 12px;font:inherit}
 textarea.input{min-height:76px;resize:vertical}
 .input:focus{outline:none;border-color:var(--orange)}
 .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
 .toggle{display:flex;align-items:center;gap:10px;cursor:pointer;min-height:44px}
 .toggle input{width:22px;height:22px;accent-color:var(--orange)}
 
-.stepper{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.stepper{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:var(--radius-md);overflow:hidden;background:var(--surface)}
 .stepper button{width:48px;height:48px;border:0;background:var(--surface-2);cursor:pointer;display:grid;place-items:center}
 .stepper output{min-width:52px;text-align:center;font-family:var(--font-display);font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
 
 .order{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px}
 @media (max-width:860px){.order{grid-template-columns:minmax(0,1fr)}}
 .pkgs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
-.pkg{border:2px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--surface);text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.pkg{border:2px solid var(--line);border-radius:var(--radius-md);padding:12px 14px;background:var(--surface);text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px}
 .pkg[aria-pressed="true"]{border-color:var(--orange);background:var(--orange-soft)}
 .pkg .price{font-family:var(--font-display);font-weight:700;font-size:20px}
 .people{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
-.person{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}
+.person{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface-2)}
 .addons{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
-.addon{position:relative;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface);text-align:left;cursor:pointer;min-height:68px}
+.addon{position:relative;border:1.5px solid var(--line);border-radius:var(--radius-md);padding:10px 12px;background:var(--surface);text-align:left;cursor:pointer;min-height:68px}
 .addon .badge{position:absolute;top:-8px;right:-6px;background:var(--orange);color:var(--charcoal);font-weight:700;border-radius:999px;min-width:26px;height:26px;display:grid;place-items:center;font-size:13px;padding:0 6px}
-.summary{background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;align-self:start}
+.summary{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-lg);padding:16px;display:flex;flex-direction:column;gap:8px;align-self:start}
 .line{display:flex;justify-content:space-between;gap:10px;font-variant-numeric:tabular-nums}
 .line .q{color:var(--muted)}
 .total{font-family:var(--font-display);font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
 .methods{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
-.method{border:2px solid var(--line);border-radius:14px;padding:14px;background:var(--surface);cursor:pointer;font-weight:600;min-height:64px}
+.method{border:2px solid var(--line);border-radius:var(--radius-sm);padding:14px;background:var(--surface);cursor:pointer;font-weight:600;min-height:64px}
 .method[aria-pressed="true"]{border-color:var(--orange);background:var(--orange-soft)}
-.qr{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px;background:#fff;color:#172033;border-radius:14px;border:1px solid var(--line)}
+.qr{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px;background:#fff;color:#172033;border-radius:var(--radius-md);border:1px solid var(--line)}
 .qr img{width:220px;height:220px;image-rendering:pixelated}
-.pp-head{background:#113566;color:#fff;font-weight:700;padding:6px 14px;border-radius:8px;font-size:14px}
+.pp-head{background:#113566;color:#fff;font-weight:700;padding:6px 14px;border-radius:var(--radius-sm);font-size:14px}
 
 .paper{background:var(--paper);color:var(--paper-ink);width:min(330px,100%);margin:0 auto 12px;padding:20px 18px 24px;font-size:13px;line-height:1.55;position:relative;box-shadow:0 1px 3px rgba(0,0,0,.12),0 12px 30px rgba(0,0,0,.10);font-variant-numeric:tabular-nums}
 .paper::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:8px;background:radial-gradient(circle at 6px 0,var(--paper) 6px,transparent 6.5px) 0 0/12px 8px repeat-x}
@@ -162,25 +165,33 @@ textarea.input{min-height:76px;resize:vertical}
 
 .setup{display:grid;grid-template-columns:220px minmax(0,1fr);gap:20px;align-items:start}
 .setup-nav{display:flex;flex-direction:column;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px}
-.setup-nav button{border:0;background:none;text-align:left;padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:500}
+.setup-nav button{border:0;background:none;text-align:left;padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;font-weight:500}
 .setup-nav button[aria-current="true"]{background:var(--orange-soft);color:var(--orange-ink);font-weight:600}
 @media (max-width:860px){.setup{grid-template-columns:minmax(0,1fr)}.setup-nav{flex-direction:row;overflow-x:auto}.setup-nav button{white-space:nowrap}}
 
 .banner{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-radius:var(--r);background:var(--orange-soft);color:var(--ink);border:1px solid transparent}
 .banner.info{background:var(--surface-2);border-color:var(--line)}
 .empty{text-align:center;padding:36px 16px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:10px}
-.toast{position:fixed;left:50%;transform:translateX(-50%);top:max(16px,calc(env(safe-area-inset-top,0px) + 12px));background:var(--charcoal);color:#fff;padding:12px 18px;border-radius:12px;z-index:80;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:calc(100% - 32px)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);top:max(16px,calc(env(safe-area-inset-top,0px) + 12px));background:var(--charcoal);color:#fff;padding:12px 18px;border-radius:var(--radius-md);z-index:80;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:calc(100% - 32px)}
 .chart text{fill:var(--muted);font-size:11px;font-family:var(--font-body)}
 .chart .pos{fill:var(--green)} .chart .neg{fill:var(--red)} .chart .open{fill:var(--line)}
 .chart .axis{stroke:var(--line)} .chart .zero{stroke:var(--muted);stroke-width:1}
 .share{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;min-width:60px}
 .share>i{display:block;height:100%;background:var(--orange)}
 .pinpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:300px;margin:0 auto}
-.pinpad button{height:60px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);font-size:22px;font-family:var(--font-display);font-weight:600;cursor:pointer}
+.pinpad button{height:60px;border-radius:var(--radius-md);border:1.5px solid var(--line);background:var(--surface);font-size:22px;font-family:var(--font-display);font-weight:600;cursor:pointer}
 .pins{display:flex;gap:12px;justify-content:center;margin:8px 0 16px}
 .pins i{width:16px;height:16px;border-radius:50%;border:2px solid var(--muted)}
 .pins i.on{background:var(--orange);border-color:var(--orange)}
 .staff-pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.result{display:flex;flex-direction:column;align-items:center;gap:var(--space-2);text-align:center;padding:var(--space-4) var(--space-4) var(--space-5)}
+.result .ic{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;color:#fff;background:var(--green);box-shadow:0 0 0 8px var(--green-soft)}
+.result.red .ic{background:var(--red);box-shadow:0 0 0 8px var(--red-soft)}
+.result strong{font-family:var(--font-display);font-size:18px;margin-top:var(--space-2)}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap}
+.pager .pages{display:flex;gap:var(--space-1)}
+.pager .pages .btn{min-width:40px;padding:0 var(--space-2)}
+.pager .pages .btn[aria-current="page"]{background:var(--orange);border-color:var(--orange);color:var(--charcoal);font-weight:600}
 .lines-edit{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:end}
 @media (max-width:600px){.lines-edit{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 </style>
@@ -502,6 +513,12 @@ function Seg({ items, value, onChange, label }) {
   return html`<div class="seg" role="group" aria-label=${label}>${items.map(([k, l]) => html`<button type="button" aria-pressed=${value === k} onClick=${() => onChange(k)}>${l}</button>`)}</div>`;
 }
 const Empty = ({ title, text, children }) => html`<div class="empty"><strong style="color:var(--ink)">${title}</strong>${text && html`<span>${text}</span>`}${children}</div>`;
+const ResultState = ({ tone = 'green', icon = 'check', title, text }) => html`<div class=${'result ' + tone} role="status"><span class="ic"><${Icon} n=${icon} s=${28}/></span><strong>${title}</strong>${text && html`<span class="sub">${text}</span>`}</div>`;
+function Pagination({ page, pages, onChange }) {
+  if (pages <= 1) return null;
+  return html`<nav class="pager" aria-label="เลือกหน้า"><span class="sub">หน้า ${page} จาก ${pages}</span><div class="pages">
+    ${Array.from({ length: pages }, (_, i) => i + 1).map(n => html`<${Btn} size="sm" aria-current=${n === page ? 'page' : null} onClick=${() => onChange(n)}>${n}<//>`)}</div></nav>`;
+}
 
 function PromptPayQR({ id, amount }) {
   let src = '';
@@ -541,7 +558,7 @@ function Receipt({ bill, shop }) {
   </div>`;
 }
 
-function ReceiptModal({ s, billId, onClose, update, me, toast }) {
+function ReceiptModal({ s, billId, onClose, update, me, toast, fresh }) {
   const bill = s.sales.find(b => b.id === billId);
   const [voiding, setVoiding] = useState(false);
   const [reason, setReason] = useState('');
@@ -554,6 +571,7 @@ function ReceiptModal({ s, billId, onClose, update, me, toast }) {
   return html`<${Modal} title=${'บิล ' + bill.no} sub=${bill.voided ? 'บิลนี้ถูกยกเลิกแล้ว' : 'ชำระเงินแล้ว'} onClose=${onClose}
       footer=${html`${canVoid && html`<${Btn} kind="danger" icon="trash" onClick=${() => setVoiding(true)}>ยกเลิกบิล<//>`}
         <${Btn} icon="printer" disabled title="ต่อเครื่องพิมพ์ Bluetooth ในเฟสถัดไป">พิมพ์ (เฟสถัดไป)<//><${Btn} kind="primary" onClick=${onClose}>เสร็จ<//>`}>
+    ${fresh && !bill.voided && html`<${ResultState} title="รับเงินเรียบร้อย" text=${bill.methodType === 'cash' ? 'เงินทอน ' + baht(bill.change, 2) : 'ชำระโดย ' + bill.methodName}/>`}
     <${Receipt} bill=${bill} shop=${s.shop}/>
     ${voiding && html`<${Confirm} title="ยกเลิกบิลนี้?" text=${'บิล ' + bill.no + ' ยอด ' + baht(bill.total, 2) + ' จะไม่ถูกนับเป็นยอดขาย'} yes="ยกเลิกบิล" danger onNo=${() => setVoiding(false)} onYes=${doVoid}>
       <div style="margin-top:12px"><${Field} label="เหตุผล"><input id="void-reason" class="input" value=${reason} onInput=${e => setReason(e.target.value)} placeholder="เช่น คีย์จำนวนคนผิด"/><//></div><//>`}
@@ -712,6 +730,7 @@ function TablesView({ s, update, me, toast }) {
   const [detail, setDetail] = useState(null);
   const [receipt, setReceipt] = useState(null);
   const [needShift, setNeedShift] = useState(null);
+  const [paidId, setPaidId] = useState(null);
   const shift = openShiftOf(s);
   const tk = todayKey();
   const today = s.sales.filter(b => b.date === tk && !b.voided);
@@ -742,9 +761,9 @@ function TablesView({ s, update, me, toast }) {
         <span style="margin-top:auto;font-weight:600" class=${late ? 'rd' : ''}>${limit ? (late ? 'เกินเวลา ' + (mins - limit) + ' น.' : 'เหลือ ' + (limit - mins) + ' น.') : 'นั่งมา ' + mins + ' น.'}</span></button>`;
     })}</div>
     ${needShift && html`<${Modal} title="เปิดกะการขาย" onClose=${() => setNeedShift(null)}><${OpenShiftForm} s=${s} update=${update} me=${me} onDone=${() => { const t = needShift; setNeedShift(null); toast('เปิดกะแล้ว'); if (t && t.id) setSheet({ mode: 'open', table: t }); }}/><//>`}
-    ${sheet && html`<${OrderSheet} s=${s} update=${update} me=${me} table=${sheet.table} mode=${sheet.mode} onClose=${() => setSheet(null)} onPaid=${id => { setSheet(null); setDetail(null); setReceipt(id); toast('รับเงินเรียบร้อย'); }}/>`}
+    ${sheet && html`<${OrderSheet} s=${s} update=${update} me=${me} table=${sheet.table} mode=${sheet.mode} onClose=${() => setSheet(null)} onPaid=${id => { setSheet(null); setDetail(null); setPaidId(id); setReceipt(id); }}/>`}
     ${detail && !sheet && html`<${TableDetail} s=${s} update=${update} table=${s.tables.find(t => t.id === detail)} onClose=${() => setDetail(null)} onAdd=${() => { if (!shift) return setNeedShift({}); setSheet({ mode: 'add', table: s.tables.find(t => t.id === detail) }); }} onReceipt=${setReceipt}/>`}
-    ${receipt && html`<${ReceiptModal} s=${s} billId=${receipt} update=${update} me=${me} toast=${toast} onClose=${() => setReceipt(null)}/>`}
+    ${receipt && html`<${ReceiptModal} s=${s} billId=${receipt} fresh=${receipt === paidId} update=${update} me=${me} toast=${toast} onClose=${() => { setReceipt(null); setPaidId(null); }}/>`}
   </div>`;
 }
 
@@ -752,17 +771,23 @@ function TablesView({ s, update, me, toast }) {
 function BillsView({ s, update, me, toast }) {
   const [date, setDate] = useState(todayKey());
   const [receipt, setReceipt] = useState(null);
+  const [page, setPage] = useState(1);
+  const PER = 10;
   const bills = s.sales.filter(b => b.date === date).sort((x, y) => y.at.localeCompare(x.at));
+  const pages = Math.max(1, Math.ceil(bills.length / PER));
+  const cur = Math.min(page, pages);
+  const shown = bills.slice((cur - 1) * PER, cur * PER);
   const ok = bills.filter(b => !b.voided);
   const byMethod = {};
   for (const b of ok) byMethod[b.methodName] = (byMethod[b.methodName] || 0) + b.total;
   return html`<div class="stack">
-    <div class="row between"><${Field} label="วันที่"><input id="bills-date" class="input" type="date" value=${date} max=${todayKey()} min=${s.startDate} onInput=${e => e.target.value && setDate(e.target.value)}/><//>
+    <div class="row between"><${Field} label="วันที่"><input id="bills-date" class="input" type="date" value=${date} max=${todayKey()} min=${s.startDate} onInput=${e => { if (e.target.value) { setDate(e.target.value); setPage(1); } }}/><//>
       <div class="row">${Object.entries(byMethod).map(([k, v]) => html`<${Pill}>${k} ${baht(v)}<//>`)}</div></div>
     <div class="stats"><${Stat} label="ยอดขาย" value=${baht(sum(ok, b => b.total))}/><${Stat} label="จำนวนบิล" value=${ok.length} sub=${bills.length - ok.length ? 'ยกเลิก ' + (bills.length - ok.length) + ' บิล' : ''}/><${Stat} label="ลูกค้า (หัว)" value=${sum(ok, b => b.heads.a + b.heads.c)} sub=${'ทานฟรี ' + sum(ok, b => b.heads.f) + ' คน'}/></div>
     ${bills.length ? html`<div class="scroll"><table class="dt"><thead><tr><th>เลขที่</th><th>เวลา</th><th>โต๊ะ</th><th>ลูกค้า</th><th>ชำระโดย</th><th>แคชเชียร์</th><th class="r">ยอด</th></tr></thead><tbody>
-      ${bills.map(b => html`<tr class="click" onClick=${() => setReceipt(b.id)}><td>${b.no} ${b.voided && html`<${Pill} tone="red">ยกเลิก<//>`}</td><td>${thTime(b.at)}</td><td>${b.tableName}</td><td>${b.heads.a + b.heads.c + b.heads.f}</td><td>${b.methodName}</td><td>${b.staffName}</td><td class=${'r ' + (b.voided ? 'strike' : '')}>${baht(b.total, 2)}</td></tr>`)}
-    </tbody></table></div>` : html`<div class="card"><${Empty} title="ไม่มีบิลในวันนี้"/></div>`}
+      ${shown.map(b => html`<tr class="click" onClick=${() => setReceipt(b.id)}><td>${b.no} ${b.voided && html`<${Pill} tone="red">ยกเลิก<//>`}</td><td>${thTime(b.at)}</td><td>${b.tableName}</td><td>${b.heads.a + b.heads.c + b.heads.f}</td><td>${b.methodName}</td><td>${b.staffName}</td><td class=${'r ' + (b.voided ? 'strike' : '')}>${baht(b.total, 2)}</td></tr>`)}
+    </tbody></table></div>
+    <${Pagination} page=${cur} pages=${pages} onChange=${setPage}/>` : html`<div class="card"><${Empty} title="ไม่มีบิลในวันนี้"/></div>`}
     ${receipt && html`<${ReceiptModal} s=${s} billId=${receipt} update=${update} me=${me} toast=${toast} onClose=${() => setReceipt(null)}/>`}
   </div>`;
 }
