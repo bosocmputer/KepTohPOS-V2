@@ -282,6 +282,8 @@ textarea.input{min-height:76px;resize:vertical}
 .count-pad{position:sticky;top:0;display:flex;flex-direction:column;gap:var(--space-3)}
 .cp-sum{display:flex;flex-direction:column;gap:var(--space-2)}
 .cp-actions{display:flex;flex-direction:column;gap:var(--space-2)}
+.cp-head{display:block}
+.cp-toggle,.cp-cur,.lbl-short,.show-sm{display:none}
 .big-val{display:block;text-align:center;font:700 40px/1.2 var(--font-display);font-variant-numeric:tabular-nums;padding:var(--space-2);border-radius:var(--radius-md);background:var(--surface-2)}
 .big-val small{font:500 var(--fs-sm) var(--font-body)}
 .dt tr.active td{background:var(--primary-soft)}
@@ -336,6 +338,25 @@ a.pill{text-decoration:none}
 @media (max-width:600px){.lines-edit{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 /* ต้องอยู่หลังกฎ .input/.search-input (ที่ใช้ font:inherit) · 16px กัน iOS ซูมหน้าเองตอนแตะช่องกรอก */
 @media (max-width:760px){.input,select.input,textarea.input,.search-input{font-size:16px}}
+/* มือถือแนวตั้ง/iPad แนวตั้ง: แป้นเป็นแผงย่อได้ — ย่อ = แถบเดียว (ชื่อ + ค่าที่ใส่ + ป้อน + บันทึก) เห็นรายการเต็มจอ · เปิด = แป้นเต็ม */
+@media (max-width:860px) and (min-height:521px){
+  .count-pad .cp-head{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2)}
+  .count-pad .cp-title{min-width:0;flex:1}
+  .count-pad .cp-title h2{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cp-toggle{display:inline-flex;align-items:center;gap:4px;flex:none;min-height:44px;padding:0 var(--space-3);border:1.5px solid var(--line);border-radius:var(--radius-md);background:var(--surface);color:var(--ink);cursor:pointer;font:600 var(--fs-sm) var(--font-body)}
+  .cp-toggle svg{transition:transform .15s}
+  .count-pad.collapsed .cp-toggle svg{transform:rotate(180deg)}
+  .count-pad .np-key{height:40px}
+  .count-pad .numpad{gap:6px}
+  .count-pad .big-val{font-size:26px;padding:2px 12px;min-width:84px;flex:none}
+  .count-pad .cp-actions .btn{min-height:46px}
+  .count-pad.collapsed{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-3)}
+  .count-pad.collapsed .numpad,.count-pad.collapsed .big-val,.count-pad.collapsed .cp-sum,.count-pad.collapsed .cp-actions .btn:not(.btn-primary),.count-pad.collapsed>.btn-ghost{display:none}
+  .count-pad.collapsed .cp-cur{display:block;font-size:var(--fs-xs);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .count-pad.collapsed .cp-actions .btn-primary{padding:0 var(--space-3);width:auto}
+  .count-pad.collapsed .cp-actions .lbl-full{display:none}
+  .count-pad.collapsed .cp-actions .lbl-short{display:inline}
+}
 /* มือถือแนวนอน (จอเตี้ย): นับของใช้ 2 คอลัมน์ รายการซ้าย · แป้นขวา แทนแป้นติดล่างที่จะสูงกว่าจอ */
 @media (max-height:520px) and (min-width:600px){
   .stock-count{padding-right:296px}   /* เว้นที่ให้แป้นที่ตรึงด้านขวา ทั้งแถบเครื่องมือและรายการ */
@@ -347,6 +368,13 @@ a.pill{text-decoration:none}
   .count-pad .cp-head h2{font-size:15px}
 }
 /* จอสัมผัส: ปุ่มเล็กต้องกดด้วยนิ้วได้ (อยู่ท้ายไฟล์เพื่อไม่ถูก .btn-sm ทับ) */
+@media (max-width:760px){
+  .hide-sm{display:none}
+  .show-sm{display:inline}
+  .seg{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .seg button{white-space:nowrap;flex:1 0 auto}
+  .toolbar-end .field>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}   /* ป้ายช่องวันที่ซ่อนเฉพาะตา (ยังอ่านออกเสียงได้) เพื่อประหยัดที่ */
+}
 @media (pointer:coarse){.btn-sm{min-height:44px}.seg button{min-height:40px}a.pill{min-height:40px;padding:0 var(--space-4)}}
 </style>
 
@@ -1270,7 +1298,8 @@ function StockCount({ s, update, ledger, date, toast }) {
   const [draft, setDraft] = useState(null);
   const [showAll, setShowAll] = useState(false);
   const [active, setActive] = useState(null);
-  useEffect(() => { setDraft(null); setActive(null); setShowAll(false); }, [date]);
+  const [padOpen, setPadOpen] = useState(false);   // มือถือ: แป้นเป็นแผงย่อได้ เริ่มต้นย่อไว้เพื่อให้เห็นรายการเต็มจอ
+  useEffect(() => { setDraft(null); setActive(null); setShowAll(false); setPadOpen(false); }, [date]);
   const day = ledger.byDate[date];
   if (!day) return null;
   const saved = s.counts[date] || {};
@@ -1310,23 +1339,25 @@ function StockCount({ s, update, ledger, date, toast }) {
     { key: 'cost', label: 'มูลค่า', align: 'r', render: i => { const c = calc(i); return c.cost == null ? '–' : fmt(c.cost); } }];
   return html`<div class="count-layout">
     <div class="stack">
-      <div class=${'banner ' + (day.closed ? 'info' : '')}><span class="grow">${day.closed ? 'วันนี้ปิดยอดแล้ว แก้ตัวเลขแล้วกดบันทึกได้ ระบบคำนวณใหม่ให้ทั้งหมด' : 'เดินนับตามที่เก็บ ตู้เย็น → ตู้แช่ → ชั้นแห้ง · แตะรายการแล้วกดตัวเลข · Enter = รายการถัดไป'}</span>
+      <div class=${'banner ' + (day.closed ? 'info' : '')}><span class="grow"><span class="hide-sm">${day.closed ? 'วันนี้ปิดยอดแล้ว แก้ตัวเลขแล้วกดบันทึกได้ ระบบคำนวณใหม่ให้ทั้งหมด' : 'เดินนับตามที่เก็บ ตู้เย็น → ตู้แช่ → ชั้นแห้ง · แตะรายการแล้วกดตัวเลข · Enter = รายการถัดไป'}</span><span class="show-sm">${day.closed ? 'ปิดยอดแล้ว · แก้ตัวเลขแล้วกดบันทึกได้' : 'แตะรายการ แล้วป้อนจำนวนที่เหลือ'}</span></span>
         <label class="toggle"><input id="count-all" type="checkbox" checked=${showAll} onChange=${e => setShowAll(e.target.checked)}/><span>แสดงทุกรายการ</span></label></div>
-      ${due.length < s.ingredients.length && html`<p class="sub" style="margin:0">ของนับรายสัปดาห์ (นับวัน${DOW[+s.shop.weeklyCountDow]}) ${s.ingredients.length - due.length} รายการ ระบบใช้ค่าประมาณจากอัตราใช้ต่อหัว</p>`}
+      ${due.length < s.ingredients.length && html`<p class="sub hide-sm" style="margin:0">ของนับรายสัปดาห์ (นับวัน${DOW[+s.shop.weeklyCountDow]}) ${s.ingredients.length - due.length} รายการ ระบบใช้ค่าประมาณจากอัตราใช้ต่อหัว</p>`}
       ${groups.map(([loc, items]) => html`<div class="stack" style="gap:8px"><h3 class="loc-h">${LOCATION[loc]}<span class="sub">${items.length} รายการ</span></h3>
-        <${DataTable} label=${'นับของเหลือ ' + LOCATION[loc]} columns=${cols} rows=${items} onRowClick=${i => { setActive(i.id); scrollActive(); }} rowClass=${i => i.id === cur ? 'active' : ''}/></div>`)}
+        <${DataTable} label=${'นับของเหลือ ' + LOCATION[loc]} columns=${cols} rows=${items} onRowClick=${i => { setActive(i.id); setPadOpen(true); scrollActive(); }} rowClass=${i => i.id === cur ? 'active' : ''}/></div>`)}
     </div>
-    <aside class="count-pad card" aria-label="ใส่จำนวนที่เหลือ">
-      ${curIng ? html`<div class="cp-head"><div class="eyebrow">${LOCATION[curIng.location] || ''}</div><h2>${curIng.name}</h2>
-          <div class="sub">มีทั้งหมด ${fmtQ(rowOf(cur).avail)} ${curIng.unit}${prevOf(cur) != null ? ' · ครั้งก่อน ' + fmtQ(prevOf(cur)) : ''}</div></div>
-        <output class="big-val" aria-live="polite">${vals[cur] || html`<span class="m">0</span>`} <small class="sub">${curIng.unit}</small></output>
+    <aside class=${'count-pad card' + (padOpen ? '' : ' collapsed')} aria-label="ใส่จำนวนที่เหลือ">
+      ${curIng ? html`<div class="cp-head"><div class="cp-title"><div class="eyebrow">${LOCATION[curIng.location] || ''}</div><h2>${curIng.name}</h2>
+          <div class="sub">มีทั้งหมด ${fmtQ(rowOf(cur).avail)} ${curIng.unit}${prevOf(cur) != null ? ' · ครั้งก่อน ' + fmtQ(prevOf(cur)) : ''}</div>
+          <div class="cp-cur">${vals[cur] !== '' && vals[cur] != null ? 'ใส่แล้ว ' + vals[cur] + ' ' + curIng.unit : 'แตะ ป้อน เพื่อใส่จำนวน'} · นับแล้ว ${doneDue}/${due.length}</div></div>
+          <output class="big-val" aria-live="polite">${vals[cur] || html`<span class="m">0</span>`} <small class="sub">${curIng.unit}</small></output>
+          <button type="button" class="cp-toggle" aria-expanded=${padOpen} aria-label=${padOpen ? 'ย่อแป้นตัวเลข' : 'เปิดแป้นตัวเลข'} onClick=${() => setPadOpen(!padOpen)}><${Icon} n="chevron" s=${18}/><span>${padOpen ? 'ย่อ' : 'ป้อน'}</span></button></div>
         <${NumPad} value=${vals[cur] || ''} onChange=${setVal} decimal keyboard maxLen=${7} onEnter=${next}/>` : html`<${Empty} title="ไม่มีรายการให้นับวันนี้"/>`}
       <div class="cp-sum"><div class="line"><span>นับแล้ว</span><strong>${doneDue}/${due.length}</strong></div>
-        <div class="line"><span>ต้นทุนจากที่นับ</span><strong class="num">${baht(sum(order, i => calc(i).cost))}</strong></div></div>
+        <div class="line"><span>ต้นทุนจากที่นับ</span><strong class="num">${baht(sum(order, i => calc(i).cost))}</strong></div>
+        ${draft && html`<${Btn} kind="ghost" size="sm" block onClick=${() => setDraft(null)}>ยกเลิกที่แก้<//>`}
+        ${day.closed && !draft && html`<${Btn} kind="ghost" size="sm" block onClick=${() => { update(st => { delete st.counts[date]; }); toast('ยกเลิกการปิดวันแล้ว'); }}>ยกเลิกการปิดวัน<//>`}</div>
       <div class="cp-actions">${curIng && html`<${Btn} block onClick=${next}>รายการถัดไป<//>`}
-        <${Btn} kind="primary" size="lg" block icon="check" disabled=${doneDue !== due.length} title=${doneDue !== due.length ? 'ใส่ให้ครบทุกรายการที่ต้องนับ (ไม่มีของเหลือใส่ 0)' : ''} onClick=${save}>บันทึกและปิดวัน<//></div>
-      ${draft && html`<${Btn} kind="ghost" size="sm" block onClick=${() => setDraft(null)}>ยกเลิกที่แก้<//>`}
-      ${day.closed && !draft && html`<${Btn} kind="ghost" size="sm" block onClick=${() => { update(st => { delete st.counts[date]; }); toast('ยกเลิกการปิดวันแล้ว'); }}>ยกเลิกการปิดวัน<//>`}
+        <${Btn} kind="primary" size="lg" block icon="check" disabled=${doneDue !== due.length} title=${doneDue !== due.length ? 'ใส่ให้ครบทุกรายการที่ต้องนับ (ไม่มีของเหลือใส่ 0)' : ''} onClick=${save}><span class="lbl-full">บันทึกและปิดวัน</span><span class="lbl-short">บันทึก</span><//></div>
     </aside></div>`;
 }
 
