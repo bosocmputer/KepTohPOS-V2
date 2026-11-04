@@ -3,13 +3,13 @@ import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/roles.dart';
 import 'package:flutter/material.dart';
 
-/// Top header bar for `AppShell` (`72px` at `1024`, `88px` at `>= 1180`,
-/// compact on mobile).
+/// Top header bar for `AppShell` (`64px` at height `<= 820`, `72px` at
+/// `1366x1024`, `52px` on mobile).
 ///
 /// Extends its surface background under the top status bar (`SafeArea`), while
-/// keeping all interactive controls below `MediaQuery.paddingOf(context).top`
-/// and aligned horizontally with the page content padding (`16` at `1024`,
-/// `24` at `>= 1180`).
+/// keeping all interactive controls (`44px` tall) below
+/// `MediaQuery.paddingOf(context).top` and aligned horizontally with the page
+/// content padding (`16` at `1024`, `24` at `>= 1180`).
 class ShellHeaderBar extends StatelessWidget {
   const new({
     required this.height,
@@ -117,7 +117,7 @@ class ShellHeaderBar extends StatelessWidget {
               customBorder: const CircleBorder(),
               child: Stack(
                 children: [
-                  Avatar(name: staffName),
+                  Avatar(name: staffName, size: AppDimensions.tap),
                   Positioned(
                     right: AppDimensions.space0,
                     bottom: AppDimensions.space0,

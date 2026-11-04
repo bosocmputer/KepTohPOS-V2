@@ -137,7 +137,7 @@ class _ToastOverlayHostState extends State<_ToastOverlayHost> {
     final mq = MediaQuery.of(context);
     final topOffset =
         mq.padding.top +
-        AppDimensions.topbarHeight(mq.size.width) +
+        AppDimensions.topbarHeight(mq.size.width, mq.size.height) +
         AppDimensions.space3;
 
     return Align(

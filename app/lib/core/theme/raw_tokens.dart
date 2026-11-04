@@ -131,11 +131,13 @@ abstract final class AppDimensions {
   // Responsive layout breakpoints & dimensions
   static const double mobileBp = 760;
   static const double wideBp = 1180;
-  static const double headerCompactH = 72;
-  static const double headerH = 88;
+  static const double compactHeightBp = 820;
+  static const double headerCompactH = 64;
+  static const double headerH = 72;
   static const double sidebarW = 232;
   static const double railW = 96;
   static const double drawerW = 365;
+  static const double rightDrawerW = 340;
   static const double orderPanelCompactW = 360;
   static const double orderPanelW = 396;
 
@@ -144,10 +146,14 @@ abstract final class AppDimensions {
   static double pagePadding(double screenWidth) =>
       screenWidth >= wideBp ? space6 : space4;
 
-  /// Topbar height: `88` at `>= 1180`, `72` at `761..1179`, `52` on mobile.
-  static double topbarHeight(double screenWidth) => screenWidth <= mobileBp
+  /// Topbar height: `64` when screen height `<= 820` (`1024x768`, `1180x820`),
+  /// `72` at `1366x1024` (`> 820`), `52` on mobile.
+  static double topbarHeight(
+    double screenWidth, [
+    double screenHeight = 1024,
+  ]) => screenWidth <= mobileBp
       ? btnLgH
-      : (screenWidth >= wideBp ? headerH : headerCompactH);
+      : (screenHeight <= compactHeightBp ? headerCompactH : headerH);
 
   /// Right order/payment panel width: `396` at `>= 1180`, `360` at `< 1180`.
   static double rightPanelWidth(double screenWidth) =>

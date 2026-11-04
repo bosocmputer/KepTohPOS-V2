@@ -27,147 +27,72 @@ class BillsFilterDrawer extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final payments = state.posState.payments;
 
-    return Material(
-      key: const ValueKey('bills-filter-drawer'),
-      color: t.scrim,
-      child: Stack(
+    return RightSheetDrawer(
+      drawerKey: const ValueKey('bills-filter-drawer'),
+      closeButtonKey: const ValueKey('bills-filter-close-btn'),
+      title: 'ตัวกรอง',
+      onClose: onClose,
+      footer: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: onClose,
-              child: const SizedBox.expand(),
+          Btn(
+            key: const ValueKey('filter-apply-btn'),
+            kind: BtnKind.primary,
+            block: true,
+            label: 'ดูผล (${state.filteredBills.length} บิล)',
+            onPressed: onClose,
+          ),
+          const SizedBox(height: AppDimensions.space2),
+          Btn(
+            key: const ValueKey('filter-clear-btn'),
+            block: true,
+            label: 'ล้างตัวกรอง',
+            disabled: state.activeFilterCount == 0,
+            onPressed: onClear,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'วิธีชำระเงิน',
+            style: tt.titleMedium?.copyWith(
+              color: t.ink,
+              fontWeight: FontWeight.w700,
             ),
           ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Container(
-              width: 340,
-              height: double.infinity,
-              decoration: BoxDecoration(
-                color: t.surface,
-                border: Border(left: BorderSide(color: t.line)),
-                boxShadow: t.shadows,
-              ),
-              child: SafeArea(
-                top: false,
-                left: false,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppDimensions.space5,
-                        vertical: AppDimensions.space3_5,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border(bottom: BorderSide(color: t.line)),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'ตัวกรอง',
-                              style: tt.titleLarge?.copyWith(
-                                color: t.ink,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          Btn(
-                            key: const ValueKey('bills-filter-close-btn'),
-                            kind: BtnKind.ghost,
-                            icon: 'x',
-                            semanticLabel: 'ปิดตัวกรอง',
-                            onPressed: onClose,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(AppDimensions.space5),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              'วิธีชำระเงิน',
-                              style: tt.titleMedium?.copyWith(
-                                color: t.ink,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: AppDimensions.space2_5),
-                            for (final pm in payments)
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  bottom: AppDimensions.space2,
-                                ),
-                                child: _MethodCheckboxTile(
-                                  key: ValueKey('filter-method-${pm.id}'),
-                                  label: pm.name,
-                                  checked: state.selectedMethodIds.contains(
-                                    pm.id,
-                                  ),
-                                  onTap: () => onToggleMethod(pm.id),
-                                ),
-                              ),
-                            const SizedBox(height: AppDimensions.space4),
-                            Divider(color: t.line, height: 1),
-                            const SizedBox(height: AppDimensions.space4),
-                            Text(
-                              'สถานะบิล',
-                              style: tt.titleMedium?.copyWith(
-                                color: t.ink,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: AppDimensions.space2_5),
-                            Seg<String>(
-                              key: const ValueKey('filter-status-seg'),
-                              value: state.statusFilter,
-                              onChanged: onStatusChanged,
-                              items: const <SegItem<String>>[
-                                SegItem(value: 'all', label: 'ทั้งหมด'),
-                                SegItem(value: 'ok', label: 'ปกติ'),
-                                SegItem(value: 'void', label: 'ยกเลิก'),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(AppDimensions.space5),
-                      decoration: BoxDecoration(
-                        color: t.surface2,
-                        border: Border(top: BorderSide(color: t.line)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Btn(
-                            key: const ValueKey('filter-apply-btn'),
-                            kind: BtnKind.primary,
-                            block: true,
-                            label: 'ดูผล (${state.filteredBills.length} บิล)',
-                            onPressed: onClose,
-                          ),
-                          const SizedBox(height: AppDimensions.space2),
-                          Btn(
-                            key: const ValueKey('filter-clear-btn'),
-                            block: true,
-                            label: 'ล้างตัวกรอง',
-                            disabled: state.activeFilterCount == 0,
-                            onPressed: onClear,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+          const SizedBox(height: AppDimensions.space2_5),
+          for (final pm in payments)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppDimensions.space2),
+              child: _MethodCheckboxTile(
+                key: ValueKey('filter-method-${pm.id}'),
+                label: pm.name,
+                checked: state.selectedMethodIds.contains(pm.id),
+                onTap: () => onToggleMethod(pm.id),
               ),
             ),
+          const SizedBox(height: AppDimensions.space4),
+          Divider(color: t.line, height: 1),
+          const SizedBox(height: AppDimensions.space4),
+          Text(
+            'สถานะบิล',
+            style: tt.titleMedium?.copyWith(
+              color: t.ink,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppDimensions.space2_5),
+          Seg<String>(
+            key: const ValueKey('filter-status-seg'),
+            value: state.statusFilter,
+            onChanged: onStatusChanged,
+            items: const <SegItem<String>>[
+              SegItem(value: 'all', label: 'ทั้งหมด'),
+              SegItem(value: 'ok', label: 'ปกติ'),
+              SegItem(value: 'void', label: 'ยกเลิก'),
+            ],
           ),
         ],
       ),

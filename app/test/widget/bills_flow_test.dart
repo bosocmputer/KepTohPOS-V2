@@ -214,10 +214,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Open filter drawer and select a filter
+    // Open filter drawer and verify it spans full screen height (0..768)
     await tester.tap(find.byKey(const ValueKey('bills-filter-btn')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('bills-filter-drawer')), findsOneWidget);
+    final drawerFinder = find.byKey(const ValueKey('bills-filter-drawer'));
+    expect(drawerFinder, findsOneWidget);
+    expect(tester.getTopLeft(drawerFinder).dy, 0);
+    expect(tester.getSize(drawerFinder).height, 768);
 
     await tester.tap(find.byKey(const ValueKey('filter-method-pm1')));
     await tester.pumpAndSettle();

@@ -8,7 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('AppShell responsive layout & role permissions', () {
     testWidgets(
-      'width >= 761 (1366x1024) renders 88px header and 365px drawer',
+      'width >= 761 (1366x1024) renders 72px header (64px at <= 820h) '
+      'and 365px drawer',
       (tester) async {
         tester.view.physicalSize = const Size(1366, 1024);
         tester.view.devicePixelRatio = 1.0;
@@ -32,6 +33,19 @@ void main() {
           find.byKey(const ValueKey('shell-header')),
         );
         expect(headerBox.height, AppDimensions.headerH);
+        expect(headerBox.height, 72);
+
+        // At 1024x768 (height <= 820), header is 64px
+        tester.view.physicalSize = const Size(1024, 768);
+        await tester.pumpAndSettle();
+        final compactHeaderBox = tester.getSize(
+          find.byKey(const ValueKey('shell-header')),
+        );
+        expect(compactHeaderBox.height, AppDimensions.headerCompactH);
+        expect(compactHeaderBox.height, 64);
+
+        tester.view.physicalSize = const Size(1366, 1024);
+        await tester.pumpAndSettle();
         expect(find.byKey(const ValueKey('shell-bottom-nav')), findsNothing);
         expect(find.byKey(const ValueKey('drawer-scrim')), findsNothing);
 
