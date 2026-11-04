@@ -116,6 +116,16 @@ class TableRound {
   final int c;
   final int f;
   final Map<String, int> ad;
+
+  TableRound copy() => TableRound(
+    id: id,
+    at: at,
+    staffId: staffId,
+    a: a,
+    c: c,
+    f: f,
+    ad: Map<String, int>.from(ad),
+  );
 }
 
 /// Adjustment reducing a sent item (`o.adjusts` / `o.log`).
@@ -168,6 +178,18 @@ class OpenTableState {
   List<TableRound> rounds;
   List<TableAdjustment> adjusts;
   final List<TableAdjustment> log;
+
+  OpenTableState copy() => OpenTableState(
+    openedAt: openedAt,
+    packageId: packageId,
+    timing: timing,
+    notes: notes,
+    billIds: List<String>.from(billIds),
+    heads: heads.copy(),
+    rounds: rounds.map((r) => r.copy()).toList(),
+    adjusts: List<TableAdjustment>.from(adjusts),
+    log: List<TableAdjustment>.from(log),
+  );
 }
 
 /// Flattened sent line returned by `sentLines`.

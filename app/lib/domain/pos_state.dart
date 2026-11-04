@@ -52,6 +52,32 @@ class BillRecord {
   final double received;
   final double change;
   bool voided;
+
+  BillRecord copy() => BillRecord(
+    id: id,
+    no: no,
+    date: date,
+    at: at,
+    tableId: tableId,
+    tableName: tableName,
+    staffId: staffId,
+    staffName: staffName,
+    shiftId: shiftId,
+    packageId: packageId,
+    lines: List<OrderLineItem>.from(lines),
+    subtotal: subtotal,
+    service: service,
+    vat: vat,
+    rounding: rounding,
+    total: total,
+    heads: heads.copy(),
+    methodId: methodId,
+    methodName: methodName,
+    methodType: methodType,
+    received: received,
+    change: change,
+    voided: voided,
+  );
 }
 
 /// Line item inside a purchase bill.
@@ -110,6 +136,7 @@ class ShiftRecord {
     required this.floatAmount,
     this.closedAt,
     this.counted,
+    this.closedBy,
   });
 
   final String id;
@@ -118,6 +145,17 @@ class ShiftRecord {
   final double floatAmount;
   String? closedAt;
   double? counted;
+  String? closedBy;
+
+  ShiftRecord copy() => ShiftRecord(
+    id: id,
+    staffId: staffId,
+    openedAt: openedAt,
+    floatAmount: floatAmount,
+    closedAt: closedAt,
+    counted: counted,
+    closedBy: closedBy,
+  );
 }
 
 /// Initial stock lot (`s.initialStock[ingId]`).
@@ -182,4 +220,32 @@ class PosState {
   final Map<String, OpenTableState> openTables;
   final Map<String, StockLot> initialStock;
   final List<ExpenseRecord> expenses;
+
+  /// Deep-copies this [PosState] so in-place domain mutations never mutate an
+  /// already-emitted BLoC/Cubit state instance.
+  PosState copy() => PosState(
+    version: version,
+    startDate: startDate,
+    currentStaffId: currentStaffId,
+    shop: shop.copyWith(),
+    packages: List<PackageItem>.from(packages),
+    addons: addons.map((a) => a.copy()).toList(),
+    suppliers: List<SupplierItem>.from(suppliers),
+    ingredients: List<IngredientItem>.from(ingredients),
+    tables: List<DiningTable>.from(tables),
+    staff: List<StaffMember>.from(staff),
+    payments: List<PaymentMethod>.from(payments),
+    expenseTypes: List<ExpenseType>.from(expenseTypes),
+    fixedCosts: List<FixedCostItem>.from(fixedCosts),
+    seq: Map<String, int>.from(seq),
+    counts: counts.map((k, v) => MapEntry(k, Map<String, double>.from(v))),
+    sales: sales.map((b) => b.copy()).toList(),
+    purchases: List<PurchaseRecord>.from(purchases),
+    shifts: shifts.map((sh) => sh.copy()).toList(),
+    openTables: openTables.map((k, v) => MapEntry(k, v.copy())),
+    initialStock: initialStock.map(
+      (k, v) => MapEntry(k, StockLot(qty: v.qty, cost: v.cost)),
+    ),
+    expenses: List<ExpenseRecord>.from(expenses),
+  );
 }

@@ -2,7 +2,10 @@ import 'dart:math' as math;
 
 import 'package:app/domain/models.dart';
 import 'package:app/domain/order_calc.dart';
+import 'package:app/domain/pos_repository.dart';
 import 'package:app/domain/roles.dart';
+
+export 'package:app/domain/pos_repository.dart';
 
 int _idCounter = 0;
 
@@ -11,14 +14,6 @@ String _genUid(String prefix, DateTime now) {
   final ts = now.millisecondsSinceEpoch.toRadixString(36);
   final tail = ts.length > 4 ? ts.substring(ts.length - 4) : ts;
   return '$prefix$tail${_idCounter.toRadixString(36).padLeft(4, '0')}';
-}
-
-/// Finds the currently open shift (`openShiftOf` in `prototype/index.html`).
-ShiftRecord? openShiftOf(PosState s) {
-  for (final sh in s.shifts) {
-    if (sh.closedAt == null) return sh;
-  }
-  return null;
 }
 
 /// Deducts (or restores when negative) addon stock (`takeStock` in JS).

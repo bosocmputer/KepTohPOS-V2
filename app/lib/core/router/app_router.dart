@@ -1,21 +1,71 @@
+import 'dart:async';
+
 import 'package:app/core/layout/app_shell.dart';
 import 'package:app/core/theme/app_theme.dart';
 import 'package:app/core/theme/tokens.dart';
+import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/dev_components_page.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/roles.dart';
+import 'package:app/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:app/features/auth/presentation/pages/login_page.dart';
+import 'package:app/features/shift/presentation/bloc/shift_bloc.dart';
+import 'package:app/features/shift/presentation/pages/shift_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+class _StreamRefreshListenable extends ChangeNotifier {
+  new(Stream<dynamic> stream) {
+    _sub = stream.listen((_) => notifyListeners());
+  }
+
+  late final StreamSubscription<dynamic> _sub;
+
+  @override
+  void dispose() {
+    unawaited(_sub.cancel());
+    super.dispose();
+  }
+}
+
 /// Creates the application [GoRouter] with routes matching `VIEWS`:
-/// `/tables`, `/bills`, `/stock`, `/shift`, `/dashboard`, `/reports`, `/setup`
-/// plus debug-only `/dev/components`.
-GoRouter createAppRouter({String initialLocation = '/tables'}) => GoRouter(
+/// `/login`, `/tables`, `/bills`, `/stock`, `/shift`, `/dashboard`,
+/// `/reports`, `/setup`, plus debug-only `/dev/components`.
+/// Enforces authentication and role-based route redirection.
+GoRouter createAppRouter({
+  String initialLocation = '/tables',
+  AuthCubit? authCubit,
+}) => GoRouter(
   initialLocation: initialLocation,
+  refreshListenable: authCubit != null
+      ? _StreamRefreshListenable(authCubit.stream)
+      : null,
+  redirect: (context, state) {
+    if (authCubit == null) return null;
+    final me = authCubit.state.currentStaff;
+    final loc = state.matchedLocation;
+    if (me == null) {
+      if (loc != '/login' && loc != '/dev/components') return '/login';
+      return null;
+    }
+    if (loc == '/login') return '/tables';
+    final viewId = loc.startsWith('/') ? loc.substring(1) : loc;
+    if (viewId.isNotEmpty &&
+        viewId != 'dev/components' &&
+        !canAccessViewId(me.role, viewId)) {
+      return '/tables';
+    }
+    return null;
+  },
   routes: <RouteBase>[
     GoRoute(path: '/', redirect: (_, _) => '/tables'),
+    GoRoute(
+      path: '/login',
+      builder: (context, state) =>
+          LoginPage(onLoggedIn: () => context.go('/tables')),
+    ),
     for (final view in kAppViews)
       GoRoute(
         path: '/${view.id}',
@@ -29,10 +79,10 @@ GoRouter createAppRouter({String initialLocation = '/tables'}) => GoRouter(
   ],
 );
 
-/// F2 placeholder screen for each `VIEWS` route wrapped in [AppShell].
-/// `/tables` (and other non-setup placeholder pages) shows only [PageHeader] +
-/// [Empty] state; `/setup` includes the theme mode selector section.
-class ShellPlaceholderPage extends StatelessWidget {
+/// Screen wrapper for each `VIEWS` route inside [AppShell].
+/// Renders [ShiftPage] for `/shift`, theme settings for `/setup`, and
+/// placeholder content for upcoming features.
+class ShellPlaceholderPage extends StatefulWidget {
   const new({
     required this.viewSpec,
     super.key,
@@ -45,21 +95,70 @@ class ShellPlaceholderPage extends StatelessWidget {
   final bool initialDrawerOpen;
 
   @override
+  State<ShellPlaceholderPage> createState() => _ShellPlaceholderPageState();
+}
+
+class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
+  bool _manualOpenShiftModal = false;
+
+  AuthCubit? _maybeAuthCubit(BuildContext context) {
+    try {
+      return context.watch<AuthCubit>();
+    } on Object {
+      return null;
+    }
+  }
+
+  ShiftBloc? _maybeShiftBloc(BuildContext context) {
+    try {
+      return context.watch<ShiftBloc>();
+    } on Object {
+      return null;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final isSetup = viewSpec.id == 'setup';
+    final authCubit = _maybeAuthCubit(context);
+    final shiftBloc = _maybeShiftBloc(context);
+    final me = authCubit?.state.currentStaff;
+    final activeShift = shiftBloc?.state.activeShift;
 
-    return AppShell(
-      activeViewId: viewSpec.id,
-      staffRole: staffRole,
-      initialDrawerOpen: initialDrawerOpen,
-      onNavigate: (viewId) => context.go('/$viewId'),
-      child: SingleChildScrollView(
+    final effectiveStaffId = me?.id ?? 'st1';
+    final effectiveStaffName = me?.name ?? 'พี่ต้อม (เจ้าของร้าน)';
+    final effectiveRole = me?.role ?? widget.staffRole;
+    final shiftTimeText = shiftBloc != null
+        ? (activeShift != null ? thTime(activeShift.openedAt) : null)
+        : '09:00';
+    final shiftStaffName = shiftBloc != null && activeShift != null
+        ? shiftBloc.state.staffNameOf(activeShift.staffId)
+        : effectiveStaffName;
+
+    final showOpenShiftModal =
+        shiftBloc != null &&
+        activeShift == null &&
+        ((authCubit?.state.shouldPromptOpenShift ?? false) ||
+            _manualOpenShiftModal);
+
+    final Widget body;
+    if (widget.viewSpec.id == 'shift' && shiftBloc != null) {
+      body = ShiftPage(
+        staffId: effectiveStaffId,
+        staffName: effectiveStaffName,
+        onGoTables: () => context.go('/tables'),
+      );
+    } else {
+      final isSetup = widget.viewSpec.id == 'setup';
+      body = SingleChildScrollView(
         padding: const EdgeInsets.all(AppDimensions.space6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            PageHeader(title: viewSpec.title, desc: 'ร้านหมูกระทะ เก็บโต๊ะ'),
+            PageHeader(
+              title: widget.viewSpec.title,
+              desc: 'ร้านหมูกระทะ เก็บโต๊ะ',
+            ),
             if (isSetup) ...[
               const SizedBox(height: AppDimensions.space5),
               const _SetupThemeSection(),
@@ -72,14 +171,50 @@ class ShellPlaceholderPage extends StatelessWidget {
                 border: Border.all(color: tokens.line),
               ),
               child: Empty(
-                title: viewSpec.title,
+                title: widget.viewSpec.title,
                 text:
-                    'หน้าจอ ${viewSpec.label} (เตรียมเชื่อมข้อมูลในขั้นถัดไป)',
+                    'หน้าจอ ${widget.viewSpec.label} '
+                    '(เตรียมเชื่อมข้อมูลในขั้นถัดไป)',
               ),
             ),
           ],
         ),
-      ),
+      );
+    }
+
+    return Stack(
+      children: [
+        AppShell(
+          activeViewId: widget.viewSpec.id,
+          staffName: effectiveStaffName,
+          staffRole: effectiveRole,
+          shiftOpenTimeText: shiftTimeText,
+          shiftStaffName: shiftStaffName,
+          initialDrawerOpen: widget.initialDrawerOpen,
+          onNavigate: (viewId) => context.go('/$viewId'),
+          onShiftAction: () {
+            if (activeShift != null) {
+              context.go('/shift');
+            } else {
+              setState(() => _manualOpenShiftModal = true);
+            }
+          },
+          onLogout: () {
+            authCubit?.logout();
+            context.go('/login');
+          },
+          child: body,
+        ),
+        if (showOpenShiftModal)
+          OpenShiftModal(
+            staffId: effectiveStaffId,
+            staffName: effectiveStaffName,
+            onClose: () {
+              setState(() => _manualOpenShiftModal = false);
+              authCubit?.dismissOpenShiftPrompt();
+            },
+          ),
+      ],
     );
   }
 }
