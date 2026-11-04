@@ -29,7 +29,7 @@
 
 **สูตร/logic ที่ต้อง port:** `calcOrder` (ปัดเศษ, VAT none/included/excluded) · `tableTotals` · `mergeTotals` · `orderOf` · `tableDue` · `tableTimer` · `sendRound` · `adjustSent` · `sentLines` · `settle` · `computeLedger` (ต้นทุนเฉลี่ย/ล่าสุด, ประมาณจากนับรายสัปดาห์+ปรับยอด, หัวเด็ก 0.5, กำไรสุทธิ) · `seed()` (ประวัติ 30 วัน) · บทบาท `ROLE` และสิทธิ์เมนู
 
-**ธีม:** `theme.css` = 2 ชั้น (palette ดิบ `--figma-*`/`--team-*` → token ความหมาย `--primary`, `--surface`, `--ink` …) · 2 แบรนด์ × light/dark
+**ธีม:** `theme.css` = 2 ชั้น (palette ดิบ `--figma-*`/`--team-*` → token ความหมาย `--primary`, `--surface`, `--ink` …) · **ใช้แบรนด์เดียวคือ `figma`** (ตัด `team` ทิ้ง) · โหมด **สว่าง / มืด / ตามเครื่อง (auto)** ให้ผู้ใช้เลือกได้
 
 **Responsive (ต้องเหมือน prototype):**
 | ความกว้าง | layout |
@@ -60,7 +60,7 @@ app/
   lib/
     main.dart · app.dart          ← MaterialApp.router + BlocProviders ระดับแอป
     core/
-      theme/                      ← tokens.dart (แปลงจาก theme.css), app_theme.dart (2 แบรนด์ × light/dark)
+      theme/                      ← tokens.dart (แปลงจาก theme.css), app_theme.dart (แบรนด์ figma × light/dark/auto)
       widgets/                    ← component กลาง 1 ไฟล์ต่อ 1 component (ข้อ 4)
       layout/                     ← AppShell responsive (sidebar / rail+drawer / bottom nav)
       router/ · di/ · utils/      ← utils: baht(), fmtQ(), วันที่ไทย
@@ -86,7 +86,7 @@ app/
 ## 5. ขั้นงาน (1 ขั้น = 1 PR, ทำตามลำดับ)
 | # | งาน | เสร็จเมื่อ |
 |---|---|---|
-| F0 | สร้าง `app/` + package ข้อ 2 + โครงข้อ 3 + `tokens.dart`/`app_theme.dart` จาก `theme.css` + แปลง `mock-data.js` → `assets/mock/*.json` | `flutter analyze` 0 issue, แอปเปิดหน้าว่างได้, สลับธีม/แบรนด์ได้ |
+| F0 | สร้าง `app/` + package ข้อ 2 + โครงข้อ 3 + `tokens.dart`/`app_theme.dart` จาก `theme.css` + แปลง `mock-data.js` → `assets/mock/*.json` | `flutter analyze` 0 issue, แอปเปิดหน้าว่างได้, สลับโหมดสว่าง/มืด/auto ได้ |
 | F1 | port สูตรใน `lib/domain/` + model + unit test (ตัวเลขคาดหวังได้จากการรันฟังก์ชัน JS เดิมใน prototype) | unit test ผ่านทั้งหมด ตัวเลขตรง JS |
 | F2 | component กลางข้อ 4 (กลุ่ม Layout/Input/Display/Overlay) + `AppShell` responsive 3 แบบ + router | widget test ของแต่ละ component + golden ของ shell 3 ขนาด |
 | F3 | Login (PIN) + กะ (เปิด/ปิด) + สิทธิ์ตามบทบาท | flow login → เปิดกะ → เห็นเมนูตามสิทธิ์ |
@@ -102,6 +102,7 @@ app/
 ## 6. สิ่งที่ตัดสินใจแล้ว
 - โค้ดอยู่ `app/` ใน repo นี้ · พัฒนาบนเครื่อง local ของผู้ใช้ (Flutter พร้อมแล้ว)
 - UI/UX ตาม prototype · ไม่ใช้ Figma
+- ธีม: แบรนด์ `figma` อย่างเดียว · โหมดสว่าง/มืด/auto · หมวด "ธีมและการแสดงผล" ในตั้งค่า เหลือแค่เลือกโหมด
 - BLoC/Cubit + Repository + go_router + get_it · ข้อมูล mock JSON เก็บในหน่วยความจำ (เปิดแอปใหม่ = เริ่มจาก mock)
 
 ## 7. ภาพรวมระยะยาว (บันทึกไว้เป็นทิศทาง — **ไม่อยู่ในขอบเขต F0–F9 ห้ามเขียนโค้ดเผื่อ**)
