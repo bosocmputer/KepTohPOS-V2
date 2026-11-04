@@ -166,6 +166,7 @@ class _StockExpenseTabState extends State<StockExpenseTab> {
                 ],
                 footerCells: [
                   const Text('รวม'),
+                  const SizedBox.shrink(),
                   SizedBox(
                     width: double.infinity,
                     child: Text(
@@ -174,6 +175,7 @@ class _StockExpenseTabState extends State<StockExpenseTab> {
                       textAlign: TextAlign.right,
                     ),
                   ),
+                  if (canManage) const SizedBox.shrink(),
                 ],
               ),
             ],

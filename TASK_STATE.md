@@ -15,5 +15,6 @@
     - Implemented `StockCountBloc` (`app/lib/features/stock/presentation/bloc/`) and `StockCubit` (`app/lib/features/stock/presentation/cubit/`), scoped to `/stock` route in `app/lib/core/router/app_router.dart` (created fresh on entering `/stock`, never held at app root).
     - Built `StockPage`, `StockCountTab`, `StockCountNumPadPanel`, `StockPurchaseTab`, `PurchaseModal`, `StockExpenseTab`, `ExpenseModal`, `StockBalanceTab`, and `StockFilterDrawer` (reusing shared `RightSheetDrawer` and `AppToastService`).
     - Added JS parity unit tests (`stock_ops_test.dart`), BLoC tests (`stock_bloc_test.dart`), widget flow tests (`stock_flow_test.dart`), and golden tests (`stock_golden_test.dart` at `1024x768` and `1366x1024`).
+    - Polished `/stock` UI based on iPad `1024x768` screen audit: removed `"แสดงทุกรายการ"` toggle so all 15 ingredients are always displayed in `StockCountTab`, tightened `StockCountNumPadPanel` spacing, fixed `Field` empty-label height & `Dropdown` compact height in `PurchaseModal` / `ExpenseModal`, aligned `Modal` footer totals to the left via `footerLeading`, aligned `StockExpenseTab` footer total under the `ยอด` column, and expanded `Seg` full-width in `StockFilterDrawer`.
 - **In Progress / Broken:** None.
 - **Next Immediate Step:** Proceed to Step F7 (`/dashboard`, `/reports`, `/setup`) per `docs/llms/flutter-plan.md`.

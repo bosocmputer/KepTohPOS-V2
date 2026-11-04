@@ -67,54 +67,14 @@ class _StockCountTabState extends State<StockCountTab> {
               borderRadius: BorderRadius.circular(AppDimensions.r),
               border: Border.all(color: state.isClosed ? t.primary : t.line),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    state.isClosed
-                        ? 'ปิดยอดแล้ว · แก้ตัวเลขแล้วกดบันทึกได้'
-                        : 'แตะรายการแล้วป้อนจำนวนที่เหลือ · '
-                              'Enter = รายการถัดไป',
-                    style: tt.bodyMedium?.copyWith(
-                      color: state.isClosed ? t.primaryInk : t.ink,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                InkWell(
-                  key: const ValueKey('stock-count-show-all'),
-                  onTap: () => bloc.add(
-                    StockCountShowAllToggled(showAll: !state.showAll),
-                  ),
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.space2,
-                      vertical: AppDimensions.space1,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          state.showAll
-                              ? Icons.check_box
-                              : Icons.check_box_outline_blank,
-                          size: 18,
-                          color: state.showAll ? t.primary : t.muted,
-                        ),
-                        const SizedBox(width: AppDimensions.space1_5),
-                        Text(
-                          'แสดงทุกรายการ',
-                          style: tt.bodySmall?.copyWith(
-                            color: t.ink,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+            child: Text(
+              state.isClosed
+                  ? 'ปิดยอดแล้ว · แก้ตัวเลขแล้วกดบันทึกได้'
+                  : 'แตะรายการแล้วป้อนจำนวนที่เหลือ · Enter = รายการถัดไป',
+              style: tt.bodyMedium?.copyWith(
+                color: state.isClosed ? t.primaryInk : t.ink,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           if (state.skippedWeeklyCount > 0) ...[

@@ -88,6 +88,7 @@ class StockFilterDrawer extends StatelessWidget {
           Seg<String>(
             key: const ValueKey('stock-filter-status-seg'),
             value: state.statusFilter,
+            expanded: true,
             onChanged: onStatusChanged,
             items: const <SegItem<String>>[
               SegItem(value: 'all', label: 'ทั้งหมด'),
@@ -140,7 +141,7 @@ class _LocationCheckTile extends StatelessWidget {
                 color: checked ? t.primary : t.surface,
                 borderRadius: BorderRadius.circular(4),
                 border: Border.all(
-                  color: checked ? t.primary : t.line,
+                  color: checked ? t.primary : t.muted,
                   width: 1.5,
                 ),
               ),

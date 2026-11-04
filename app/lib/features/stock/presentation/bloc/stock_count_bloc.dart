@@ -15,7 +15,6 @@ class StockCountBloc extends Bloc<StockCountEvent, StockCountState> {
       super(_initialState(repository, now)) {
     on<StockCountRepositoryUpdated>(_onRepositoryUpdated);
     on<StockCountDateChanged>(_onDateChanged);
-    on<StockCountShowAllToggled>(_onShowAllToggled);
     on<StockCountItemSelected>(_onItemSelected);
     on<StockCountValueChanged>(_onValueChanged);
     on<StockCountNextPressed>(_onNextPressed);
@@ -83,17 +82,9 @@ class StockCountBloc extends Bloc<StockCountEvent, StockCountState> {
         selectedDate: event.date,
         draft: null,
         activeId: null,
-        showAll: false,
         padOpen: false,
       ),
     );
-  }
-
-  void _onShowAllToggled(
-    StockCountShowAllToggled event,
-    Emitter<StockCountState> emit,
-  ) {
-    emit(state.copyWith(showAll: event.showAll));
   }
 
   void _onItemSelected(
@@ -129,10 +120,18 @@ class StockCountBloc extends Bloc<StockCountEvent, StockCountState> {
     if (idx < 0) return;
     final after = order.sublist(idx + 1);
     final vals = state.values;
+    final nextEmptyDue = after
+        .where(
+          (x) =>
+              isIngredientDue(state.posState, x, state.selectedDate) &&
+              (vals[x.id] ?? '').isEmpty,
+        )
+        .firstOrNull;
     final nextEmpty = after
         .where((x) => (vals[x.id] ?? '').isEmpty)
         .firstOrNull;
-    final nextItem = nextEmpty ?? (after.isNotEmpty ? after.first : null);
+    final nextItem =
+        nextEmptyDue ?? nextEmpty ?? (after.isNotEmpty ? after.first : null);
     if (nextItem != null) {
       emit(state.copyWith(activeId: nextItem.id));
     }

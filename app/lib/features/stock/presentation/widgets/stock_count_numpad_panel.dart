@@ -143,7 +143,7 @@ class StockCountNumPadPanel extends StatelessWidget {
                   ],
                 ),
                 if (showPad) ...[
-                  const SizedBox(height: AppDimensions.space3),
+                  const SizedBox(height: AppDimensions.space2_5),
                   Center(
                     child: NumPad(
                       key: ValueKey('stock-count-numpad-${curIng.id}'),
@@ -152,16 +152,20 @@ class StockCountNumPadPanel extends StatelessWidget {
                       maxDecimalPlaces: 1,
                       maxLen: 7,
                       keyboard: true,
-                      keyHeight: AppDimensions.numPadKeyCompactH,
+                      keyHeight: 50,
+                      rowGap: AppDimensions.space1_5,
                       onChanged: (v) => bloc.add(StockCountValueChanged(v)),
                       onEnter: (_) => bloc.add(const StockCountNextPressed()),
                     ),
                   ),
                 ],
                 if (!isMobile) const Spacer(),
-                const SizedBox(height: AppDimensions.space3),
+                const SizedBox(height: AppDimensions.space2),
                 Container(
-                  padding: const EdgeInsets.all(AppDimensions.space3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.space3,
+                    vertical: AppDimensions.space2_5,
+                  ),
                   decoration: BoxDecoration(
                     color: t.surface2,
                     borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
@@ -196,7 +200,7 @@ class StockCountNumPadPanel extends StatelessWidget {
                         ],
                       ),
                       if (state.hasDraft) ...[
-                        const SizedBox(height: AppDimensions.space2),
+                        const SizedBox(height: AppDimensions.space1_5),
                         Btn(
                           key: const ValueKey('stock-count-cancel-draft-btn'),
                           kind: BtnKind.ghost,
@@ -208,7 +212,7 @@ class StockCountNumPadPanel extends StatelessWidget {
                         ),
                       ],
                       if (state.isClosed && !state.hasDraft && canReopen) ...[
-                        const SizedBox(height: AppDimensions.space2),
+                        const SizedBox(height: AppDimensions.space1_5),
                         Btn(
                           key: const ValueKey('stock-count-reopen-btn'),
                           kind: BtnKind.ghost,
@@ -222,7 +226,7 @@ class StockCountNumPadPanel extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: AppDimensions.space3),
+                const SizedBox(height: AppDimensions.space2),
                 Btn(
                   key: const ValueKey('stock-count-next-btn'),
                   block: true,

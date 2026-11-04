@@ -10,6 +10,7 @@ class Modal extends StatelessWidget {
     super.key,
     this.sub,
     this.onClose,
+    this.footerLeading,
     this.footer = const <Widget>[],
     this.wide = false,
   });
@@ -18,6 +19,7 @@ class Modal extends StatelessWidget {
   final String? sub;
   final VoidCallback? onClose;
   final Widget child;
+  final Widget? footerLeading;
   final List<Widget> footer;
   final bool wide;
 
@@ -95,7 +97,7 @@ class Modal extends StatelessWidget {
                   child: child,
                 ),
               ),
-              if (footer.isNotEmpty)
+              if (footer.isNotEmpty || footerLeading != null)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppDimensions.space5,
@@ -105,12 +107,25 @@ class Modal extends StatelessWidget {
                     color: tokens.surface2,
                     border: Border(top: BorderSide(color: tokens.line)),
                   ),
-                  child: Wrap(
-                    alignment: WrapAlignment.end,
-                    spacing: AppDimensions.space2_5,
-                    runSpacing: AppDimensions.space2,
-                    children: footer,
-                  ),
+                  child: footerLeading != null
+                      ? Row(
+                          children: [
+                            Expanded(child: footerLeading!),
+                            const SizedBox(width: AppDimensions.space3),
+                            Wrap(
+                              alignment: WrapAlignment.end,
+                              spacing: AppDimensions.space2_5,
+                              runSpacing: AppDimensions.space2,
+                              children: footer,
+                            ),
+                          ],
+                        )
+                      : Wrap(
+                          alignment: WrapAlignment.end,
+                          spacing: AppDimensions.space2_5,
+                          runSpacing: AppDimensions.space2,
+                          children: footer,
+                        ),
                 ),
             ],
           ),

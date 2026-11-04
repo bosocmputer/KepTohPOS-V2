@@ -108,17 +108,14 @@ class _ExpenseModalState extends State<ExpenseModal> {
                   : 'บันทึกค่าใช้จ่าย · ${thDateShort(widget.date)}',
               sub: 'ค่าใช้จ่ายที่ไม่เข้าสต็อก ใช้หักกำไรสุทธิ',
               onClose: widget.onClose,
-              footer: [
-                Padding(
-                  padding: const EdgeInsets.only(right: AppDimensions.space3),
-                  child: Text(
-                    'รวม ${baht(modalTotal)}',
-                    style: tt.titleLarge?.copyWith(
-                      color: t.ink,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+              footerLeading: Text(
+                'รวม ${baht(modalTotal)}',
+                style: tt.titleLarge?.copyWith(
+                  color: t.ink,
+                  fontWeight: FontWeight.w700,
                 ),
+              ),
+              footer: [
                 Btn(
                   key: const ValueKey('expense-modal-cancel-btn'),
                   label: 'ยกเลิก',
@@ -198,7 +195,7 @@ class _ExpenseModalState extends State<ExpenseModal> {
                           ),
                           if (widget.editId == null && _lines.length > 1)
                             Padding(
-                              padding: EdgeInsets.only(top: i == 0 ? 22 : 4),
+                              padding: EdgeInsets.only(top: i == 0 ? 25 : 0),
                               child: Btn(
                                 kind: BtnKind.ghost,
                                 icon: 'trash',

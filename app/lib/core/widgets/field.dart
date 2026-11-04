@@ -17,15 +17,17 @@ class Field extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          label,
-          style: textTheme.bodySmall?.copyWith(
-            color: tokens.muted,
-            fontSize: AppDimensions.fsSm,
-            fontWeight: FontWeight.w600,
+        if (label.isNotEmpty) ...[
+          Text(
+            label,
+            style: textTheme.bodySmall?.copyWith(
+              color: tokens.muted,
+              fontSize: AppDimensions.fsSm,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-        const SizedBox(height: AppDimensions.space1_5),
+          const SizedBox(height: AppDimensions.space1_5),
+        ],
         child,
         if (hint != null && hint!.isNotEmpty) ...[
           const SizedBox(height: AppDimensions.space1_5),

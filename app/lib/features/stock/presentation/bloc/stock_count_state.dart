@@ -38,16 +38,6 @@ final class StockCountDateChanged extends StockCountEvent {
   List<Object?> get props => <Object?>[date];
 }
 
-/// Toggles showing all ingredients vs only due/counted ingredients.
-final class StockCountShowAllToggled extends StockCountEvent {
-  const new({required this.showAll});
-
-  final bool showAll;
-
-  @override
-  List<Object?> get props => <Object?>[showAll];
-}
-
 /// Selects a specific ingredient row for keypad input.
 final class StockCountItemSelected extends StockCountEvent {
   const new(this.ingredientId);
@@ -118,7 +108,6 @@ class StockCountState extends Equatable {
     required this.todayDate,
     required this.selectedDate,
     this.draft,
-    this.showAll = false,
     this.activeId,
     this.padOpen = false,
     this.toastMessage = '',
@@ -129,7 +118,6 @@ class StockCountState extends Equatable {
   final String todayDate;
   final String selectedDate;
   final Map<String, String>? draft;
-  final bool showAll;
   final String? activeId;
   final bool padOpen;
   final String toastMessage;
@@ -166,21 +154,9 @@ class StockCountState extends Equatable {
   int get skippedWeeklyCount =>
       posState.ingredients.length - dueIngredients.length;
 
-  /// Visible ingredients grouped by storage location (`groups` in
-  /// `index.html`).
-  List<MapEntry<String, List<IngredientItem>>> get locationGroups {
-    final vals = values;
-    final visible = showAll
-        ? posState.ingredients
-        : posState.ingredients
-              .where(
-                (i) =>
-                    isIngredientDue(posState, i, selectedDate) ||
-                    (vals[i.id] ?? '').isNotEmpty,
-              )
-              .toList();
-    return groupIngredientsByLocation(visible);
-  }
+  /// All ingredients grouped by storage location (`groups` in `index.html`).
+  List<MapEntry<String, List<IngredientItem>>> get locationGroups =>
+      groupIngredientsByLocation(posState.ingredients);
 
   /// Flattened display order of visible ingredients (`order` in `index.html`).
   List<IngredientItem> get orderedIngredients => <IngredientItem>[
@@ -195,10 +171,17 @@ class StockCountState extends Equatable {
       return activeId;
     }
     final vals = values;
+    final firstEmptyDue = order
+        .where(
+          (i) =>
+              isIngredientDue(posState, i, selectedDate) &&
+              (vals[i.id] ?? '').isEmpty,
+        )
+        .firstOrNull;
     final firstEmpty = order
         .where((i) => (vals[i.id] ?? '').isEmpty)
         .firstOrNull;
-    return (firstEmpty ?? order.first).id;
+    return (firstEmptyDue ?? firstEmpty ?? order.first).id;
   }
 
   /// Effective active [IngredientItem] (`curIng` in `index.html:1375`).
@@ -258,7 +241,6 @@ class StockCountState extends Equatable {
     String? todayDate,
     String? selectedDate,
     Object? draft = _unset,
-    bool? showAll,
     Object? activeId = _unset,
     bool? padOpen,
     String? toastMessage,
@@ -270,7 +252,6 @@ class StockCountState extends Equatable {
     draft: identical(draft, _unset)
         ? this.draft
         : draft as Map<String, String>?,
-    showAll: showAll ?? this.showAll,
     activeId: identical(activeId, _unset) ? this.activeId : activeId as String?,
     padOpen: padOpen ?? this.padOpen,
     toastMessage: toastMessage ?? this.toastMessage,
@@ -283,7 +264,6 @@ class StockCountState extends Equatable {
     todayDate,
     selectedDate,
     draft,
-    showAll,
     activeId,
     padOpen,
     toastMessage,

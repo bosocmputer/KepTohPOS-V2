@@ -138,18 +138,15 @@ class _PurchaseModalState extends State<PurchaseModal> {
               title: widget.editId == null ? 'รับของเข้า' : 'แก้ไขบิลซื้อของ',
               sub: 'ใส่จำนวนและยอดเงินตามบิล ระบบคิดราคาต่อหน่วยให้',
               onClose: widget.onClose,
-              footer: [
-                Padding(
-                  padding: const EdgeInsets.only(right: AppDimensions.space3),
-                  child: Text(
-                    'รวม ${baht(_total, 2)}',
-                    key: const ValueKey('purchase-modal-total'),
-                    style: tt.titleLarge?.copyWith(
-                      color: t.ink,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+              footerLeading: Text(
+                'รวม ${baht(_total, 2)}',
+                key: const ValueKey('purchase-modal-total'),
+                style: tt.titleLarge?.copyWith(
+                  color: t.ink,
+                  fontWeight: FontWeight.w700,
                 ),
+              ),
+              footer: [
                 Btn(
                   key: const ValueKey('purchase-modal-cancel-btn'),
                   label: 'ยกเลิก',
@@ -354,7 +351,7 @@ class _PurchaseModalState extends State<PurchaseModal> {
           ),
           const SizedBox(width: AppDimensions.space2),
           Padding(
-            padding: EdgeInsets.only(top: index == 0 ? 22 : 4),
+            padding: EdgeInsets.only(top: index == 0 ? 25 : 0),
             child: Btn(
               key: ValueKey('purchase-line-del-$index'),
               kind: BtnKind.ghost,
