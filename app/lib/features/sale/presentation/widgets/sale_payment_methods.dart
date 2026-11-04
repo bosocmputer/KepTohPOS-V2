@@ -93,7 +93,10 @@ class CashPaymentSection extends StatelessWidget {
               key: const ValueKey('cash-change-amount'),
               recv >= total || recv == 0
                   ? baht(state.cashChange, state.cashChange % 1 != 0 ? 2 : 0)
-                  : baht(total - recv, 2),
+                  : baht(
+                      state.cashShortage,
+                      state.cashShortage % 1 != 0 ? 2 : 0,
+                    ),
               style: tt.titleLarge?.copyWith(
                 color: recv > 0 && recv < total ? t.danger : t.success,
                 fontWeight: FontWeight.w700,

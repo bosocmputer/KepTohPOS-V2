@@ -193,6 +193,14 @@ class PaymentPicker extends StatelessWidget {
   final String value;
   final ValueChanged<String> onChanged;
 
+  static String _shortMethodLabel(PaymentMethod m) {
+    final name = m.name.trim();
+    if (name == 'โอนเข้าบัญชีร้าน' || name.startsWith('โอนเข้าบัญชี')) {
+      return 'โอนเงิน';
+    }
+    return name;
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
@@ -231,9 +239,9 @@ class PaymentPicker extends StatelessWidget {
                       ),
                       const SizedBox(height: AppDimensions.space1),
                       Text(
-                        active[i].name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        _shortMethodLabel(active[i]),
+                        maxLines: 2,
+                        textAlign: TextAlign.center,
                         style: tt.labelSmall?.copyWith(
                           color: active[i].id == value ? t.primaryInk : t.ink,
                           fontWeight: active[i].id == value

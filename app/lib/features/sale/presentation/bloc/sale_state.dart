@@ -125,6 +125,9 @@ class SaleState extends Equatable {
 
   double get cashChange => math.max(0, r2(cashReceivedAmount - payOrder.total));
 
+  double get cashShortage =>
+      math.max(0, r2(payOrder.total - cashReceivedAmount));
+
   bool get canConfirmPayment {
     final m = activePaymentMethod;
     if (m == null || !canPay || openShiftOf(posState) == null) return false;
