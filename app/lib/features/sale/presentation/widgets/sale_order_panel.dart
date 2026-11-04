@@ -132,7 +132,13 @@ class SaleOrderPanel extends StatelessWidget {
                 name: l.name,
                 sub: l.price > 0 ? baht(l.price) : 'ฟรี',
                 qty: l.qty,
-                icon: l.kind == 'pkg' ? 'package' : 'drink',
+                icon: AppIcons.forLineKind(
+                  l.kind,
+                  addonCategory: s.addons
+                      .where((a) => a.id == l.key)
+                      .map((a) => a.category)
+                      .firstOrNull,
+                ),
                 removeLabel: 'ลบ ${l.name}',
                 removeOff: !canVoid,
                 onRemove: () => onOpenRemoveModal('${l.kind}:${l.key}'),
