@@ -47,10 +47,7 @@ class SaleOrderPanel extends StatelessWidget {
     final totalTxt = baht(payOrder.total, payOrder.total % 1 != 0 ? 2 : 0);
     final sentRows = state.sentRows;
     final canVoid = staff.role != 'cashier';
-    final activeMethods = s.payments.where((m) => m.active).toList();
-    final methodId =
-        selectedMethodId ??
-        (activeMethods.isNotEmpty ? activeMethods.first.id : 'pm1');
+    final methodId = selectedMethodId ?? state.activePaymentMethod?.id ?? 'pm1';
 
     final tableOpts = s.tables.map((x) {
       final ot = s.openTables[x.id];
@@ -103,9 +100,7 @@ class SaleOrderPanel extends StatelessWidget {
             onChanged: (v) => bloc.add(SaleHeadsChanged(f: v)),
           ),
           if (cartAddons.isNotEmpty) ...[
-            const SizedBox(height: AppDimensions.space3),
-            Divider(color: t.line, height: 1),
-            const SizedBox(height: AppDimensions.space3),
+            Divider(color: t.line, height: AppDimensions.space6),
             Text(
               timing == 'after'
                   ? 'รายการใหม่ (ยังไม่ส่ง)'
@@ -125,9 +120,7 @@ class SaleOrderPanel extends StatelessWidget {
               ),
           ],
           if (sentRows.isNotEmpty) ...[
-            const SizedBox(height: AppDimensions.space3),
-            Divider(color: t.line, height: 1),
-            const SizedBox(height: AppDimensions.space3),
+            Divider(color: t.line, height: AppDimensions.space6),
             Text(
               'ส่งออเดอร์แล้ว · รอชำระ',
               style: tt.titleMedium?.copyWith(color: t.ink),
@@ -213,25 +206,14 @@ class SaleOrderPanel extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (note.isNotEmpty) ...[
-                  const SizedBox(height: AppDimensions.space2),
-                  Row(
-                    children: [
-                      AppIcon(
-                        'edit',
-                        size: AppDimensions.iconXs,
-                        color: t.muted,
-                      ),
-                      const SizedBox(width: AppDimensions.space1_5),
-                      Expanded(
-                        child: Text(
-                          note,
-                          style: tt.labelSmall?.copyWith(color: t.muted),
-                        ),
-                      ),
-                    ],
+                if (note.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppDimensions.space2),
+                    child: Text(
+                      '✎ $note',
+                      style: tt.labelSmall?.copyWith(color: t.muted),
+                    ),
                   ),
-                ],
               ],
             ),
           ),
@@ -279,7 +261,9 @@ class SaleOrderPanel extends StatelessWidget {
                 PaymentPicker(
                   methods: s.payments,
                   value: methodId,
-                  onChanged: onSelectMethod ?? (_) {},
+                  onChanged:
+                      onSelectMethod ??
+                      (id) => bloc.add(SalePaymentMethodSelected(id)),
                 ),
                 const SizedBox(height: AppDimensions.space3),
                 if (timing == 'after') ...[
@@ -304,7 +288,9 @@ class SaleOrderPanel extends StatelessWidget {
                   block: true,
                   icon: 'receipt',
                   disabled: !state.canPay,
-                  onPressed: onPayPressed ?? () {},
+                  onPressed:
+                      onPayPressed ??
+                      () => bloc.add(const SalePaymentStepChanged('pay')),
                 ),
               ],
             ),

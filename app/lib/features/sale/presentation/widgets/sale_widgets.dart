@@ -56,8 +56,7 @@ class PeopleRow extends StatelessWidget {
   }
 }
 
-/// Order item row inside the Order Panel (`const OrderLine` in
-/// `prototype/index.html` & `design/figma/cashier.png`).
+/// Order item row inside the Order Panel (`const OrderLine`).
 class OrderLine extends StatelessWidget {
   const new({
     required this.name,
@@ -181,8 +180,7 @@ class OrderLine extends StatelessWidget {
   }
 }
 
-/// Selectable payment method cards (`const PaymentPicker` in
-/// `prototype/index.html` & `design/figma/cashier.png`).
+/// Selectable payment method cards (`const PaymentPicker`).
 class PaymentPicker extends StatelessWidget {
   const new({
     required this.methods,
@@ -291,43 +289,35 @@ class OrderSummary extends StatelessWidget {
               )
             else
               for (final l in order.lines)
-                _SummaryRow('${l.name} × ${l.qty}', baht(l.qty * l.price)),
-          if (order.subtotal > 0) _SummaryRow('ยอดรวม', baht(order.subtotal)),
+                _row(context, '${l.name} × ${l.qty}', baht(l.qty * l.price)),
+          if (order.subtotal > 0) _row(context, 'ยอดรวม', baht(order.subtotal)),
           if (order.service > 0)
-            _SummaryRow(
+            _row(
+              context,
               'ค่าบริการ ${fmtQ(shop.servicePct)}%',
               baht(order.service, 2),
             ),
           if (shop.vatMode == 'excluded' && order.vat > 0)
-            _SummaryRow('VAT 7%', baht(order.vat, 2)),
+            _row(context, 'VAT 7%', baht(order.vat, 2)),
           if (order.rounding != 0)
-            _SummaryRow('ปัดเศษ', baht(order.rounding, 2)),
+            _row(context, 'ปัดเศษ', baht(order.rounding, 2)),
           if (!noTotal) ...[
-            const SizedBox(height: AppDimensions.space2),
-            Divider(color: t.line, height: 1),
-            const SizedBox(height: AppDimensions.space2),
-            _SummaryRow(
+            Divider(color: t.line, height: AppDimensions.space4),
+            _row(
+              context,
               'ยอดชำระ',
               baht(order.total, order.total % 1 != 0 ? 2 : 0),
-              highlight: true,
+              hi: true,
             ),
           ],
         ],
       ),
     );
   }
-}
 
-class _SummaryRow extends StatelessWidget {
-  const new(this.label, this.value, {this.highlight = false});
-  final String label;
-  final String value;
-  final bool highlight;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.tokens;
-    final tt = Theme.of(context).textTheme;
+  Widget _row(BuildContext ctx, String k, String v, {bool hi = false}) {
+    final t = ctx.tokens;
+    final tt = Theme.of(ctx).textTheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppDimensions.spaceHalf),
       child: Row(
@@ -335,17 +325,17 @@ class _SummaryRow extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              label,
-              style: (highlight ? tt.bodyMedium : tt.bodySmall)?.copyWith(
-                color: highlight ? t.ink : t.muted,
-                fontWeight: highlight ? FontWeight.w700 : null,
+              k,
+              style: (hi ? tt.bodyMedium : tt.bodySmall)?.copyWith(
+                color: hi ? t.ink : t.muted,
+                fontWeight: hi ? FontWeight.w700 : null,
               ),
             ),
           ),
           Text(
-            value,
-            style: (highlight ? tt.titleLarge : tt.bodySmall)?.copyWith(
-              color: highlight ? t.primary : t.ink,
+            v,
+            style: (hi ? tt.titleLarge : tt.bodySmall)?.copyWith(
+              color: hi ? t.primary : t.ink,
               fontWeight: FontWeight.w700,
             ),
           ),

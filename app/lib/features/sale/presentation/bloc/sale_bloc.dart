@@ -7,9 +7,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 export 'package:app/features/sale/presentation/bloc/sale_state.dart';
 
-/// BLoC managing table order building, sending rounds (`sendRound`), and
-/// manager-only sent item adjustments (`adjustSent`) (`SaleView` in
-/// `prototype/index.html`).
+/// BLoC managing table order building, sending rounds (`sendRound`),
+/// manager-only sent item adjustments (`adjustSent`), and payment settlement
+/// (`settle` in `prototype/index.html`).
 class SaleBloc extends Bloc<SaleEvent, SaleState> {
   new(PosRepository repository, {required String initialTableId, DateTime? now})
     : _repository = repository,
@@ -29,6 +29,18 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
     on<SaleNotesSaved>(_onNotesSaved);
     on<SaleRoundSent>(_onRoundSent);
     on<SaleSentItemAdjusted>(_onSentItemAdjusted);
+    on<SalePaymentStepChanged>(_onPaymentStepChanged);
+    on<SalePaymentMethodSelected>(_onPaymentMethodSelected);
+    on<SaleCashReceivedChanged>(
+      (e, emit) => emit(state.copyWith(cashReceived: e.value)),
+    );
+    on<SaleTransferStatusChanged>(
+      (e, emit) => emit(state.copyWith(transferStatus: e.status)),
+    );
+    on<SalePaymentSubmitted>(_onPaymentSubmitted);
+    on<SaleReceiptDismissed>(
+      (e, emit) => emit(state.copyWith(clearSettledBill: true)),
+    );
     on<SaleTableClosed>(_onTableClosed);
     on<SaleToastCleared>((e, emit) => emit(state.copyWith(toastMessage: '')));
     on<SalePosStateUpdated>(_onPosStateUpdated);
@@ -39,11 +51,13 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
   final PosRepository _repository;
   final DateTime? _fixedNow;
   StreamSubscription<PosState>? _sub;
+  static int _billSeq = 0;
 
   static SaleState _blankCartState(
     PosState s,
     String tableId, {
     DateTime? now,
+    String? settledBillId,
     String toastMessage = '',
   }) {
     final o = s.openTables[tableId];
@@ -52,6 +66,8 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
     final timing = o?.timing ?? s.shop.payTiming;
     final firstAddonCat =
         s.addons.where((x) => x.active).firstOrNull?.category ?? 'เครื่องดื่ม';
+    final firstPayId =
+        s.payments.where((p) => p.active).firstOrNull?.id ?? 'pm1';
     return SaleState(
       posState: s,
       tableId: tableId,
@@ -63,6 +79,8 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
       ad: const <String, int>{},
       notes: '',
       selectedCategory: o != null ? firstAddonCat : 'แพ็กเกจ',
+      payMethodId: firstPayId,
+      settledBillId: settledBillId,
       toastMessage: toastMessage,
       now: now,
     );
@@ -83,13 +101,9 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
   }
 
   void _onAddonQtyChanged(SaleAddonQtyChanged event, Emitter<SaleState> emit) {
-    AddonItem? addon;
-    for (final x in state.posState.addons) {
-      if (x.id == event.addonId) {
-        addon = x;
-        break;
-      }
-    }
+    final addon = state.posState.addons
+        .where((x) => x.id == event.addonId)
+        .firstOrNull;
     final maxStock = addon?.stock ?? event.qty;
     final clamped = math.min(math.max(0, event.qty), maxStock);
     final nextAd = Map<String, int>.from(state.ad);
@@ -175,6 +189,93 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
       );
     });
     emit(state.copyWith(posState: nextPos, toastMessage: 'ลบรายการแล้ว'));
+  }
+
+  void _onPaymentStepChanged(
+    SalePaymentStepChanged event,
+    Emitter<SaleState> emit,
+  ) {
+    if (event.step == 'pay') {
+      if (openShiftOf(state.posState) == null) {
+        emit(state.copyWith(toastMessage: 'ต้องเปิดกะก่อนจึงรับเงินได้'));
+        return;
+      }
+      if (!state.canPay) return;
+      final totalStr = state.payOrder.total % 1 == 0
+          ? state.payOrder.total.toInt().toString()
+          : state.payOrder.total.toStringAsFixed(2);
+      emit(
+        state.copyWith(
+          step: 'pay',
+          cashReceived: state.cashReceived.isEmpty
+              ? totalStr
+              : state.cashReceived,
+        ),
+      );
+    } else {
+      emit(state.copyWith(step: event.step));
+    }
+  }
+
+  void _onPaymentMethodSelected(
+    SalePaymentMethodSelected event,
+    Emitter<SaleState> emit,
+  ) {
+    emit(
+      state.copyWith(payMethodId: event.methodId, transferStatus: 'waiting'),
+    );
+  }
+
+  void _onPaymentSubmitted(
+    SalePaymentSubmitted event,
+    Emitter<SaleState> emit,
+  ) {
+    final tb = state.table;
+    final pkg = state.activePackage;
+    final method = state.activePaymentMethod;
+    if (tb == null || pkg == null || method == null) return;
+    if (!state.canConfirmPayment) {
+      emit(state.copyWith(toastMessage: 'จำนวนเงินที่รับยังไม่ครบ'));
+      return;
+    }
+
+    final currentNow = event.now ?? _fixedNow ?? DateTime.now();
+    _billSeq = (_billSeq + 1) & 0xFFFFF;
+    final billId =
+        event.billId ??
+        'b${currentNow.millisecondsSinceEpoch.toRadixString(36)}$_billSeq';
+    final cart = state.cartTotals;
+    final timing = state.effectiveTiming;
+    final notes = state.notes;
+    final recv = method.type == 'cash'
+        ? state.cashReceivedAmount
+        : state.payOrder.total;
+
+    final nextPos = _repository.update((s) {
+      settle(
+        s,
+        tb,
+        cart,
+        event.staff,
+        timing: timing,
+        pkgId: pkg.id,
+        method: method,
+        received: recv,
+        billId: billId,
+        notes: notes,
+        now: currentNow,
+      );
+    });
+
+    emit(
+      _blankCartState(
+        nextPos,
+        state.tableId,
+        now: _fixedNow,
+        settledBillId: billId,
+        toastMessage: 'รับเงินโต๊ะ ${tb.name} เรียบร้อย',
+      ),
+    );
   }
 
   void _onTableClosed(SaleTableClosed event, Emitter<SaleState> emit) {

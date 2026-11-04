@@ -81,4 +81,54 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'select table -> order -> pay cash -> see receipt -> return to /tables',
+    (tester) async {
+      tester.view.physicalSize = const Size(1366, 1024);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final repo = MockPosRepository.createFallback();
+      await tester.pumpWidget(KepTohApp(repository: repo));
+      await tester.pumpAndSettle();
+
+      // 1. Tap free table A1 (t1) on /tables -> opens /tables/t1
+      await tester.tap(find.byKey(const ValueKey('table-card-t1')));
+      await tester.pumpAndSettle();
+
+      // 2. Switch to drink tab and add 1 water (ad1 = 15) on top of 2 adults
+      await tester.tap(find.text('เครื่องดื่ม'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('addon-card-ad1')));
+      await tester.pumpAndSettle();
+
+      // 3. Tap primary pay button -> opens SalePaymentPanel
+      await tester.tap(find.byKey(const ValueKey('sale-pay-btn')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('sale-payment-panel')), findsOneWidget);
+
+      // 4. Tap quick cash 500 button and confirm cash payment
+      await tester.tap(find.byKey(const ValueKey('quick-cash-500')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('pay-confirm-btn')));
+      await tester.pumpAndSettle();
+
+      // 5. Verify ReceiptModal is shown with receipt details
+      expect(find.byKey(const ValueKey('receipt-modal')), findsOneWidget);
+      expect(find.byKey(const ValueKey('receipt-card')), findsOneWidget);
+      expect(find.text('รับเงินเรียบร้อย'), findsWidgets);
+
+      // 6. Tap "เสร็จสิ้น" -> returns to /tables and table A1 shows "มีลูกค้า"
+      await tester.tap(find.byKey(const ValueKey('receipt-done-btn')));
+      await tester.pumpAndSettle();
+
+      final updatedA1Card = find.byKey(const ValueKey('table-card-t1'));
+      expect(updatedA1Card, findsOneWidget);
+      expect(
+        find.descendant(of: updatedA1Card, matching: find.text('มีลูกค้า')),
+        findsOneWidget,
+      );
+    },
+  );
 }

@@ -1,138 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:app/domain/domain.dart';
 import 'package:equatable/equatable.dart';
 
-/// Base event for `SaleBloc` (`SaleView` in `prototype/index.html`).
-sealed class SaleEvent extends Equatable {
-  const new();
+export 'package:app/features/sale/presentation/bloc/sale_event.dart';
 
-  @override
-  List<Object?> get props => [];
-}
-
-/// Switches the active table in `SaleView`.
-final class SaleTableSelected extends SaleEvent {
-  const new(this.tableId);
-  final String tableId;
-
-  @override
-  List<Object?> get props => [tableId];
-}
-
-/// Selects a buffet package (`pkgId`).
-final class SalePackageSelected extends SaleEvent {
-  const new(this.packageId);
-  final String packageId;
-
-  @override
-  List<Object?> get props => [packageId];
-}
-
-/// Changes the payment timing (`'before'` or `'after'`) when opening a table.
-final class SaleTimingChanged extends SaleEvent {
-  const new(this.timing);
-  final String timing;
-
-  @override
-  List<Object?> get props => [timing];
-}
-
-/// Selects the active product/package tab (`cat`).
-final class SaleCategorySelected extends SaleEvent {
-  const new(this.category);
-  final String category;
-
-  @override
-  List<Object?> get props => [category];
-}
-
-/// Updates adult (`a`), child (`c`), or free toddler (`f`) head counts.
-final class SaleHeadsChanged extends SaleEvent {
-  const new({this.a, this.c, this.f});
-  final int? a;
-  final int? c;
-  final int? f;
-
-  @override
-  List<Object?> get props => [a, c, f];
-}
-
-/// Sets the quantity of an addon item in the current cart (`setDrink`).
-final class SaleAddonQtyChanged extends SaleEvent {
-  const new({required this.addonId, required this.qty});
-  final String addonId;
-  final int qty;
-
-  @override
-  List<Object?> get props => [addonId, qty];
-}
-
-/// Increments an addon item by 1 when tapping its `ProductCard`.
-final class SaleAddonIncremented extends SaleEvent {
-  const new(this.addonId);
-  final String addonId;
-
-  @override
-  List<Object?> get props => [addonId];
-}
-
-/// Saves table notes (`NoteModal`).
-final class SaleNotesSaved extends SaleEvent {
-  const new(this.notes);
-  final String notes;
-
-  @override
-  List<Object?> get props => [notes];
-}
-
-/// Sends the current cart as a round in eat-before-paying mode (`sendRound`).
-final class SaleRoundSent extends SaleEvent {
-  const new({required this.staff, this.now});
-  final StaffMember staff;
-  final DateTime? now;
-
-  @override
-  List<Object?> get props => [staff.id, now];
-}
-
-/// Reduces/removes an already-sent item (`adjustSent`). Manager/owner only.
-final class SaleSentItemAdjusted extends SaleEvent {
-  const new({
-    required this.kind,
-    required this.key,
-    required this.qty,
-    required this.reason,
-    required this.staff,
-    this.now,
-  });
-
-  final String kind;
-  final String key;
-  final int qty;
-  final String reason;
-  final StaffMember staff;
-  final DateTime? now;
-
-  @override
-  List<Object?> get props => [kind, key, qty, reason, staff.id, now];
-}
-
-/// Closes an occupied table when `due == 0` (`เก็บโต๊ะ`).
-final class SaleTableClosed extends SaleEvent {
-  const new();
-}
-
-/// Clears the transient toast/error message.
-final class SaleToastCleared extends SaleEvent {
-  const new();
-}
-
-/// Synchronizes [SaleState] with the latest [PosRepository] state.
-final class SalePosStateUpdated extends SaleEvent {
-  const new();
-}
-
-/// Immutable state for `SaleBloc`. All monetary and quantity totals are
-/// delegated to `app/lib/domain/` functions.
+/// Immutable state for `SaleBloc`.
 class SaleState extends Equatable {
   const new({
     required this.posState,
@@ -145,6 +18,11 @@ class SaleState extends Equatable {
     required this.ad,
     required this.notes,
     required this.selectedCategory,
+    this.step = 'order',
+    this.payMethodId = 'pm1',
+    this.cashReceived = '',
+    this.transferStatus = 'waiting',
+    this.settledBillId,
     this.toastMessage = '',
     this.now,
   });
@@ -159,15 +37,16 @@ class SaleState extends Equatable {
   final Map<String, int> ad;
   final String notes;
   final String selectedCategory;
+  final String step;
+  final String payMethodId;
+  final String cashReceived;
+  final String transferStatus;
+  final String? settledBillId;
   final String toastMessage;
   final DateTime? now;
 
-  DiningTable? get table {
-    for (final t in posState.tables) {
-      if (t.id == tableId) return t;
-    }
-    return null;
-  }
+  DiningTable? get table =>
+      posState.tables.where((t) => t.id == tableId).firstOrNull;
 
   OpenTableState? get openTable => posState.openTables[tableId];
 
@@ -177,16 +56,20 @@ class SaleState extends Equatable {
   List<AddonItem> get activeAddons =>
       posState.addons.where((x) => x.active).toList();
 
+  List<PaymentMethod> get activePayments =>
+      posState.payments.where((p) => p.active).toList();
+
+  PaymentMethod? get activePaymentMethod =>
+      activePayments.where((p) => p.id == payMethodId).firstOrNull ??
+      activePayments.firstOrNull;
+
   PackageItem? get activePackage {
     final targetId = openTable?.packageId ?? pkgId;
-    for (final p in posState.packages) {
-      if (p.id == targetId) return p;
-    }
-    return activePackages.isNotEmpty ? activePackages.first : null;
+    return posState.packages.where((p) => p.id == targetId).firstOrNull ??
+        activePackages.firstOrNull;
   }
 
   String get effectiveTiming => openTable?.timing ?? timing;
-
   String get effectiveNotes => openTable?.notes ?? notes;
 
   List<String> get categories {
@@ -238,6 +121,24 @@ class SaleState extends Equatable {
       payOrder.total > 0 &&
       (openTable != null || (a + c + f) > 0);
 
+  double get cashReceivedAmount => double.tryParse(cashReceived) ?? 0;
+
+  double get cashChange => math.max(0, r2(cashReceivedAmount - payOrder.total));
+
+  bool get canConfirmPayment {
+    final m = activePaymentMethod;
+    if (m == null || !canPay || openShiftOf(posState) == null) return false;
+    if (m.type == 'cash') return cashReceivedAmount >= payOrder.total;
+    if (m.type == 'transfer' || m.type == 'card') {
+      return transferStatus != 'failed';
+    }
+    return true;
+  }
+
+  BillRecord? get settledBill => settledBillId == null
+      ? null
+      : posState.sales.where((b) => b.id == settledBillId).firstOrNull;
+
   SaleState copyWith({
     PosState? posState,
     String? tableId,
@@ -249,6 +150,12 @@ class SaleState extends Equatable {
     Map<String, int>? ad,
     String? notes,
     String? selectedCategory,
+    String? step,
+    String? payMethodId,
+    String? cashReceived,
+    String? transferStatus,
+    String? settledBillId,
+    bool clearSettledBill = false,
     String? toastMessage,
     DateTime? now,
   }) => SaleState(
@@ -262,6 +169,13 @@ class SaleState extends Equatable {
     ad: ad ?? this.ad,
     notes: notes ?? this.notes,
     selectedCategory: selectedCategory ?? this.selectedCategory,
+    step: step ?? this.step,
+    payMethodId: payMethodId ?? this.payMethodId,
+    cashReceived: cashReceived ?? this.cashReceived,
+    transferStatus: transferStatus ?? this.transferStatus,
+    settledBillId: clearSettledBill
+        ? null
+        : (settledBillId ?? this.settledBillId),
     toastMessage: toastMessage ?? this.toastMessage,
     now: now ?? this.now,
   );
@@ -278,6 +192,11 @@ class SaleState extends Equatable {
     ad,
     notes,
     selectedCategory,
+    step,
+    payMethodId,
+    cashReceived,
+    transferStatus,
+    settledBillId,
     toastMessage,
     now,
   ];

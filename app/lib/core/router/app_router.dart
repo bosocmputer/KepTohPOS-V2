@@ -290,27 +290,22 @@ class _SetupThemeSection extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'ธีมและการแสดงผล',
-                style: tt.titleLarge?.copyWith(color: t.ink),
-              ),
-              const SizedBox(height: AppDimensions.space1),
-              Text(
-                'เลือกโหมดสว่าง มืด หรือตามเครื่อง',
-                style: tt.bodySmall?.copyWith(color: t.muted),
-              ),
+              Text('ธีมและการแสดงผล', style: tt.titleLarge),
+              Text('เลือกโหมดสว่าง มืด หรือตามเครื่อง', style: tt.bodySmall),
             ],
           ),
-          Wrap(
-            spacing: AppDimensions.space2,
+          Row(
             children: [
               for (final m in AppThemeMode.values)
-                Btn(
-                  key: ValueKey('setup-mode-${m.name}'),
-                  label: m.label,
-                  size: BtnSize.sm,
-                  kind: mode == m ? BtnKind.primary : BtnKind.normal,
-                  onPressed: () => cubit.setMode(m),
+                Padding(
+                  padding: const EdgeInsets.only(left: AppDimensions.space2),
+                  child: Btn(
+                    key: ValueKey('setup-mode-${m.name}'),
+                    label: m.label,
+                    size: BtnSize.sm,
+                    kind: mode == m ? BtnKind.primary : BtnKind.normal,
+                    onPressed: () => cubit.setMode(m),
+                  ),
                 ),
             ],
           ),

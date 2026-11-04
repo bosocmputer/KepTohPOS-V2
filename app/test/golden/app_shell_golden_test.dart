@@ -47,6 +47,13 @@ void main() {
 
         await tester.pumpWidget(_buildGoldenShell(drawerOpen: true));
         await tester.pumpAndSettle();
+        await tester.runAsync(() async {
+          for (final el in find.byType(Image).evaluate()) {
+            final img = el.widget as Image;
+            await precacheImage(img.image, el);
+          }
+        });
+        await tester.pumpAndSettle();
 
         await expectLater(
           find.byType(MaterialApp),

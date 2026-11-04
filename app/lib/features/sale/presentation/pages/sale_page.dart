@@ -7,6 +7,8 @@ import 'package:app/features/sale/presentation/bloc/sale_bloc.dart';
 import 'package:app/features/sale/presentation/widgets/sale_main_content.dart';
 import 'package:app/features/sale/presentation/widgets/sale_modals.dart';
 import 'package:app/features/sale/presentation/widgets/sale_order_panel.dart';
+import 'package:app/features/sale/presentation/widgets/sale_payment_panel.dart';
+import 'package:app/features/sale/presentation/widgets/sale_receipt_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -14,6 +16,8 @@ export 'package:app/features/sale/presentation/bloc/sale_bloc.dart';
 export 'package:app/features/sale/presentation/widgets/sale_main_content.dart';
 export 'package:app/features/sale/presentation/widgets/sale_modals.dart';
 export 'package:app/features/sale/presentation/widgets/sale_order_panel.dart';
+export 'package:app/features/sale/presentation/widgets/sale_payment_panel.dart';
+export 'package:app/features/sale/presentation/widgets/sale_receipt_modal.dart';
 export 'package:app/features/sale/presentation/widgets/sale_widgets.dart';
 
 /// Cashier sale & order-pad screen (`function SaleView` in
@@ -49,14 +53,20 @@ class _SalePageState extends State<SalePage> {
   }
 
   Widget _buildPanel(SaleState state, {required bool fullHeight}) =>
-      SaleOrderPanel(
-        state: state,
-        staff: widget.staff,
-        fullHeight: fullHeight,
-        onSelectTable: widget.onSelectTable,
-        onOpenNoteModal: () => setState(() => _showNoteModal = true),
-        onOpenRemoveModal: (sel) => setState(() => _removeSelection = sel),
-      );
+      state.step == 'pay'
+      ? SalePaymentPanel(
+          state: state,
+          staff: widget.staff,
+          fullHeight: fullHeight,
+        )
+      : SaleOrderPanel(
+          state: state,
+          staff: widget.staff,
+          fullHeight: fullHeight,
+          onSelectTable: widget.onSelectTable,
+          onOpenNoteModal: () => setState(() => _showNoteModal = true),
+          onOpenRemoveModal: (sel) => setState(() => _removeSelection = sel),
+        );
 
   Widget _buildMain(SaleState state, DiningTable tb) => SaleMainContent(
     state: state,
@@ -85,20 +95,13 @@ class _SalePageState extends State<SalePage> {
         if (tb == null) {
           return Padding(
             padding: const EdgeInsets.all(AppDimensions.space6),
-            child: Container(
-              decoration: BoxDecoration(
-                color: t.surface,
-                borderRadius: BorderRadius.circular(AppDimensions.r),
-                border: Border.all(color: t.line),
-              ),
-              child: Empty(
-                title: 'ไม่พบโต๊ะนี้',
-                text: 'โต๊ะอาจถูกลบไปแล้ว',
-                action: Btn(
-                  label: 'กลับหน้าโต๊ะ',
-                  kind: BtnKind.primary,
-                  onPressed: widget.onBackToTables,
-                ),
+            child: Empty(
+              title: 'ไม่พบโต๊ะนี้',
+              text: 'โต๊ะอาจถูกลบไปแล้ว',
+              action: Btn(
+                label: 'กลับหน้าโต๊ะ',
+                kind: BtnKind.primary,
+                onPressed: widget.onBackToTables,
               ),
             ),
           );
@@ -120,8 +123,7 @@ class _SalePageState extends State<SalePage> {
           children: [
             LayoutBuilder(
               builder: (context, constraints) {
-                final isMobile = constraints.maxWidth <= AppDimensions.mobileBp;
-                if (!isMobile) {
+                if (constraints.maxWidth > AppDimensions.mobileBp) {
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -152,6 +154,8 @@ class _SalePageState extends State<SalePage> {
 
                 final payTotal = state.payOrder.total;
                 final showBar = state.hasCart || payTotal > 0;
+                final barStyle = Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: t.onPrimary, fontWeight: FontWeight.w700);
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -193,20 +197,12 @@ class _SalePageState extends State<SalePage> {
                               children: [
                                 Text(
                                   'ดูออเดอร์โต๊ะ ${tb.name}',
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(
-                                        color: t.onPrimary,
-                                        fontWeight: FontWeight.w700,
-                                      ),
+                                  style: barStyle,
                                 ),
                                 Text(
                                   '${baht(payTotal, payTotal % 1 != 0 ? 2 : 0)}'
                                   ' ›',
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(
-                                        color: t.onPrimary,
-                                        fontWeight: FontWeight.w700,
-                                      ),
+                                  style: barStyle,
                                 ),
                               ],
                             ),
@@ -285,6 +281,17 @@ class _SalePageState extends State<SalePage> {
                           ),
                   ),
                 ),
+              ),
+            if (state.settledBill != null)
+              ReceiptModal(
+                shop: state.posState.shop,
+                bill: state.settledBill!,
+                onPrint: () =>
+                    showAppToast(context, 'ส่งพิมพ์ใบเสร็จแล้ว (จำลอง)'),
+                onDone: () {
+                  context.read<SaleBloc>().add(const SaleReceiptDismissed());
+                  widget.onBackToTables();
+                },
               ),
           ],
         );

@@ -266,6 +266,18 @@ void main() {
       expect(ot.rounds, isEmpty);
       expect(ot.adjusts, isEmpty);
       expect(ot.log.length, 2);
+
+      // 3. Verify PromptPay QR payload for settled bill totals (607 & 1196)
+      expect(
+        promptPayPayload(s.shop.promptpay, bill1.total),
+        '00020101021229370016A00000067701011101130066812345678'
+        '53037645406607.005802TH6304E9DB',
+      );
+      expect(
+        promptPayPayload(s.shop.promptpay, bill2.total),
+        '00020101021229370016A00000067701011101130066812345678'
+        '530376454071196.005802TH6304FA97',
+      );
     });
   });
 }

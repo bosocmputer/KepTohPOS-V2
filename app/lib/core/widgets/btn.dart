@@ -155,7 +155,11 @@ class Btn extends StatelessWidget {
               padding: EdgeInsets.symmetric(
                 horizontal: _isIconOnly ? AppDimensions.space0 : hPad,
               ),
-              child: Center(widthFactor: block ? null : 1, child: content),
+              child: Center(
+                widthFactor: block ? null : 1,
+                heightFactor: 1,
+                child: content,
+              ),
             ),
           ),
         ),

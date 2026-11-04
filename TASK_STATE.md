@@ -1,21 +1,19 @@
 # TASK_STATE.md
 
-- **Branch:** `flutter/f4a-tables-sale`
-- **Completed (F0 + F1 + F2 + F3 + F4a Tables & Sale):**
-  - **F3 Cleanup (`refactor: split nav drawer, read-only state access, login per Figma` — commit `c87e32e`):**
-    - Split `app/lib/core/layout/nav_drawer.dart` into `nav_drawer.dart` + `nav_panel_sections.dart` (`<= 300` lines each).
-    - Updated `MockPosRepository` so `PosState` is deep-copied ONLY inside `update(...)` and frozen via `.freeze()` (`UnmodifiableListView`/`UnmodifiableMapView` + read-only setters on `PosState`, `OpenTableState`, `TableRound`, `HeadsCount`), returning `_state` in O(1) on `state` getter and throwing `UnsupportedError` on direct UI mutation.
-    - Updated `PinDots`, `NumPad`, and `LoginHeroPanel` to match `design/figma/login.png` (square PIN boxes, borderless number keys, vertically balanced left orange panel).
-    - Added top back bar (`dev-components-back-btn`) to `/dev/components`, switched Sidebar `"Components (dev)"` navigation to `context.push('/dev/components')`, and added widget test coverage in `app_shell_router_test.dart`.
-  - **F4a Tables Overview & Sale Screen (`feat(sale): tables overview, order pad, rounds and manager adjustments`):**
-    - Implemented `TablesCubit`, `TablesPage`, `TableCard`, and `TableChip` (`app/lib/features/tables/presentation/`), grouping tables by zone (`ในร้าน`, `ลานด้านนอก`, ฯลฯ), displaying statuses `ว่าง` / `มีลูกค้า` / `เกินเวลา` / `รอชำระ` from `tableTimer` and `tableDue`, search & zone filter, and 4-stat summary strip matching `design/figma/table.png`.
-    - Implemented `SaleBloc` (`SaleState`/`SaleEvent`), `SalePage`, `SaleMainContent`, `SaleCatalog`, `SaleOrderPanel`, `PeopleRow`, `OrderLine`, `OrderSummary`, `NoteModal`, and `RemoveItemModal` (`app/lib/features/sale/presentation/`) matching `design/figma/cashier.png`:
-      - Left main content + right `396px` Order Panel (`<= 760` mobile moves Order Panel below with sticky `"ดูออเดอร์โต๊ะ ..."` bar).
-      - Package selection, head count steppers (`ผู้ใหญ่` / `เด็ก` / `เด็กเล็ก`), category `Tabs` + `ProductCard` with `PosStepper`, table note modal (`NoteModal`), and `OrderSummary` using `calcOrder`/`orderOf` from `domain`.
-      - Eat-before-paying (`after`): `ส่งออเดอร์` (`sendRound`), sent-item reduction/removal (`RemoveItemModal` + `adjustSent`, manager/owner only with mandatory reason, restoring addon stock).
-      - Pay-before-eating (`before`): placeholder `ไปชำระเงิน` button ready for F4b settlement modal.
-    - Added `bloc_test` (`app/test/bloc/sale_bloc_test.dart`), widget flow test (`app/test/widget/tables_sale_flow_test.dart`), and 4 golden tests (`app/test/golden/tables_sale_golden_test.dart` -> `tables_1366x1024.png`, `tables_390x844.png`, `sale_1366x1024.png`, `sale_390x844.png`).
+- **Branch:** `flutter/f4b-payment`
+- **Completed (F0 + F1 + F2 + F3 + F4a + F4b Payment & Receipt):**
+  - **Installed Skill (`tech-stack-skills` -> `flutter-expert`):**
+    - Installed `.agents/skills/flutter-expert/` (`SKILL.md` + `references/`) via `bash .claude/hooks/install-skill.sh flutter-expert` and applied `bloc-state.md` and `widget-patterns.md`.
+  - **Theme & Brand Logo (`feat(theme): switch to team palette and new logo` — commit `8a627a7`):**
+    - Replaced all token values in `app/lib/core/theme/raw_tokens.dart` and `app/lib/core/theme/tokens.dart` with the team palette (`primary: #FF7A00`, `onPrimary: #20242C`, `bg: #F4F4F5`, `side: #172033`, `success: #16A36A`, `danger: #E5484D`) in Light and Dark modes (zero `figma` color constants remaining).
+    - Bundled `app/assets/logo.jpg` and `app/assets/logo_name.jpg`, updated `app/web/favicon.png` & `app/web/icons/*`, and added `BrandLogo` and `BrandLogoName` widgets (`BoxFit.contain` on white rounded containers) used across `LoginPage`, `LoginHeroPanel`, `AppNavDrawer`, and `ReceiptCard`.
+  - **Sale & Figma Alignment (`fix(sale): align topbar, icons, order panel and catalog with Figma` — commit `3eb6d15`):**
+    - Replaced Material `Icons.*` in `app/lib/core/widgets/app_icon.dart` with `HugeIcons.strokeRounded*` (`hugeicons: ^0.0.7`) and added `AppIcons.forCategory` & `AppIcons.forPaymentType` helpers (zero `Icons.*` outside `app_icon.dart`).
+    - Aligned `ShellHeaderBar` (left Sidebar toggle + SearchBox; right contextual `เปิดโต๊ะ` / `เก็บโต๊ะ` + shift status pill + Avatar) and `AppShell` (`ShellDesktopHeaderScope` so `SalePage`'s right `396px` Order Panel spans 100% height on `>= 761`).
+    - Updated `TableCard` (`'table'` dining icon), `ProductCard` (category icon), `SalePackagesList` (leading `36x36` package icon badge), `SaleAddonsGrid` (4 columns at `1366`, 3 columns at `1024`), and `OrderLine` (leading `36x36` category icon badge + inline note button).
+  - **Payment & Receipt Settlement (`feat(payment): cash, PromptPay and transfer settlement with receipt`):**
+    - Implemented `SalePaymentPanel`, `CashPaymentSection` (quick cash `พอดี` / `฿100` / `฿500` / `฿1,000`, `NumPad`, change/shortfall display), `PromptPayQR` (`qr_flutter` + `promptPayPayload`), `TransferStatusSection` (`waiting` / `success` / `failed`), `ReceiptCard`, and `ReceiptModal` (with `BrandLogo` `logo.jpg`).
+    - Extended `SaleBloc`, `SaleState`, and `SaleEvent` with `step` (`'order'` / `'pay'`), `methodId`, `cashReceived`, `transferState`, `settledBill`, and `SalePaymentSubmitted` calling `settle(...)` from `domain/settle.dart`.
+    - Added unit (`order_settle_test.dart`), bloc (`sale_bloc_test.dart`), widget (`tables_sale_flow_test.dart`), and golden (`tables_sale_golden_test.dart`) tests covering cash, PromptPay QR, bank transfer, and receipt modal.
 - **In Progress / Broken:** None.
-- **Important Note for F4b & Subsequent Steps:**
-  - `MockPosRepository.state` returns a frozen `PosState` snapshot (`PosState.freeze()`). Always mutate via `PosRepository.update((s) { ... })`.
-- **Next Immediate Step:** Start **F4b** (`docs/llms/flutter-plan.md`): Payment/Settlement modal (`เงินสด` / `QR พร้อมเพย์` / `โอนเงิน`), receipt modal, and `/bills` history + void bill.
+- **Next Immediate Step:** Proceed to `/bills` history + void bill (`voidBill`) and `/shift` / `/stock` / `/expenses` / `/reports` / `/setup` per `docs/llms/flutter-plan.md`.

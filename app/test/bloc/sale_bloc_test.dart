@@ -177,5 +177,133 @@ void main() {
         await bloc.close();
       },
     );
+
+    blocTest<SaleBloc, SaleState>(
+      'pay-before cash 1000 settles bill 607 with change 393 & deducts stock',
+      build: () => SaleBloc(
+        MockPosRepository.fromState(_loadFreshMockState(fixedNow)),
+        initialTableId: 't1',
+        now: fixedNow,
+      ),
+      act: (bloc) => bloc
+        ..add(const SaleTimingChanged('before'))
+        ..add(const SalePackageSelected('pk1'))
+        ..add(const SaleHeadsChanged(a: 2, c: 1, f: 1))
+        ..add(const SaleAddonQtyChanged(addonId: 'ad1', qty: 2))
+        ..add(const SaleAddonQtyChanged(addonId: 'ad5', qty: 1))
+        ..add(const SalePaymentStepChanged('pay'))
+        ..add(const SalePaymentMethodSelected('pm1'))
+        ..add(const SaleCashReceivedChanged('1000'))
+        ..add(
+          SalePaymentSubmitted(staff: ownerStaff, billId: 'b1', now: fixedNow),
+        ),
+      verify: (bloc) {
+        final s = bloc.state;
+        final bill = s.settledBill;
+        expect(bill, isNotNull);
+        expect(bill!.no, '261104-001');
+        expect(bill.total, 607);
+        expect(bill.received, 1000);
+        expect(bill.change, 393);
+        expect(s.openTable, isNotNull);
+        expect(s.openTable!.billIds, contains('b1'));
+
+        final ad1 = s.posState.addons.firstWhere((x) => x.id == 'ad1');
+        final ad5 = s.posState.addons.firstWhere((x) => x.id == 'ad5');
+        expect(ad1.stock, 94);
+        expect(ad5.stock, 59);
+      },
+    );
+
+    blocTest<SaleBloc, SaleState>(
+      'eat-before-paying PromptPay settles 2 rounds + adjust + extra = 1196',
+      build: () => SaleBloc(
+        MockPosRepository.fromState(_loadFreshMockState(fixedNow)),
+        initialTableId: 't2',
+        now: fixedNow,
+      ),
+      act: (bloc) => bloc
+        ..add(const SaleTimingChanged('after'))
+        ..add(const SalePackageSelected('pk2'))
+        ..add(const SaleHeadsChanged(a: 3, c: 1))
+        ..add(const SaleAddonQtyChanged(addonId: 'ad1', qty: 3))
+        ..add(const SaleAddonQtyChanged(addonId: 'ad5', qty: 2))
+        ..add(const SaleRoundSent(staff: ownerStaff))
+        ..add(const SaleHeadsChanged(a: 1))
+        ..add(const SaleAddonQtyChanged(addonId: 'ad5', qty: 1))
+        ..add(const SaleRoundSent(staff: ownerStaff))
+        ..add(
+          const SaleSentItemAdjusted(
+            kind: 'head',
+            key: 'a',
+            qty: 1,
+            reason: 'ลดหัวผู้ใหญ่ 1',
+            staff: ownerStaff,
+          ),
+        )
+        ..add(
+          const SaleSentItemAdjusted(
+            kind: 'addon',
+            key: 'ad5',
+            qty: 1,
+            reason: 'คืนเบียร์ 1',
+            staff: ownerStaff,
+          ),
+        )
+        ..add(const SaleAddonQtyChanged(addonId: 'ad1', qty: 1))
+        ..add(const SalePaymentStepChanged('pay'))
+        ..add(const SalePaymentMethodSelected('pm2'))
+        ..add(
+          SalePaymentSubmitted(staff: ownerStaff, billId: 'b2', now: fixedNow),
+        ),
+      verify: (bloc) {
+        final s = bloc.state;
+        final bill = s.settledBill;
+        expect(bill, isNotNull);
+        expect(bill!.no, '261104-001');
+        expect(bill.total, 1196);
+        expect(bill.received, 1196);
+        expect(bill.change, 0);
+        expect(s.openTable, isNotNull);
+        expect(s.openTable!.rounds, isEmpty);
+        expect(s.openTable!.adjusts, isEmpty);
+        expect(s.due, 0);
+
+        final ad1 = s.posState.addons.firstWhere((x) => x.id == 'ad1');
+        expect(ad1.stock, 92);
+      },
+    );
+
+    blocTest<SaleBloc, SaleState>(
+      'insufficient cash received blocks settlement',
+      build: () => SaleBloc(
+        MockPosRepository.fromState(_loadFreshMockState(fixedNow)),
+        initialTableId: 't1',
+        now: fixedNow,
+      ),
+      act: (bloc) => bloc
+        ..add(const SaleTimingChanged('before'))
+        ..add(const SalePackageSelected('pk1'))
+        ..add(const SaleHeadsChanged(a: 2, c: 1, f: 1))
+        ..add(const SaleAddonQtyChanged(addonId: 'ad1', qty: 2))
+        ..add(const SaleAddonQtyChanged(addonId: 'ad5', qty: 1))
+        ..add(const SalePaymentStepChanged('pay'))
+        ..add(const SalePaymentMethodSelected('pm1'))
+        ..add(const SaleCashReceivedChanged('500'))
+        ..add(
+          SalePaymentSubmitted(
+            staff: ownerStaff,
+            billId: 'b_fail',
+            now: fixedNow,
+          ),
+        ),
+      verify: (bloc) {
+        final s = bloc.state;
+        expect(s.canConfirmPayment, isFalse);
+        expect(s.settledBill, isNull);
+        expect(s.posState.sales, isEmpty);
+        expect(s.toastMessage, 'จำนวนเงินที่รับยังไม่ครบ');
+      },
+    );
   });
 }
