@@ -1,130 +1,111 @@
-# แผน: ย้ายไป Flutter — แกะ UI จาก Figma ให้ตรง 100% ก่อน แล้วค่อยปรับเป็น KepTohPOS — v0.2 (ยืนยันแล้ว: ระยะ A + BLoC)
+# แผน: ย้าย KepTohPOS จาก prototype HTML ไป Flutter — v0.3
 
-> อ่านคู่กับ `keptoh-blueprint.md` (กติกาธุรกิจ) · prototype HTML (`prototype/`) ทีมอนุมัติแล้ว ใช้เป็น **ต้นแบบ flow และสูตรคำนวณ** ไม่ต้องแก้ต่อ
-> Figma: [Makaryo POS (Community)](https://www.figma.com/design/zWOF0W01I3hFtoKNXAFmVZ/Makaryo-Point-Of-Sales-Free--Community-?node-id=1-3517) · fileKey `zWOF0W01I3hFtoKNXAFmVZ` · หน้า `1:3517 🍏 UI Design`
-> ความคืบหน้าจดใน `TASK_STATE.md` (skill `handoff`) เพื่อส่งต่องานข้ามโมเดล/เครื่อง
+> **แหล่งความจริงเดียว = `prototype/`** (`index.html`, `theme.css`, `data/mock-data.js`) ซึ่งทีมอนุมัติแล้ว
+> **ยกเลิกการอ้างอิง Figma** — ไม่ต้องเปิด Figma / ไม่ใช้ Figma MCP
+> อ่านคู่กับ `keptoh-blueprint.md` (กติกาธุรกิจ/สูตร) · ความคืบหน้าจดใน `TASK_STATE.md` (skill `handoff`)
 
 ## 0. หลักการ
-1. **ระยะ A = แกะ Figma ตรงตัว** ใช้ข้อความ รูป และข้อมูลตัวอย่างแบบใน Figma (เบอร์เกอร์, ภาษาอังกฤษ, $) ห้ามดัดแปลงเป็นของร้านในระยะนี้ เพื่อวัดผลได้ว่า "ตรง Figma" จริง
-2. **ระยะ B = ปรับเป็น KepTohPOS** เปลี่ยนเนื้อหา/flow ทีหลัง โดยใช้ widget ชุดเดียวกับระยะ A ห้ามก๊อปไปแก้เป็นอีกตัว
-3. ทุกค่า (สี ระยะ ขนาดตัวอักษร มุมโค้ง เงา) มาจาก **token** ที่ถอดจาก Figma ห้ามใส่เลขลอยในหน้าจอ
-4. "ตรง 100%" วัดด้วย **golden test** เทียบภาพ Figma ที่ขนาด 1366×1024 (ดูข้อ 6) ไม่ใช้สายตาอย่างเดียว
-5. 1 PR = 1 ขั้นในข้อ 5 · ไม่เกิน ~5 ไฟล์ต่อรอบโดยไม่แจ้ง (ตาม `CLAUDE.md`)
-6. แบ่งงานโมเดล: **Opus** ถอดสเปกทีละหน้าเป็นไฟล์ `docs/llms/figma-spec/<screen>.md` · **Sonnet** เขียนโค้ดตามสเปก
+1. **หน้าตา + flow + สูตร ต้องเหมือน prototype** (layout, สี, ข้อความไทย, ลำดับการกด, ตัวเลข) ห้ามออกแบบใหม่เอง
+2. ข้อมูล = **mock JSON** แปลงจาก `prototype/data/mock-data.js` · ยังไม่มีฐานข้อมูล ไม่มี backend ไม่มี license
+3. สูตรธุรกิจ port จาก JS เป็น Dart **ทีละฟังก์ชันพร้อม unit test** ผลลัพธ์ต้องเท่ากับ JS ทุกตัวเลข
+4. Component กลางตามรายการในข้อ 4 · หน้าจอประกอบจาก component กลางเท่านั้น ห้ามก๊อปไปแก้เป็นอีกตัว
+5. 1 PR = 1 ขั้นในข้อ 5 · ไม่เกิน ~5 ไฟล์ต่อรอบโดยไม่แจ้ง (ตาม `CLAUDE.md`) · อ่านเฉพาะส่วนของ `index.html` ที่เกี่ยวกับขั้นนั้น (ใช้ grep หา `function <ชื่อ>`) ไม่ต้องอ่านทั้งไฟล์
+6. ทุกขั้นต้องรันจริงก่อนรายงาน: `flutter analyze` (0 issue) · `flutter test`
 
-## 1. สิ่งที่มีใน Figma (สำรวจแล้ว)
-ทุก frame เป็น **1366×1024 (แท็บเล็ตแนวนอน)** — **ไม่มีแบบมือถือ ไม่มีแนวตั้ง**
+## 1. สิ่งที่ต้อง port (จาก `prototype/index.html`)
+**เมนูหลัก (`VIEWS`):** โต๊ะและการขาย `tables` · บิลขาย `bills` · สต็อก `stock` · กะ `shift` · ภาพรวมกำไร `dashboard`* · รายงานรายวัน `reports`* · ตั้งค่าร้าน `setup`* (*เฉพาะ owner/manager) + หน้า Login (PIN)
 
-| กลุ่ม | frame (node id) | จำนวน |
+| หน้า | function ใน index.html | ส่วนย่อย |
 |---|---|---|
-| Login | `2005:3955` | 4 สถานะ |
-| หน้าหลัก | Cashier `68:14268` · Table `275:21181` · History `274:11946` · Report `275:12839` · Supply list `207:8812` · Supply grid `2001:5973` (ทั้งหมดใน `2005:3948`) | 6 |
-| ชำระเงิน | Credit Card (`2005:3913–3915`) · Cash `2005:3925` · QRIS `2005:3926` | 3 + 4 + 3 |
-| Dropdown | Select Table · Order Type · Floor (`2005:3949`) | 3 |
-| Modal แก้ไข | Edit Customer `2005:3950` · Customer Notes `2005:3951` · Menu Notes `2005:3952` | 2 + 2 + 2 |
-| ตัวกรอง | History Filter · Supply Filter (`2005:3953`) | 2 |
-| Empty state | Order Panel · Order List · Report · History · Supply list/grid (`2005:3954`) | 6 |
+| Login | `Login` | เลือกพนักงาน + PIN (`PinDots`, `NumPad`), การ์ดสรุปวันล่าสุด |
+| โต๊ะ | `TablesView` | จัดกลุ่มตามโซน, `TableCard` (ว่าง/มีลูกค้า/เกินเวลา/รอชำระ) |
+| ขาย | `SaleView` | `TableChip`, `Tabs` หมวด, รายการแพ็กเกจ/สินค้า (แถว ไม่มีรูป), `PeopleRow`, `OrderLine`, `OrderSummary`, `PaymentPicker`, `PayStep`, `NoteModal`, `RemoveItemModal`, `PromptPayQR`, `Receipt` · **จ่ายก่อนกิน และ กินก่อนจ่าย** (รอบสั่ง/ปรับรายการ) |
+| บิล | `BillsView` | `DataTable`, ตัวกรอง, ยอดแยกช่องทาง, `ReceiptModal` |
+| สต็อก | `StockView` | `StockCount` (แป้นตัวเลขพับได้, Enter=ถัดไป), `StockPurchase`/`PurchaseModal`, `StockExpense`/`ExpenseModal`, `StockBalance` |
+| กะ | `ShiftView` | `OpenShiftForm`, ปิดกะ/สรุปเงินสด |
+| ภาพรวม | `DashboardView` | `Stat` 2 กลุ่ม, `ProfitChart`, `PendingBadge` |
+| รายงาน | `ReportsView` | ตารางรายวัน |
+| ตั้งค่า | `SetupView` | 13 หมวด (`SECS`): ข้อมูลร้าน, แพ็กเกจ, สินค้าเสริม, วัตถุดิบ, แหล่งซื้อ, โต๊ะ, พนักงาน/สิทธิ์, ช่องทางชำระ, สูตรกำไร (`CostingForm`), ค่าใช้จ่ายคงที่, ประเภทค่าใช้จ่าย, ธีม (`ThemeSettings`), ข้อมูลตัวอย่าง · ใช้ `CrudSection` + `FormFields` |
 
-รวม ≈ **37 สถานะหน้าจอ**
+**สูตร/logic ที่ต้อง port:** `calcOrder` (ปัดเศษ, VAT none/included/excluded) · `tableTotals` · `mergeTotals` · `orderOf` · `tableDue` · `tableTimer` · `sendRound` · `adjustSent` · `sentLines` · `settle` · `computeLedger` (ต้นทุนเฉลี่ย/ล่าสุด, ประมาณจากนับรายสัปดาห์+ปรับยอด, หัวเด็ก 0.5, กำไรสุทธิ) · `seed()` (ประวัติ 30 วัน) · บทบาท `ROLE` และสิทธิ์เมนู
 
-**โครงหน้า (Cashier):** Header สูง 88 (ปุ่มเปิด sidebar, ค้นหา, ปุ่ม "Close Order") · พื้นที่หลักกว้าง 970 (Order List แนวนอน → แท็บหมวด → grid เมนู 4 คอลัมน์) · **Order Panel ขวา 396** (ลูกค้า, dropdown โต๊ะ/ประเภท, รายการ+stepper, สรุปยอด, วิธีชำระ 3 ช่อง, ปุ่ม Place Order)
-**Sidebar:** กว้าง 365 เป็น **drawer ซ้อนทับ** พร้อมฉากมืด (ไม่ได้ตรึง) — มีโลโก้, การ์ดกะพนักงาน, เมนู 5 รายการ (Cashier, Table, Report, History, Supply), Log out
+**ธีม:** `theme.css` = 2 ชั้น (palette ดิบ `--figma-*`/`--team-*` → token ความหมาย `--primary`, `--surface`, `--ink` …) · 2 แบรนด์ × light/dark
 
-**Component ที่ Figma ประกาศไว้:** `Header`, `sidebar-left`, `Tab-Cashier`, `Tab - Burger`, `Menu Label`, `Icon`, `Order Status`, `Order Status Indicator Icon`, `Stock Status`, `Title`
-
-**Token สี (variables):**
-`Orange/50 #fff4ed` `Orange/100 #ffe6d4` `Orange/500 #fe4e10` `Orange/600 #ef3408` · `Neutral/50 #f8f8f8` `/100 #e7e7e7` `/300 #b0b0b0` `/400 #888888` `/500 #6d6d6d` `/600 #5d5d5d` `/900 #3d3d3d` `/950 #000000` · `Gray/100 #f2f4f7` `/200 #e4e7ec` `/400 #98a2b3` · `Green #f0fdf4` `#dcfce7` `#16a34a` · `Red #dc2626` · `Dark #141B34` · `Burger Brand/100 #ffe9e1` `/700 #f85625`
-
-**ยังต้องตรวจในขั้น 0:** ฟอนต์จริง, ชุดไอคอน (ดูเหมือน Hugeicons), ขนาดตัวอักษร/ระยะ/เงา, สิทธิ์ใช้รูปอาหารในไฟล์ community
+**Responsive (ต้องเหมือน prototype):**
+| ความกว้าง | layout |
+|---|---|
+| ≥1100 | Sidebar ตรึง 232 |
+| 761–1099 | แถบไอคอนซ้าย + ปุ่มเมนูเปิด Drawer + ปุ่มผู้ใช้ |
+| ≤760 | เมนูล่าง 4 รายการ + "เพิ่มเติม" |
+| สูง ≤520 (มือถือแนวนอน) | แป้นตัวเลขนับสต็อกเป็นคอลัมน์ขวา |
 
 ## 2. Stack (ยืนยันแล้ว — ห้ามเพิ่ม package นอกรายการโดยไม่ถาม)
-- เครื่องพัฒนา: **Flutter 3.47.9 / Dart 3.13.7** (ตั้ง `environment.sdk` ใน pubspec ให้ตรง)
-- `flutter create --platforms=android,ios,web` · ระยะ A รัน/ดูผลบน Chrome หรือ iPad ได้ · web ใช้ส่งลิงก์ให้ทีมดู
-- **ข้อมูลระยะ A = mock JSON เท่านั้น** ยังไม่มีฐานข้อมูล ไม่มี backend ไม่มี license
+- **Flutter 3.47.9 / Dart 3.13.7** · `flutter create --platforms=android,ios,web app`
+- ดูผลระหว่างพัฒนาบน Chrome / iPad · web build ใช้ส่งลิงก์ให้ทีม
 
 | เรื่อง | package | หมายเหตุ |
 |---|---|---|
-| State | `flutter_bloc`, `equatable` | **Cubit** หน้าทั่วไป (ตั้งค่า/รายการ/ตัวกรอง) · **Bloc** flow ซับซ้อน (ออเดอร์/ชำระเงิน) |
-| Routing | `go_router` | |
-| DI | `get_it` | ลงทะเบียน repository ที่เดียว (`core/di/`) |
-| Model | `freezed`, `json_serializable` (+ `build_runner` dev) | model immutable + อ่าน mock JSON |
-| ฟอนต์/ไอคอน | ตามผลตรวจขั้น A0 | ให้ตรง Figma |
-| ทดสอบ | `flutter_test` (unit/widget/**golden**), `bloc_test`, `mocktail` | |
-| Lint | `very_good_analysis` | `flutter analyze` ต้อง 0 issue |
+| State | `flutter_bloc`, `equatable` | **Cubit** หน้าทั่วไป · **Bloc** flow ซับซ้อน (ขาย/ชำระเงิน/นับสต็อก/กะ) |
+| Routing | `go_router` | path ตาม `VIEWS` เช่น `/tables`, `/setup/costing` |
+| DI | `get_it` | ลงทะเบียน repository ที่ `core/di/` |
+| Model | `freezed`, `json_serializable` (+ `build_runner` dev) | |
+| ฟอนต์ | `google_fonts` | ใช้ฟอนต์เดียวกับ prototype (ดูลิงก์ Google Fonts ใน `<head>` ของ index.html) |
+| QR พร้อมเพย์ | ถามผู้ใช้ก่อนเพิ่ม (เช่น `qr_flutter`) | |
+| ทดสอบ | `flutter_test` (unit/widget/golden), `bloc_test`, `mocktail` | |
+| Lint | `very_good_analysis` | |
 
-## 3. โครงโฟลเดอร์ (Clean Architecture แบบ feature-first, แยกไฟล์ตั้งแต่แรก)
+## 3. โครงโฟลเดอร์ (Clean Architecture แบบ feature-first)
 ```
-app/                              ← โปรเจกต์ Flutter (repo เดียวกับ prototype)
+app/
   lib/
     main.dart · app.dart          ← MaterialApp.router + BlocProviders ระดับแอป
     core/
-      theme/                      ← tokens.dart (สี/ระยะ/มุม/เงา), typography.dart, app_theme.dart
-      widgets/                    ← component กลาง 1 ไฟล์ต่อ 1 component
-      layout/                     ← AppShell (Header + Sidebar drawer + body)
-      router/ · di/ · utils/
-    features/<feature>/           ← login, cashier, table, history, report, supply, payment
+      theme/                      ← tokens.dart (แปลงจาก theme.css), app_theme.dart (2 แบรนด์ × light/dark)
+      widgets/                    ← component กลาง 1 ไฟล์ต่อ 1 component (ข้อ 4)
+      layout/                     ← AppShell responsive (sidebar / rail+drawer / bottom nav)
+      router/ · di/ · utils/      ← utils: baht(), fmtQ(), วันที่ไทย
+    domain/                       ← สูตรกลางที่หลาย feature ใช้: order_calc.dart, ledger.dart, settle.dart (Dart ล้วน ไม่ import Flutter)
+    features/<feature>/           ← auth, tables, sale, bills, stock, shift, dashboard, reports, setup
       presentation/               ← pages/, widgets/, bloc/ หรือ cubit/
       domain/                     ← entities/, repositories/ (abstract)
-      data/                       ← models/ (freezed), datasources/ (mock_*.dart อ่าน assets/mock), repositories/ (impl)
-  assets/{images,icons,mock}/
-  test/{unit,bloc,widget,golden}/ + test/golden/figma/   ← ภาพอ้างอิงจาก Figma
-docs/llms/figma-spec/             ← สเปกทีละหน้า (Opus เขียน)
+      data/                       ← models/, datasources/ (อ่าน assets/mock), repositories/ (impl, เก็บในหน่วยความจำ)
+  assets/mock/                    ← JSON แปลงจาก mock-data.js
+  test/{unit,bloc,widget,golden}/
 ```
-กติกา:
-- ไฟล์ละไม่เกิน ~300 บรรทัด · หน้าจอประกอบจาก `core/widgets` เท่านั้น
-- UI → Bloc/Cubit → Repository (abstract) เท่านั้น ห้าม widget อ่าน JSON หรือเรียก datasource ตรง
-- ภายหลังเปลี่ยนแหล่งข้อมูล (SQLite) ได้โดยเปลี่ยนแค่ `data/` ไม่แตะ UI
+กติกา: ไฟล์ละไม่เกิน ~300 บรรทัด · UI → Bloc/Cubit → Repository (abstract) เท่านั้น ห้าม widget อ่าน JSON เอง · `domain/` ห้าม import Flutter
 
-## 4. Component กลาง (ถอดจาก Figma)
-| กลุ่ม | widget |
+## 4. Component กลาง (ชื่อเดียวกับ prototype ให้ค้นเทียบได้)
+| กลุ่ม | widget (prototype → Flutter) |
 |---|---|
-| Layout | `AppShell`, `AppHeader` (88), `AppSidebar` (drawer 365 + scrim), `ShiftCard`, `PageTitle` (หัวข้อ+คำอธิบาย+ปุ่มขวา) |
-| Input | `PrimaryButton`/`SecondaryButton`/`IconBtn`, `SearchField`, `AppDropdown`, `QtyStepper`, `CategoryTab` (`Tab-Cashier`), `PaymentMethodTile`, `PinPad` (login), `TextArea` (notes) |
-| Display | `OrderCard` + `OrderStatusBadge`, `MenuCard` + `MenuLabel`, `TableTile` (สถานะ Available/Occupied), `AppDataTable` + `AppPagination`, `StockStatusBadge`, `SupplyCard`, `SummaryRows`, `EmptyState` |
-| Overlay | `AppModal` (Edit customer/notes), `FilterPanel`, `DropdownMenuOverlay` |
-| Domain (Figma) | `OrderPanel` (396) + `OrderLineItem`, `PaymentSheet` (Card/Cash/QRIS ตามขั้นตอนใน Figma) |
+| Layout | `AppShell`, `NavPanel`/`NavDrawer`, `PageHeader`, `Toolbar`, `SearchBox`, `Avatar`, `Drawer` |
+| Input | `Btn`, `Field`, `Stepper`, `Seg`, `Tabs`, `Dropdown`, `NumPad`, `PinDots` |
+| Display | `Pill`, `Stat`, `DataTable`, `Pagination`, `Empty`, `ResultState`, `Icon` (ชุด `ICONS`) |
+| Overlay | `Modal`, `Confirm`, toast |
+| Domain | `TableCard`, `TableChip`, `PeopleRow`, `OrderLine`, `PaymentPicker`, `OrderSummary`, `PayStep`, `PromptPayQR`, `Receipt`, `CrudSection`, `FormFields`, `ProfitChart` |
 
-## 5. ขั้นงาน (1 ขั้น = 1 PR)
-### ระยะ A — แกะ Figma
-| # | งาน | ผู้ทำ | เสร็จเมื่อ |
-|---|---|---|---|
-| A0 | ตรวจฟอนต์/ไอคอน/สเปกด้วย `get_design_context` · export ภาพอ้างอิง 37 สถานะ + รูป/ไอคอน · เขียน `figma-spec/_tokens.md` | Opus | มีไฟล์ token + ภาพอ้างอิงครบ |
-| A1 | สร้าง `app/` (flutter create, web) + package ข้อ 2 + theme/tokens + โครงโฟลเดอร์ + CI `flutter analyze`/`flutter test` | Sonnet | `flutter analyze` 0 issue, แอปเปิดได้ |
-| A2 | `AppShell`, `AppHeader`, `AppSidebar` + router 6 หน้า (หน้าว่าง) | Sonnet | golden ของ shell ผ่าน |
-| A3 | **Cashier** (OrderCard, CategoryTab, MenuCard, OrderPanel, Stepper, PaymentMethodTile) | Sonnet | golden Cashier ผ่าน |
-| A4 | Payment: Credit Card 3 · Cash 4 · QRIS 3 สถานะ | Sonnet | golden 10 สถานะผ่าน |
-| A5 | Dropdown 3 · Edit Customer/Notes/Menu Notes 6 สถานะ | Sonnet | golden ผ่าน |
-| A6 | **Table** + Pagination | Sonnet | golden ผ่าน |
-| A7 | **History** + **Report** (`AppDataTable`) + History Filter | Sonnet | golden ผ่าน |
-| A8 | **Supply** list/grid + Supply Filter + StockStatus | Sonnet | golden ผ่าน |
-| A9 | **Login** 4 สถานะ + Empty state 6 แบบ | Sonnet | golden ผ่านครบ 37 สถานะ |
-| A10 | ตรวจรวม + deploy Flutter web บน Vercel ให้ทีมดู | Opus ตรวจ | ทีมยืนยันว่า "ตรง Figma" |
+## 5. ขั้นงาน (1 ขั้น = 1 PR, ทำตามลำดับ)
+| # | งาน | เสร็จเมื่อ |
+|---|---|---|
+| F0 | สร้าง `app/` + package ข้อ 2 + โครงข้อ 3 + `tokens.dart`/`app_theme.dart` จาก `theme.css` + แปลง `mock-data.js` → `assets/mock/*.json` | `flutter analyze` 0 issue, แอปเปิดหน้าว่างได้, สลับธีม/แบรนด์ได้ |
+| F1 | port สูตรใน `lib/domain/` + model + unit test (ตัวเลขคาดหวังได้จากการรันฟังก์ชัน JS เดิมใน prototype) | unit test ผ่านทั้งหมด ตัวเลขตรง JS |
+| F2 | component กลางข้อ 4 (กลุ่ม Layout/Input/Display/Overlay) + `AppShell` responsive 3 แบบ + router | widget test ของแต่ละ component + golden ของ shell 3 ขนาด |
+| F3 | Login (PIN) + กะ (เปิด/ปิด) + สิทธิ์ตามบทบาท | flow login → เปิดกะ → เห็นเมนูตามสิทธิ์ |
+| F4 | โต๊ะ + ขาย + ชำระเงิน + ใบเสร็จ (ทั้งจ่ายก่อนและกินก่อนจ่าย) | bloc test ครบ flow · ยอดตรง prototype |
+| F5 | บิล | ตัวกรอง/ยอดแยกช่องทาง/ดูใบเสร็จ |
+| F6 | สต็อก: นับของเหลือ (แป้นพับได้) / ซื้อของ / ค่าใช้จ่าย / คงเหลือ | นับครบแล้วบันทึกปิดวันได้ |
+| F7 | ภาพรวม + รายงาน (กราฟกำไร) | ตัวเลขตรงกับ prototype บน mock data ชุดเดียวกัน |
+| F8 | ตั้งค่า 13 หมวด | CRUD ทุกหมวด, ค่าเปลี่ยนแล้วมีผลกับหน้าขาย/สูตร |
+| F9 | ตรวจรวม: เทียบทุกหน้ากับ prototype 3 ขนาด (1366×1024, 820×1180, 390×844) + build web ให้ทีมดู | ทีมยืนยันว่าเหมือน prototype |
 
-ก่อนแต่ละขั้น A3–A9: Opus เขียน `figma-spec/<screen>.md` (โครง layout, ขนาด/ระยะทุกกล่อง, component ที่ใช้, สถานะ) ให้ Sonnet ทำตาม
+**วิธีเทียบหน้าตา:** เปิด `prototype/index.html` ในเบราว์เซอร์ขนาดเดียวกับแอป แล้วเทียบทีละหน้า (ภาพอ้างอิงเก็บที่ `app/test/golden/reference/` ถ้ามี)
 
-### ระยะ B — ปรับเป็น KepTohPOS (วางแผนละเอียดหลังจบ A)
-- B1 port สูตรจาก prototype เป็น Dart ใน `domain/` พร้อม unit test ตัวเลขเดียวกับเทสต์ JS เดิม (`calcOrder`, `settle`, `computeLedger` ฯลฯ)
-- B2 ภาษาไทย + ฟอนต์ไทย, บาท, mock data ร้านหมูกระทะ
-- B3 แมปหน้า: Cashier→ขาย (แพ็กเกจบุฟเฟต์/จำนวนหัว, จ่ายก่อน/หลังกิน), Table→โต๊ะ+เวลา, History→บิล, Report→กำไรขาดทุน, Supply→สต็อก+นับของเหลือ
-- B4 หน้าที่ Figma ไม่มี (ตั้งค่า, ค่าใช้จ่าย, นับสต็อกเร็ว) ประกอบจาก widget ระยะ A
-- B5 ขนาดจอเล็ก/มือถือ/แนวตั้ง (Figma ไม่มี ต้องออกแบบเพิ่ม)
-
-## 6. วิธีวัด "ตรง Figma"
-- Golden test ตั้งขนาด `1366×1024` ใช้ฟอนต์จริง (โหลดใน test) และ mock data ตรง Figma
-- สคริปต์เทียบภาพ golden กับภาพ export จาก Figma → รายงาน % pixel ต่าง + ภาพ diff
-- เกณฑ์: layout/ตำแหน่ง/ขนาดตรง (ต่างไม่เกิน 1–2px) · สีตรง token · การเรนเดอร์ตัวอักษรที่ต่างเล็กน้อยระหว่าง Figma กับ Flutter ยอมรับได้ (ตรงพิกเซล 100% ทางเทคนิคเป็นไปไม่ได้เพราะ engine วาดฟอนต์ต่างกัน)
-
-## 7. สภาพแวดล้อม
-- container ของ Claude บนคลาวด์ตอนนี้ **ยังไม่มี Flutter SDK** → ทำบนเครื่องผู้ใช้ (clone repo) หรือเพิ่มการติดตั้ง Flutter ใน setup script ของ environment
-- ทุกขั้นต้องรันจริงก่อนรายงาน: `flutter analyze` · `flutter test` · (golden) `flutter test test/golden`
-
-## 8. สิ่งที่ตัดสินใจแล้ว
+## 6. สิ่งที่ตัดสินใจแล้ว
 - โค้ดอยู่ `app/` ใน repo นี้ · พัฒนาบนเครื่อง local ของผู้ใช้ (Flutter พร้อมแล้ว)
-- BLoC/Cubit + Repository + go_router + get_it (ข้อ 2)
-- ระยะ A = UI ตรง Figma + mock JSON เท่านั้น
+- UI/UX ตาม prototype · ไม่ใช้ Figma
+- BLoC/Cubit + Repository + go_router + get_it · ข้อมูล mock JSON เก็บในหน่วยความจำ (เปิดแอปใหม่ = เริ่มจาก mock)
 
-## 9. ภาพรวมระยะยาว (บันทึกไว้เป็นทิศทาง — **ไม่อยู่ในขอบเขตระยะ A/B ห้ามเขียนโค้ดเผื่อ**)
+## 7. ภาพรวมระยะยาว (บันทึกไว้เป็นทิศทาง — **ไม่อยู่ในขอบเขต F0–F9 ห้ามเขียนโค้ดเผื่อ**)
 - ผู้ให้บริการคือ **สำนักงานบัญชี** ติดตั้ง POS ให้ร้านลูกค้า เพื่อได้ข้อมูลขาย/ต้นทุนของร้านโดยไม่ต้องขอ · เริ่มจากร้านหมูกระทะ
-- แนวทาง: **แอปติดตั้งในเครื่อง** (ไม่ใช้ cloud สำหรับการขาย) ฐานข้อมูลในเครื่อง (SQLite/`drift`) · ไม่ใช้ Redis/Kafka
-- **License key มีวันหมดอายุ** (key เซ็นลายเซ็นดิจิทัล ตรวจได้แบบ offline, กันย้อนนาฬิกา, มี grace period, หมดอายุแล้วยังดู/ส่งออกข้อมูลได้)
-- ยังต้องตัดสินใจภายหลัง: วิธีส่งข้อมูลให้สำนักงาน (ส่งไฟล์เอง vs ส่งขึ้นเครื่องสำนักงานอัตโนมัติ), อุปกรณ์ร้าน, รูปแบบไฟล์ให้ตรงโปรแกรมบัญชีของสำนักงาน, สัญญา/PDPA
+- **แอปติดตั้งในเครื่อง** (ไม่ใช้ cloud สำหรับการขาย) ฐานข้อมูลในเครื่อง (SQLite/`drift`) แทน repository แบบ mock · ไม่ใช้ Redis/Kafka
+- **License key มีวันหมดอายุ** (key เซ็นลายเซ็นดิจิทัล ตรวจแบบ offline, กันย้อนนาฬิกา, grace period, หมดอายุแล้วยังดู/ส่งออกข้อมูลได้)
+- ยังต้องตัดสินใจภายหลัง: วิธีส่งข้อมูลให้สำนักงาน, อุปกรณ์ร้าน, รูปแบบไฟล์ให้ตรงโปรแกรมบัญชีของสำนักงาน, สัญญา/PDPA
