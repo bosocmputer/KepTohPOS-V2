@@ -8,12 +8,21 @@ import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:app/features/auth/presentation/pages/login_page.dart';
+import 'package:app/features/bills/presentation/cubit/bills_cubit.dart';
+import 'package:app/features/dashboard/presentation/pages/dashboard_page.dart';
+import 'package:app/features/reports/presentation/pages/reports_page.dart';
+import 'package:app/features/shift/presentation/bloc/shift_bloc.dart';
+import 'package:app/features/shift/presentation/pages/shift_page.dart';
+import 'package:app/features/stock/presentation/cubit/stock_cubit.dart';
+import 'package:app/features/stock/presentation/pages/stock_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 export 'package:app/core/router/shell_placeholder_page.dart';
+export 'package:app/features/shift/presentation/pages/shift_page.dart'
+    show OpenShiftModal;
 
 class _StreamRefreshListenable extends ChangeNotifier {
   new(Stream<dynamic> stream) {
@@ -72,8 +81,11 @@ GoRouter createAppRouter({
     for (final view in kAppViews)
       GoRoute(
         path: '/${view.id}',
-        builder: (context, state) =>
-            ShellPlaceholderPage(viewSpec: view, now: now),
+        builder: (context, state) => ShellPlaceholderPage(
+          viewSpec: view,
+          billsDate: state.uri.queryParameters['date'],
+          now: now,
+        ),
       ),
     if (kDebugMode)
       GoRoute(
@@ -81,6 +93,91 @@ GoRouter createAppRouter({
         builder: (context, state) => const DevComponentsPage(),
       ),
   ],
+);
+
+/// Builds `/stock`, `/shift`, `/dashboard`, `/reports`, or `/setup` body.
+Widget buildAnalyticsOrPlaceholderBody(
+  BuildContext context, {
+  required AppViewSpec viewSpec,
+  required StaffMember me,
+  required AppTokens tokens,
+  required PosRepository? repo,
+  required StockCubit? stockCubit,
+  required ShiftBloc? shiftBloc,
+  required BillsCubit? billsCubit,
+  required DashboardCubit? existingDash,
+  required ReportsCubit? existingRep,
+  required DateTime? now,
+}) {
+  if (viewSpec.id == 'stock' && stockCubit != null) return StockPage(staff: me);
+  if (viewSpec.id == 'shift' && shiftBloc != null) {
+    return ShiftPage(
+      staffId: me.id,
+      staffName: me.name,
+      onGoTables: () => context.go('/tables'),
+    );
+  }
+  if (viewSpec.id == 'dashboard' && (existingDash != null || repo != null)) {
+    final page = DashboardPage(
+      onGoStockCount: () => context.go('/stock'),
+      onGoSetupCosting: () => context.go('/setup'),
+    );
+    return existingDash != null
+        ? page
+        : BlocProvider(
+            key: const ValueKey('dashboard-scope'),
+            create: (_) => DashboardCubit(repo!, now: now),
+            child: page,
+          );
+  }
+  if (viewSpec.id == 'reports' && (existingRep != null || repo != null)) {
+    final page = ReportsPage(
+      onSelectDateForBills: (d) {
+        billsCubit?.setDate(d);
+        context.go('/bills?date=$d');
+      },
+      onGoSetupCosting: () => context.go('/setup'),
+    );
+    return existingRep != null
+        ? page
+        : BlocProvider(
+            key: const ValueKey('reports-scope'),
+            create: (_) => ReportsCubit(repo!, now: now),
+            child: page,
+          );
+  }
+  return buildSetupOrPlaceholderBody(viewSpec: viewSpec, tokens: tokens);
+}
+
+/// Builds the fallback placeholder body (including [SetupThemeSection] for
+/// `/setup`).
+Widget buildSetupOrPlaceholderBody({
+  required AppViewSpec viewSpec,
+  required AppTokens tokens,
+}) => SingleChildScrollView(
+  padding: const EdgeInsets.all(AppDimensions.space6),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      PageHeader(title: viewSpec.title, desc: 'ร้านหมูกระทะ เก็บโต๊ะ'),
+      if (viewSpec.id == 'setup') ...[
+        const SizedBox(height: AppDimensions.space5),
+        const SetupThemeSection(),
+      ],
+      const SizedBox(height: AppDimensions.space5),
+      Container(
+        decoration: BoxDecoration(
+          color: tokens.surface,
+          borderRadius: BorderRadius.circular(AppDimensions.r),
+          border: Border.all(color: tokens.line),
+        ),
+        child: Empty(
+          title: viewSpec.title,
+          text: 'หน้าจอ ${viewSpec.label} (เตรียมเชื่อมข้อมูลในขั้นถัดไป)',
+        ),
+      ),
+    ],
+  ),
 );
 
 /// Theme switcher card shown inside the Setup placeholder screen.

@@ -1,22 +1,15 @@
 # TASK_STATE.md
 
-- **Branch:** `flutter/f6-stock`
-- **Completed (F0 + F1 + F2 + F3 + F4a + F4b + F4c + F5 + F6 Stock):**
-  - **Section 0 (`66b4a7e`):**
-    - Updated `.gitignore` (`.serena/`, `.vscode/`, `.DS_Store`) and committed `app/devtools_options.yaml`.
-    - Fixed sent-line icons in `SaleOrderPanel` (`app/lib/features/sale/presentation/widgets/sale_order_panel.dart`) via `AppIcons.forLineKind` so head lines (`ผู้ใหญ่/เด็ก/เด็กเล็ก`) use `'user'` instead of `'drink'`.
-  - **Section 1 — Step F6 Stock (`feat(stock): fast daily count, purchases, expenses and balance`):**
-    - Confirmed stock rules documented in `docs/llms/keptoh-blueprint.md`:
-      1. `StockStatus`: `out` (`qty <= 0`), `low` (`par > 0 && 0 < qty < par`, recommended order `roundQty(par - qty, unit)`), `ok` (`qty >= par`, or `qty > 0` when `par <= 0`).
-      2. Units & rounding: discrete units (`kCountUnits`: `ฟอง, แพ็ค, ถุง, ชิ้น, ขวด`) disable `.` on `NumPad`; continuous units (`กก., ลิตร`) allow `.` up to 1 decimal place (`maxDecimalPlaces: 1`); saving rounds with `roundQty(val, unit)`.
-      3. Costing: `savePurchase` never mutates `ing.lastCost`; all unit costs come from `st.purchases` via `computeLedger`, and `StockBalance` switches between `ต้นทุนเฉลี่ย` (`avg`) and `ราคาซื้อล่าสุด` (`last`) per `shop.costMethod`.
-      4. Permissions: `cashier` can add purchases and daily expenses; editing/deleting purchases or daily expenses and reopening a closed day (`ยกเลิกการปิดวัน`) are restricted to `manager`/`owner`.
-    - Implemented domain operations in `app/lib/domain/stock_ops.dart` and updated `app/lib/domain/ledger.dart`.
-    - Implemented `StockCountBloc` (`app/lib/features/stock/presentation/bloc/`) and `StockCubit` (`app/lib/features/stock/presentation/cubit/`), scoped to `/stock` route in `app/lib/core/router/app_router.dart` (created fresh on entering `/stock`, never held at app root).
-    - Built `StockPage`, `StockCountTab`, `StockCountNumPadPanel`, `StockPurchaseTab`, `PurchaseModal`, `StockExpenseTab`, `ExpenseModal`, `StockBalanceTab`, and `StockFilterDrawer` (reusing shared `RightSheetDrawer` and `AppToastService`).
-    - Added JS parity unit tests (`stock_ops_test.dart`), BLoC tests (`stock_bloc_test.dart`), widget flow tests (`stock_flow_test.dart`), and golden tests (`stock_golden_test.dart` at `1024x768` and `1366x1024`).
-    - Polished `/stock` UI based on iPad `1024x768` screen audit (`748c70c`): removed `"แสดงทุกรายการ"` toggle so all 15 ingredients are always displayed in `StockCountTab`, tightened `StockCountNumPadPanel` spacing, fixed `Field` empty-label height & `Dropdown` compact height in `PurchaseModal` / `ExpenseModal`, aligned `Modal` footer totals to the left via `footerLeading`, aligned `StockExpenseTab` footer total under the `ยอด` column, and expanded `Seg` full-width in `StockFilterDrawer`.
-    - Fixed `computeLedger` today resolution & injected clock (`d61e1f7`): removed `_defaultTodayKey` from `app/lib/domain/ledger.dart` so `today` comes strictly from the passed `today` argument or `dkey(DateTime.now())`; injected `{DateTime? now, DateTime Function()? clock}` into `AuthCubit`, `StockCubit`, `StockCountBloc`, `BillsCubit`, `KepTohApp`, and `ShellPlaceholderPage`; added unit test verifying `computeLedger` without `today` uses clock date even when state contains future dates.
-    - Refactored files exceeding 300 lines across `app/lib` so every `.dart` file in `app/lib` is `<= 300` lines (`stock_count_table.dart`, `stock_purchase_widgets.dart`, `purchase_modal_line_row.dart`, `stock_balance_grid.dart`, `shell_placeholder_page.dart`, `stock_balance_ops.dart`, `sale_summary_widgets.dart`).
+- **Branch:** `flutter/f7-dashboard-reports`
+- **Completed (F0 + F1 + F2 + F3 + F4a + F4b + F4c + F5 + F6 + F7 Dashboard & Reports):**
+  - **Step F6 Stock (`origin/main` `3cbfea6`):**
+    - Completed fast daily count, purchases, expenses, stock balance, iPad `1024x768` polish, strict clock injection in `computeLedger`, and `<= 300` line limit across `app/lib`.
+  - **Step F7 Dashboard & Reports (`feat(dashboard): profit overview, chart and daily reports`):**
+    - Implemented pure domain calculations in `app/lib/domain/dashboard_reports_ops.dart` and `app/lib/domain/reports_ops.dart` (`computeDashboardSummary`, `computeMonthlyReport`, `IngredientCostShareRow`, `AddonSalesSummaryRow`, `DashboardSummary`, `MonthlyReportSummary`) with 100% parity against `prototype/index.html` (`DashboardView`, `ProfitChart`, `ReportsView`).
+    - Implemented route-scoped `DashboardCubit` (`app/lib/features/dashboard/presentation/cubit/dashboard_cubit.dart`) and `ReportsCubit` (`app/lib/features/reports/presentation/cubit/reports_cubit.dart`), created fresh when entering `/dashboard` and `/reports` with `{DateTime? now, DateTime Function()? clock}` injection.
+    - Built `DashboardPage`, `DashboardHeroSection` (`today-hero` + `PendingBadge` + `"วันนี้ยังไม่ปิดยอด"` banner with `"ไปนับของเหลือ"` button navigating to `/stock`), primary/secondary `StatsGroup`, `ProfitChart` (`CustomPainter` bar chart with 3 dashed grid lines + numbers, zero line, positive green / negative red / unclosed faint bars, `<= 10` date labels, and tap-to-inspect bar badge), and `DashboardBreakdownGrid` (`ต้นทุนวัตถุดิบแยกรายการ` top 8 + `ขายเสริม · เครื่องดื่ม`).
+    - Built `ReportsPage` and `DailyReportTable` with month `Dropdown` selector, monthly summary `StatsGroup`, pinned left `วันที่` column (`"ยังไม่ปิด"` pill when open), horizontally scrollable metric columns on `1024x768`, monthly `รวม` footer (cost/profit summed over closed days only), and row tap navigating to `/bills?date=YYYY-MM-DD`.
+    - Added JS parity unit tests (`dashboard_reports_ops_test.dart`), `bloc_test` suite (`dashboard_reports_cubit_test.dart`), widget flow tests (`dashboard_reports_flow_test.dart`), and golden tests (`dashboard_reports_golden_test.dart` at `1024x768` with top safe area `24`, `1366x1024`, and dark mode `1024x768`).
+    - Verified every `.dart` file in `app/lib` is `<= 300` lines (`max = 300`).
 - **In Progress / Broken:** None.
-- **Next Immediate Step:** Proceed to Step F7 (`/dashboard`, `/reports`, `/setup`) per `docs/llms/flutter-plan.md`.
+- **Next Immediate Step:** Proceed to Step F8 (`/setup` — ตั้งค่าร้าน, แพ็กเกจ/เครื่องดื่ม, วัตถุดิบ/สูตรต้นทุน, โต๊ะ, พนักงาน/สิทธิ์, ช่องทางชำระ/PromptPay, ค่าคงที่รายเดือน) per `docs/llms/flutter-plan.md`.
