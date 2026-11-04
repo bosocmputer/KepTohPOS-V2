@@ -10,8 +10,13 @@ abstract final class AppTheme {
     final tokens = AppTokens.resolve(brightness: brightness);
     final baseTheme = ThemeData(useMaterial3: true, brightness: brightness);
 
-    final bodyFont = GoogleFonts.ibmPlexSansThai(color: tokens.ink);
-    final displayStyle = GoogleFonts.anuphan(color: tokens.ink);
+    final useRemoteFonts = GoogleFonts.config.allowRuntimeFetching;
+    final bodyFont = useRemoteFonts
+        ? GoogleFonts.ibmPlexSansThai(color: tokens.ink)
+        : TextStyle(color: tokens.ink);
+    final displayStyle = useRemoteFonts
+        ? GoogleFonts.anuphan(color: tokens.ink)
+        : TextStyle(color: tokens.ink);
     final textTheme = baseTheme.textTheme.copyWith(
       displayLarge: displayStyle.copyWith(
         fontSize: 28,

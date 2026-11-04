@@ -1,11 +1,11 @@
 # TASK_STATE.md
 
-- **Branch:** `flutter/f1-domain`
-- **Completed (F0 + F1 Preparation + F1 Domain & Parity Unit Tests):**
-  - Merged `origin/claude/determined-bell-k5ps5l` (plan v0.4).
-  - Renamed 23 Figma reference screenshots in `design/figma/`, removed redundant zip archive, and documented mapped/missing screens in `design/figma/README.md`.
-  - Split `app/lib/core/theme/tokens.dart` into `raw_tokens.dart` + `tokens.dart` (single `figma` brand, `light`/`dark`/`system` modes) and removed `app/assets/mock/mock_data.json`.
-  - Ported pure-Dart domain models, permissions (`ROLE`, `VIEWS`), pricing (`calcOrder`, `tableTotals`, `mergeTotals`, `orderOf`, `tableDue`, `tableTimer`, `sentLines`), settlement (`sendRound`, `adjustSent`, `settle`), inventory/profit ledger (`computeLedger`), and deterministic `rng`/`seed` into `app/lib/domain/`.
-  - Added JS-parity unit tests in `app/test/unit/order_settle_test.dart` and `app/test/unit/seed_ledger_test.dart` (`flutter analyze` 0 issues, `flutter test` 11/11 passed).
+- **Branch:** `flutter/f2-shell`
+- **Completed (F0 + F1 + F2 Shared Components, AppShell & Router):**
+  - **F1 Cleanup:** Added unit tests for stock deduction (`before` on `settle`, `after` on `sendRound` + `adjustSent` restore), `promptPayPayload` + `crc16`, and `tableTimer` (`timeLimit` + overdue `late = true`); removed unused `freezed`/`json_serializable`/`build_runner` from `app/pubspec.yaml`.
+  - **F2 Shared Components (`app/lib/core/widgets/`):** Implemented `AppIcon`, `Btn`, `Field`/`AppTextInput`, `Dropdown`, `PosStepper`, `Seg`, `Tabs`, `NumPad`, `PinDots`, `Pill`, `Stat`/`StatsGroup`, `PosDataTable`, `Pagination`, `Empty`/`ResultState`, `Modal`, `Confirm`, `AppToast`/`showAppToast`, `ProductCard`, `PageHeader`/`Toolbar`/`SearchBox`/`Avatar`, plus debug showcase `/dev/components` (Light & Dark side-by-side) and `formatters.dart`.
+  - **F2 Layout & Router (`app/lib/core/layout/`, `app/lib/core/router/`):** Implemented responsive `AppShell` (`>= 761`: `88px` Header + `365px` slide-over `NavDrawer` with dark scrim; `<= 760`: Bottom nav 4 items + `"เพิ่มเติม"`), role-filtered navigation (`allowedViewsForRole`), routes (`/tables`, `/bills`, `/stock`, `/shift`, `/dashboard`, `/reports`, `/setup`), widget tests, and golden tests (`1366x1024`, `820x1180`, `390x844`).
 - **In Progress / Broken:** None.
-- **Next Immediate Step:** Start **F2** (`docs/llms/flutter-plan.md`): implement data layer (`drift` SQLite tables/DAOs + `shared_preferences` + repositories + first-run seed from `assets/mock/*.json`) and repository tests.
+- **Important Note for F3 & Subsequent BLoC/Cubit Steps:**
+  - `domain` functions (`settle`, `sendRound`, `adjustSent`, `takeStock`, `makeBill`, ฯลฯ) แก้ `PosState` ในก้อนเดิม (in-place mutation) → **Bloc/Cubit ต้อง copy state ก่อนเรียกฟังก์ชัน domain แล้วค่อย `emit` state ก้อนใหม่เสมอ**
+- **Next Immediate Step:** Start **F3** (`docs/llms/flutter-plan.md`): implement Login (PIN) + Shift (open/close) + role-based menu permissions flow.

@@ -1,133 +1,102 @@
+import 'package:app/core/layout/app_shell.dart';
 import 'package:app/core/theme/app_theme.dart';
 import 'package:app/core/theme/tokens.dart';
+import 'package:app/core/widgets/dev_components_page.dart';
+import 'package:app/core/widgets/widgets.dart';
+import 'package:app/domain/roles.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-/// Creates the application [GoRouter].
-GoRouter createAppRouter() => GoRouter(
-  initialLocation: '/',
+/// Creates the application [GoRouter] with routes matching `VIEWS`:
+/// `/tables`, `/bills`, `/stock`, `/shift`, `/dashboard`, `/reports`, `/setup`
+/// plus debug-only `/dev/components`.
+GoRouter createAppRouter({String initialLocation = '/tables'}) => GoRouter(
+  initialLocation: initialLocation,
   routes: <RouteBase>[
-    GoRoute(path: '/', builder: (context, state) => const F0BootstrapPage()),
+    GoRoute(path: '/', redirect: (_, _) => '/tables'),
+    for (final view in kAppViews)
+      GoRoute(
+        path: '/${view.id}',
+        builder: (context, state) => ShellPlaceholderPage(viewSpec: view),
+      ),
+    if (kDebugMode)
+      GoRoute(
+        path: '/dev/components',
+        builder: (context, state) => const DevComponentsPage(),
+      ),
   ],
 );
 
-/// F0 empty shell page allowing live switching of theme mode
-/// (`light` / `dark` / `system`).
-class F0BootstrapPage extends StatelessWidget {
-  const new({super.key});
+/// F2 placeholder screen for each `VIEWS` route wrapped in [AppShell] and
+/// displaying a [PageHeader] + theme mode switcher.
+class ShellPlaceholderPage extends StatelessWidget {
+  const new({
+    required this.viewSpec,
+    super.key,
+    this.staffRole = 'owner',
+    this.initialDrawerOpen = false,
+  });
+
+  final AppViewSpec viewSpec;
+  final String staffRole;
+  final bool initialDrawerOpen;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final themeState = context.watch<ThemeCubit>().state;
-    final cubit = context.read<ThemeCubit>();
-    final textTheme = Theme.of(context).textTheme;
+    final themeCubit = context.read<ThemeCubit>();
 
-    return Scaffold(
-      backgroundColor: tokens.bg,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: Padding(
-              padding: const EdgeInsets.all(AppDimensions.space6),
-              child: Container(
-                padding: const EdgeInsets.all(AppDimensions.space6),
-                decoration: BoxDecoration(
-                  color: tokens.surface,
-                  borderRadius: BorderRadius.circular(AppDimensions.r),
-                  border: Border.all(color: tokens.line),
-                  boxShadow: tokens.shadows,
+    return AppShell(
+      activeViewId: viewSpec.id,
+      staffRole: staffRole,
+      initialDrawerOpen: initialDrawerOpen,
+      onNavigate: (viewId) => context.go('/$viewId'),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppDimensions.space6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            PageHeader(
+              title: viewSpec.title,
+              desc: 'ธีมและการแสดงผล',
+              actions: [
+                Text(
+                  'KepToh POS',
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: tokens.muted),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'KepToh POS',
-                      style: textTheme.displaySmall?.copyWith(
-                        color: tokens.ink,
-                      ),
-                    ),
-                    const SizedBox(height: AppDimensions.space1),
-                    Text(
-                      'ธีมและการแสดงผล',
-                      style: textTheme.bodySmall?.copyWith(color: tokens.muted),
-                    ),
-                    const SizedBox(height: AppDimensions.space5),
-                    Text(
-                      'โหมด',
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: tokens.ink,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: AppDimensions.space2),
-                    Wrap(
-                      spacing: AppDimensions.space2,
-                      children: AppThemeMode.values.map((mode) {
-                        final selected = themeState.mode == mode;
-                        return _SegmentChip(
-                          key: ValueKey('mode-${mode.name}'),
-                          label: mode.label,
-                          selected: selected,
-                          onTap: () => cubit.setMode(mode),
-                        );
-                      }).toList(),
-                    ),
-                  ],
+                Wrap(
+                  spacing: AppDimensions.space2,
+                  children: AppThemeMode.values.map((mode) {
+                    final selected = themeState.mode == mode;
+                    return Btn(
+                      key: ValueKey('mode-${mode.name}'),
+                      label: mode.label,
+                      size: BtnSize.sm,
+                      kind: selected ? BtnKind.primary : BtnKind.normal,
+                      onPressed: () => themeCubit.setMode(mode),
+                    );
+                  }).toList(),
                 ),
+              ],
+            ),
+            const SizedBox(height: AppDimensions.space5),
+            Container(
+              decoration: BoxDecoration(
+                color: tokens.surface,
+                borderRadius: BorderRadius.circular(AppDimensions.r),
+                border: Border.all(color: tokens.line),
+              ),
+              child: Empty(
+                title: viewSpec.title,
+                text:
+                    'หน้าจอ ${viewSpec.label} (เตรียมเชื่อมข้อมูลในขั้นถัดไป)',
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SegmentChip extends StatelessWidget {
-  const new({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    super.key,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.tokens;
-    return Material(
-      color: selected ? tokens.primary : tokens.surface2,
-      borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minHeight: AppDimensions.tap,
-            minWidth: 88,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.space4,
-              vertical: AppDimensions.space2,
-            ),
-            child: Center(
-              child: Text(
-                label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: selected ? tokens.onPrimary : tokens.ink,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
+          ],
         ),
       ),
     );

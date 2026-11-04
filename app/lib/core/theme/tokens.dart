@@ -162,6 +162,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
   final Color sideHover;
   final Color sideLine;
   final List<BoxShadow> shadows;
+  Color get scrim => AppRawTokens.scrim;
 
   @override
   AppTokens copyWith({

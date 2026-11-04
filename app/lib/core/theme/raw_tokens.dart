@@ -54,26 +54,74 @@ abstract final class AppDimensions {
   static const String fontDisplay = 'Anuphan';
   static const String fontBody = 'IBM Plex Sans Thai';
 
+  static const double fs2xs = 11;
   static const double fsXs = 12;
   static const double fsSm = 14;
   static const double fsBase = 15;
   static const double fsMd = 16;
+  static const double fsLg = 18;
+  static const double fsXl = 20;
+  static const double fs2xl = 22;
+  static const double fs3xl = 24;
+
+  static const double iconXs = 16;
+  static const double iconSm = 18;
+  static const double iconMd = 20;
+  static const double iconLg = 22;
+  static const double iconXl = 24;
+  static const double icon2xl = 28;
+
+  static const double borderThin = 1;
+  static const double borderThick = 1.5;
+  static const double borderBold = 2;
+  static const double borderAccent = 3;
 
   static const double radiusXs = 4;
   static const double radiusSm = 8;
   static const double radiusMd = 12;
   static const double radiusLg = 16;
+  static const double radiusPill = 999;
   static const double r = radiusMd;
 
+  static const double space0 = 0;
+  static const double spaceHalf = 2;
   static const double space1 = 4;
+  static const double space1_5 = 6;
   static const double space2 = 8;
+  static const double space2_5 = 10;
   static const double space3 = 12;
+  static const double space3_5 = 14;
   static const double space4 = 16;
+  static const double space4_5 = 18;
   static const double space5 = 20;
+  static const double space5_5 = 22;
   static const double space6 = 24;
+  static const double space7 = 28;
+  static const double space8 = 32;
+  static const double space9 = 36;
+  static const double space10 = 40;
+  static const double space12 = 48;
 
   static const double tap = 44;
+  static const double btnSmH = 36;
+  static const double btnMdH = 44;
+  static const double btnLgH = 56;
+  static const double dropdownMinH = 56;
+  static const double dropdownMaxListH = 320;
+  static const double numPadKeyH = 60;
+  static const double numPadMaxW = 320;
+  static const double pinDotSize = 16;
+  static const double avatarSm = 36;
+  static const double avatarMd = 40;
+  static const double statusDotSm = 8;
+  static const double statusDotMd = 12;
+  static const double modalW = 560;
+  static const double modalWideW = 1000;
+  static const double productCardImgH = 112;
+
+  static const double headerH = 88;
   static const double sidebarW = 232;
   static const double railW = 96;
   static const double drawerW = 365;
+  static const double mobileBp = 760;
 }
