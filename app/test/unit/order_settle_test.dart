@@ -157,8 +157,13 @@ void main() {
       final pmCash = s.payments.firstWhere((p) => p.id == 'pm1');
       final pmQr = s.payments.firstWhere((p) => p.id == 'pm2');
       final pkg2 = s.packages.firstWhere((p) => p.id == 'pk2');
+      int stockOf(String id) => s.addons.firstWhere((x) => x.id == id).stock;
 
-      // 1. Pay-before-eating on t1
+      // Initial stock from mock-data.js (ad1=96, ad5=60)
+      expect(stockOf('ad1'), 96);
+      expect(stockOf('ad5'), 60);
+
+      // 1. Pay-before-eating on t1 (deducts stock on settle: ad1=94, ad5=59)
       settle(
         s,
         t1,
@@ -172,6 +177,8 @@ void main() {
         notes: 'test before',
         now: fixedNow,
       );
+      expect(stockOf('ad1'), 94);
+      expect(stockOf('ad5'), 59);
 
       expect(s.sales.length, 1);
       final bill1 = s.sales.first;
@@ -181,7 +188,7 @@ void main() {
       expect(bill1.change, 393);
       expect(s.openTables['t1']?.billIds, contains('b1'));
 
-      // 2. Eat-before-paying on t2 (2 rounds, adjustSent, sentLines, settle)
+      // 2. Eat-before-paying on t2 (sendRound deducts stock immediately)
       sendRound(
         s,
         t2,
@@ -192,6 +199,9 @@ void main() {
         'round 1',
         now: fixedNow,
       );
+      expect(stockOf('ad1'), 91);
+      expect(stockOf('ad5'), 57);
+
       sendRound(
         s,
         t2,
@@ -202,6 +212,8 @@ void main() {
         'round 2',
         now: fixedNow,
       );
+      expect(stockOf('ad1'), 91);
+      expect(stockOf('ad5'), 56);
 
       final ot = s.openTables['t2']!;
       final totBefore = tableTotals(ot);
@@ -210,8 +222,11 @@ void main() {
       expect(totBefore.ad, {'ad1': 3, 'ad5': 3});
       expect(tableDue(s, ot), 1540);
 
+      // adjustSent restores stock for addon (ad5 + 1 = 57)
       adjustSent(s, 't2', 'head', 'a', 1, 'ลดหัวผู้ใหญ่ 1', me, now: fixedNow);
       adjustSent(s, 't2', 'addon', 'ad5', 1, 'คืนเบียร์ 1', me, now: fixedNow);
+      expect(stockOf('ad1'), 91);
+      expect(stockOf('ad5'), 57);
 
       final totAfter = tableTotals(ot);
       expect(totAfter.a, 3);
@@ -240,6 +255,8 @@ void main() {
         notes: 'settle after',
         now: fixedNow,
       );
+      expect(stockOf('ad1'), 90);
+      expect(stockOf('ad5'), 57);
 
       final bill2 = s.sales.last;
       expect(bill2.no, '261104-002');

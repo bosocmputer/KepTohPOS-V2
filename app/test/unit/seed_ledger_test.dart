@@ -153,4 +153,66 @@ void main() {
       },
     );
   });
+
+  group('promptPayPayload + crc16 & tableTimer (timeLimit/late) JS parity', () {
+    test('crc16 and promptPayPayload match full EMVCo strings from JS', () {
+      expect(crc16('000201010211'), '0449');
+      expect(
+        promptPayPayload('081-234-5678'),
+        '00020101021129370016A0000006770101110113006681234567853037645802TH'
+        '6304823E',
+      );
+      expect(
+        promptPayPayload('081-234-5678', 607),
+        '00020101021229370016A0000006770101110113006681234567853037645406'
+        '607.005802TH6304E9DB',
+      );
+      expect(
+        promptPayPayload('0105565098765', 1196.5),
+        '00020101021229370016A0000006770101110213010556509876553037645407'
+        '1196.505802TH6304B135',
+      );
+    });
+
+    test(
+      'tableTimer handles package timeLimit (remaining vs overdue late)',
+      () {
+        final fixedNow = DateTime(2026, 11, 4, 12);
+        final s = _loadSeededState(fixedNow);
+
+        final ot90 = OpenTableState(
+          openedAt: fixedNow
+              .subtract(const Duration(minutes: 90))
+              .toUtc()
+              .toIso8601String(),
+          packageId: 'pk2', // pk2 has timeLimit: 120
+        );
+        final tm90 = tableTimer(s, ot90, now: fixedNow);
+        expect(tm90.mins, 90);
+        expect(tm90.limit, 120);
+        expect(tm90.late, isFalse);
+        expect(tm90.text, 'เหลือ 30 น.');
+
+        final ot135 = OpenTableState(
+          openedAt: fixedNow
+              .subtract(const Duration(minutes: 135))
+              .toUtc()
+              .toIso8601String(),
+          packageId: 'pk2',
+        );
+        final tm135 = tableTimer(s, ot135, now: fixedNow);
+        expect(tm135.mins, 135);
+        expect(tm135.limit, 120);
+        expect(tm135.late, isTrue);
+        expect(tm135.text, 'เกินเวลา 15 น.');
+
+        s.shop = s.shop.copyWith(useTimer: false);
+        final tmDisabled = tableTimer(s, ot135, now: fixedNow);
+        expect(tmDisabled.mins, 135);
+        expect(tmDisabled.limit, 0);
+        expect(tmDisabled.late, isFalse);
+        expect(tmDisabled.text, 'นั่งมา 135 น.');
+      },
+    );
+  });
 }
