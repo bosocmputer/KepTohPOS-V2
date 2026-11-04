@@ -176,3 +176,4 @@ List<StockBalanceRow> computeStockBalanceRows(PosState s, LedgerResult ledger) {
     );
   }).toList();
 }
+
