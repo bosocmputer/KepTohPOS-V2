@@ -87,14 +87,7 @@ class _SalePageState extends State<SalePage> {
           curr.toastMessage.isNotEmpty &&
           curr.toastMessage != prev.toastMessage,
       listener: (context, state) {
-        final hasModal =
-            state.settledBill != null ||
-            _showNoteModal ||
-            _removeSelection != null ||
-            _showCloseConfirm;
-        if (!hasModal) {
-          showAppToast(context, state.toastMessage);
-        }
+        showAppToast(context, state.toastMessage);
         context.read<SaleBloc>().add(const SaleToastCleared());
       },
       builder: (context, state) {

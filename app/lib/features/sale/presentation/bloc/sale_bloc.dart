@@ -273,7 +273,6 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
         state.tableId,
         now: _fixedNow,
         settledBillId: billId,
-        toastMessage: 'รับเงินโต๊ะ ${tb.name} เรียบร้อย',
       ),
     );
   }
