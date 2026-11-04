@@ -9,6 +9,8 @@ import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:app/features/auth/presentation/pages/login_page.dart';
+import 'package:app/features/bills/presentation/cubit/bills_cubit.dart';
+import 'package:app/features/bills/presentation/pages/bills_page.dart';
 import 'package:app/features/sale/presentation/pages/sale_page.dart';
 import 'package:app/features/shift/presentation/bloc/shift_bloc.dart';
 import 'package:app/features/shift/presentation/pages/shift_page.dart';
@@ -119,6 +121,7 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
     final authCubit = _maybe<AuthCubit>(context);
     final shiftBloc = _maybe<ShiftBloc>(context);
     final tablesCubit = _maybe<TablesCubit>(context);
+    final billsCubit = _maybe<BillsCubit>(context);
     final existingSaleBloc = _maybe<SaleBloc>(context, watch: false);
     final repo = _maybe<PosRepository>(context, watch: false);
     final activeShift = shiftBloc?.state.activeShift;
@@ -148,6 +151,8 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
         (existingSaleBloc != null || repo != null);
     final isTablesView =
         !isSaleView && widget.viewSpec.id == 'tables' && tablesCubit != null;
+    final isBillsView =
+        widget.viewSpec.id == 'bills' && (billsCubit != null || repo != null);
 
     final Widget body;
     if (isSaleView) {
@@ -171,6 +176,14 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
         onRequestOpenShift: () => setState(() => _manualOpenShiftModal = true),
         onGoSetupTables: () => context.go('/setup'),
       );
+    } else if (isBillsView) {
+      final billsPage = BillsPage(staff: me);
+      body = billsCubit != null
+          ? billsPage
+          : BlocProvider<BillsCubit>(
+              create: (_) => BillsCubit(repo!),
+              child: billsPage,
+            );
     } else if (widget.viewSpec.id == 'shift' && shiftBloc != null) {
       body = ShiftPage(
         staffId: me.id,
@@ -239,9 +252,21 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
                 },
               ),
           ],
-          searchQuery: isTablesView ? tablesCubit.state.searchQuery : '',
-          searchPlaceholder: isTablesView ? 'ค้นหาชื่อโต๊ะ' : 'ค้นหา',
-          onSearchChanged: isTablesView ? tablesCubit.setSearchQuery : null,
+          searchQuery: isTablesView
+              ? tablesCubit.state.searchQuery
+              : (isBillsView && billsCubit != null
+                    ? billsCubit.state.searchQuery
+                    : ''),
+          searchPlaceholder: isTablesView
+              ? 'ค้นหาชื่อโต๊ะ'
+              : (isBillsView
+                    ? 'ค้นหาเลขที่บิล โต๊ะ ช่องทาง แคชเชียร์'
+                    : 'ค้นหา'),
+          onSearchChanged: isTablesView
+              ? tablesCubit.setSearchQuery
+              : (isBillsView && billsCubit != null
+                    ? billsCubit.setSearchQuery
+                    : null),
           onNavigate: (viewId) => viewId == 'dev/components'
               ? unawaited(context.push('/dev/components'))
               : context.go('/$viewId'),

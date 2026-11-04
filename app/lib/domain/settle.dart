@@ -254,3 +254,43 @@ void adjustSent(
     takeStock(st, <String, int>{key: -n});
   }
 }
+
+/// Voids a settled [BillRecord] (`me.role != 'cashier'`) and restores addon
+/// stock for all addon items recorded on the bill. Returns `true` if voided,
+/// or `false` if unauthorized, not found, or already voided.
+bool voidBill(
+  PosState st, {
+  required String billId,
+  required StaffMember me,
+  String reason = '',
+  DateTime? now,
+}) {
+  if (me.role == 'cashier') return false;
+  BillRecord? bill;
+  for (final b in st.sales) {
+    if (b.id == billId) {
+      bill = b;
+      break;
+    }
+  }
+  if (bill == null || bill.voided) return false;
+
+  final current = now ?? DateTime.now();
+  final trimmed = reason.trim();
+  bill
+    ..voided = true
+    ..voidReason = trimmed.isEmpty ? 'ไม่ระบุ' : trimmed
+    ..voidBy = me.name
+    ..voidAt = current.toUtc().toIso8601String();
+
+  final returnMap = <String, int>{};
+  for (final line in bill.lines) {
+    if (line.type == 'addon' && line.id != null && line.qty > 0) {
+      returnMap[line.id!] = (returnMap[line.id!] ?? 0) - line.qty;
+    }
+  }
+  if (returnMap.isNotEmpty) {
+    takeStock(st, returnMap);
+  }
+  return true;
+}

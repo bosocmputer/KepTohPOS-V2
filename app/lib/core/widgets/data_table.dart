@@ -13,11 +13,13 @@ class DataTableCol<T> {
     required this.label,
     required this.cellBuilder,
     this.align = ColAlign.left,
+    this.flex = 1,
   });
 
   final String key;
   final String label;
   final ColAlign align;
+  final int flex;
   final Widget Function(BuildContext context, T row) cellBuilder;
 }
 
@@ -97,6 +99,7 @@ class PosDataTable<T> extends StatelessWidget {
                           children: [
                             for (final col in columns)
                               Expanded(
+                                flex: col.flex,
                                 child: Align(
                                   alignment: _alignment(col.align),
                                   child: Text(
@@ -188,6 +191,7 @@ class PosDataTable<T> extends StatelessWidget {
           children: [
             for (final col in columns)
               Expanded(
+                flex: col.flex,
                 child: Align(
                   alignment: _alignment(col.align),
                   child: col.cellBuilder(context, row),
