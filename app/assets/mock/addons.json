@@ -1,0 +1,74 @@
+[
+  {
+    "id": "ad1",
+    "name": "น้ำเปล่า 600 มล.",
+    "category": "เครื่องดื่ม",
+    "price": 15,
+    "cost": 6,
+    "stock": 96,
+    "active": true
+  },
+  {
+    "id": "ad2",
+    "name": "น้ำแข็งถัง",
+    "category": "เครื่องดื่ม",
+    "price": 20,
+    "cost": 6,
+    "stock": 999,
+    "active": true
+  },
+  {
+    "id": "ad3",
+    "name": "โค้ก 325 มล.",
+    "category": "เครื่องดื่ม",
+    "price": 25,
+    "cost": 13,
+    "stock": 72,
+    "active": true
+  },
+  {
+    "id": "ad4",
+    "name": "โซดา",
+    "category": "เครื่องดื่ม",
+    "price": 20,
+    "cost": 9,
+    "stock": 48,
+    "active": true
+  },
+  {
+    "id": "ad5",
+    "name": "เบียร์ช้าง ขวดใหญ่",
+    "category": "เครื่องดื่ม",
+    "price": 80,
+    "cost": 56,
+    "stock": 60,
+    "active": true
+  },
+  {
+    "id": "ad6",
+    "name": "เบียร์ลีโอ ขวดใหญ่",
+    "category": "เครื่องดื่ม",
+    "price": 80,
+    "cost": 55,
+    "stock": 60,
+    "active": true
+  },
+  {
+    "id": "ad7",
+    "name": "เบียร์สิงห์ ขวดใหญ่",
+    "category": "เครื่องดื่ม",
+    "price": 90,
+    "cost": 63,
+    "stock": 36,
+    "active": true
+  },
+  {
+    "id": "adFine",
+    "name": "ค่าปรับอาหารเหลือ (ต่อ 100 กรัม)",
+    "category": "อื่นๆ",
+    "price": 20,
+    "cost": 0,
+    "stock": 999,
+    "active": false
+  }
+]

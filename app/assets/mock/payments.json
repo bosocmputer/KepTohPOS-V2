@@ -1,0 +1,26 @@
+[
+  {
+    "id": "pm1",
+    "name": "เงินสด",
+    "type": "cash",
+    "active": true
+  },
+  {
+    "id": "pm2",
+    "name": "พร้อมเพย์ (QR)",
+    "type": "qr",
+    "active": true
+  },
+  {
+    "id": "pm3",
+    "name": "โอนเข้าบัญชีร้าน",
+    "type": "transfer",
+    "active": true
+  },
+  {
+    "id": "pm4",
+    "name": "บัตรเครดิต",
+    "type": "card",
+    "active": false
+  }
+]

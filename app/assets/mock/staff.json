@@ -1,0 +1,30 @@
+[
+  {
+    "id": "st1",
+    "name": "คุณแอน",
+    "role": "owner",
+    "pin": "1234",
+    "active": true
+  },
+  {
+    "id": "st2",
+    "name": "คุณบี",
+    "role": "manager",
+    "pin": "2222",
+    "active": true
+  },
+  {
+    "id": "st3",
+    "name": "น้องมุก",
+    "role": "cashier",
+    "pin": "1111",
+    "active": true
+  },
+  {
+    "id": "st4",
+    "name": "น้องเต้",
+    "role": "cashier",
+    "pin": "3333",
+    "active": true
+  }
+]
