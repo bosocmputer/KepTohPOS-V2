@@ -123,5 +123,6 @@ abstract final class AppDimensions {
   static const double sidebarW = 232;
   static const double railW = 96;
   static const double drawerW = 365;
+  static const double orderPanelW = 396;
   static const double mobileBp = 760;
 }

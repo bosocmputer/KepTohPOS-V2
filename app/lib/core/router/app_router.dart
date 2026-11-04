@@ -6,11 +6,13 @@ import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/dev_components_page.dart';
 import 'package:app/core/widgets/widgets.dart';
-import 'package:app/domain/roles.dart';
+import 'package:app/domain/domain.dart';
 import 'package:app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:app/features/auth/presentation/pages/login_page.dart';
+import 'package:app/features/sale/presentation/pages/sale_page.dart';
 import 'package:app/features/shift/presentation/bloc/shift_bloc.dart';
 import 'package:app/features/shift/presentation/pages/shift_page.dart';
+import 'package:app/features/tables/presentation/pages/tables_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,9 +22,7 @@ class _StreamRefreshListenable extends ChangeNotifier {
   new(Stream<dynamic> stream) {
     _sub = stream.listen((_) => notifyListeners());
   }
-
   late final StreamSubscription<dynamic> _sub;
-
   @override
   void dispose() {
     unawaited(_sub.cancel());
@@ -30,10 +30,7 @@ class _StreamRefreshListenable extends ChangeNotifier {
   }
 }
 
-/// Creates the application [GoRouter] with routes matching `VIEWS`:
-/// `/login`, `/tables`, `/bills`, `/stock`, `/shift`, `/dashboard`,
-/// `/reports`, `/setup`, plus debug-only `/dev/components`.
-/// Enforces authentication and role-based route redirection.
+/// Creates the application [GoRouter] with routes matching `VIEWS`.
 GoRouter createAppRouter({
   String initialLocation = '/tables',
   AuthCubit? authCubit,
@@ -52,9 +49,10 @@ GoRouter createAppRouter({
     }
     if (loc == '/login') return '/tables';
     final viewId = loc.startsWith('/') ? loc.substring(1) : loc;
+    final rootViewId = viewId.split('/').first;
     if (viewId.isNotEmpty &&
         viewId != 'dev/components' &&
-        !canAccessViewId(me.role, viewId)) {
+        !canAccessViewId(me.role, rootViewId)) {
       return '/tables';
     }
     return null;
@@ -65,6 +63,13 @@ GoRouter createAppRouter({
       path: '/login',
       builder: (context, state) =>
           LoginPage(onLoggedIn: () => context.go('/tables')),
+    ),
+    GoRoute(
+      path: '/tables/:tableId',
+      builder: (context, state) => ShellPlaceholderPage(
+        viewSpec: kAppViews.first,
+        saleTableId: state.pathParameters['tableId'],
+      ),
     ),
     for (final view in kAppViews)
       GoRoute(
@@ -80,19 +85,19 @@ GoRouter createAppRouter({
 );
 
 /// Screen wrapper for each `VIEWS` route inside [AppShell].
-/// Renders [ShiftPage] for `/shift`, theme settings for `/setup`, and
-/// placeholder content for upcoming features.
 class ShellPlaceholderPage extends StatefulWidget {
   const new({
     required this.viewSpec,
     super.key,
     this.staffRole = 'owner',
     this.initialDrawerOpen = false,
+    this.saleTableId,
   });
 
   final AppViewSpec viewSpec;
   final String staffRole;
   final bool initialDrawerOpen;
+  final String? saleTableId;
 
   @override
   State<ShellPlaceholderPage> createState() => _ShellPlaceholderPageState();
@@ -101,17 +106,9 @@ class ShellPlaceholderPage extends StatefulWidget {
 class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
   bool _manualOpenShiftModal = false;
 
-  AuthCubit? _maybeAuthCubit(BuildContext context) {
+  T? _maybe<T>(BuildContext context, {bool watch = true}) {
     try {
-      return context.watch<AuthCubit>();
-    } on Object {
-      return null;
-    }
-  }
-
-  ShiftBloc? _maybeShiftBloc(BuildContext context) {
-    try {
-      return context.watch<ShiftBloc>();
+      return watch ? context.watch<T>() : context.read<T>();
     } on Object {
       return null;
     }
@@ -120,21 +117,26 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final authCubit = _maybeAuthCubit(context);
-    final shiftBloc = _maybeShiftBloc(context);
-    final me = authCubit?.state.currentStaff;
+    final authCubit = _maybe<AuthCubit>(context);
+    final shiftBloc = _maybe<ShiftBloc>(context);
+    final tablesCubit = _maybe<TablesCubit>(context);
+    final existingSaleBloc = _maybe<SaleBloc>(context, watch: false);
+    final repo = _maybe<PosRepository>(context, watch: false);
     final activeShift = shiftBloc?.state.activeShift;
-
-    final effectiveStaffId = me?.id ?? 'st1';
-    final effectiveStaffName = me?.name ?? 'พี่ต้อม (เจ้าของร้าน)';
-    final effectiveRole = me?.role ?? widget.staffRole;
+    final me =
+        authCubit?.state.currentStaff ??
+        StaffMember(
+          id: 'st1',
+          name: 'พี่ต้อม (เจ้าของร้าน)',
+          role: widget.staffRole,
+          pin: '1111',
+        );
     final shiftTimeText = shiftBloc != null
         ? (activeShift != null ? thTime(activeShift.openedAt) : null)
         : '09:00';
     final shiftStaffName = shiftBloc != null && activeShift != null
         ? shiftBloc.state.staffNameOf(activeShift.staffId)
-        : effectiveStaffName;
-
+        : me.name;
     final showOpenShiftModal =
         shiftBloc != null &&
         activeShift == null &&
@@ -142,14 +144,36 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
             _manualOpenShiftModal);
 
     final Widget body;
-    if (widget.viewSpec.id == 'shift' && shiftBloc != null) {
+    if (widget.viewSpec.id == 'tables' &&
+        widget.saleTableId != null &&
+        (existingSaleBloc != null || repo != null)) {
+      final salePage = SalePage(
+        staff: me,
+        onBackToTables: () => context.go('/tables'),
+        onSelectTable: (id) => context.go('/tables/$id'),
+        onRequestOpenShift: () => setState(() => _manualOpenShiftModal = true),
+      );
+      body = existingSaleBloc != null
+          ? salePage
+          : BlocProvider<SaleBloc>(
+              key: ValueKey('sale-bloc-${widget.saleTableId}'),
+              create: (_) =>
+                  SaleBloc(repo!, initialTableId: widget.saleTableId!),
+              child: salePage,
+            );
+    } else if (widget.viewSpec.id == 'tables' && tablesCubit != null) {
+      body = TablesPage(
+        onSelectTable: (id) => context.go('/tables/$id'),
+        onRequestOpenShift: () => setState(() => _manualOpenShiftModal = true),
+        onGoSetupTables: () => context.go('/setup'),
+      );
+    } else if (widget.viewSpec.id == 'shift' && shiftBloc != null) {
       body = ShiftPage(
-        staffId: effectiveStaffId,
-        staffName: effectiveStaffName,
+        staffId: me.id,
+        staffName: me.name,
         onGoTables: () => context.go('/tables'),
       );
     } else {
-      final isSetup = widget.viewSpec.id == 'setup';
       body = SingleChildScrollView(
         padding: const EdgeInsets.all(AppDimensions.space6),
         child: Column(
@@ -159,7 +183,7 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
               title: widget.viewSpec.title,
               desc: 'ร้านหมูกระทะ เก็บโต๊ะ',
             ),
-            if (isSetup) ...[
+            if (widget.viewSpec.id == 'setup') ...[
               const SizedBox(height: AppDimensions.space5),
               const _SetupThemeSection(),
             ],
@@ -186,25 +210,17 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
       children: [
         AppShell(
           activeViewId: widget.viewSpec.id,
-          staffName: effectiveStaffName,
-          staffRole: effectiveRole,
+          staffName: me.name,
+          staffRole: me.role,
           shiftOpenTimeText: shiftTimeText,
           shiftStaffName: shiftStaffName,
           initialDrawerOpen: widget.initialDrawerOpen,
-          onNavigate: (viewId) {
-            if (viewId == 'dev/components') {
-              unawaited(context.push('/dev/components'));
-            } else {
-              context.go('/$viewId');
-            }
-          },
-          onShiftAction: () {
-            if (activeShift != null) {
-              context.go('/shift');
-            } else {
-              setState(() => _manualOpenShiftModal = true);
-            }
-          },
+          onNavigate: (viewId) => viewId == 'dev/components'
+              ? unawaited(context.push('/dev/components'))
+              : context.go('/$viewId'),
+          onShiftAction: () => activeShift != null
+              ? context.go('/shift')
+              : setState(() => _manualOpenShiftModal = true),
           onLogout: () {
             authCubit?.logout();
             context.go('/login');
@@ -213,8 +229,8 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
         ),
         if (showOpenShiftModal)
           OpenShiftModal(
-            staffId: effectiveStaffId,
-            staffName: effectiveStaffName,
+            staffId: me.id,
+            staffName: me.name,
             onClose: () {
               setState(() => _manualOpenShiftModal = false);
               authCubit?.dismissOpenShiftPrompt();
@@ -234,7 +250,6 @@ class _SetupThemeSection extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final themeState = context.watch<ThemeCubit>().state;
     final themeCubit = context.read<ThemeCubit>();
-
     return Container(
       padding: const EdgeInsets.all(AppDimensions.space5),
       decoration: BoxDecoration(
@@ -261,16 +276,19 @@ class _SetupThemeSection extends StatelessWidget {
           ),
           Wrap(
             spacing: AppDimensions.space2,
-            children: AppThemeMode.values.map((mode) {
-              final selected = themeState.mode == mode;
-              return Btn(
-                key: ValueKey('setup-mode-${mode.name}'),
-                label: mode.label,
-                size: BtnSize.sm,
-                kind: selected ? BtnKind.primary : BtnKind.normal,
-                onPressed: () => themeCubit.setMode(mode),
-              );
-            }).toList(),
+            children: AppThemeMode.values
+                .map(
+                  (mode) => Btn(
+                    key: ValueKey('setup-mode-${mode.name}'),
+                    label: mode.label,
+                    size: BtnSize.sm,
+                    kind: themeState.mode == mode
+                        ? BtnKind.primary
+                        : BtnKind.normal,
+                    onPressed: () => themeCubit.setMode(mode),
+                  ),
+                )
+                .toList(),
           ),
         ],
       ),
