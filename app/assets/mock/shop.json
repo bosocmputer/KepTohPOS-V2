@@ -1,0 +1,20 @@
+{
+  "name": "หมูกระทะลุงหมี",
+  "branch": "ร้านตัวอย่าง",
+  "address": "99/9 ถ.มิตรภาพ ต.ในเมือง อ.เมือง จ.ขอนแก่น 40000",
+  "phone": "043-000-000",
+  "taxId": "",
+  "promptpay": "0812345678",
+  "vatMode": "none",
+  "servicePct": 0,
+  "defaultFloat": 1000,
+  "receiptFooter": "ขอบคุณที่อุดหนุน ทานให้อร่อย ไม่เหลือทิ้งนะคะ",
+  "useTimer": true,
+  "payTiming": "before",
+  "costMethod": "avg",
+  "showNetProfit": true,
+  "childHeadWeight": 0.5,
+  "openDaysPerMonth": 30,
+  "weeklyCountDow": 1,
+  "rounding": "down"
+}

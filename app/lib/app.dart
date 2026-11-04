@@ -1,0 +1,105 @@
+import 'dart:async';
+
+import 'package:app/core/data/mock_pos_repository.dart';
+import 'package:app/core/di/injection.dart';
+import 'package:app/core/router/app_router.dart';
+import 'package:app/core/theme/app_theme.dart';
+import 'package:app/domain/pos_repository.dart';
+import 'package:app/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:app/features/shift/presentation/bloc/shift_bloc.dart';
+import 'package:app/features/tables/presentation/cubit/tables_cubit.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+
+/// Root application widget with app-level [BlocProvider]s.
+class KepTohApp extends StatefulWidget {
+  const new({
+    super.key,
+    this.themeCubit,
+    this.repository,
+    this.authCubit,
+    this.shiftBloc,
+    this.tablesCubit,
+    this.initialLocation = '/tables',
+  });
+
+  final ThemeCubit? themeCubit;
+  final PosRepository? repository;
+  final AuthCubit? authCubit;
+  final ShiftBloc? shiftBloc;
+  final TablesCubit? tablesCubit;
+  final String initialLocation;
+
+  @override
+  State<KepTohApp> createState() => _KepTohAppState();
+}
+
+class _KepTohAppState extends State<KepTohApp> {
+  late final PosRepository _repo =
+      widget.repository ??
+      (sl.isRegistered<PosRepository>()
+          ? sl<PosRepository>()
+          : MockPosRepository.createFallback());
+
+  late final ThemeCubit _themeCubit =
+      widget.themeCubit ??
+      (sl.isRegistered<ThemeCubit>() ? sl<ThemeCubit>() : ThemeCubit());
+
+  late final AuthCubit _authCubit = widget.authCubit ?? AuthCubit(_repo);
+
+  late final ShiftBloc _shiftBloc = widget.shiftBloc ?? ShiftBloc(_repo);
+
+  late final TablesCubit _tablesCubit =
+      widget.tablesCubit ?? TablesCubit(_repo);
+
+  late final GoRouter _router = createAppRouter(
+    initialLocation: widget.initialLocation,
+    authCubit: _authCubit,
+  );
+
+  @override
+  void dispose() {
+    if (widget.themeCubit == null) {
+      unawaited(_themeCubit.close());
+    }
+    if (widget.authCubit == null) {
+      unawaited(_authCubit.close());
+    }
+    if (widget.shiftBloc == null) {
+      unawaited(_shiftBloc.close());
+    }
+    if (widget.tablesCubit == null) {
+      unawaited(_tablesCubit.close());
+    }
+    _router.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RepositoryProvider<PosRepository>.value(
+      value: _repo,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<ThemeCubit>.value(value: _themeCubit),
+          BlocProvider<AuthCubit>.value(value: _authCubit),
+          BlocProvider<ShiftBloc>.value(value: _shiftBloc),
+          BlocProvider<TablesCubit>.value(value: _tablesCubit),
+        ],
+        child: BlocBuilder<ThemeCubit, ThemeState>(
+          builder: (context, state) {
+            return MaterialApp.router(
+              title: 'KepToh POS',
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.build(brightness: Brightness.light),
+              darkTheme: AppTheme.build(brightness: Brightness.dark),
+              themeMode: state.mode.themeMode,
+              routerConfig: _router,
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
