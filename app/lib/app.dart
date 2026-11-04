@@ -6,6 +6,7 @@ import 'package:app/core/router/app_router.dart';
 import 'package:app/core/theme/app_theme.dart';
 import 'package:app/domain/pos_repository.dart';
 import 'package:app/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:app/features/bills/presentation/cubit/bills_cubit.dart';
 import 'package:app/features/shift/presentation/bloc/shift_bloc.dart';
 import 'package:app/features/tables/presentation/cubit/tables_cubit.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +22,7 @@ class KepTohApp extends StatefulWidget {
     this.authCubit,
     this.shiftBloc,
     this.tablesCubit,
+    this.billsCubit,
     this.initialLocation = '/tables',
   });
 
@@ -29,6 +31,7 @@ class KepTohApp extends StatefulWidget {
   final AuthCubit? authCubit;
   final ShiftBloc? shiftBloc;
   final TablesCubit? tablesCubit;
+  final BillsCubit? billsCubit;
   final String initialLocation;
 
   @override
@@ -53,6 +56,8 @@ class _KepTohAppState extends State<KepTohApp> {
   late final TablesCubit _tablesCubit =
       widget.tablesCubit ?? TablesCubit(_repo);
 
+  late final BillsCubit _billsCubit = widget.billsCubit ?? BillsCubit(_repo);
+
   late final GoRouter _router = createAppRouter(
     initialLocation: widget.initialLocation,
     authCubit: _authCubit,
@@ -72,6 +77,9 @@ class _KepTohAppState extends State<KepTohApp> {
     if (widget.tablesCubit == null) {
       unawaited(_tablesCubit.close());
     }
+    if (widget.billsCubit == null) {
+      unawaited(_billsCubit.close());
+    }
     _router.dispose();
     super.dispose();
   }
@@ -86,6 +94,7 @@ class _KepTohAppState extends State<KepTohApp> {
           BlocProvider<AuthCubit>.value(value: _authCubit),
           BlocProvider<ShiftBloc>.value(value: _shiftBloc),
           BlocProvider<TablesCubit>.value(value: _tablesCubit),
+          BlocProvider<BillsCubit>.value(value: _billsCubit),
         ],
         child: BlocBuilder<ThemeCubit, ThemeState>(
           builder: (context, state) {

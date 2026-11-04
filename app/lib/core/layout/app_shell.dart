@@ -83,8 +83,9 @@ class _AppShellState extends State<AppShell> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final screenW = constraints.maxWidth;
+        final screenH = constraints.maxHeight;
         final isMobile = screenW <= AppDimensions.mobileBp;
-        final headerHeight = AppDimensions.topbarHeight(screenW);
+        final headerHeight = AppDimensions.topbarHeight(screenW, screenH);
         final pagePad = isMobile
             ? AppDimensions.space3
             : AppDimensions.pagePadding(screenW);

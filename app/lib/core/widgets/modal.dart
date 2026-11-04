@@ -119,3 +119,148 @@ class Modal extends StatelessWidget {
     );
   }
 }
+
+/// Mounts [child] full-screen on the root [Overlay] (covering the Topbar
+/// with `100%` viewport height, equivalent to `position: fixed; inset: 0`),
+/// while preserving its position in the logical widget tree.
+class RootOverlayBox extends StatefulWidget {
+  const new({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  State<RootOverlayBox> createState() => _RootOverlayBoxState();
+}
+
+class _RootOverlayBoxState extends State<RootOverlayBox> {
+  final OverlayPortalController _controller = OverlayPortalController();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.show();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return OverlayPortal(
+      controller: _controller,
+      overlayLocation: OverlayChildLocation.rootOverlay,
+      overlayChildBuilder: (_) => Positioned.fill(child: widget.child),
+    );
+  }
+}
+
+/// Shared right-side slide-over drawer (`340px` wide, `100%` screen height
+/// over the Topbar with dark scrim and `SafeArea`) used by `BillsFilterDrawer`
+/// and the Stock filter drawer.
+class RightSheetDrawer extends StatelessWidget {
+  const new({
+    required this.title,
+    required this.onClose,
+    required this.child,
+    super.key,
+    this.drawerKey,
+    this.closeButtonKey,
+    this.closeSemanticLabel = 'ปิดตัวกรอง',
+    this.footer,
+    this.width = AppDimensions.rightDrawerW,
+  });
+
+  final String title;
+  final VoidCallback onClose;
+  final Widget child;
+  final Key? drawerKey;
+  final Key? closeButtonKey;
+  final String closeSemanticLabel;
+  final Widget? footer;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final tt = Theme.of(context).textTheme;
+
+    return RootOverlayBox(
+      child: Material(
+        key: drawerKey,
+        color: t.scrim,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onClose,
+                child: const SizedBox.expand(),
+              ),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Container(
+                width: width,
+                height: double.infinity,
+                decoration: BoxDecoration(
+                  color: t.surface,
+                  border: Border(left: BorderSide(color: t.line)),
+                  boxShadow: t.shadows,
+                ),
+                child: SafeArea(
+                  left: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppDimensions.space5,
+                          vertical: AppDimensions.space3_5,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border(bottom: BorderSide(color: t.line)),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                title,
+                                style: tt.titleLarge?.copyWith(
+                                  color: t.ink,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            Btn(
+                              key: closeButtonKey,
+                              kind: BtnKind.ghost,
+                              icon: 'x',
+                              semanticLabel: closeSemanticLabel,
+                              onPressed: onClose,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(AppDimensions.space5),
+                          child: child,
+                        ),
+                      ),
+                      if (footer != null)
+                        Container(
+                          padding: const EdgeInsets.all(AppDimensions.space5),
+                          decoration: BoxDecoration(
+                            color: t.surface2,
+                            border: Border(top: BorderSide(color: t.line)),
+                          ),
+                          child: footer,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

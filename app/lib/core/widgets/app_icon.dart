@@ -39,7 +39,7 @@ abstract final class AppIcons {
     'back': HugeIcons.strokeRoundedArrowLeft01,
     'forward': HugeIcons.strokeRoundedArrowRight01,
     'search': HugeIcons.strokeRoundedSearch01,
-    'backspace': HugeIcons.strokeRoundedDeletePutBack,
+    'backspace': Icons.backspace_outlined,
     'menu': HugeIcons.strokeRoundedMenu01,
     'package': HugeIcons.strokeRoundedRestaurant01,
     'buffet': HugeIcons.strokeRoundedRestaurant01,

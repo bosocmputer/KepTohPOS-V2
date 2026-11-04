@@ -27,6 +27,9 @@ class BillRecord {
     required this.change,
     this.shiftId,
     this.voided = false,
+    this.voidReason,
+    this.voidBy,
+    this.voidAt,
   });
 
   final String id;
@@ -52,6 +55,9 @@ class BillRecord {
   final double received;
   final double change;
   bool voided;
+  String? voidReason;
+  String? voidBy;
+  String? voidAt;
 
   BillRecord copy() => BillRecord(
     id: id,
@@ -77,6 +83,9 @@ class BillRecord {
     received: received,
     change: change,
     voided: voided,
+    voidReason: voidReason,
+    voidBy: voidBy,
+    voidAt: voidAt,
   );
 }
 

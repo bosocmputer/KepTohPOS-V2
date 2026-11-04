@@ -279,5 +279,154 @@ void main() {
         '530376454071196.005802TH6304FA97',
       );
     });
+
+    test(
+      'voidBill sets metadata, reduces computeLedger sales/profit, restores '
+      'addon stock for before & after (with adjustSent), and is idempotent',
+      () {
+        final fixedNow = DateTime(2026, 11, 4, 12);
+        final voidTime = DateTime(2026, 11, 4, 13, 30);
+        final s = _loadFreshMockState(fixedNow);
+        final owner = s.staff.firstWhere((st) => st.role == 'owner');
+        final cashier = s.staff.firstWhere((st) => st.role == 'cashier');
+        final t1 = s.tables.firstWhere((t) => t.id == 't1');
+        final t2 = s.tables.firstWhere((t) => t.id == 't2');
+        final pmCash = s.payments.firstWhere((p) => p.id == 'pm1');
+        final pmQr = s.payments.firstWhere((p) => p.id == 'pm2');
+        int stockOf(String id) => s.addons.firstWhere((x) => x.id == id).stock;
+
+        expect(stockOf('ad1'), 96);
+        expect(stockOf('ad5'), 60);
+
+        // 1. Settle 'before' bill b1 (ad1: 2, ad5: 1 -> ad1=94, ad5=59)
+        settle(
+          s,
+          t1,
+          TableTotals(a: 2, c: 1, f: 1, ad: {'ad1': 2, 'ad5': 1}),
+          owner,
+          timing: 'before',
+          pkgId: 'pk1',
+          method: pmCash,
+          received: 1000,
+          billId: 'b1',
+          now: fixedNow,
+        );
+        expect(stockOf('ad1'), 94);
+        expect(stockOf('ad5'), 59);
+
+        // 2. Settle 'after' bill b2 with sendRound + adjustSent + extraCart
+        sendRound(
+          s,
+          t2,
+          TableTotals(a: 3, c: 1, ad: {'ad1': 3, 'ad5': 3}),
+          owner,
+          'after',
+          'pk2',
+          '',
+          now: fixedNow,
+        );
+        expect(stockOf('ad1'), 91);
+        expect(stockOf('ad5'), 56);
+
+        // adjustSent reduces ad5 by 1 -> stock ad5=57, net ad5 on table = 2
+        adjustSent(
+          s,
+          't2',
+          'addon',
+          'ad5',
+          1,
+          'คืนเบียร์ 1',
+          owner,
+          now: fixedNow,
+        );
+        expect(stockOf('ad5'), 57);
+
+        // Settle with extraCart ad1: 1 -> stock ad1=90, ad5=57
+        settle(
+          s,
+          t2,
+          TableTotals(ad: {'ad1': 1}),
+          owner,
+          timing: 'after',
+          pkgId: 'pk2',
+          method: pmQr,
+          received: 0,
+          billId: 'b2',
+          now: fixedNow,
+        );
+        expect(stockOf('ad1'), 90);
+        expect(stockOf('ad5'), 57);
+
+        // Close day counts so computeLedger computes gross & net profit
+        s.counts['2026-11-04'] = <String, double>{
+          for (final ing in s.ingredients) ing.id: 0,
+        };
+
+        final ledgerBefore = computeLedger(s, today: '2026-11-04');
+        final dayBefore = ledgerBefore.days.firstWhere(
+          (d) => d.date == '2026-11-04',
+        );
+        expect(dayBefore.gross, 607 + 1196);
+        expect(dayBefore.bills, 2);
+
+        // Cashier cannot void
+        expect(
+          voidBill(
+            s,
+            billId: 'b1',
+            me: cashier,
+            reason: 'ทดลอง',
+            now: voidTime,
+          ),
+          isFalse,
+        );
+        expect(s.sales.firstWhere((b) => b.id == 'b1').voided, isFalse);
+        expect(stockOf('ad1'), 90);
+
+        // Void b1 ('before' mode) as owner -> restores ad1 +2 (92), ad5 +1 (58)
+        expect(
+          voidBill(
+            s,
+            billId: 'b1',
+            me: owner,
+            reason: 'คีย์จำนวนคนผิด',
+            now: voidTime,
+          ),
+          isTrue,
+        );
+        final bill1 = s.sales.firstWhere((b) => b.id == 'b1');
+        expect(bill1.voided, isTrue);
+        expect(bill1.voidBy, owner.name);
+        expect(bill1.voidReason, 'คีย์จำนวนคนผิด');
+        expect(bill1.voidAt, voidTime.toUtc().toIso8601String());
+        expect(stockOf('ad1'), 92);
+        expect(stockOf('ad5'), 58);
+
+        final ledgerAfterB1 = computeLedger(s, today: '2026-11-04');
+        final dayAfterB1 = ledgerAfterB1.days.firstWhere(
+          (d) => d.date == '2026-11-04',
+        );
+        expect(dayAfterB1.gross, 1196);
+        expect(dayAfterB1.bills, 1);
+        expect(dayBefore.profit! - dayAfterB1.profit!, greaterThan(0));
+
+        // Voiding b1 again is a no-op and does not restore stock twice
+        expect(
+          voidBill(s, billId: 'b1', me: owner, reason: 'ซ้ำ', now: voidTime),
+          isFalse,
+        );
+        expect(stockOf('ad1'), 92);
+        expect(stockOf('ad5'), 58);
+        expect(bill1.voidReason, 'คีย์จำนวนคนผิด');
+
+        // Void b2 ('after' mode with adjustSent) -> restores ad1 +4, ad5 +2
+        expect(voidBill(s, billId: 'b2', me: owner, now: voidTime), isTrue);
+        final bill2 = s.sales.firstWhere((b) => b.id == 'b2');
+        expect(bill2.voided, isTrue);
+        expect(bill2.voidReason, 'ไม่ระบุ');
+        expect(stockOf('ad1'), 96);
+        expect(stockOf('ad5'), 60);
+      },
+    );
   });
 }
