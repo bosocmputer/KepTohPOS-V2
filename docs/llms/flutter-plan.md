@@ -33,7 +33,7 @@
 
 **สูตร/logic ที่ต้อง port:** `calcOrder` (ปัดเศษ, VAT none/included/excluded) · `tableTotals` · `mergeTotals` · `orderOf` · `tableDue` · `tableTimer` · `sendRound` · `adjustSent` · `sentLines` · `settle` · `computeLedger` (ต้นทุนเฉลี่ย/ล่าสุด, ประมาณจากนับรายสัปดาห์+ปรับยอด, หัวเด็ก 0.5, กำไรสุทธิ) · `seed()` (ประวัติ 30 วัน) · บทบาท `ROLE` และสิทธิ์เมนู
 
-**ธีม:** `theme.css` = 2 ชั้น (palette ดิบ `--figma-*`/`--team-*` → token ความหมาย `--primary`, `--surface`, `--ink` …) · **ใช้แบรนด์เดียวคือ `figma`** (ตัด `team` ทิ้ง) · โหมด **สว่าง / มืด / ตามเครื่อง (auto)** ให้ผู้ใช้เลือกได้
+**ธีม:** `theme.css` = 2 ชั้น (palette ดิบ `--figma-*`/`--team-*` → token ความหมาย `--primary`, `--surface`, `--ink` …) · **ใช้ชุดสีทีมเป็นแบรนด์เดียว** (Charcoal #20242C, Orange #FF7A00, Warm Gray #F4F4F5, White #FFFFFF, Navy Text #172033, Green #16A36A, Red #E5484D — ค่าและ token ความหมายตาม `--team-*` และ `[data-brand="team"]` ใน theme.css ทั้งสว่าง/มืด) · โครงหน้ายังตาม Figma · โหมด **สว่าง / มืด / ตามเครื่อง (auto)** ให้ผู้ใช้เลือกได้
 
 **แมปหน้า prototype → ภาพ Figma อ้างอิง**
 | หน้า (prototype) | ภาพ Figma ที่ใช้เป็นแบบ |
@@ -76,7 +76,7 @@ app/
   lib/
     main.dart · app.dart          ← MaterialApp.router + BlocProviders ระดับแอป
     core/
-      theme/                      ← tokens.dart (แปลงจาก theme.css), app_theme.dart (แบรนด์ figma × light/dark/auto)
+      theme/                      ← tokens.dart (แปลงจาก theme.css), app_theme.dart (ชุดสีทีม × light/dark/auto)
       widgets/                    ← component กลาง 1 ไฟล์ต่อ 1 component (ข้อ 4)
       layout/                     ← AppShell responsive (sidebar / rail+drawer / bottom nav)
       router/ · di/ · utils/      ← utils: baht(), fmtQ(), วันที่ไทย
@@ -122,7 +122,7 @@ app/
 ## 6. สิ่งที่ตัดสินใจแล้ว
 - โค้ดอยู่ `app/` ใน repo นี้ · พัฒนาบนเครื่อง local ของผู้ใช้ (Flutter พร้อมแล้ว)
 - UI แบบผสม: หน้าตาตามภาพ Figma, เนื้อหา/flow ตาม prototype · Sidebar เลื่อนทับ (Figma) · สินค้าเป็นการ์ดมีรูป (Figma) · ไม่ใช้ Figma MCP
-- ธีม: แบรนด์ `figma` อย่างเดียว · โหมดสว่าง/มืด/auto · หมวด "ธีมและการแสดงผล" ในตั้งค่า เหลือแค่เลือกโหมด
+- ธีม: ชุดสีทีมอย่างเดียว (เปลี่ยนจาก figma เมื่อ F4b) · โลโก้ `app/assets/logo.jpg` (ไอคอน) และ `logo_name.jpg` (โลโก้+ชื่อ) · โหมดสว่าง/มืด/auto · หมวด "ธีมและการแสดงผล" ในตั้งค่า เหลือแค่เลือกโหมด
 - BLoC/Cubit + Repository + go_router + get_it · ข้อมูล mock JSON เก็บในหน่วยความจำ (เปิดแอปใหม่ = เริ่มจาก mock)
 
 ## 7. ภาพรวมระยะยาว (บันทึกไว้เป็นทิศทาง — **ไม่อยู่ในขอบเขต F0–F9 ห้ามเขียนโค้ดเผื่อ**)
