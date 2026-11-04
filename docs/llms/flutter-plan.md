@@ -1,11 +1,15 @@
-# แผน: ย้าย KepTohPOS จาก prototype HTML ไป Flutter — v0.3
+# แผน: ย้าย KepTohPOS จาก prototype HTML ไป Flutter — v0.4 (แบบผสม Figma + prototype)
 
-> **แหล่งความจริงเดียว = `prototype/`** (`index.html`, `theme.css`, `data/mock-data.js`) ซึ่งทีมอนุมัติแล้ว
-> **ยกเลิกการอ้างอิง Figma** — ไม่ต้องเปิด Figma / ไม่ใช้ Figma MCP
+> **แบบผสม:** หน้าตา (layout/สไตล์) ตาม **ภาพ Figma** ใน `design/figma/*.png` · เนื้อหา/flow/สูตร/ข้อมูล ตาม **`prototype/`** (`index.html`, `theme.css`, `data/mock-data.js`)
+> ไม่ใช้ Figma MCP (บัญชีแผน Starter โควต้าน้อย) — ใช้ภาพ PNG ที่ export ไว้แทน
 > อ่านคู่กับ `keptoh-blueprint.md` (กติกาธุรกิจ/สูตร) · ความคืบหน้าจดใน `TASK_STATE.md` (skill `handoff`)
 
 ## 0. หลักการ
-1. **หน้าตา + flow + สูตร ต้องเหมือน prototype** (layout, สี, ข้อความไทย, ลำดับการกด, ตัวเลข) ห้ามออกแบบใหม่เอง
+1. **กติกาแบบผสม** (ห้ามออกแบบใหม่เอง):
+   - **จาก Figma (ภาพ):** โครงหน้า, ตำแหน่ง/ขนาด, สไตล์การ์ด/ปุ่ม/ตาราง/badge/modal, Sidebar เลื่อนทับ, Order Panel ขวา, การ์ดสินค้ามีรูป
+   - **จาก prototype:** เมนูและหน้าจอทั้งหมด (`VIEWS`), ข้อความไทย, ลำดับการกด, สูตร/ตัวเลข, mock data, สิทธิ์ตามบทบาท, หน้าที่ Figma ไม่มี, layout มือถือ
+   - ขัดกันเมื่อไร: **เรื่องหน้าตา → Figma** (ถ้า Figma มีหน้าที่เทียบได้) · **เรื่องพฤติกรรม/เนื้อหา → prototype**
+   - หน้าที่ Figma ไม่มี → ใช้ layout ของ prototype แต่ใช้ component/สไตล์ชุด Figma ให้เข้าชุด
 2. ข้อมูล = **mock JSON** แปลงจาก `prototype/data/mock-data.js` · ยังไม่มีฐานข้อมูล ไม่มี backend ไม่มี license
 3. สูตรธุรกิจ port จาก JS เป็น Dart **ทีละฟังก์ชันพร้อม unit test** ผลลัพธ์ต้องเท่ากับ JS ทุกตัวเลข
 4. Component กลางตามรายการในข้อ 4 · หน้าจอประกอบจาก component กลางเท่านั้น ห้ามก๊อปไปแก้เป็นอีกตัว
@@ -31,12 +35,24 @@
 
 **ธีม:** `theme.css` = 2 ชั้น (palette ดิบ `--figma-*`/`--team-*` → token ความหมาย `--primary`, `--surface`, `--ink` …) · **ใช้แบรนด์เดียวคือ `figma`** (ตัด `team` ทิ้ง) · โหมด **สว่าง / มืด / ตามเครื่อง (auto)** ให้ผู้ใช้เลือกได้
 
-**Responsive (ต้องเหมือน prototype):**
+**แมปหน้า prototype → ภาพ Figma อ้างอิง**
+| หน้า (prototype) | ภาพ Figma ที่ใช้เป็นแบบ |
+|---|---|
+| Login | Login (4 สถานะ) |
+| โต๊ะ | Table · Drop Down "Floor" (เลือกโซน) |
+| ขาย | Cashier (หมวด=Tabs, การ์ดสินค้ามีรูป, Order Panel ขวา 396) · Edit Menu Notes (`NoteModal`) · Edit Customer (`PeopleRow`/จำนวนคน) · Drop Down เลือกโต๊ะ |
+| ชำระเงิน | Cash (เงินสด) · QRIS (→ PromptPay QR) · Credit Card (→ โอน/บัตร) |
+| บิล | History + History Filter |
+| รายงาน | Report |
+| สต็อก: คงเหลือ/ซื้อของ | Supply list / Supply grid + Supply Filter |
+| สต็อก: นับของเหลือ, กะ, ภาพรวม, ตั้งค่า | **ไม่มีใน Figma** → layout prototype + สไตล์ Figma |
+| สถานะว่างทุกหน้า | Empty State (6 แบบ) |
+
+**Responsive:**
 | ความกว้าง | layout |
 |---|---|
-| ≥1100 | Sidebar ตรึง 232 |
-| 761–1099 | แถบไอคอนซ้าย + ปุ่มเมนูเปิด Drawer + ปุ่มผู้ใช้ |
-| ≤760 | เมนูล่าง 4 รายการ + "เพิ่มเติม" |
+| ≥761 (แท็บเล็ต/จอกว้าง) | **ตาม Figma:** Header 88 + **Sidebar 365 เลื่อนทับพร้อมฉากมืด** (กดปุ่มที่ Header) · ไม่มี sidebar ตรึง ไม่มีแถบไอคอน |
+| ≤760 (มือถือ, Figma ไม่มี) | ตาม prototype: เมนูล่าง 4 รายการ + "เพิ่มเติม" · Order Panel ย้ายลงล่าง (แถบ "ดูออเดอร์") |
 | สูง ≤520 (มือถือแนวนอน) | แป้นตัวเลขนับสต็อกเป็นคอลัมน์ขวา |
 
 ## 2. Stack (ยืนยันแล้ว — ห้ามเพิ่ม package นอกรายการโดยไม่ถาม)
@@ -79,7 +95,7 @@ app/
 |---|---|
 | Layout | `AppShell`, `NavPanel`/`NavDrawer`, `PageHeader`, `Toolbar`, `SearchBox`, `Avatar`, `Drawer` |
 | Input | `Btn`, `Field`, `Stepper`, `Seg`, `Tabs`, `Dropdown`, `NumPad`, `PinDots` |
-| Display | `Pill`, `Stat`, `DataTable`, `Pagination`, `Empty`, `ResultState`, `Icon` (ชุด `ICONS`) |
+| Display | `ProductCard` (การ์ดมีรูป ตาม Figma), `Pill`, `Stat`, `DataTable`, `Pagination`, `Empty`, `ResultState`, `Icon` (ชุด `ICONS`) |
 | Overlay | `Modal`, `Confirm`, toast |
 | Domain | `TableCard`, `TableChip`, `PeopleRow`, `OrderLine`, `PaymentPicker`, `OrderSummary`, `PayStep`, `PromptPayQR`, `Receipt`, `CrudSection`, `FormFields`, `ProfitChart` |
 
@@ -97,11 +113,15 @@ app/
 | F8 | ตั้งค่า 13 หมวด | CRUD ทุกหมวด, ค่าเปลี่ยนแล้วมีผลกับหน้าขาย/สูตร |
 | F9 | ตรวจรวม: เทียบทุกหน้ากับ prototype 3 ขนาด (1366×1024, 820×1180, 390×844) + build web ให้ทีมดู | ทีมยืนยันว่าเหมือน prototype |
 
-**วิธีเทียบหน้าตา:** เปิด `prototype/index.html` ในเบราว์เซอร์ขนาดเดียวกับแอป แล้วเทียบทีละหน้า (ภาพอ้างอิงเก็บที่ `app/test/golden/reference/` ถ้ามี)
+**วิธีเทียบหน้าตา:** เทียบแอปที่ 1366×1024 กับภาพ Figma ตามตารางแมปหน้า (โครง/สไตล์) และกับ `prototype/index.html` (เนื้อหา/flow) · `app/test/golden/` เก็บเฉพาะภาพที่ Flutter สร้างเองจาก golden test
+
+**ภาพ Figma:** เก็บที่ `design/figma/` (ไม่ใช่ `app/test/golden/`) · ตั้งชื่อตามหน้า เช่น `cashier.png`, `payment_cash_1.png` · รายการไฟล์อยู่ใน `design/figma/README.md` · ถ้ารวมเกิน ~20 MB ให้บีบอัดก่อน commit
+
+**รูปสินค้า (mock):** ใส่ใน `app/assets/images/products/` · ยังไม่มีรูปจริงของร้าน → ใช้รูปตัวอย่างหรือ placeholder (ห้ามใช้รูปเบอร์เกอร์จาก Figma ในแอป)
 
 ## 6. สิ่งที่ตัดสินใจแล้ว
 - โค้ดอยู่ `app/` ใน repo นี้ · พัฒนาบนเครื่อง local ของผู้ใช้ (Flutter พร้อมแล้ว)
-- UI/UX ตาม prototype · ไม่ใช้ Figma
+- UI แบบผสม: หน้าตาตามภาพ Figma, เนื้อหา/flow ตาม prototype · Sidebar เลื่อนทับ (Figma) · สินค้าเป็นการ์ดมีรูป (Figma) · ไม่ใช้ Figma MCP
 - ธีม: แบรนด์ `figma` อย่างเดียว · โหมดสว่าง/มืด/auto · หมวด "ธีมและการแสดงผล" ในตั้งค่า เหลือแค่เลือกโหมด
 - BLoC/Cubit + Repository + go_router + get_it · ข้อมูล mock JSON เก็บในหน่วยความจำ (เปิดแอปใหม่ = เริ่มจาก mock)
 
