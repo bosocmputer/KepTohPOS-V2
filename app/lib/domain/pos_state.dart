@@ -248,4 +248,34 @@ class PosState {
     ),
     expenses: List<ExpenseRecord>.from(expenses),
   );
+
+  /// Returns an unmodifiable snapshot of this [PosState] where all collections
+  /// and nested table states are read-only (`UnsupportedError` on mutation).
+  PosState freeze() => PosState(
+    version: version,
+    startDate: startDate,
+    currentStaffId: currentStaffId,
+    shop: shop,
+    packages: List<PackageItem>.unmodifiable(packages),
+    addons: List<AddonItem>.unmodifiable(addons),
+    suppliers: List<SupplierItem>.unmodifiable(suppliers),
+    ingredients: List<IngredientItem>.unmodifiable(ingredients),
+    tables: List<DiningTable>.unmodifiable(tables),
+    staff: List<StaffMember>.unmodifiable(staff),
+    payments: List<PaymentMethod>.unmodifiable(payments),
+    expenseTypes: List<ExpenseType>.unmodifiable(expenseTypes),
+    fixedCosts: List<FixedCostItem>.unmodifiable(fixedCosts),
+    seq: Map<String, int>.unmodifiable(seq),
+    counts: Map<String, Map<String, double>>.unmodifiable(
+      counts.map((k, v) => MapEntry(k, Map<String, double>.unmodifiable(v))),
+    ),
+    sales: List<BillRecord>.unmodifiable(sales),
+    purchases: List<PurchaseRecord>.unmodifiable(purchases),
+    shifts: List<ShiftRecord>.unmodifiable(shifts),
+    openTables: Map<String, OpenTableState>.unmodifiable(
+      openTables.map((k, v) => MapEntry(k, v.freeze())),
+    ),
+    initialStock: Map<String, StockLot>.unmodifiable(initialStock),
+    expenses: List<ExpenseRecord>.unmodifiable(expenses),
+  );
 }

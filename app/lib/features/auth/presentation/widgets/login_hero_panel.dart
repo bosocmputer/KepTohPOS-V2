@@ -101,7 +101,10 @@ class LoginHeroPanel extends StatelessWidget {
                 ],
               ),
             ),
-          const SizedBox(height: AppDimensions.space4),
+          if (!compact)
+            const Spacer()
+          else
+            const SizedBox(height: AppDimensions.space4),
           Text(
             'ต้นแบบสำหรับทดลองกด · ข้อมูลทั้งหมดเป็นข้อมูลจำลอง',
             style: textTheme.bodySmall?.copyWith(

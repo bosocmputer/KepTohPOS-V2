@@ -5,10 +5,11 @@ import 'package:app/domain/domain.dart';
 import 'package:flutter/services.dart';
 
 /// In-memory implementation of [PosRepository] backed by `assets/mock/*.json`
-/// and `seed()`. Always deep-copies [PosState] before applying mutations.
+/// and `seed()`. Copies [PosState] only on [update], while [state] returns the
+/// frozen read-only snapshot in O(1) without copying.
 class MockPosRepository implements PosRepository {
   new({required PosState initialState, String? sessionStaffId})
-    : _state = initialState.copy() {
+    : _state = initialState.copy().freeze() {
     _sessionStaffId = sessionStaffId;
   }
 
@@ -162,7 +163,7 @@ class MockPosRepository implements PosRepository {
       StreamController<PosState>.broadcast(sync: true);
 
   @override
-  PosState get state => _state.copy();
+  PosState get state => _state;
 
   @override
   Stream<PosState> get stream => _controller.stream;
@@ -181,11 +182,11 @@ class MockPosRepository implements PosRepository {
   PosState update(void Function(PosState s) mutator) {
     final next = _state.copy();
     mutator(next);
-    _state = next;
+    _state = next.freeze();
     if (!_controller.isClosed) {
-      _controller.add(_state.copy());
+      _controller.add(_state);
     }
-    return _state.copy();
+    return _state;
   }
 
   @override
@@ -194,7 +195,7 @@ class MockPosRepository implements PosRepository {
     if (staffId != null) {
       update((s) => s.currentStaffId = staffId);
     } else if (!_controller.isClosed) {
-      _controller.add(_state.copy());
+      _controller.add(_state);
     }
   }
 

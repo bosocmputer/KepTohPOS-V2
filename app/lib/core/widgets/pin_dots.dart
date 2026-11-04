@@ -1,7 +1,8 @@
 import 'package:app/core/theme/tokens.dart';
 import 'package:flutter/material.dart';
 
-/// PIN indicator dots (`PinDots` in `prototype/index.html` & Figma Login).
+/// Square PIN indicator boxes (`PinDots` in `prototype/index.html` &
+/// `design/figma/login.png`).
 class PinDots extends StatelessWidget {
   const new({required this.value, super.key, this.length = 4});
 
@@ -25,18 +26,30 @@ class PinDots extends StatelessWidget {
             for (var i = 0; i < length; i++) ...[
               if (i > 0) const SizedBox(width: AppDimensions.space3),
               Container(
-                width: AppDimensions.pinDotSize,
-                height: AppDimensions.pinDotSize,
+                width: AppDimensions.btnMdH,
+                height: AppDimensions.btnMdH,
                 decoration: BoxDecoration(
-                  color: i < value.length
-                      ? tokens.primary
-                      : tokens.surface.withValues(alpha: 0),
-                  shape: BoxShape.circle,
+                  color: i < value.length ? tokens.primarySoft : tokens.surface,
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
                   border: Border.all(
-                    color: i < value.length ? tokens.primary : tokens.muted,
-                    width: AppDimensions.borderBold,
+                    color: i < value.length ? tokens.primary : tokens.line,
+                    width: i < value.length
+                        ? AppDimensions.borderBold
+                        : AppDimensions.borderThin,
                   ),
                 ),
+                child: i < value.length
+                    ? Center(
+                        child: Container(
+                          width: AppDimensions.pinDotSize,
+                          height: AppDimensions.pinDotSize,
+                          decoration: BoxDecoration(
+                            color: tokens.primary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      )
+                    : null,
               ),
             ],
           ],

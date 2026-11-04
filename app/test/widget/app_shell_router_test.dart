@@ -125,6 +125,21 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('drawer-nav-reports')));
       await tester.pumpAndSettle();
       expect(find.text('รายงานรายวัน'), findsWidgets);
+
+      // Open Sidebar from /reports -> push /dev/components -> tap back -> returns to /reports
+      await tester.tap(find.byKey(const ValueKey('shell-menu-btn')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('drawer-nav-dev-components')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('dev-components-back-btn')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey('dev-components-back-btn')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('รายงานรายวัน'), findsWidgets);
     });
   });
 }

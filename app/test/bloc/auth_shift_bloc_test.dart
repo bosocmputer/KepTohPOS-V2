@@ -38,9 +38,12 @@ MockPosRepository _createSeededRepo({
 
 void main() {
   group('PosRepository immutability & PosState.copy()', () {
-    test('update() deep-copies PosState without mutating prior snapshot', () {
+    test('state getter returns read-only snapshot without copying on read', () {
       final repo = _createSeededRepo(closeActiveShift: true);
       final before = repo.state;
+      expect(identical(before, repo.state), isTrue);
+      expect(before.shifts.clear, throwsUnsupportedError);
+      expect(before.openTables.clear, throwsUnsupportedError);
       expect(openShiftOf(before), isNull);
       final shiftsBefore = before.shifts.length;
 
@@ -49,6 +52,7 @@ void main() {
       });
 
       expect(identical(before, after), isFalse);
+      expect(identical(after, repo.state), isTrue);
       expect(before.shifts.length, shiftsBefore);
       expect(openShiftOf(before), isNull);
       expect(after.shifts.length, shiftsBefore + 1);

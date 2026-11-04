@@ -191,7 +191,13 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
           shiftOpenTimeText: shiftTimeText,
           shiftStaffName: shiftStaffName,
           initialDrawerOpen: widget.initialDrawerOpen,
-          onNavigate: (viewId) => context.go('/$viewId'),
+          onNavigate: (viewId) {
+            if (viewId == 'dev/components') {
+              unawaited(context.push('/dev/components'));
+            } else {
+              context.go('/$viewId');
+            }
+          },
           onShiftAction: () {
             if (activeShift != null) {
               context.go('/shift');

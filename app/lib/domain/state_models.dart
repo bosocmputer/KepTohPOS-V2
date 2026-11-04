@@ -4,16 +4,40 @@ export 'package:app/domain/pos_state.dart';
 
 /// Head counts for adult (`a`), child (`c`), and free toddler (`f`).
 class HeadsCount {
-  new({this.a = 0, this.c = 0, this.f = 0});
+  new({int a = 0, int c = 0, int f = 0, bool frozen = false}) {
+    _a = a;
+    _c = c;
+    _f = f;
+    _frozen = frozen;
+  }
 
-  int a;
-  int c;
-  int f;
+  late int _a;
+  late int _c;
+  late int _f;
+  late final bool _frozen;
+
+  int get a => _a;
+  set a(int value) {
+    if (_frozen) throw UnsupportedError('Cannot modify frozen HeadsCount');
+    _a = value;
+  }
+
+  int get c => _c;
+  set c(int value) {
+    if (_frozen) throw UnsupportedError('Cannot modify frozen HeadsCount');
+    _c = value;
+  }
+
+  int get f => _f;
+  set f(int value) {
+    if (_frozen) throw UnsupportedError('Cannot modify frozen HeadsCount');
+    _f = value;
+  }
 
   int operator [](String key) => switch (key) {
-    'a' => a,
-    'c' => c,
-    'f' => f,
+    'a' => _a,
+    'c' => _c,
+    'f' => _f,
     _ => 0,
   };
 
@@ -28,7 +52,9 @@ class HeadsCount {
     }
   }
 
-  HeadsCount copy() => HeadsCount(a: a, c: c, f: f);
+  HeadsCount copy() => HeadsCount(a: _a, c: _c, f: _f);
+
+  HeadsCount freeze() => HeadsCount(a: _a, c: _c, f: _f, frozen: true);
 }
 
 /// Input line for `calcOrder` (`{ addon, qty }`).
@@ -126,6 +152,16 @@ class TableRound {
     f: f,
     ad: Map<String, int>.from(ad),
   );
+
+  TableRound freeze() => TableRound(
+    id: id,
+    at: at,
+    staffId: staffId,
+    a: a,
+    c: c,
+    f: f,
+    ad: Map<String, int>.unmodifiable(ad),
+  );
 }
 
 /// Adjustment reducing a sent item (`o.adjusts` / `o.log`).
@@ -189,6 +225,18 @@ class OpenTableState {
     rounds: rounds.map((r) => r.copy()).toList(),
     adjusts: List<TableAdjustment>.from(adjusts),
     log: List<TableAdjustment>.from(log),
+  );
+
+  OpenTableState freeze() => OpenTableState(
+    openedAt: openedAt,
+    packageId: packageId,
+    timing: timing,
+    notes: notes,
+    billIds: List<String>.unmodifiable(billIds),
+    heads: heads.freeze(),
+    rounds: List<TableRound>.unmodifiable(rounds.map((r) => r.freeze())),
+    adjusts: List<TableAdjustment>.unmodifiable(adjusts),
+    log: List<TableAdjustment>.unmodifiable(log),
   );
 }
 

@@ -31,6 +31,7 @@ abstract final class AppIcons {
     'cup': Icons.local_cafe_outlined,
     'back': Icons.chevron_left_rounded,
     'filter': Icons.tune_rounded,
+    'grid': Icons.grid_view_rounded,
   };
 
   static IconData resolve(String name) => byName[name] ?? Icons.circle_outlined;

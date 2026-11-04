@@ -178,11 +178,8 @@ class _NumKey extends StatelessWidget {
     button: true,
     label: semanticLabel ?? label,
     child: Material(
-      color: tokens.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-        side: BorderSide(color: tokens.line, width: AppDimensions.borderThick),
-      ),
+      color: tokens.surface.withValues(alpha: 0),
+      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
