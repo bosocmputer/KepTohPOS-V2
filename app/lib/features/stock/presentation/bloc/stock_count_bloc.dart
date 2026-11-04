@@ -9,10 +9,18 @@ export 'package:app/features/stock/presentation/bloc/stock_count_state.dart';
 /// BLoC managing the fast daily/weekly stock counting flow (`StockCount` in
 /// `prototype/index.html:1352-1417`).
 class StockCountBloc extends Bloc<StockCountEvent, StockCountState> {
-  new({required PosRepository repository, DateTime? now})
-    : _repository = repository,
-      _now = now,
-      super(_initialState(repository, now)) {
+  new({
+    required PosRepository repository,
+    DateTime? now,
+    DateTime Function()? clock,
+  }) : _repository = repository,
+       _clock = clock ?? (now != null ? () => now : DateTime.now),
+       super(
+         _initialState(
+           repository,
+           (clock ?? (now != null ? () => now : DateTime.now))(),
+         ),
+       ) {
     on<StockCountRepositoryUpdated>(_onRepositoryUpdated);
     on<StockCountDateChanged>(_onDateChanged);
     on<StockCountItemSelected>(_onItemSelected);
@@ -30,12 +38,12 @@ class StockCountBloc extends Bloc<StockCountEvent, StockCountState> {
   }
 
   final PosRepository _repository;
-  final DateTime? _now;
+  final DateTime Function() _clock;
   StreamSubscription<PosState>? _sub;
 
-  static StockCountState _initialState(PosRepository repo, DateTime? now) {
+  static StockCountState _initialState(PosRepository repo, DateTime now) {
     final s = repo.state;
-    final today = _resolveTodayKey(s, now);
+    final today = dkey(now);
     final ledger = computeLedger(s, today: today);
     return StockCountState(
       posState: s,
@@ -45,23 +53,11 @@ class StockCountBloc extends Bloc<StockCountEvent, StockCountState> {
     );
   }
 
-  static String _resolveTodayKey(PosState s, DateTime? now) {
-    if (now != null) return dkey(now);
-    final dates = <String>{
-      s.startDate,
-      ...s.counts.keys,
-      for (final b in s.sales) b.date,
-      for (final p in s.purchases) p.date,
-      for (final e in s.expenses) e.date,
-    };
-    return dates.reduce((a, b) => a.compareTo(b) >= 0 ? a : b);
-  }
-
   void _onRepositoryUpdated(
     StockCountRepositoryUpdated event,
     Emitter<StockCountState> emit,
   ) {
-    final today = _resolveTodayKey(event.posState, _now);
+    final today = dkey(_clock());
     final ledger = computeLedger(event.posState, today: today);
     emit(
       state.copyWith(
@@ -159,7 +155,7 @@ class StockCountBloc extends Bloc<StockCountEvent, StockCountState> {
       saveDailyCount(st, date: date, draftValues: draftValues);
     });
     final s = _repository.state;
-    final today = _resolveTodayKey(s, _now);
+    final today = dkey(_clock());
     final ledger = computeLedger(s, today: today);
     emit(
       state.copyWith(
@@ -184,7 +180,7 @@ class StockCountBloc extends Bloc<StockCountEvent, StockCountState> {
     });
     if (!reopened) return;
     final s = _repository.state;
-    final today = _resolveTodayKey(s, _now);
+    final today = dkey(_clock());
     final ledger = computeLedger(s, today: today);
     emit(
       state.copyWith(

@@ -60,7 +60,7 @@ Widget _buildTablesGolden(
   child: MultiBlocProvider(
     providers: [
       BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
-      BlocProvider<AuthCubit>(create: (_) => AuthCubit(repo)),
+      BlocProvider<AuthCubit>(create: (_) => AuthCubit(repo, now: now)),
       BlocProvider<ShiftBloc>(create: (_) => ShiftBloc(repo)),
       BlocProvider<TablesCubit>(create: (_) => TablesCubit(repo, now: now)),
     ],
@@ -96,7 +96,7 @@ Widget _buildSaleGolden(
   child: MultiBlocProvider(
     providers: [
       BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
-      BlocProvider<AuthCubit>(create: (_) => AuthCubit(repo)),
+      BlocProvider<AuthCubit>(create: (_) => AuthCubit(repo, now: now)),
       BlocProvider<ShiftBloc>(create: (_) => ShiftBloc(repo)),
       BlocProvider<TablesCubit>(create: (_) => TablesCubit(repo, now: now)),
       if (saleBloc != null)

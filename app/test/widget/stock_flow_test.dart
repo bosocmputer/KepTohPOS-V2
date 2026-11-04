@@ -44,7 +44,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     final repo = _buildFullStockRepo(fixedNow: fixedNow);
-    final authCubit = AuthCubit(repo);
+    final authCubit = AuthCubit(repo, now: fixedNow);
     addTearDown(authCubit.close);
 
     // Before closing 2026-11-04, latest closed day is 2026-11-03 (15,299 ฿)
@@ -55,6 +55,7 @@ void main() {
       KepTohApp(
         repository: repo,
         authCubit: authCubit,
+        now: fixedNow,
         initialLocation: '/stock',
       ),
     );
@@ -120,7 +121,7 @@ void main() {
         sessionStaffId: 'st3',
       );
       await tester.pumpWidget(
-        KepTohApp(repository: repo, initialLocation: '/stock'),
+        KepTohApp(repository: repo, now: fixedNow, initialLocation: '/stock'),
       );
       await tester.pumpAndSettle();
 

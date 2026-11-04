@@ -42,7 +42,8 @@ void main() {
         addTearDown(() => tester.binding.setSurfaceSize(null));
 
         final repo = _createGoldenRepo();
-        final authCubit = AuthCubit(repo)..setPin('12');
+        final authCubit = AuthCubit(repo, now: DateTime(2026, 11, 4, 12))
+          ..setPin('12');
         addTearDown(authCubit.close);
 
         await tester.pumpWidget(

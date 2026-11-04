@@ -46,20 +46,21 @@ MockPosRepository _buildRepoWithBills(DateTime fixedNow) {
 }
 
 void main() {
+  final fixedNow = DateTime(2026, 11, 4, 18);
+
   testWidgets('tap bill row -> open receipt -> void bill with reason -> '
       'row shows "ยกเลิก" and summary sales decreases', (tester) async {
     tester.view.physicalSize = const Size(1366, 1024);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    final fixedNow = DateTime(2026, 11, 4, 18);
     final repo = _buildRepoWithBills(fixedNow);
 
     // b1 = 428, b2 = 199 -> initial totalSales = 627, stock ad1 = 94
     expect(repo.state.addons.first.stock, 94);
 
     await tester.pumpWidget(
-      KepTohApp(repository: repo, initialLocation: '/bills'),
+      KepTohApp(repository: repo, now: fixedNow, initialLocation: '/bills'),
     );
     await tester.pumpAndSettle();
 
@@ -118,7 +119,7 @@ void main() {
 
     final repo = _buildRepoWithBills(DateTime(2026, 11, 4, 18));
     await tester.pumpWidget(
-      KepTohApp(repository: repo, initialLocation: '/bills'),
+      KepTohApp(repository: repo, now: fixedNow, initialLocation: '/bills'),
     );
     await tester.pumpAndSettle();
 
@@ -160,7 +161,7 @@ void main() {
 
     final repo = _buildRepoWithBills(DateTime(2026, 11, 4, 18));
     await tester.pumpWidget(
-      KepTohApp(repository: repo, initialLocation: '/bills'),
+      KepTohApp(repository: repo, now: fixedNow, initialLocation: '/bills'),
     );
     await tester.pumpAndSettle();
 
@@ -210,7 +211,7 @@ void main() {
 
     final repo = _buildRepoWithBills(DateTime(2026, 11, 4, 18));
     await tester.pumpWidget(
-      KepTohApp(repository: repo, initialLocation: '/bills'),
+      KepTohApp(repository: repo, now: fixedNow, initialLocation: '/bills'),
     );
     await tester.pumpAndSettle();
 

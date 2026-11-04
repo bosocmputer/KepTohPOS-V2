@@ -6,29 +6,11 @@ import 'package:app/domain/roles.dart';
 
 export 'package:app/domain/ledger_models.dart';
 
-String _defaultTodayKey(PosState s) {
-  var maxKey = dkey(DateTime.now());
-  if (s.startDate.compareTo(maxKey) > 0) maxKey = s.startDate;
-  for (final k in s.counts.keys) {
-    if (k.compareTo(maxKey) > 0) maxKey = k;
-  }
-  for (final b in s.sales) {
-    if (b.date.compareTo(maxKey) > 0) maxKey = b.date;
-  }
-  for (final p in s.purchases) {
-    if (p.date.compareTo(maxKey) > 0) maxKey = p.date;
-  }
-  for (final e in s.expenses) {
-    if (e.date.compareTo(maxKey) > 0) maxKey = e.date;
-  }
-  return maxKey;
-}
-
 /// Computes daily cost of goods sold, weighted/latest ingredient valuation,
 /// weekly count estimation/reconciliation, and gross/net profit
 /// (`computeLedger` in `prototype/index.html`).
 LedgerResult computeLedger(PosState s, {String? today}) {
-  final tk = today ?? _defaultTodayKey(s);
+  final tk = today ?? dkey(DateTime.now());
   final sh = s.shop;
   final w = sh.childHeadWeight;
   final activeFixedSum = s.fixedCosts

@@ -39,6 +39,7 @@ class _StreamRefreshListenable extends ChangeNotifier {
 GoRouter createAppRouter({
   String initialLocation = '/tables',
   AuthCubit? authCubit,
+  DateTime? now,
 }) => GoRouter(
   initialLocation: initialLocation,
   refreshListenable: authCubit != null
@@ -73,12 +74,14 @@ GoRouter createAppRouter({
       builder: (context, state) => ShellPlaceholderPage(
         viewSpec: kAppViews.first,
         saleTableId: state.pathParameters['tableId'],
+        now: now,
       ),
     ),
     for (final view in kAppViews)
       GoRoute(
         path: '/${view.id}',
-        builder: (context, state) => ShellPlaceholderPage(viewSpec: view),
+        builder: (context, state) =>
+            ShellPlaceholderPage(viewSpec: view, now: now),
       ),
     if (kDebugMode)
       GoRoute(
@@ -96,12 +99,14 @@ class ShellPlaceholderPage extends StatefulWidget {
     this.staffRole = 'owner',
     this.initialDrawerOpen = false,
     this.saleTableId,
+    this.now,
   });
 
   final AppViewSpec viewSpec;
   final String staffRole;
   final bool initialDrawerOpen;
   final String? saleTableId;
+  final DateTime? now;
 
   @override
   State<ShellPlaceholderPage> createState() => _ShellPlaceholderPageState();
@@ -130,10 +135,12 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
         key: const ValueKey('stock-scope'),
         providers: [
           if (existingStockCubit == null)
-            BlocProvider<StockCubit>(create: (_) => StockCubit(repo)),
+            BlocProvider<StockCubit>(
+              create: (_) => StockCubit(repo, now: widget.now),
+            ),
           if (existingStockBloc == null)
             BlocProvider<StockCountBloc>(
-              create: (_) => StockCountBloc(repository: repo),
+              create: (_) => StockCountBloc(repository: repo, now: widget.now),
             ),
         ],
         child: Builder(builder: _buildShell),
@@ -194,8 +201,11 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
           ? salePage
           : BlocProvider<SaleBloc>(
               key: ValueKey('sale-bloc-${widget.saleTableId}'),
-              create: (_) =>
-                  SaleBloc(repo!, initialTableId: widget.saleTableId!),
+              create: (_) => SaleBloc(
+                repo!,
+                initialTableId: widget.saleTableId!,
+                now: widget.now,
+              ),
               child: salePage,
             );
     } else if (isTablesView) {
@@ -209,7 +219,7 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
       body = billsCubit != null
           ? billsPage
           : BlocProvider<BillsCubit>(
-              create: (_) => BillsCubit(repo!),
+              create: (_) => BillsCubit(repo!, now: widget.now),
               child: billsPage,
             );
     } else if (isStockView) {

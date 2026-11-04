@@ -9,23 +9,33 @@ export 'package:app/features/stock/presentation/cubit/stock_state.dart';
 /// Cubit managing `/stock` tabs, purchases, daily expenses, and stock balance
 /// (`StockView` in `prototype/index.html:1420-1509`).
 class StockCubit extends Cubit<StockState> {
-  new(this._repository, {DateTime? now, String initialTab = 'count'})
-    : _now = now,
-      super(_initialState(_repository, now, initialTab)) {
+  new(
+    this._repository, {
+    DateTime? now,
+    DateTime Function()? clock,
+    String initialTab = 'count',
+  }) : _clock = clock ?? (now != null ? () => now : DateTime.now),
+       super(
+         _initialState(
+           _repository,
+           (clock ?? (now != null ? () => now : DateTime.now))(),
+           initialTab,
+         ),
+       ) {
     _sub = _repository.stream.listen(_onRepositoryUpdated);
   }
 
   final PosRepository _repository;
-  final DateTime? _now;
+  final DateTime Function() _clock;
   StreamSubscription<PosState>? _sub;
 
   static StockState _initialState(
     PosRepository repo,
-    DateTime? now,
+    DateTime now,
     String initialTab,
   ) {
     final s = repo.state;
-    final today = _resolveTodayKey(s, now);
+    final today = dkey(now);
     final ledger = computeLedger(s, today: today);
     return StockState(
       posState: s,
@@ -36,20 +46,8 @@ class StockCubit extends Cubit<StockState> {
     );
   }
 
-  static String _resolveTodayKey(PosState s, DateTime? now) {
-    if (now != null) return dkey(now);
-    final dates = <String>{
-      s.startDate,
-      ...s.counts.keys,
-      for (final b in s.sales) b.date,
-      for (final p in s.purchases) p.date,
-      for (final e in s.expenses) e.date,
-    };
-    return dates.reduce((a, b) => a.compareTo(b) >= 0 ? a : b);
-  }
-
   void _onRepositoryUpdated(PosState s) {
-    final today = _resolveTodayKey(s, _now);
+    final today = dkey(_clock());
     final ledger = computeLedger(s, today: today);
     emit(state.copyWith(posState: s, ledger: ledger, todayDate: today));
   }
@@ -125,6 +123,7 @@ class StockCubit extends Cubit<StockState> {
     String note = '',
     String? editId,
   }) {
+    final now = _clock();
     var ok = false;
     _repository.update((st) {
       ok = savePurchase(
@@ -135,12 +134,12 @@ class StockCubit extends Cubit<StockState> {
         me: staff,
         note: note,
         editId: editId,
-        now: _now,
+        now: now,
       );
     });
     if (!ok) return false;
     final s = _repository.state;
-    final today = _resolveTodayKey(s, _now);
+    final today = dkey(now);
     final ledger = computeLedger(s, today: today);
     emit(
       state.copyWith(
@@ -165,7 +164,7 @@ class StockCubit extends Cubit<StockState> {
     });
     if (!ok) return false;
     final s = _repository.state;
-    final today = _resolveTodayKey(s, _now);
+    final today = dkey(_clock());
     final ledger = computeLedger(s, today: today);
     emit(
       state.copyWith(
@@ -186,6 +185,7 @@ class StockCubit extends Cubit<StockState> {
     required StaffMember staff,
     String? editId,
   }) {
+    final now = _clock();
     var ok = false;
     _repository.update((st) {
       ok = saveExpenses(
@@ -194,12 +194,12 @@ class StockCubit extends Cubit<StockState> {
         lines: lines,
         me: staff,
         editId: editId,
-        now: _now,
+        now: now,
       );
     });
     if (!ok) return false;
     final s = _repository.state;
-    final today = _resolveTodayKey(s, _now);
+    final today = dkey(now);
     final ledger = computeLedger(s, today: today);
     emit(
       state.copyWith(
@@ -221,7 +221,7 @@ class StockCubit extends Cubit<StockState> {
     });
     if (!ok) return false;
     final s = _repository.state;
-    final today = _resolveTodayKey(s, _now);
+    final today = dkey(_clock());
     final ledger = computeLedger(s, today: today);
     emit(
       state.copyWith(

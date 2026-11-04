@@ -152,6 +152,40 @@ void main() {
         expect(r2(lastLatest.netProfit!), 15290.44);
       },
     );
+
+    test('computeLedger without today uses clock date even when state contains '
+        'future dates', () {
+      final clockNow = DateTime.now();
+      final clockKey = dkey(clockNow);
+      final s = _loadSeededState(clockNow);
+      const futureDate = '2099-12-31';
+      s.counts[futureDate] = <String, double>{'i1': 5};
+      s.purchases.add(
+        const PurchaseRecord(
+          id: 'P-FUT',
+          date: futureDate,
+          at: '2099-12-31T10:00:00Z',
+          supplierId: 's1',
+          lines: <PurchaseLine>[PurchaseLine(ingId: 'i1', qty: 2, total: 370)],
+          note: 'future',
+        ),
+      );
+      s.expenses.add(
+        const ExpenseRecord(
+          id: 'E-FUT',
+          date: futureDate,
+          at: '2099-12-31T11:00:00Z',
+          typeId: 'et1',
+          amount: 100,
+          note: 'future',
+        ),
+      );
+
+      final ledger = computeLedger(s);
+      expect(ledger.days.last.date, clockKey);
+      expect(ledger.days.last.isToday, isTrue);
+      expect(ledger.byDate.containsKey(futureDate), isFalse);
+    });
   });
 
   group('promptPayPayload + crc16 & tableTimer (timeLimit/late) JS parity', () {
