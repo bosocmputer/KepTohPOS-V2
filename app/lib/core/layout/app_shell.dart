@@ -18,6 +18,7 @@ class AppShell extends StatefulWidget {
     required this.onNavigate,
     required this.child,
     super.key,
+    this.pageTitle = 'โต๊ะและขาย',
     this.shopName = 'ร้านหมูกระทะ เก็บโต๊ะ',
     this.dateKey = '2026-11-04',
     this.staffName = 'พี่ต้อม (เจ้าของร้าน)',
@@ -25,6 +26,7 @@ class AppShell extends StatefulWidget {
     this.shiftOpenTimeText = '09:00',
     this.shiftStaffName = 'พี่ต้อม (เจ้าของร้าน)',
     this.initialDrawerOpen = false,
+    this.delegateDesktopHeader = false,
     this.headerActions = const <Widget>[],
     this.searchQuery = '',
     this.searchPlaceholder = 'ค้นหา',
@@ -36,6 +38,7 @@ class AppShell extends StatefulWidget {
   final String activeViewId;
   final ValueChanged<String> onNavigate;
   final Widget child;
+  final String pageTitle;
   final String shopName;
   final String dateKey;
   final String staffName;
@@ -43,6 +46,7 @@ class AppShell extends StatefulWidget {
   final String? shiftOpenTimeText;
   final String? shiftStaffName;
   final bool initialDrawerOpen;
+  final bool delegateDesktopHeader;
   final List<Widget> headerActions;
   final String searchQuery;
   final String searchPlaceholder;
@@ -82,6 +86,22 @@ class _AppShellState extends State<AppShell> {
         final headerHeight = isMobile
             ? AppDimensions.btnLgH
             : AppDimensions.headerH;
+        final delegateHeader =
+            !isMobile && widget.delegateDesktopHeader && hasAccess;
+
+        ShellHeaderBar buildHeader({List<Widget> extraActions = const []}) =>
+            ShellHeaderBar(
+              height: headerHeight,
+              isMobile: isMobile,
+              pageTitle: widget.pageTitle,
+              staffName: widget.staffName,
+              isShiftOpen: widget.shiftOpenTimeText != null,
+              actions: <Widget>[...extraActions, ...widget.headerActions],
+              searchQuery: widget.searchQuery,
+              searchPlaceholder: widget.searchPlaceholder,
+              onSearchChanged: widget.onSearchChanged,
+              onOpenDrawer: () => setState(() => _drawerOpen = true),
+            );
 
         return Scaffold(
           backgroundColor: tokens.bg,
@@ -90,20 +110,15 @@ class _AppShellState extends State<AppShell> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  ShellHeaderBar(
-                    height: headerHeight,
-                    isMobile: isMobile,
-                    staffName: widget.staffName,
-                    isShiftOpen: widget.shiftOpenTimeText != null,
-                    actions: widget.headerActions,
-                    searchQuery: widget.searchQuery,
-                    searchPlaceholder: widget.searchPlaceholder,
-                    onSearchChanged: widget.onSearchChanged,
-                    onOpenDrawer: () => setState(() => _drawerOpen = true),
-                  ),
+                  if (!delegateHeader) buildHeader(),
                   Expanded(
                     child: hasAccess
-                        ? widget.child
+                        ? (delegateHeader
+                              ? ShellDesktopHeaderScope(
+                                  headerBuilder: buildHeader,
+                                  child: widget.child,
+                                )
+                              : widget.child)
                         : Padding(
                             padding: const EdgeInsets.all(AppDimensions.space6),
                             child: Container(

@@ -4,8 +4,16 @@ import 'package:app/domain/roles.dart';
 import 'package:flutter/material.dart';
 
 /// Top header bar for `AppShell` (`88px` on `>= 761`, compact on mobile).
-/// Displays Sidebar toggle button + Search box + Avatar per
-/// `design/figma/cashier.png` (without duplicating `PageHeader` title).
+///
+/// Desktop (`>= 761`, `design/figma/table.png` & `cashier.png`):
+/// - Left: `44x44` bordered rounded-square Sidebar toggle button + Search box
+///   (`height: 44`, `width: ~292`).
+/// - Right (flush right via `Spacer`): Primary page action button (e.g.
+///   `"เปิดโต๊ะ"` on `/tables`, `"เก็บโต๊ะ"` on `/tables/:tableId`) + shift
+///   status pill + `Avatar`.
+///
+/// Mobile (`<= 760`):
+/// - Sidebar button + Page title + Search icon button + `Avatar`.
 class ShellHeaderBar extends StatelessWidget {
   const new({
     required this.height,
@@ -15,6 +23,7 @@ class ShellHeaderBar extends StatelessWidget {
     required this.actions,
     required this.onOpenDrawer,
     super.key,
+    this.pageTitle = 'โต๊ะและขาย',
     this.searchQuery = '',
     this.searchPlaceholder = 'ค้นหา',
     this.onSearchChanged,
@@ -26,6 +35,7 @@ class ShellHeaderBar extends StatelessWidget {
   final bool isShiftOpen;
   final List<Widget> actions;
   final VoidCallback onOpenDrawer;
+  final String pageTitle;
   final String searchQuery;
   final String searchPlaceholder;
   final ValueChanged<String>? onSearchChanged;
@@ -33,6 +43,7 @@ class ShellHeaderBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
+    final textTheme = Theme.of(context).textTheme;
 
     return Container(
       key: const ValueKey('shell-header'),
@@ -48,25 +59,54 @@ class ShellHeaderBar extends StatelessWidget {
         children: [
           Btn(
             key: const ValueKey('shell-menu-btn'),
-            kind: BtnKind.ghost,
             icon: 'sidebar',
             semanticLabel: 'เปิดเมนู',
             onPressed: onOpenDrawer,
           ),
-          const SizedBox(width: AppDimensions.space3),
-          Flexible(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 320),
-              child: SearchBox(
-                value: searchQuery,
-                placeholder: searchPlaceholder,
-                onChanged: onSearchChanged ?? (_) {},
+          if (isMobile) ...[
+            const SizedBox(width: AppDimensions.space2_5),
+            Expanded(
+              child: Text(
+                pageTitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.titleMedium?.copyWith(
+                  color: tokens.ink,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
-          ),
-          const Spacer(),
-          if (actions.isNotEmpty) ...[
-            ...actions,
+            Btn(
+              key: const ValueKey('shell-mobile-search-btn'),
+              kind: BtnKind.ghost,
+              icon: 'search',
+              semanticLabel: 'ค้นหา',
+              onPressed: () {},
+            ),
+            const SizedBox(width: AppDimensions.space1_5),
+          ] else ...[
+            const SizedBox(width: AppDimensions.space3),
+            Flexible(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: AppDimensions.topbarSearchW,
+                ),
+                child: SearchBox(
+                  value: searchQuery,
+                  placeholder: searchPlaceholder,
+                  onChanged: onSearchChanged ?? (_) {},
+                ),
+              ),
+            ),
+            const Spacer(),
+            if (actions.isNotEmpty) ...[
+              ...actions,
+              const SizedBox(width: AppDimensions.space3),
+            ],
+            Pill(
+              label: isShiftOpen ? 'กะเปิด' : 'ยังไม่เปิดกะ',
+              tone: isShiftOpen ? PillTone.green : PillTone.neutral,
+            ),
             const SizedBox(width: AppDimensions.space2_5),
           ],
           Semantics(
@@ -105,6 +145,21 @@ class ShellHeaderBar extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Provides the desktop `ShellHeaderBar` builder to split-screen views like
+/// `SalePage` so the topbar spans only the left main area while the right
+/// Order Panel spans 100% of screen height (`design/figma/cashier.png`).
+class ShellDesktopHeaderScope extends InheritedWidget {
+  const new({required this.headerBuilder, required super.child, super.key});
+
+  final Widget Function({List<Widget> extraActions}) headerBuilder;
+
+  static ShellDesktopHeaderScope? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ShellDesktopHeaderScope>();
+
+  @override
+  bool updateShouldNotify(ShellDesktopHeaderScope oldWidget) => true;
 }
 
 /// Mobile bottom navigation bar (`<= 760px`: 4 items + "เพิ่มเติม").

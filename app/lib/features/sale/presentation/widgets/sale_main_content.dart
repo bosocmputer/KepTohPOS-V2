@@ -54,7 +54,7 @@ class SaleMainContent extends StatelessWidget {
         value: c,
         label: c,
         count: count,
-        icon: c == 'แพ็กเกจ' ? 'tables' : 'cup',
+        icon: c == 'แพ็กเกจ' ? 'package' : AppIcons.forCategory(c),
       );
     }).toList();
 

@@ -44,8 +44,7 @@ GoRouter createAppRouter({
     final me = authCubit.state.currentStaff;
     final loc = state.matchedLocation;
     if (me == null) {
-      if (loc != '/login' && loc != '/dev/components') return '/login';
-      return null;
+      return (loc != '/login' && loc != '/dev/components') ? '/login' : null;
     }
     if (loc == '/login') return '/tables';
     final viewId = loc.startsWith('/') ? loc.substring(1) : loc;
@@ -143,10 +142,15 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
         ((authCubit?.state.shouldPromptOpenShift ?? false) ||
             _manualOpenShiftModal);
 
-    final Widget body;
-    if (widget.viewSpec.id == 'tables' &&
+    final isSaleView =
+        widget.viewSpec.id == 'tables' &&
         widget.saleTableId != null &&
-        (existingSaleBloc != null || repo != null)) {
+        (existingSaleBloc != null || repo != null);
+    final isTablesView =
+        !isSaleView && widget.viewSpec.id == 'tables' && tablesCubit != null;
+
+    final Widget body;
+    if (isSaleView) {
       final salePage = SalePage(
         staff: me,
         onBackToTables: () => context.go('/tables'),
@@ -161,7 +165,7 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
                   SaleBloc(repo!, initialTableId: widget.saleTableId!),
               child: salePage,
             );
-    } else if (widget.viewSpec.id == 'tables' && tablesCubit != null) {
+    } else if (isTablesView) {
       body = TablesPage(
         onSelectTable: (id) => context.go('/tables/$id'),
         onRequestOpenShift: () => setState(() => _manualOpenShiftModal = true),
@@ -210,11 +214,34 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
       children: [
         AppShell(
           activeViewId: widget.viewSpec.id,
+          pageTitle: widget.viewSpec.title,
           staffName: me.name,
           staffRole: me.role,
           shiftOpenTimeText: shiftTimeText,
           shiftStaffName: shiftStaffName,
           initialDrawerOpen: widget.initialDrawerOpen,
+          delegateDesktopHeader: isSaleView,
+          headerActions: <Widget>[
+            if (isTablesView)
+              Btn(
+                key: const ValueKey('topbar-open-table-btn'),
+                kind: BtnKind.primary,
+                label: 'เปิดโต๊ะ',
+                onPressed: () {
+                  final s = tablesCubit.state.posState;
+                  final free = s.tables.where(
+                    (t) => !s.openTables.containsKey(t.id),
+                  );
+                  final id = free.isNotEmpty
+                      ? free.first.id
+                      : (s.tables.isNotEmpty ? s.tables.first.id : 't1');
+                  context.go('/tables/$id');
+                },
+              ),
+          ],
+          searchQuery: isTablesView ? tablesCubit.state.searchQuery : '',
+          searchPlaceholder: isTablesView ? 'ค้นหาชื่อโต๊ะ' : 'ค้นหา',
+          onSearchChanged: isTablesView ? tablesCubit.setSearchQuery : null,
           onNavigate: (viewId) => viewId == 'dev/components'
               ? unawaited(context.push('/dev/components'))
               : context.go('/$viewId'),
@@ -246,16 +273,16 @@ class _SetupThemeSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.tokens;
-    final textTheme = Theme.of(context).textTheme;
-    final themeState = context.watch<ThemeCubit>().state;
-    final themeCubit = context.read<ThemeCubit>();
+    final t = context.tokens;
+    final tt = Theme.of(context).textTheme;
+    final mode = context.watch<ThemeCubit>().state.mode;
+    final cubit = context.read<ThemeCubit>();
     return Container(
       padding: const EdgeInsets.all(AppDimensions.space5),
       decoration: BoxDecoration(
-        color: tokens.surface,
+        color: t.surface,
         borderRadius: BorderRadius.circular(AppDimensions.r),
-        border: Border.all(color: tokens.line),
+        border: Border.all(color: t.line),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -265,30 +292,27 @@ class _SetupThemeSection extends StatelessWidget {
             children: [
               Text(
                 'ธีมและการแสดงผล',
-                style: textTheme.titleLarge?.copyWith(color: tokens.ink),
+                style: tt.titleLarge?.copyWith(color: t.ink),
               ),
               const SizedBox(height: AppDimensions.space1),
               Text(
                 'เลือกโหมดสว่าง มืด หรือตามเครื่อง',
-                style: textTheme.bodySmall?.copyWith(color: tokens.muted),
+                style: tt.bodySmall?.copyWith(color: t.muted),
               ),
             ],
           ),
           Wrap(
             spacing: AppDimensions.space2,
-            children: AppThemeMode.values
-                .map(
-                  (mode) => Btn(
-                    key: ValueKey('setup-mode-${mode.name}'),
-                    label: mode.label,
-                    size: BtnSize.sm,
-                    kind: themeState.mode == mode
-                        ? BtnKind.primary
-                        : BtnKind.normal,
-                    onPressed: () => themeCubit.setMode(mode),
-                  ),
-                )
-                .toList(),
+            children: [
+              for (final m in AppThemeMode.values)
+                Btn(
+                  key: ValueKey('setup-mode-${m.name}'),
+                  label: m.label,
+                  size: BtnSize.sm,
+                  kind: mode == m ? BtnKind.primary : BtnKind.normal,
+                  onPressed: () => cubit.setMode(m),
+                ),
+            ],
           ),
         ],
       ),

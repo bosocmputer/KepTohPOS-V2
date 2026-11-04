@@ -40,6 +40,25 @@ class SalePackagesList extends StatelessWidget {
                   padding: const EdgeInsets.all(AppDimensions.space4),
                   child: Row(
                     children: [
+                      Container(
+                        width: AppDimensions.avatarMd,
+                        height: AppDimensions.avatarMd,
+                        decoration: BoxDecoration(
+                          color: p.id == state.pkgId
+                              ? t.primary.withValues(alpha: 0.16)
+                              : t.surface2,
+                          borderRadius: BorderRadius.circular(
+                            AppDimensions.radiusSm,
+                          ),
+                        ),
+                        child: Center(
+                          child: AppIcon(
+                            'package',
+                            color: p.id == state.pkgId ? t.primaryInk : t.muted,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppDimensions.space3),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,7 +115,7 @@ class SaleAddonsGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final w = constraints.maxWidth;
-        final cols = w >= 720 ? 3 : 2;
+        final cols = w >= 780 ? 4 : (w >= 520 ? 3 : 2);
         const spacing = AppDimensions.space3;
         final itemW = (w - (cols - 1) * spacing) / cols;
 

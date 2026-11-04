@@ -63,6 +63,13 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
     'assets/fonts/IBMPlexSansThai-Bold.ttf',
   ]);
 
+  await _loadFontFamily('HgiStrokeRounded', const <String>[
+    'assets/fonts/hugeicons-stroke-rounded.ttf',
+  ]);
+  await _loadFontFamily('packages/hugeicons/HgiStrokeRounded', const <String>[
+    'assets/fonts/hugeicons-stroke-rounded.ttf',
+  ]);
+
   final materialFont = _findMaterialIconsFont();
   if (materialFont != null) {
     final bytes = materialFont.readAsBytesSync();

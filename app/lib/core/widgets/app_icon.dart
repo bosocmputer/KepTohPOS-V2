@@ -1,40 +1,92 @@
 import 'package:app/core/theme/tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
-/// Maps semantic icon keys (`ICONS` in `prototype/index.html`) to standard
-/// platform [IconData] without custom inline SVGs.
+/// Maps semantic icon keys (`ICONS` in `prototype/index.html` and Figma visual
+/// components) to [HugeIcons] stroke-rounded [IconData].
+///
+/// All icons across the app must be resolved through [AppIcons] / [AppIcon].
 abstract final class AppIcons {
   static const Map<String, IconData> byName = <String, IconData>{
-    'tables': Icons.grid_view_rounded,
-    'receipt': Icons.receipt_long_outlined,
-    'box': Icons.inventory_2_outlined,
-    'clock': Icons.schedule_rounded,
-    'chart': Icons.bar_chart_rounded,
-    'list': Icons.format_list_bulleted_rounded,
-    'gear': Icons.settings_outlined,
-    'user': Icons.person_outline_rounded,
-    'plus': Icons.add_rounded,
-    'minus': Icons.remove_rounded,
-    'x': Icons.close_rounded,
-    'trash': Icons.delete_outline_rounded,
-    'edit': Icons.edit_outlined,
-    'copy': Icons.content_copy_rounded,
-    'flame': Icons.local_fire_department_rounded,
-    'printer': Icons.print_outlined,
-    'check': Icons.check_rounded,
-    'sidebar': Icons.view_sidebar_outlined,
-    'logout': Icons.logout_rounded,
-    'chevron': Icons.keyboard_arrow_down_rounded,
-    'search': Icons.search_rounded,
-    'backspace': Icons.backspace_outlined,
-    'menu': Icons.menu_rounded,
-    'cup': Icons.local_cafe_outlined,
-    'back': Icons.chevron_left_rounded,
-    'filter': Icons.tune_rounded,
-    'grid': Icons.grid_view_rounded,
+    'tables': HugeIcons.strokeRoundedGridView,
+    'table': HugeIcons.strokeRoundedRestaurantTable,
+    'receipt': HugeIcons.strokeRoundedInvoice02,
+    'bills': HugeIcons.strokeRoundedInvoice02,
+    'box': HugeIcons.strokeRoundedPackage,
+    'stock': HugeIcons.strokeRoundedPackage,
+    'clock': HugeIcons.strokeRoundedClock01,
+    'shift': HugeIcons.strokeRoundedClock01,
+    'chart': HugeIcons.strokeRoundedChartColumn,
+    'dashboard': HugeIcons.strokeRoundedChartColumn,
+    'list': HugeIcons.strokeRoundedCheckList,
+    'reports': HugeIcons.strokeRoundedCheckList,
+    'gear': HugeIcons.strokeRoundedSettings01,
+    'setup': HugeIcons.strokeRoundedSettings01,
+    'user': HugeIcons.strokeRoundedUser,
+    'plus': HugeIcons.strokeRoundedAdd01,
+    'minus': HugeIcons.strokeRoundedRemove01,
+    'x': HugeIcons.strokeRoundedCancel01,
+    'trash': HugeIcons.strokeRoundedDelete02,
+    'edit': HugeIcons.strokeRoundedNoteEdit,
+    'note': HugeIcons.strokeRoundedNoteEdit,
+    'copy': HugeIcons.strokeRoundedCopy01,
+    'flame': HugeIcons.strokeRoundedFire,
+    'printer': HugeIcons.strokeRoundedPrinter,
+    'check': HugeIcons.strokeRoundedTick02,
+    'sidebar': HugeIcons.strokeRoundedSidebarLeft,
+    'logout': HugeIcons.strokeRoundedLogout03,
+    'chevron': HugeIcons.strokeRoundedArrowDown01,
+    'back': HugeIcons.strokeRoundedArrowLeft01,
+    'forward': HugeIcons.strokeRoundedArrowRight01,
+    'search': HugeIcons.strokeRoundedSearch01,
+    'backspace': HugeIcons.strokeRoundedDeletePutBack,
+    'menu': HugeIcons.strokeRoundedMenu01,
+    'package': HugeIcons.strokeRoundedRestaurant01,
+    'buffet': HugeIcons.strokeRoundedRestaurant01,
+    'cup': HugeIcons.strokeRoundedSoftDrink01,
+    'drink': HugeIcons.strokeRoundedSoftDrink01,
+    'coffee': HugeIcons.strokeRoundedCoffee01,
+    'meat': HugeIcons.strokeRoundedSteak,
+    'veg': HugeIcons.strokeRoundedBroccoli,
+    'plate': HugeIcons.strokeRoundedDish01,
+    'snack': HugeIcons.strokeRoundedDish01,
+    'noodles': HugeIcons.strokeRoundedNoodles,
+    'ice': HugeIcons.strokeRoundedIceCream01,
+    'cash': HugeIcons.strokeRoundedCash01,
+    'qr': HugeIcons.strokeRoundedQrCode,
+    'transfer': HugeIcons.strokeRoundedBank,
+    'card': HugeIcons.strokeRoundedCreditCardPos,
+    'filter': HugeIcons.strokeRoundedFilterHorizontal,
+    'grid': HugeIcons.strokeRoundedGridView,
+    'sun': HugeIcons.strokeRoundedSun03,
+    'moon': HugeIcons.strokeRoundedMoon02,
+    'alert': HugeIcons.strokeRoundedAlertCircle,
   };
 
-  static IconData resolve(String name) => byName[name] ?? Icons.circle_outlined;
+  static IconData resolve(String name) =>
+      byName[name] ?? HugeIcons.strokeRoundedCircle;
+
+  /// Resolves a semantic icon key for a product/addon category.
+  static String forCategory(String? category) {
+    final c = (category ?? '').trim();
+    if (c.contains('เครื่องดื่ม') || c.contains('น้ำ')) return 'drink';
+    if (c.contains('เนื้อ') || c.contains('หมู') || c.contains('ทะเล')) {
+      return 'meat';
+    }
+    if (c.contains('ผัก')) return 'veg';
+    if (c.contains('ของหวาน') || c.contains('ไอศกรีม')) return 'ice';
+    if (c.contains('แพ็กเกจ') || c.contains('บุฟเฟต์')) return 'package';
+    if (c.contains('ของทานเล่น') || c.contains('อาหาร')) return 'plate';
+    return 'plate';
+  }
+
+  /// Resolves a semantic icon key for a payment method type (`cash`/`qr`/`transfer`).
+  static String forPaymentType(String type) => switch (type) {
+    'cash' => 'cash',
+    'qr' => 'qr',
+    'card' => 'card',
+    _ => 'transfer',
+  };
 }
 
 /// Shared icon component (`Icon` in `prototype/index.html`).

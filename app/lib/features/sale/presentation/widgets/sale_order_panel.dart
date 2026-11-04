@@ -17,6 +17,9 @@ class SaleOrderPanel extends StatelessWidget {
     required this.onOpenNoteModal,
     required this.onOpenRemoveModal,
     super.key,
+    this.fullHeight = false,
+    this.selectedMethodId,
+    this.onSelectMethod,
     this.onPayPressed,
   });
 
@@ -25,6 +28,9 @@ class SaleOrderPanel extends StatelessWidget {
   final ValueChanged<String> onSelectTable;
   final VoidCallback onOpenNoteModal;
   final ValueChanged<String> onOpenRemoveModal;
+  final bool fullHeight;
+  final String? selectedMethodId;
+  final ValueChanged<String>? onSelectMethod;
   final VoidCallback? onPayPressed;
 
   @override
@@ -41,6 +47,10 @@ class SaleOrderPanel extends StatelessWidget {
     final totalTxt = baht(payOrder.total, payOrder.total % 1 != 0 ? 2 : 0);
     final sentRows = state.sentRows;
     final canVoid = staff.role != 'cashier';
+    final activeMethods = s.payments.where((m) => m.active).toList();
+    final methodId =
+        selectedMethodId ??
+        (activeMethods.isNotEmpty ? activeMethods.first.id : 'pm1');
 
     final tableOpts = s.tables.map((x) {
       final ot = s.openTables[x.id];
@@ -58,16 +68,103 @@ class SaleOrderPanel extends StatelessWidget {
         .where((x) => (state.ad[x.id] ?? 0) > 0)
         .toList();
 
-    return Container(
-      key: const ValueKey('sale-order-panel'),
-      decoration: BoxDecoration(
-        color: t.surface,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-        border: Border.all(color: t.line),
-      ),
+    final bodyContent = Padding(
+      padding: const EdgeInsets.all(AppDimensions.space4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '${o != null ? "เพิ่มคน (ถ้ามี)" : "จำนวนลูกค้า"}'
+            '${pkg != null ? " · ${pkg.name}" : ""}',
+            style: tt.titleMedium?.copyWith(color: t.ink),
+          ),
+          const SizedBox(height: AppDimensions.space2),
+          PeopleRow(
+            stepperKey: const ValueKey('people-stepper-a'),
+            label: 'ผู้ใหญ่',
+            sub: pkg != null ? baht(pkg.adultPrice) : '-',
+            value: state.a,
+            onChanged: (v) => bloc.add(SaleHeadsChanged(a: v)),
+          ),
+          PeopleRow(
+            stepperKey: const ValueKey('people-stepper-c'),
+            label: 'เด็ก',
+            sub: pkg != null
+                ? '${baht(pkg.childPrice)} · ${pkg.childRule}'
+                : '-',
+            value: state.c,
+            onChanged: (v) => bloc.add(SaleHeadsChanged(c: v)),
+          ),
+          PeopleRow(
+            stepperKey: const ValueKey('people-stepper-f'),
+            label: 'เด็กเล็ก',
+            sub: pkg != null ? pkg.freeRule : '-',
+            value: state.f,
+            onChanged: (v) => bloc.add(SaleHeadsChanged(f: v)),
+          ),
+          if (cartAddons.isNotEmpty) ...[
+            const SizedBox(height: AppDimensions.space3),
+            Divider(color: t.line, height: 1),
+            const SizedBox(height: AppDimensions.space3),
+            Text(
+              timing == 'after'
+                  ? 'รายการใหม่ (ยังไม่ส่ง)'
+                  : 'ขายเสริม · เครื่องดื่ม',
+              style: tt.titleMedium?.copyWith(color: t.ink),
+            ),
+            const SizedBox(height: AppDimensions.space1_5),
+            for (final x in cartAddons)
+              OrderLine(
+                name: x.name,
+                sub: baht(x.price),
+                qty: state.ad[x.id] ?? 0,
+                icon: AppIcons.forCategory(x.category),
+                onNoteTap: onOpenNoteModal,
+                onChanged: (q) =>
+                    bloc.add(SaleAddonQtyChanged(addonId: x.id, qty: q)),
+              ),
+          ],
+          if (sentRows.isNotEmpty) ...[
+            const SizedBox(height: AppDimensions.space3),
+            Divider(color: t.line, height: 1),
+            const SizedBox(height: AppDimensions.space3),
+            Text(
+              'ส่งออเดอร์แล้ว · รอชำระ',
+              style: tt.titleMedium?.copyWith(color: t.ink),
+            ),
+            const SizedBox(height: AppDimensions.space1_5),
+            for (final l in sentRows)
+              OrderLine(
+                key: ValueKey('sent-line-${l.kind}-${l.key}'),
+                name: l.name,
+                sub: l.price > 0 ? baht(l.price) : 'ฟรี',
+                qty: l.qty,
+                icon: l.kind == 'pkg' ? 'package' : 'drink',
+                removeLabel: 'ลบ ${l.name}',
+                removeOff: !canVoid,
+                onRemove: () => onOpenRemoveModal('${l.kind}:${l.key}'),
+              ),
+          ],
+        ],
+      ),
+    );
+
+    return Container(
+      key: const ValueKey('sale-order-panel'),
+      height: fullHeight ? double.infinity : null,
+      decoration: fullHeight
+          ? BoxDecoration(
+              color: t.surface,
+              border: Border(left: BorderSide(color: t.line)),
+            )
+          : BoxDecoration(
+              color: t.surface,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+              border: Border.all(color: t.line),
+            ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: fullHeight ? MainAxisSize.max : MainAxisSize.min,
         children: [
           Padding(
             padding: const EdgeInsets.all(AppDimensions.space4),
@@ -139,91 +236,23 @@ class SaleOrderPanel extends StatelessWidget {
             ),
           ),
           Divider(color: t.line, height: 1),
-          Padding(
-            padding: const EdgeInsets.all(AppDimensions.space4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  '${o != null ? "เพิ่มคน (ถ้ามี)" : "จำนวนลูกค้า"}'
-                  '${pkg != null ? " · ${pkg.name}" : ""}',
-                  style: tt.titleMedium?.copyWith(color: t.ink),
-                ),
-                const SizedBox(height: AppDimensions.space2),
-                PeopleRow(
-                  stepperKey: const ValueKey('people-stepper-a'),
-                  label: 'ผู้ใหญ่',
-                  sub: pkg != null ? baht(pkg.adultPrice) : '-',
-                  value: state.a,
-                  onChanged: (v) => bloc.add(SaleHeadsChanged(a: v)),
-                ),
-                PeopleRow(
-                  stepperKey: const ValueKey('people-stepper-c'),
-                  label: 'เด็ก',
-                  sub: pkg != null
-                      ? '${baht(pkg.childPrice)} · ${pkg.childRule}'
-                      : '-',
-                  value: state.c,
-                  onChanged: (v) => bloc.add(SaleHeadsChanged(c: v)),
-                ),
-                PeopleRow(
-                  stepperKey: const ValueKey('people-stepper-f'),
-                  label: 'เด็กเล็ก',
-                  sub: pkg != null ? pkg.freeRule : '-',
-                  value: state.f,
-                  onChanged: (v) => bloc.add(SaleHeadsChanged(f: v)),
-                ),
-                if (cartAddons.isNotEmpty) ...[
-                  const SizedBox(height: AppDimensions.space3),
-                  Divider(color: t.line, height: 1),
-                  const SizedBox(height: AppDimensions.space3),
-                  Text(
-                    timing == 'after'
-                        ? 'รายการใหม่ (ยังไม่ส่ง)'
-                        : 'ขายเสริม · เครื่องดื่ม',
-                    style: tt.titleMedium?.copyWith(color: t.ink),
-                  ),
-                  const SizedBox(height: AppDimensions.space1_5),
-                  for (final x in cartAddons)
-                    OrderLine(
-                      name: x.name,
-                      sub: baht(x.price),
-                      qty: state.ad[x.id] ?? 0,
-                      onChanged: (q) =>
-                          bloc.add(SaleAddonQtyChanged(addonId: x.id, qty: q)),
-                    ),
-                ],
-                if (sentRows.isNotEmpty) ...[
-                  const SizedBox(height: AppDimensions.space3),
-                  Divider(color: t.line, height: 1),
-                  const SizedBox(height: AppDimensions.space3),
-                  Text(
-                    'ส่งออเดอร์แล้ว · รอชำระ',
-                    style: tt.titleMedium?.copyWith(color: t.ink),
-                  ),
-                  const SizedBox(height: AppDimensions.space1_5),
-                  for (final l in sentRows)
-                    OrderLine(
-                      key: ValueKey('sent-line-${l.kind}-${l.key}'),
-                      name: l.name,
-                      sub: l.price > 0 ? baht(l.price) : 'ฟรี',
-                      qty: l.qty,
-                      removeLabel: 'ลบ ${l.name}',
-                      removeOff: !canVoid,
-                      onRemove: () => onOpenRemoveModal('${l.kind}:${l.key}'),
-                    ),
-                ],
-                const SizedBox(height: AppDimensions.space3),
-                OrderSummary(shop: s.shop, order: payOrder, noTotal: true),
-              ],
-            ),
-          ),
+          if (fullHeight)
+            Expanded(child: SingleChildScrollView(child: bodyContent))
+          else
+            bodyContent,
           Divider(color: t.line, height: 1),
           Padding(
             padding: const EdgeInsets.all(AppDimensions.space4),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                OrderSummary(
+                  shop: s.shop,
+                  order: payOrder,
+                  noTotal: true,
+                  showLines: false,
+                ),
+                const SizedBox(height: AppDimensions.space2_5),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -246,6 +275,12 @@ class SaleOrderPanel extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: AppDimensions.space2_5),
+                PaymentPicker(
+                  methods: s.payments,
+                  value: methodId,
+                  onChanged: onSelectMethod ?? (_) {},
+                ),
                 const SizedBox(height: AppDimensions.space3),
                 if (timing == 'after') ...[
                   Btn(
@@ -258,27 +293,19 @@ class SaleOrderPanel extends StatelessWidget {
                     onPressed: () => bloc.add(SaleRoundSent(staff: staff)),
                   ),
                   const SizedBox(height: AppDimensions.space2),
-                  Btn(
-                    key: const ValueKey('sale-pay-btn'),
-                    label: 'เช็กบิล $totalTxt',
-                    kind: BtnKind.primary,
-                    size: BtnSize.lg,
-                    block: true,
-                    icon: 'receipt',
-                    disabled: !state.canPay,
-                    onPressed: onPayPressed ?? () {},
-                  ),
-                ] else
-                  Btn(
-                    key: const ValueKey('sale-pay-btn'),
-                    label: 'ไปชำระเงิน $totalTxt',
-                    kind: BtnKind.primary,
-                    size: BtnSize.lg,
-                    block: true,
-                    icon: 'receipt',
-                    disabled: !state.canPay,
-                    onPressed: onPayPressed ?? () {},
-                  ),
+                ],
+                Btn(
+                  key: const ValueKey('sale-pay-btn'),
+                  label: timing == 'after'
+                      ? 'เช็กบิล $totalTxt'
+                      : 'ไปชำระเงิน $totalTxt',
+                  kind: BtnKind.primary,
+                  size: BtnSize.lg,
+                  block: true,
+                  icon: 'receipt',
+                  disabled: !state.canPay,
+                  onPressed: onPayPressed ?? () {},
+                ),
               ],
             ),
           ),

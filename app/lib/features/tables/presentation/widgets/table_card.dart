@@ -50,7 +50,7 @@ class TableCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    AppIcon('tables', size: AppDimensions.iconSm, color: t.ink),
+                    AppIcon('table', size: AppDimensions.iconSm, color: t.ink),
                     const SizedBox(width: AppDimensions.space2),
                     Expanded(
                       child: Text(
@@ -127,7 +127,7 @@ class TableCard extends StatelessWidget {
                   Row(
                     children: [
                       AppIcon(
-                        'tables',
+                        'table',
                         size: AppDimensions.iconSm,
                         color: t.ink,
                       ),

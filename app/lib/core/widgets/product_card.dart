@@ -16,7 +16,7 @@ class ProductCard extends StatelessWidget {
     this.category,
     this.subtitle,
     this.stock,
-    this.icon = 'cup',
+    this.icon,
     this.selected = false,
     this.onTap,
   });
@@ -26,7 +26,7 @@ class ProductCard extends StatelessWidget {
   final String? category;
   final String? subtitle;
   final int? stock;
-  final String icon;
+  final String? icon;
   final bool selected;
   final VoidCallback? onTap;
 
@@ -35,6 +35,7 @@ class ProductCard extends StatelessWidget {
     final tokens = context.tokens;
     final textTheme = Theme.of(context).textTheme;
     final outOfStock = stock != null && stock! <= 0;
+    final resolvedIcon = icon ?? AppIcons.forCategory(category);
 
     return Opacity(
       opacity: outOfStock ? 0.5 : 1,
@@ -68,7 +69,7 @@ class ProductCard extends StatelessWidget {
                     children: [
                       Center(
                         child: AppIcon(
-                          icon,
+                          resolvedIcon,
                           size: AppDimensions.icon2xl,
                           color: selected ? tokens.primary : tokens.muted,
                         ),

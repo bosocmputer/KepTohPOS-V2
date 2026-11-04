@@ -42,14 +42,14 @@ void main() {
       // 4. Add 1 adult head and 1 child head via PeopleRow steppers
       final adultPlus = find.descendant(
         of: find.byKey(const ValueKey('people-stepper-a')),
-        matching: find.byIcon(Icons.add_rounded),
+        matching: find.bySemanticsLabel('เพิ่ม'),
       );
       await tester.tap(adultPlus);
       await tester.pumpAndSettle();
 
       final childPlus = find.descendant(
         of: find.byKey(const ValueKey('people-stepper-c')),
-        matching: find.byIcon(Icons.add_rounded),
+        matching: find.bySemanticsLabel('เพิ่ม'),
       );
       await tester.tap(childPlus);
       await tester.pumpAndSettle();

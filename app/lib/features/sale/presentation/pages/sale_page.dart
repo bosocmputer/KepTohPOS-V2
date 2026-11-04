@@ -1,3 +1,4 @@
+import 'package:app/core/layout/shell_bars.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
@@ -47,9 +48,29 @@ class _SalePageState extends State<SalePage> {
     super.dispose();
   }
 
+  Widget _buildPanel(SaleState state, {required bool fullHeight}) =>
+      SaleOrderPanel(
+        state: state,
+        staff: widget.staff,
+        fullHeight: fullHeight,
+        onSelectTable: widget.onSelectTable,
+        onOpenNoteModal: () => setState(() => _showNoteModal = true),
+        onOpenRemoveModal: (sel) => setState(() => _removeSelection = sel),
+      );
+
+  Widget _buildMain(SaleState state, DiningTable tb) => SaleMainContent(
+    state: state,
+    table: tb,
+    onBackToTables: widget.onBackToTables,
+    onSelectTable: widget.onSelectTable,
+    onRequestOpenShift: widget.onRequestOpenShift,
+    onRequestCloseTable: () => setState(() => _showCloseConfirm = true),
+  );
+
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
+    final headerScope = ShellDesktopHeaderScope.maybeOf(context);
 
     return BlocConsumer<SaleBloc, SaleState>(
       listenWhen: (prev, curr) =>
@@ -83,12 +104,16 @@ class _SalePageState extends State<SalePage> {
           );
         }
 
-        final orderPanel = SaleOrderPanel(
-          state: state,
-          staff: widget.staff,
-          onSelectTable: widget.onSelectTable,
-          onOpenNoteModal: () => setState(() => _showNoteModal = true),
-          onOpenRemoveModal: (sel) => setState(() => _removeSelection = sel),
+        final desktopHeader = headerScope?.headerBuilder(
+          extraActions: <Widget>[
+            Btn(
+              key: const ValueKey('topbar-close-table-btn'),
+              kind: BtnKind.danger,
+              label: 'เก็บโต๊ะ',
+              disabled: state.openTable == null,
+              onPressed: () => setState(() => _showCloseConfirm = true),
+            ),
+          ],
         );
 
         return Stack(
@@ -97,36 +122,34 @@ class _SalePageState extends State<SalePage> {
               builder: (context, constraints) {
                 final isMobile = constraints.maxWidth <= AppDimensions.mobileBp;
                 if (!isMobile) {
-                  return Padding(
-                    padding: const EdgeInsets.all(AppDimensions.space5),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: SingleChildScrollView(
-                            child: SaleMainContent(
-                              state: state,
-                              table: tb,
-                              onBackToTables: widget.onBackToTables,
-                              onSelectTable: widget.onSelectTable,
-                              onRequestOpenShift: widget.onRequestOpenShift,
-                              onRequestCloseTable: () =>
-                                  setState(() => _showCloseConfirm = true),
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ?desktopHeader,
+                            Expanded(
+                              child: SingleChildScrollView(
+                                padding: const EdgeInsets.all(
+                                  AppDimensions.space5,
+                                ),
+                                child: _buildMain(state, tb),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                        const SizedBox(width: AppDimensions.space4),
-                        SizedBox(
-                          width: AppDimensions.orderPanelW,
-                          child: SingleChildScrollView(child: orderPanel),
-                        ),
-                      ],
-                    ),
+                      ),
+                      SizedBox(
+                        width: AppDimensions.orderPanelW,
+                        height: double.infinity,
+                        child: _buildPanel(state, fullHeight: true),
+                      ),
+                    ],
                   );
                 }
 
-                // Mobile <= 760: Order Panel moves below main content + sticky
-                // "ดูออเดอร์" bar per prototype.
                 final payTotal = state.payOrder.total;
                 final showBar = state.hasCart || payTotal > 0;
                 return Column(
@@ -139,17 +162,9 @@ class _SalePageState extends State<SalePage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            SaleMainContent(
-                              state: state,
-                              table: tb,
-                              onBackToTables: widget.onBackToTables,
-                              onSelectTable: widget.onSelectTable,
-                              onRequestOpenShift: widget.onRequestOpenShift,
-                              onRequestCloseTable: () =>
-                                  setState(() => _showCloseConfirm = true),
-                            ),
+                            _buildMain(state, tb),
                             const SizedBox(height: AppDimensions.space4),
-                            orderPanel,
+                            _buildPanel(state, fullHeight: false),
                           ],
                         ),
                       ),
