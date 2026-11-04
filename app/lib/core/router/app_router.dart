@@ -12,8 +12,8 @@ GoRouter createAppRouter() => GoRouter(
   ],
 );
 
-/// F0 empty shell page allowing live switching of brand (`figma` / `team`)
-/// and theme mode (`light` / `dark` / `system`).
+/// F0 empty shell page allowing live switching of theme mode
+/// (`light` / `dark` / `system`).
 class F0BootstrapPage extends StatelessWidget {
   const new({super.key});
 
@@ -56,27 +56,6 @@ class F0BootstrapPage extends StatelessWidget {
                       style: textTheme.bodySmall?.copyWith(color: tokens.muted),
                     ),
                     const SizedBox(height: AppDimensions.space5),
-                    Text(
-                      'ธีมสี',
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: tokens.ink,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: AppDimensions.space2),
-                    Wrap(
-                      spacing: AppDimensions.space2,
-                      children: AppBrand.values.map((brand) {
-                        final selected = themeState.brand == brand;
-                        return _SegmentChip(
-                          key: ValueKey('brand-${brand.name}'),
-                          label: brand.label,
-                          selected: selected,
-                          onTap: () => cubit.setBrand(brand),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: AppDimensions.space4),
                     Text(
                       'โหมด',
                       style: textTheme.bodyMedium?.copyWith(

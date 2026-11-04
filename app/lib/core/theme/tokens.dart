@@ -1,14 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Brand themes supported by KepToh POS (`data-brand="figma|team"`).
-enum AppBrand {
-  figma('Figma'),
-  team('ทีม');
-
-  new(this.label);
-  final String label;
-}
-
 /// Theme modes supported by KepToh POS (`light | dark | system`).
 enum AppThemeMode {
   light('สว่าง', ThemeMode.light),
@@ -20,7 +11,7 @@ enum AppThemeMode {
   final ThemeMode themeMode;
 }
 
-/// Layer 1 raw palette (`--figma-*`, `--team-*`, and theme-invariant tokens).
+/// Layer 1 raw palette (`--figma-*` and theme-invariant tokens).
 abstract final class AppRawTokens {
   // Figma · Makaryo POS kit
   static const Color figmaOrange50 = Color(0xFFFFF4ED);
@@ -47,28 +38,6 @@ abstract final class AppRawTokens {
   static const Color figmaRed700 = Color(0xFFB91C1C);
   static const Color figmaDark = Color(0xFF141B34);
 
-  // Team palette
-  static const Color teamOrange = Color(0xFFFF7A00);
-  static const Color teamOrange600 = Color(0xFFE56D00);
-  static const Color teamOrangeSoft = Color(0xFFFFF1E4);
-  static const Color teamOrangeSoft2 = Color(0xFFFFE2C7);
-  static const Color teamOrangeInk = Color(0xFFB35300);
-  static const Color teamCharcoal = Color(0xFF20242C);
-  static const Color teamGray = Color(0xFFF4F4F5);
-  static const Color teamSurface2 = Color(0xFFFAFAFB);
-  static const Color teamNavy = Color(0xFF172033);
-  static const Color teamGreen = Color(0xFF16A36A);
-  static const Color teamGreenSoft = Color(0xFFE6F6EE);
-  static const Color teamGreenInk = Color(0xFF0F7A52);
-  static const Color teamRed = Color(0xFFE5484D);
-  static const Color teamRedSoft = Color(0xFFFDECEC);
-  static const Color teamRedInk = Color(0xFFB42328);
-  static const Color teamMuted = Color(0xFF5B6475);
-  static const Color teamLine = Color(0xFFE2E3E8);
-  static const Color teamSideInkLight = Color(0xFFC7CAD2);
-  static const Color teamSideDark = Color(0xFF0C0E12);
-  static const Color teamSideInkDark = Color(0xFFAEB3BE);
-
   // Dark mode base tokens
   static const Color darkBg = Color(0xFF121419);
   static const Color darkSurface = Color(0xFF1C1F26);
@@ -89,7 +58,6 @@ abstract final class AppRawTokens {
   static const Color qrInk = Color(0xFF172033);
   static const Color promptPayBlue = Color(0xFF113566);
   static const Color scrim = Color.fromRGBO(14, 16, 21, 0.55);
-  static const Color teamSideHover = Color.fromRGBO(255, 255, 255, 0.06);
 }
 
 /// Layer 2 non-color layout, typography, spacing, and radius tokens.
@@ -125,7 +93,6 @@ abstract final class AppDimensions {
 @immutable
 class AppTokens extends ThemeExtension<AppTokens> {
   const new({
-    required this.brand,
     required this.brightness,
     required this.primary,
     required this.primaryHover,
@@ -155,8 +122,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
     required this.shadows,
   });
 
-  factory figmaLight() => const AppTokens(
-    brand: AppBrand.figma,
+  factory light() => const AppTokens(
     brightness: Brightness.light,
     primary: AppRawTokens.figmaOrange500,
     primaryHover: AppRawTokens.figmaOrange600,
@@ -186,69 +152,10 @@ class AppTokens extends ThemeExtension<AppTokens> {
     shadows: _lightShadows,
   );
 
-  factory teamLight() => const AppTokens(
-    brand: AppBrand.team,
-    brightness: Brightness.light,
-    primary: AppRawTokens.teamOrange,
-    primaryHover: AppRawTokens.teamOrange600,
-    primarySoft: AppRawTokens.teamOrangeSoft,
-    primarySoft2: AppRawTokens.teamOrangeSoft2,
-    primaryInk: AppRawTokens.teamOrangeInk,
-    onPrimary: AppRawTokens.teamCharcoal,
-    bg: AppRawTokens.teamGray,
-    surface: AppRawTokens.white,
-    surface2: AppRawTokens.teamSurface2,
-    ink: AppRawTokens.teamNavy,
-    muted: AppRawTokens.teamMuted,
-    line: AppRawTokens.teamLine,
-    success: AppRawTokens.teamGreen,
-    successSoft: AppRawTokens.teamGreenSoft,
-    successInk: AppRawTokens.teamGreenInk,
-    danger: AppRawTokens.teamRed,
-    dangerSoft: AppRawTokens.teamRedSoft,
-    dangerInk: AppRawTokens.teamRedInk,
-    dark: AppRawTokens.teamCharcoal,
-    onDark: AppRawTokens.white,
-    side: AppRawTokens.teamCharcoal,
-    sideInk: AppRawTokens.teamSideInkLight,
-    sideInkStrong: AppRawTokens.white,
-    sideHover: AppRawTokens.teamSideHover,
-    sideLine: Colors.transparent,
-    shadows: _lightShadows,
-  );
-
-  factory figmaDark() => AppTokens._darkFrom(AppTokens.figmaLight());
-
-  factory teamDark() => AppTokens._darkFrom(
-    AppTokens.teamLight(),
-    sideOverride: AppRawTokens.teamSideDark,
-    sideInkOverride: AppRawTokens.teamSideInkDark,
-    sideInkStrongOverride: AppRawTokens.white,
-    sideHoverOverride: AppRawTokens.teamSideHover,
-    sideLineOverride: Colors.transparent,
-  );
-
-  factory resolve({required AppBrand brand, required Brightness brightness}) {
-    final isDark = brightness == Brightness.dark;
-    return switch ((brand, isDark)) {
-      (AppBrand.figma, false) => AppTokens.figmaLight(),
-      (AppBrand.figma, true) => AppTokens.figmaDark(),
-      (AppBrand.team, false) => AppTokens.teamLight(),
-      (AppBrand.team, true) => AppTokens.teamDark(),
-    };
-  }
-
-  factory _darkFrom(
-    AppTokens base, {
-    Color? sideOverride,
-    Color? sideInkOverride,
-    Color? sideInkStrongOverride,
-    Color? sideHoverOverride,
-    Color? sideLineOverride,
-  }) {
+  factory dark() {
+    final base = AppTokens.light();
     const surface = AppRawTokens.darkSurface;
     return AppTokens(
-      brand: base.brand,
       brightness: Brightness.dark,
       primary: base.primary,
       primaryHover: base.primaryHover,
@@ -270,14 +177,17 @@ class AppTokens extends ThemeExtension<AppTokens> {
       dangerInk: Color.lerp(AppRawTokens.white, base.danger, 0.55)!,
       dark: AppRawTokens.darkChip,
       onDark: AppRawTokens.darkInk,
-      side: sideOverride ?? surface,
-      sideInk: sideInkOverride ?? AppRawTokens.darkMuted,
-      sideInkStrong: sideInkStrongOverride ?? AppRawTokens.darkInk,
-      sideHover: sideHoverOverride ?? AppRawTokens.darkSurface2,
-      sideLine: sideLineOverride ?? AppRawTokens.darkLine,
+      side: surface,
+      sideInk: AppRawTokens.darkMuted,
+      sideInkStrong: AppRawTokens.darkInk,
+      sideHover: AppRawTokens.darkSurface2,
+      sideLine: AppRawTokens.darkLine,
       shadows: _darkShadows,
     );
   }
+
+  factory resolve({required Brightness brightness}) =>
+      brightness == Brightness.dark ? AppTokens.dark() : AppTokens.light();
 
   static const List<BoxShadow> _lightShadows = [
     BoxShadow(
@@ -300,7 +210,6 @@ class AppTokens extends ThemeExtension<AppTokens> {
     ),
   ];
 
-  final AppBrand brand;
   final Brightness brightness;
   final Color primary;
   final Color primaryHover;
@@ -331,7 +240,6 @@ class AppTokens extends ThemeExtension<AppTokens> {
 
   @override
   AppTokens copyWith({
-    AppBrand? brand,
     Brightness? brightness,
     Color? primary,
     Color? primaryHover,
@@ -360,7 +268,6 @@ class AppTokens extends ThemeExtension<AppTokens> {
     Color? sideLine,
     List<BoxShadow>? shadows,
   }) => AppTokens(
-    brand: brand ?? this.brand,
     brightness: brightness ?? this.brightness,
     primary: primary ?? this.primary,
     primaryHover: primaryHover ?? this.primaryHover,
@@ -399,5 +306,5 @@ class AppTokens extends ThemeExtension<AppTokens> {
 
 extension AppTokensContext on BuildContext {
   AppTokens get tokens =>
-      Theme.of(this).extension<AppTokens>() ?? AppTokens.figmaLight();
+      Theme.of(this).extension<AppTokens>() ?? AppTokens.light();
 }

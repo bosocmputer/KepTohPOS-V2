@@ -4,13 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Builds a [ThemeData] from [AppTokens] for the active brand and brightness.
+/// Builds a [ThemeData] from [AppTokens] for the active brightness.
 abstract final class AppTheme {
-  static ThemeData build({
-    required AppBrand brand,
-    required Brightness brightness,
-  }) {
-    final tokens = AppTokens.resolve(brand: brand, brightness: brightness);
+  static ThemeData build({required Brightness brightness}) {
+    final tokens = AppTokens.resolve(brightness: brightness);
     final baseTheme = ThemeData(useMaterial3: true, brightness: brightness);
 
     final bodyFont = GoogleFonts.ibmPlexSansThai(color: tokens.ink);
@@ -76,25 +73,22 @@ abstract final class AppTheme {
   }
 }
 
-/// Immutable state for active [AppBrand] and [AppThemeMode].
+/// Immutable state for active [AppThemeMode].
 class ThemeState extends Equatable {
-  const new({this.brand = AppBrand.figma, this.mode = AppThemeMode.light});
+  const new({this.mode = AppThemeMode.light});
 
-  final AppBrand brand;
   final AppThemeMode mode;
 
-  ThemeState copyWith({AppBrand? brand, AppThemeMode? mode}) =>
-      ThemeState(brand: brand ?? this.brand, mode: mode ?? this.mode);
+  ThemeState copyWith({AppThemeMode? mode}) =>
+      ThemeState(mode: mode ?? this.mode);
 
   @override
-  List<Object?> get props => [brand, mode];
+  List<Object?> get props => [mode];
 }
 
-/// Cubit controlling brand (`figma` | `team`) and mode (`light` | `dark`).
+/// Cubit controlling mode (`light` | `dark` | `system`).
 class ThemeCubit extends Cubit<ThemeState> {
   new({ThemeState initialState = const ThemeState()}) : super(initialState);
-
-  void setBrand(AppBrand brand) => emit(state.copyWith(brand: brand));
 
   void setMode(AppThemeMode mode) => emit(state.copyWith(mode: mode));
 }

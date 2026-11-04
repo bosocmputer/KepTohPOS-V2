@@ -11,46 +11,27 @@ void main() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
-  group('AppTokens (theme.css parity)', () {
-    test('resolves 2 brands x light/dark accurately', () {
-      final figmaLight = AppTokens.resolve(
-        brand: AppBrand.figma,
-        brightness: Brightness.light,
-      );
-      final figmaDark = AppTokens.resolve(
-        brand: AppBrand.figma,
-        brightness: Brightness.dark,
-      );
-      final teamLight = AppTokens.resolve(
-        brand: AppBrand.team,
-        brightness: Brightness.light,
-      );
-      final teamDark = AppTokens.resolve(
-        brand: AppBrand.team,
-        brightness: Brightness.dark,
-      );
+  group('AppTokens (theme.css figma brand parity)', () {
+    test('resolves light and dark tokens accurately', () {
+      final light = AppTokens.resolve(brightness: Brightness.light);
+      final dark = AppTokens.resolve(brightness: Brightness.dark);
 
-      expect(figmaLight.primary, AppRawTokens.figmaOrange500);
-      expect(figmaLight.bg, AppRawTokens.figmaNeutral50);
-      expect(figmaLight.side, AppRawTokens.white);
+      expect(light.primary, AppRawTokens.figmaOrange500);
+      expect(light.bg, AppRawTokens.figmaNeutral50);
+      expect(light.surface, AppRawTokens.white);
+      expect(light.side, AppRawTokens.white);
+      expect(light.ink, AppRawTokens.figmaNeutral950);
 
-      expect(teamLight.primary, AppRawTokens.teamOrange);
-      expect(teamLight.onPrimary, AppRawTokens.teamCharcoal);
-      expect(teamLight.bg, AppRawTokens.teamGray);
-      expect(teamLight.side, AppRawTokens.teamCharcoal);
-
-      expect(figmaDark.bg, AppRawTokens.darkBg);
-      expect(figmaDark.surface, AppRawTokens.darkSurface);
-      expect(figmaDark.side, AppRawTokens.darkSurface);
-
-      expect(teamDark.bg, AppRawTokens.darkBg);
-      expect(teamDark.side, AppRawTokens.teamSideDark);
-      expect(teamDark.sideInk, AppRawTokens.teamSideInkDark);
+      expect(dark.primary, AppRawTokens.figmaOrange500);
+      expect(dark.bg, AppRawTokens.darkBg);
+      expect(dark.surface, AppRawTokens.darkSurface);
+      expect(dark.side, AppRawTokens.darkSurface);
+      expect(dark.ink, AppRawTokens.darkInk);
     });
   });
 
-  group('KepTohApp F0 shell and theme switching', () {
-    testWidgets('renders empty bootstrap screen and switches brand and mode', (
+  group('KepTohApp F0 shell and theme mode switching', () {
+    testWidgets('renders empty bootstrap screen and switches mode', (
       tester,
     ) async {
       await tester.pumpWidget(const KepTohApp());
@@ -58,19 +39,19 @@ void main() {
 
       expect(find.text('KepToh POS'), findsOneWidget);
       expect(find.text('ธีมและการแสดงผล'), findsOneWidget);
+      expect(find.text('ธีมสี'), findsNothing);
 
       final context = tester.element(find.text('KepToh POS'));
       final cubit = context.read<ThemeCubit>();
-      expect(cubit.state.brand, AppBrand.figma);
       expect(cubit.state.mode, AppThemeMode.light);
-
-      await tester.tap(find.byKey(const ValueKey('brand-team')));
-      await tester.pumpAndSettle();
-      expect(cubit.state.brand, AppBrand.team);
 
       await tester.tap(find.byKey(const ValueKey('mode-dark')));
       await tester.pumpAndSettle();
       expect(cubit.state.mode, AppThemeMode.dark);
+
+      await tester.tap(find.byKey(const ValueKey('mode-system')));
+      await tester.pumpAndSettle();
+      expect(cubit.state.mode, AppThemeMode.system);
     });
   });
 }

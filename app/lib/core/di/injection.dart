@@ -10,4 +10,3 @@ Future<void> configureDependencies() async {
     sl.registerFactory<ThemeCubit>(ThemeCubit.new);
   }
 }
-

@@ -41,14 +41,8 @@ class _KepTohAppState extends State<KepTohApp> {
           return MaterialApp.router(
             title: 'KepToh POS',
             debugShowCheckedModeBanner: false,
-            theme: AppTheme.build(
-              brand: state.brand,
-              brightness: Brightness.light,
-            ),
-            darkTheme: AppTheme.build(
-              brand: state.brand,
-              brightness: Brightness.dark,
-            ),
+            theme: AppTheme.build(brightness: Brightness.light),
+            darkTheme: AppTheme.build(brightness: Brightness.dark),
             themeMode: state.mode.themeMode,
             routerConfig: _router,
           );
