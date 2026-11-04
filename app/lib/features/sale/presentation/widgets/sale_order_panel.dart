@@ -7,8 +7,7 @@ import 'package:app/features/sale/presentation/widgets/sale_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// Right-hand `396px` Order Panel (`aside.sale-panel` in `prototype/index.html`
-/// & `design/figma/cashier.png`).
+/// Right-hand `396px` Order Panel (`aside.sale-panel` in `prototype/index.html`).
 class SaleOrderPanel extends StatelessWidget {
   const new({
     required this.state,
@@ -48,23 +47,20 @@ class SaleOrderPanel extends StatelessWidget {
     final sentRows = state.sentRows;
     final canVoid = staff.role != 'cashier';
     final methodId = selectedMethodId ?? state.activePaymentMethod?.id ?? 'pm1';
-
-    final tableOpts = s.tables.map((x) {
-      final ot = s.openTables[x.id];
-      final sub = ot != null
-          ? 'มีลูกค้า${tableDue(s, ot) > 0 ? " · รอชำระ" : ""}'
-          : 'ว่าง · ${x.seats} ที่นั่ง';
-      return DropdownOption<String>(
-        value: x.id,
-        label: 'โต๊ะ ${x.name}',
-        sub: sub,
-      );
-    }).toList();
-
+    final tableOpts = [
+      for (final x in s.tables)
+        DropdownOption(
+          value: x.id,
+          label: 'โต๊ะ ${x.name}',
+          sub: s.openTables[x.id] != null
+              ? 'มีลูกค้า'
+                    '${tableDue(s, s.openTables[x.id]!) > 0 ? " · รอชำระ" : ""}'
+              : 'ว่าง · ${x.seats} ที่นั่ง',
+        ),
+    ];
     final cartAddons = state.activeAddons
         .where((x) => (state.ad[x.id] ?? 0) > 0)
         .toList();
-
     final bodyContent = Padding(
       padding: const EdgeInsets.all(AppDimensions.space4),
       child: Column(
@@ -147,7 +143,6 @@ class SaleOrderPanel extends StatelessWidget {
         ],
       ),
     );
-
     final column = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: fullHeight ? MainAxisSize.max : MainAxisSize.min,
@@ -271,9 +266,8 @@ class SaleOrderPanel extends StatelessWidget {
               ],
               Btn(
                 key: const ValueKey('sale-pay-btn'),
-                label: timing == 'after'
-                    ? 'เช็กบิล $totalTxt'
-                    : 'ไปชำระเงิน $totalTxt',
+                label:
+                    '${timing == 'after' ? 'เช็กบิล' : 'ไปชำระเงิน'} $totalTxt',
                 kind: BtnKind.primary,
                 size: BtnSize.lg,
                 block: true,
@@ -288,20 +282,18 @@ class SaleOrderPanel extends StatelessWidget {
         ),
       ],
     );
-
     return Container(
       key: const ValueKey('sale-order-panel'),
       height: fullHeight ? double.infinity : null,
-      decoration: fullHeight
-          ? BoxDecoration(
-              color: t.surface,
-              border: Border(left: BorderSide(color: t.line)),
-            )
-          : BoxDecoration(
-              color: t.surface,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-              border: Border.all(color: t.line),
-            ),
+      decoration: BoxDecoration(
+        color: t.surface,
+        borderRadius: fullHeight
+            ? null
+            : BorderRadius.circular(AppDimensions.radiusMd),
+        border: fullHeight
+            ? Border(left: BorderSide(color: t.line))
+            : Border.all(color: t.line),
+      ),
       child: fullHeight ? SafeArea(left: false, child: column) : column,
     );
   }

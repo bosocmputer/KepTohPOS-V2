@@ -3,26 +3,10 @@ import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/stock/presentation/cubit/stock_cubit.dart';
+import 'package:app/features/stock/presentation/widgets/purchase_modal_line_row.dart';
 import 'package:flutter/material.dart';
 
-/// Editable line inside [PurchaseModal].
-class PurchaseModalLineDraft {
-  const new({required this.ingId, this.qty = '', this.total = ''});
-
-  final String ingId;
-  final String qty;
-  final String total;
-
-  PurchaseModalLineDraft copyWith({
-    String? ingId,
-    String? qty,
-    String? total,
-  }) => PurchaseModalLineDraft(
-    ingId: ingId ?? this.ingId,
-    qty: qty ?? this.qty,
-    total: total ?? this.total,
-  );
-}
+export 'package:app/features/stock/presentation/widgets/purchase_modal_line_row.dart';
 
 /// Modal dialog for recording or editing a purchase bill
 /// (`PurchaseModal` in `prototype/index.html:1313-1346`).
@@ -237,7 +221,17 @@ class _PurchaseModalState extends State<PurchaseModal> {
                   ),
                   const SizedBox(height: AppDimensions.space3),
                   for (var i = 0; i < _lines.length; i++)
-                    _buildLineRow(context, i, _lines[i], s),
+                    PurchaseModalLineRow(
+                      index: i,
+                      line: _lines[i],
+                      state: widget.state,
+                      onChanged: (next) => setState(() => _lines[i] = next),
+                      onDelete: () => setState(() {
+                        if (_lines.length > 1) {
+                          _lines.removeAt(i);
+                        }
+                      }),
+                    ),
                   const SizedBox(height: AppDimensions.space2),
                   Align(
                     alignment: Alignment.centerLeft,
@@ -266,105 +260,6 @@ class _PurchaseModalState extends State<PurchaseModal> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildLineRow(
-    BuildContext context,
-    int index,
-    PurchaseModalLineDraft line,
-    PosState s,
-  ) {
-    final ing = widget.state.ingredientOf(line.ingId);
-    final q = double.tryParse(line.qty.trim()) ?? 0;
-    final tot = double.tryParse(line.total.trim()) ?? 0;
-    final unitHint = q > 0 && tot > 0
-        ? '${fmt(tot / q, 2)} ฿/${ing?.unit ?? "หน่วย"}'
-        : null;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppDimensions.space2_5),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 4,
-            child: Field(
-              label: index == 0 ? 'รายการ' : '',
-              child: Dropdown<String>(
-                key: ValueKey('purchase-line-ing-$index'),
-                value: line.ingId,
-                placeholder: 'เลือกวัตถุดิบ',
-                onChanged: (v) => setState(() {
-                  _lines[index] = line.copyWith(ingId: v);
-                }),
-                options: [
-                  const DropdownOption<String>(
-                    value: '',
-                    label: 'เลือกวัตถุดิบ',
-                  ),
-                  for (final x in s.ingredients)
-                    DropdownOption<String>(
-                      value: x.id,
-                      label: '${x.name} (${x.unit})',
-                    ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: AppDimensions.space2_5),
-          Expanded(
-            flex: 2,
-            child: Field(
-              label: index == 0 ? 'จำนวน' : '',
-              hint: ing?.unit,
-              child: AppTextInput(
-                key: ValueKey('purchase-line-qty-$index'),
-                value: line.qty,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                onChanged: (v) => setState(() {
-                  _lines[index] = line.copyWith(qty: v);
-                }),
-              ),
-            ),
-          ),
-          const SizedBox(width: AppDimensions.space2_5),
-          Expanded(
-            flex: 3,
-            child: Field(
-              label: index == 0 ? 'ยอดเงิน (บาท)' : '',
-              hint: unitHint,
-              child: AppTextInput(
-                key: ValueKey('purchase-line-total-$index'),
-                value: line.total,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                onChanged: (v) => setState(() {
-                  _lines[index] = line.copyWith(total: v);
-                }),
-              ),
-            ),
-          ),
-          const SizedBox(width: AppDimensions.space2),
-          Padding(
-            padding: EdgeInsets.only(top: index == 0 ? 25 : 0),
-            child: Btn(
-              key: ValueKey('purchase-line-del-$index'),
-              kind: BtnKind.ghost,
-              icon: 'trash',
-              semanticLabel: 'ลบบรรทัด',
-              onPressed: () => setState(() {
-                if (_lines.length > 1) {
-                  _lines.removeAt(index);
-                }
-              }),
-            ),
-          ),
-        ],
       ),
     );
   }

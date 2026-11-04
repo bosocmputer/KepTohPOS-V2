@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:app/core/theme/tokens.dart';
+import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:flutter/material.dart';
@@ -202,4 +203,54 @@ class _RemoveItemModalState extends State<RemoveItemModal> {
       ),
     );
   }
+}
+
+/// Modal/confirm dialog shown when closing a table (`เก็บโต๊ะ`).
+class CloseTableConfirmModal extends StatelessWidget {
+  const new({
+    required this.tableName,
+    required this.due,
+    required this.onClose,
+    required this.onConfirm,
+    super.key,
+  });
+
+  final String tableName;
+  final double due;
+  final VoidCallback onClose;
+  final VoidCallback onConfirm;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: context.tokens.scrim,
+    child: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppDimensions.space4),
+        child: due > 0
+            ? Modal(
+                title: 'ยังเก็บโต๊ะไม่ได้',
+                onClose: onClose,
+                footer: [
+                  Btn(
+                    label: 'เข้าใจแล้ว',
+                    kind: BtnKind.primary,
+                    onPressed: onClose,
+                  ),
+                ],
+                child: Text(
+                  'โต๊ะ $tableName ยังมียอดค้างชำระ '
+                  '${baht(due, due % 1 != 0 ? 2 : 0)} '
+                  'ต้องเช็กบิลให้ครบก่อนจึงเก็บโต๊ะได้',
+                ),
+              )
+            : Confirm(
+                title: 'เก็บโต๊ะ $tableName?',
+                text: 'ลูกค้ากลับแล้ว โต๊ะจะกลับเป็นโต๊ะว่าง',
+                yesLabel: 'เก็บโต๊ะ',
+                onNo: onClose,
+                onYes: onConfirm,
+              ),
+      ),
+    ),
+  );
 }

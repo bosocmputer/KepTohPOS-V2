@@ -246,46 +246,15 @@ class _SalePageState extends State<SalePage> {
                 },
               ),
             if (_showCloseConfirm)
-              Material(
-                color: t.scrim,
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppDimensions.space4),
-                    child: state.due > 0
-                        ? Modal(
-                            title: 'ยังเก็บโต๊ะไม่ได้',
-                            onClose: () =>
-                                setState(() => _showCloseConfirm = false),
-                            footer: [
-                              Btn(
-                                label: 'เข้าใจแล้ว',
-                                kind: BtnKind.primary,
-                                onPressed: () =>
-                                    setState(() => _showCloseConfirm = false),
-                              ),
-                            ],
-                            child: Text(
-                              'โต๊ะ ${tb.name} ยังมียอดค้างชำระ '
-                              '${baht(state.due, state.due % 1 != 0 ? 2 : 0)} '
-                              'ต้องเช็กบิลให้ครบก่อนจึงเก็บโต๊ะได้',
-                            ),
-                          )
-                        : Confirm(
-                            title: 'เก็บโต๊ะ ${tb.name}?',
-                            text: 'ลูกค้ากลับแล้ว โต๊ะจะกลับเป็นโต๊ะว่าง',
-                            yesLabel: 'เก็บโต๊ะ',
-                            onNo: () =>
-                                setState(() => _showCloseConfirm = false),
-                            onYes: () {
-                              context.read<SaleBloc>().add(
-                                const SaleTableClosed(),
-                              );
-                              setState(() => _showCloseConfirm = false);
-                              widget.onBackToTables();
-                            },
-                          ),
-                  ),
-                ),
+              CloseTableConfirmModal(
+                tableName: tb.name,
+                due: state.due,
+                onClose: () => setState(() => _showCloseConfirm = false),
+                onConfirm: () {
+                  context.read<SaleBloc>().add(const SaleTableClosed());
+                  setState(() => _showCloseConfirm = false);
+                  widget.onBackToTables();
+                },
               ),
             if (state.settledBill != null)
               ReceiptModal(
