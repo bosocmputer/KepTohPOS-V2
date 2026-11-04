@@ -34,26 +34,7 @@ class LoginHeroPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
         children: [
-          Row(
-            children: [
-              Container(
-                width: AppDimensions.avatarSm,
-                height: AppDimensions.avatarSm,
-                decoration: BoxDecoration(
-                  color: tokens.onPrimary.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                ),
-                child: Center(child: AppIcon('flame', color: tokens.onPrimary)),
-              ),
-              const SizedBox(width: AppDimensions.space3),
-              Text(
-                'KepToh POS',
-                style: textTheme.displaySmall?.copyWith(
-                  color: tokens.onPrimary,
-                ),
-              ),
-            ],
-          ),
+          const BrandLogoName(),
           const SizedBox(height: AppDimensions.space5),
           Text(
             'วันนี้ขายบุฟเฟต์\nได้กำไรหรือขาดทุน?',

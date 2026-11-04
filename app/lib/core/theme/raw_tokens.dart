@@ -1,33 +1,30 @@
 import 'package:flutter/material.dart';
 
-/// Layer 1 raw palette (`--figma-*` and theme-invariant tokens).
+/// Layer 1 raw palette (`--team-*` and theme-invariant tokens from
+/// `prototype/theme.css`).
 abstract final class AppRawTokens {
-  // Figma · Makaryo POS kit
-  static const Color figmaOrange50 = Color(0xFFFFF4ED);
-  static const Color figmaOrange100 = Color(0xFFFFE6D4);
-  static const Color figmaOrange500 = Color(0xFFFE4E10);
-  static const Color figmaOrange600 = Color(0xFFEF3408);
-  static const Color figmaOrangeInk = Color(0xFFB42A08);
-  static const Color figmaNeutral50 = Color(0xFFF8F8F8);
-  static const Color figmaNeutral100 = Color(0xFFE7E7E7);
-  static const Color figmaNeutral300 = Color(0xFFB0B0B0);
-  static const Color figmaNeutral400 = Color(0xFF888888);
-  static const Color figmaNeutral500 = Color(0xFF6D6D6D);
-  static const Color figmaNeutral600 = Color(0xFF5D5D5D);
-  static const Color figmaNeutral900 = Color(0xFF3D3D3D);
-  static const Color figmaNeutral950 = Color(0xFF000000);
-  static const Color figmaGray100 = Color(0xFFF2F4F7);
-  static const Color figmaGray200 = Color(0xFFE4E7EC);
-  static const Color figmaGreen50 = Color(0xFFF0FDF4);
-  static const Color figmaGreen100 = Color(0xFFDCFCE7);
-  static const Color figmaGreen600 = Color(0xFF16A34A);
-  static const Color figmaGreen700 = Color(0xFF15803D);
-  static const Color figmaRed50 = Color(0xFFFEF2F2);
-  static const Color figmaRed600 = Color(0xFFDC2626);
-  static const Color figmaRed700 = Color(0xFFB91C1C);
-  static const Color figmaDark = Color(0xFF141B34);
+  // Team brand palette (--team-* in prototype/theme.css lines 27–31)
+  static const Color teamOrange = Color(0xFFFF7A00);
+  static const Color teamOrange600 = Color(0xFFE56D00);
+  static const Color teamOrangeSoft = Color(0xFFFFF1E4);
+  static const Color teamOrangeSoft2 = Color(0xFFFFE2C7);
+  static const Color teamOrangeInk = Color(0xFFB35300);
+  static const Color teamCharcoal = Color(0xFF20242C);
+  static const Color teamGray = Color(0xFFF4F4F5);
+  static const Color teamSurface2 = Color(0xFFFAFAFB);
+  static const Color teamNavy = Color(0xFF172033);
+  static const Color teamGreen = Color(0xFF16A36A);
+  static const Color teamGreenSoft = Color(0xFFE6F6EE);
+  static const Color teamGreenInk = Color(0xFF0F7A52);
+  static const Color teamRed = Color(0xFFE5484D);
+  static const Color teamRedSoft = Color(0xFFFDECEC);
+  static const Color teamRedInk = Color(0xFFB42328);
+  static const Color teamMuted = Color(0xFF5B6475);
+  static const Color teamLine = Color(0xFFE2E3E8);
+  static const Color teamDarkSide = Color(0xFF0C0E12);
+  static const Color teamDarkSideInk = Color(0xFFAEB3BE);
 
-  // Dark mode base tokens
+  // Dark mode base tokens (:root[data-theme="dark"] in prototype/theme.css)
   static const Color darkBg = Color(0xFF121419);
   static const Color darkSurface = Color(0xFF1C1F26);
   static const Color darkSurface2 = Color(0xFF22262E);
@@ -117,7 +114,8 @@ abstract final class AppDimensions {
   static const double statusDotMd = 12;
   static const double modalW = 560;
   static const double modalWideW = 1000;
-  static const double productCardImgH = 112;
+  static const double productCardImgH = 92;
+  static const double topbarSearchW = 292;
 
   static const double headerH = 88;
   static const double sidebarW = 232;

@@ -55,7 +55,7 @@ class NavPanel extends StatelessWidget {
     return Container(
       width: AppDimensions.drawerW,
       height: double.infinity,
-      color: t.surface,
+      color: t.side,
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.space4,
         vertical: AppDimensions.space5,
@@ -116,15 +116,7 @@ class NavPanel extends StatelessWidget {
     children: [
       Row(
         children: [
-          Container(
-            width: AppDimensions.avatarSm,
-            height: AppDimensions.avatarSm,
-            decoration: BoxDecoration(
-              color: t.primary,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-            ),
-            child: Center(child: AppIcon('flame', color: t.onPrimary)),
-          ),
+          const BrandLogo(),
           const SizedBox(width: AppDimensions.space3),
           Text('KepToh POS', style: tt.displaySmall?.copyWith(color: t.ink)),
         ],

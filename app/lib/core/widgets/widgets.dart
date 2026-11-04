@@ -1,4 +1,5 @@
 export 'package:app/core/widgets/app_icon.dart';
+export 'package:app/core/widgets/brand_logo.dart';
 export 'package:app/core/widgets/btn.dart';
 export 'package:app/core/widgets/confirm.dart';
 export 'package:app/core/widgets/data_table.dart';

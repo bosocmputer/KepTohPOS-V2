@@ -14,7 +14,8 @@ enum AppThemeMode {
   final ThemeMode themeMode;
 }
 
-/// Layer 2 semantic color tokens (`--primary`, `--surface`, `--ink`, etc.).
+/// Layer 2 semantic color tokens (`--primary`, `--surface`, `--ink`, etc.)
+/// mapped from `:root[data-brand="team"]` in `prototype/theme.css`.
 @immutable
 class AppTokens extends ThemeExtension<AppTokens> {
   const new({
@@ -49,31 +50,31 @@ class AppTokens extends ThemeExtension<AppTokens> {
 
   factory light() => const AppTokens(
     brightness: Brightness.light,
-    primary: AppRawTokens.figmaOrange500,
-    primaryHover: AppRawTokens.figmaOrange600,
-    primarySoft: AppRawTokens.figmaOrange50,
-    primarySoft2: AppRawTokens.figmaOrange100,
-    primaryInk: AppRawTokens.figmaOrangeInk,
-    onPrimary: AppRawTokens.white,
-    bg: AppRawTokens.figmaNeutral50,
+    primary: AppRawTokens.teamOrange,
+    primaryHover: AppRawTokens.teamOrange600,
+    primarySoft: AppRawTokens.teamOrangeSoft,
+    primarySoft2: AppRawTokens.teamOrangeSoft2,
+    primaryInk: AppRawTokens.teamOrangeInk,
+    onPrimary: AppRawTokens.teamCharcoal,
+    bg: AppRawTokens.teamGray,
     surface: AppRawTokens.white,
-    surface2: AppRawTokens.figmaGray100,
-    ink: AppRawTokens.figmaNeutral950,
-    muted: AppRawTokens.figmaNeutral500,
-    line: AppRawTokens.figmaNeutral100,
-    success: AppRawTokens.figmaGreen600,
-    successSoft: AppRawTokens.figmaGreen100,
-    successInk: AppRawTokens.figmaGreen700,
-    danger: AppRawTokens.figmaRed600,
-    dangerSoft: AppRawTokens.figmaRed50,
-    dangerInk: AppRawTokens.figmaRed700,
-    dark: AppRawTokens.figmaDark,
+    surface2: AppRawTokens.teamSurface2,
+    ink: AppRawTokens.teamNavy,
+    muted: AppRawTokens.teamMuted,
+    line: AppRawTokens.teamLine,
+    success: AppRawTokens.teamGreen,
+    successSoft: AppRawTokens.teamGreenSoft,
+    successInk: AppRawTokens.teamGreenInk,
+    danger: AppRawTokens.teamRed,
+    dangerSoft: AppRawTokens.teamRedSoft,
+    dangerInk: AppRawTokens.teamRedInk,
+    dark: AppRawTokens.teamCharcoal,
     onDark: AppRawTokens.white,
     side: AppRawTokens.white,
-    sideInk: AppRawTokens.figmaNeutral500,
-    sideInkStrong: AppRawTokens.figmaNeutral950,
-    sideHover: AppRawTokens.figmaNeutral50,
-    sideLine: AppRawTokens.figmaNeutral100,
+    sideInk: AppRawTokens.teamMuted,
+    sideInkStrong: AppRawTokens.teamNavy,
+    sideHover: AppRawTokens.teamGray,
+    sideLine: AppRawTokens.teamLine,
     shadows: _lightShadows,
   );
 
@@ -87,7 +88,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
       primarySoft: Color.lerp(surface, base.primary, 0.20)!,
       primarySoft2: Color.lerp(surface, base.primary, 0.32)!,
       primaryInk: Color.lerp(AppRawTokens.white, base.primary, 0.60)!,
-      onPrimary: base.onPrimary,
+      onPrimary: AppRawTokens.teamCharcoal,
       bg: AppRawTokens.darkBg,
       surface: surface,
       surface2: AppRawTokens.darkSurface2,

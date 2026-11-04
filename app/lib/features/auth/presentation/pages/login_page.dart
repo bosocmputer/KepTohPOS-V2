@@ -105,21 +105,10 @@ class _LoginFormPanel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Center(
-          child: Container(
-            width: AppDimensions.space12,
-            height: AppDimensions.space12,
-            decoration: BoxDecoration(
-              color: tokens.primary,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-            ),
-            child: Center(
-              child: AppIcon(
-                'flame',
-                size: AppDimensions.icon2xl,
-                color: tokens.onPrimary,
-              ),
-            ),
+        const Center(
+          child: BrandLogo(
+            size: AppDimensions.space12,
+            radius: AppDimensions.radiusMd,
           ),
         ),
         const SizedBox(height: AppDimensions.space3),

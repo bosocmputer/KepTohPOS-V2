@@ -6,18 +6,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('AppTokens (theme.css figma brand parity)', () {
+  group('AppTokens (theme.css team brand parity)', () {
     test('resolves light and dark tokens accurately', () {
       final light = AppTokens.resolve(brightness: Brightness.light);
       final dark = AppTokens.resolve(brightness: Brightness.dark);
 
-      expect(light.primary, AppRawTokens.figmaOrange500);
-      expect(light.bg, AppRawTokens.figmaNeutral50);
+      expect(light.primary, AppRawTokens.teamOrange);
+      expect(light.onPrimary, AppRawTokens.teamCharcoal);
+      expect(light.bg, AppRawTokens.teamGray);
       expect(light.surface, AppRawTokens.white);
       expect(light.side, AppRawTokens.white);
-      expect(light.ink, AppRawTokens.figmaNeutral950);
+      expect(light.ink, AppRawTokens.teamNavy);
 
-      expect(dark.primary, AppRawTokens.figmaOrange500);
+      expect(dark.primary, AppRawTokens.teamOrange);
+      expect(dark.onPrimary, AppRawTokens.teamCharcoal);
       expect(dark.bg, AppRawTokens.darkBg);
       expect(dark.surface, AppRawTokens.darkSurface);
       expect(dark.side, AppRawTokens.darkSurface);
