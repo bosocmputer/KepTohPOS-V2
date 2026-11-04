@@ -4,13 +4,8 @@ import 'package:app/core/theme/tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 void main() {
-  setUpAll(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
-  });
-
   group('AppTokens (theme.css figma brand parity)', () {
     test('resolves light and dark tokens accurately', () {
       final light = AppTokens.resolve(brightness: Brightness.light);
@@ -35,6 +30,9 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(const KepTohApp());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('shell-menu-btn')));
       await tester.pumpAndSettle();
 
       expect(find.text('KepToh POS'), findsOneWidget);

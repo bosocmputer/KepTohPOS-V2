@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:app/core/theme/tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -19,7 +21,8 @@ class DataTableCol<T> {
   final Widget Function(BuildContext context, T row) cellBuilder;
 }
 
-/// Shared data table component (`DataTable` in `prototype/index.html` & Figma).
+/// Shared data table component (`DataTable` in `prototype/index.html` & Figma
+/// `design/figma/history.png`). Stretches to full width of its parent container.
 class PosDataTable<T> extends StatelessWidget {
   const new({
     required this.columns,
@@ -63,90 +66,96 @@ class PosDataTable<T> extends StatelessWidget {
     return Semantics(
       label: label,
       child: Container(
+        width: double.infinity,
         decoration: BoxDecoration(
           color: tokens.surface,
           borderRadius: BorderRadius.circular(AppDimensions.r),
           border: Border.all(color: tokens.line),
         ),
         clipBehavior: Clip.antiAlias,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 520),
-            child: IntrinsicWidth(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (showHeader)
-                    Container(
-                      color: tokens.surface2,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: AppDimensions.space2_5,
-                        horizontal: AppDimensions.space3,
-                      ),
-                      child: Row(
-                        children: [
-                          for (final col in columns)
-                            Expanded(
-                              child: Align(
-                                alignment: _alignment(col.align),
-                                child: Text(
-                                  col.label,
-                                  textAlign: _textAlign(col.align),
-                                  style: textTheme.labelSmall?.copyWith(
-                                    color: tokens.muted,
-                                    fontSize: AppDimensions.fsXs,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  for (var i = 0; i < rows.length; i++)
-                    _buildRow(context, rows[i], i == rows.length - 1, tokens),
-                  if (footerCells != null && footerCells!.isNotEmpty)
-                    Container(
-                      decoration: BoxDecoration(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final tableWidth = constraints.hasBoundedWidth
+                ? math.max<double>(constraints.maxWidth, 520)
+                : 520.0;
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: tableWidth,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (showHeader)
+                      Container(
                         color: tokens.surface2,
-                        border: Border(
-                          top: BorderSide(
-                            color: tokens.line,
-                            width: AppDimensions.borderThick,
-                          ),
-                        ),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: AppDimensions.space2_5,
-                        horizontal: AppDimensions.space3,
-                      ),
-                      child: DefaultTextStyle.merge(
-                        style: TextStyle(
-                          color: tokens.ink,
-                          fontWeight: FontWeight.w700,
-                          fontSize: AppDimensions.fsSm,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppDimensions.space2_5,
+                          horizontal: AppDimensions.space3,
                         ),
                         child: Row(
                           children: [
-                            for (var i = 0; i < footerCells!.length; i++)
+                            for (final col in columns)
                               Expanded(
                                 child: Align(
-                                  alignment: i < columns.length
-                                      ? _alignment(columns[i].align)
-                                      : Alignment.centerLeft,
-                                  child: footerCells![i],
+                                  alignment: _alignment(col.align),
+                                  child: Text(
+                                    col.label,
+                                    textAlign: _textAlign(col.align),
+                                    style: textTheme.labelSmall?.copyWith(
+                                      color: tokens.muted,
+                                      fontSize: AppDimensions.fsXs,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ),
                               ),
                           ],
                         ),
                       ),
-                    ),
-                ],
+                    for (var i = 0; i < rows.length; i++)
+                      _buildRow(context, rows[i], i == rows.length - 1, tokens),
+                    if (footerCells != null && footerCells!.isNotEmpty)
+                      Container(
+                        decoration: BoxDecoration(
+                          color: tokens.surface2,
+                          border: Border(
+                            top: BorderSide(
+                              color: tokens.line,
+                              width: AppDimensions.borderThick,
+                            ),
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppDimensions.space2_5,
+                          horizontal: AppDimensions.space3,
+                        ),
+                        child: DefaultTextStyle.merge(
+                          style: TextStyle(
+                            color: tokens.ink,
+                            fontWeight: FontWeight.w700,
+                            fontSize: AppDimensions.fsSm,
+                          ),
+                          child: Row(
+                            children: [
+                              for (var i = 0; i < footerCells!.length; i++)
+                                Expanded(
+                                  child: Align(
+                                    alignment: i < columns.length
+                                        ? _alignment(columns[i].align)
+                                        : Alignment.centerLeft,
+                                    child: footerCells![i],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );

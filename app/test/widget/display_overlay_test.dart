@@ -3,7 +3,6 @@ import 'package:app/core/widgets/dev_components_page.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 Widget _wrap(Widget child) => MaterialApp(
   theme: AppTheme.build(brightness: Brightness.light),
@@ -11,10 +10,6 @@ Widget _wrap(Widget child) => MaterialApp(
 );
 
 void main() {
-  setUpAll(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
-  });
-
   group('Shared Display & Overlay Components', () {
     testWidgets('Pill, Stat, StatsGroup, Empty, and ResultState render', (
       tester,

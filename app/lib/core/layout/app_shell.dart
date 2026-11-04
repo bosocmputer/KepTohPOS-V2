@@ -1,7 +1,6 @@
 import 'package:app/core/layout/nav_drawer.dart';
 import 'package:app/core/layout/shell_bars.dart';
 import 'package:app/core/theme/tokens.dart';
-import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/roles.dart';
 import 'package:flutter/material.dart';
@@ -23,10 +22,14 @@ class AppShell extends StatefulWidget {
     this.dateKey = '2026-11-04',
     this.staffName = 'พี่ต้อม (เจ้าของร้าน)',
     this.staffRole = 'owner',
-    this.shiftOpenTimeText = '15:30',
+    this.shiftOpenTimeText = '09:00',
     this.shiftStaffName = 'พี่ต้อม (เจ้าของร้าน)',
     this.initialDrawerOpen = false,
     this.headerActions = const <Widget>[],
+    this.searchQuery = '',
+    this.searchPlaceholder = 'ค้นหา',
+    this.onSearchChanged,
+    this.onShiftAction,
     this.onLogout,
   });
 
@@ -41,6 +44,10 @@ class AppShell extends StatefulWidget {
   final String? shiftStaffName;
   final bool initialDrawerOpen;
   final List<Widget> headerActions;
+  final String searchQuery;
+  final String searchPlaceholder;
+  final ValueChanged<String>? onSearchChanged;
+  final VoidCallback? onShiftAction;
   final VoidCallback? onLogout;
 
   @override
@@ -56,14 +63,6 @@ class _AppShellState extends State<AppShell> {
     _drawerOpen = widget.initialDrawerOpen;
   }
 
-  AppViewSpec get _currentView {
-    final base = widget.activeViewId.split('/').first;
-    for (final v in kAppViews) {
-      if (v.id == base) return v;
-    }
-    return kAppViews.first;
-  }
-
   void _handleSelectView(String viewId) {
     setState(() => _drawerOpen = false);
     widget.onNavigate(viewId);
@@ -73,7 +72,9 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final allowedViews = allowedViewsForRole(widget.staffRole);
-    final hasAccess = canAccessViewId(widget.staffRole, widget.activeViewId);
+    final hasAccess =
+        widget.activeViewId == 'dev/components' ||
+        canAccessViewId(widget.staffRole, widget.activeViewId);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -92,11 +93,12 @@ class _AppShellState extends State<AppShell> {
                   ShellHeaderBar(
                     height: headerHeight,
                     isMobile: isMobile,
-                    title: _currentView.title,
-                    subtitle: '${widget.shopName} · ${thDate(widget.dateKey)}',
                     staffName: widget.staffName,
                     isShiftOpen: widget.shiftOpenTimeText != null,
                     actions: widget.headerActions,
+                    searchQuery: widget.searchQuery,
+                    searchPlaceholder: widget.searchPlaceholder,
+                    onSearchChanged: widget.onSearchChanged,
                     onOpenDrawer: () => setState(() => _drawerOpen = true),
                   ),
                   Expanded(
@@ -146,6 +148,7 @@ class _AppShellState extends State<AppShell> {
                     shiftStaffName: widget.shiftStaffName,
                     onSelectView: _handleSelectView,
                     onClose: () => setState(() => _drawerOpen = false),
+                    onShiftAction: widget.onShiftAction,
                     onLogout: widget.onLogout,
                   ),
                 ),

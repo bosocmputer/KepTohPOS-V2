@@ -4,32 +4,35 @@ import 'package:app/domain/roles.dart';
 import 'package:flutter/material.dart';
 
 /// Top header bar for `AppShell` (`88px` on `>= 761`, compact on mobile).
+/// Displays Sidebar toggle button + Search box + Avatar per
+/// `design/figma/cashier.png` (without duplicating `PageHeader` title).
 class ShellHeaderBar extends StatelessWidget {
   const new({
     required this.height,
     required this.isMobile,
-    required this.title,
-    required this.subtitle,
     required this.staffName,
     required this.isShiftOpen,
     required this.actions,
     required this.onOpenDrawer,
     super.key,
+    this.searchQuery = '',
+    this.searchPlaceholder = 'ค้นหา',
+    this.onSearchChanged,
   });
 
   final double height;
   final bool isMobile;
-  final String title;
-  final String subtitle;
   final String staffName;
   final bool isShiftOpen;
   final List<Widget> actions;
   final VoidCallback onOpenDrawer;
+  final String searchQuery;
+  final String searchPlaceholder;
+  final ValueChanged<String>? onSearchChanged;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final textTheme = Theme.of(context).textTheme;
 
     return Container(
       key: const ValueKey('shell-header'),
@@ -51,36 +54,17 @@ class ShellHeaderBar extends StatelessWidget {
             onPressed: onOpenDrawer,
           ),
           const SizedBox(width: AppDimensions.space3),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.displaySmall?.copyWith(
-                    color: tokens.ink,
-                    fontSize: isMobile
-                        ? AppDimensions.fsLg
-                        : AppDimensions.fs2xl,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.bodySmall?.copyWith(
-                    color: tokens.muted,
-                    fontSize: isMobile
-                        ? AppDimensions.fsXs
-                        : AppDimensions.fsSm,
-                  ),
-                ),
-              ],
+          Flexible(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: SearchBox(
+                value: searchQuery,
+                placeholder: searchPlaceholder,
+                onChanged: onSearchChanged ?? (_) {},
+              ),
             ),
           ),
+          const Spacer(),
           if (actions.isNotEmpty) ...[
             ...actions,
             const SizedBox(width: AppDimensions.space2_5),

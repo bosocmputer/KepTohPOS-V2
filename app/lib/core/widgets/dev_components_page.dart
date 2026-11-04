@@ -4,9 +4,11 @@ import 'package:app/core/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 
 /// Debug-only visual showcase (`/dev/components`) rendering every shared
-/// component in both Light and Dark themes side-by-side.
+/// component in Light and Dark themes.
 class DevComponentsPage extends StatefulWidget {
-  const new({super.key});
+  const new({super.key, this.forcedBrightness});
+
+  final Brightness? forcedBrightness;
 
   @override
   State<DevComponentsPage> createState() => _DevComponentsPageState();
@@ -22,26 +24,38 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
   String _pin = '12';
   int _page = 1;
 
+  static final List<DataTableCol<(String, String, String)>> _sampleCols = [
+    DataTableCol(key: 'no', label: 'เลขบิล', cellBuilder: (_, r) => Text(r.$1)),
+    DataTableCol(key: 'tb', label: 'โต๊ะ', cellBuilder: (_, r) => Text(r.$2)),
+    DataTableCol(
+      key: 'total',
+      label: 'ยอดรวม',
+      align: ColAlign.right,
+      cellBuilder: (_, r) => Text(r.$3),
+    ),
+  ];
+
+  Widget _themedPane(Brightness brightness, String title) => Theme(
+    data: AppTheme.build(brightness: brightness),
+    child: Builder(builder: (ctx) => _buildThemeColumn(ctx, title)),
+  );
+
   @override
   Widget build(BuildContext context) {
-    final lightTheme = AppTheme.build(brightness: Brightness.light);
-    final darkTheme = AppTheme.build(brightness: Brightness.dark);
+    final forced = widget.forcedBrightness;
+    if (forced != null) {
+      final isDark = forced == Brightness.dark;
+      final title = isDark ? 'โหมดมืด (Dark)' : 'โหมดสว่าง (Light)';
+      return Scaffold(
+        body: SingleChildScrollView(child: _themedPane(forced, title)),
+      );
+    }
 
     return Scaffold(
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final lightPane = Theme(
-            data: lightTheme,
-            child: Builder(
-              builder: (ctx) => _buildThemeColumn(ctx, 'โหมดสว่าง (Light)'),
-            ),
-          );
-          final darkPane = Theme(
-            data: darkTheme,
-            child: Builder(
-              builder: (ctx) => _buildThemeColumn(ctx, 'โหมดมืด (Dark)'),
-            ),
-          );
+          final lightPane = _themedPane(Brightness.light, 'โหมดสว่าง (Light)');
+          final darkPane = _themedPane(Brightness.dark, 'โหมดมืด (Dark)');
           if (constraints.maxWidth >= 960) {
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,10 +129,10 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
               spacing: AppDimensions.space2,
               runSpacing: AppDimensions.space2,
               children: [
-                Pill(label: 'ว่าง', showDot: true),
-                Pill(label: 'มีลูกค้า', tone: PillTone.orange, showDot: true),
-                Pill(label: 'ชำระแล้ว', tone: PillTone.green, showDot: true),
-                Pill(label: 'เกินเวลา', tone: PillTone.red, showDot: true),
+                Pill(label: 'ว่าง'),
+                Pill(label: 'มีลูกค้า', tone: PillTone.orange),
+                Pill(label: 'ชำระแล้ว', tone: PillTone.green),
+                Pill(label: 'เกินเวลา', tone: PillTone.red),
               ],
             ),
             gap,
@@ -221,24 +235,7 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
             gap,
             PosDataTable<(String, String, String)>(
               label: 'ตารางบิลตัวอย่าง',
-              columns: [
-                DataTableCol(
-                  key: 'no',
-                  label: 'เลขบิล',
-                  cellBuilder: (_, r) => Text(r.$1),
-                ),
-                DataTableCol(
-                  key: 'table',
-                  label: 'โต๊ะ',
-                  cellBuilder: (_, r) => Text(r.$2),
-                ),
-                DataTableCol(
-                  key: 'total',
-                  label: 'ยอดรวม',
-                  align: ColAlign.right,
-                  cellBuilder: (_, r) => Text(r.$3),
-                ),
-              ],
+              columns: _sampleCols,
               rows: const [
                 ('261104-001', 'A1', '฿607'),
                 ('261104-002', 'A2', '฿1,196'),

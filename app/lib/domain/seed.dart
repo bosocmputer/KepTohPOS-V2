@@ -144,11 +144,14 @@ PosState seed({
       );
     }
 
-    // Shift
+    // Shift (today's openedAt must never exceed currentNow)
     final cashier = pick(<String>['st3', 'st4']);
     final shiftOpen = isToday
         ? DateTime.fromMillisecondsSinceEpoch(
-            currentNow.millisecondsSinceEpoch - (4.5 * 3600000).round(),
+            (currentNow.millisecondsSinceEpoch - (4.5 * 3600000).round()).clamp(
+              _atHours(day, 0).millisecondsSinceEpoch,
+              currentNow.millisecondsSinceEpoch,
+            ),
           )
         : _atHours(day, 16);
     final shift = ShiftRecord(

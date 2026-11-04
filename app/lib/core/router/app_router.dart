@@ -29,8 +29,9 @@ GoRouter createAppRouter({String initialLocation = '/tables'}) => GoRouter(
   ],
 );
 
-/// F2 placeholder screen for each `VIEWS` route wrapped in [AppShell] and
-/// displaying a [PageHeader] + theme mode switcher.
+/// F2 placeholder screen for each `VIEWS` route wrapped in [AppShell].
+/// `/tables` (and other non-setup placeholder pages) shows only [PageHeader] +
+/// [Empty] state; `/setup` includes the theme mode selector section.
 class ShellPlaceholderPage extends StatelessWidget {
   const new({
     required this.viewSpec,
@@ -46,8 +47,7 @@ class ShellPlaceholderPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final themeState = context.watch<ThemeCubit>().state;
-    final themeCubit = context.read<ThemeCubit>();
+    final isSetup = viewSpec.id == 'setup';
 
     return AppShell(
       activeViewId: viewSpec.id,
@@ -59,30 +59,11 @@ class ShellPlaceholderPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            PageHeader(
-              title: viewSpec.title,
-              desc: 'ธีมและการแสดงผล',
-              actions: [
-                Text(
-                  'KepToh POS',
-                  style: Theme.of(context).textTheme.bodySmall
-                      ?.copyWith(color: tokens.muted),
-                ),
-                Wrap(
-                  spacing: AppDimensions.space2,
-                  children: AppThemeMode.values.map((mode) {
-                    final selected = themeState.mode == mode;
-                    return Btn(
-                      key: ValueKey('mode-${mode.name}'),
-                      label: mode.label,
-                      size: BtnSize.sm,
-                      kind: selected ? BtnKind.primary : BtnKind.normal,
-                      onPressed: () => themeCubit.setMode(mode),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
+            PageHeader(title: viewSpec.title, desc: 'ร้านหมูกระทะ เก็บโต๊ะ'),
+            if (isSetup) ...[
+              const SizedBox(height: AppDimensions.space5),
+              const _SetupThemeSection(),
+            ],
             const SizedBox(height: AppDimensions.space5),
             Container(
               decoration: BoxDecoration(
@@ -98,6 +79,59 @@ class ShellPlaceholderPage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SetupThemeSection extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final textTheme = Theme.of(context).textTheme;
+    final themeState = context.watch<ThemeCubit>().state;
+    final themeCubit = context.read<ThemeCubit>();
+
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.space5),
+      decoration: BoxDecoration(
+        color: tokens.surface,
+        borderRadius: BorderRadius.circular(AppDimensions.r),
+        border: Border.all(color: tokens.line),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'ธีมและการแสดงผล',
+                style: textTheme.titleLarge?.copyWith(color: tokens.ink),
+              ),
+              const SizedBox(height: AppDimensions.space1),
+              Text(
+                'เลือกโหมดสว่าง มืด หรือตามเครื่อง',
+                style: textTheme.bodySmall?.copyWith(color: tokens.muted),
+              ),
+            ],
+          ),
+          Wrap(
+            spacing: AppDimensions.space2,
+            children: AppThemeMode.values.map((mode) {
+              final selected = themeState.mode == mode;
+              return Btn(
+                key: ValueKey('setup-mode-${mode.name}'),
+                label: mode.label,
+                size: BtnSize.sm,
+                kind: selected ? BtnKind.primary : BtnKind.normal,
+                onPressed: () => themeCubit.setMode(mode),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }

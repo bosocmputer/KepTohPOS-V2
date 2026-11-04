@@ -2,21 +2,26 @@ import 'package:app/core/theme/tokens.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-/// Builds a [ThemeData] from [AppTokens] for the active brightness.
+/// Builds a [ThemeData] from [AppTokens] for the active brightness using
+/// bundled offline fonts (`Anuphan` and `IBM Plex Sans Thai`).
 abstract final class AppTheme {
   static ThemeData build({required Brightness brightness}) {
     final tokens = AppTokens.resolve(brightness: brightness);
-    final baseTheme = ThemeData(useMaterial3: true, brightness: brightness);
+    final baseTheme = ThemeData(
+      useMaterial3: true,
+      brightness: brightness,
+      fontFamily: AppDimensions.fontBody,
+    );
 
-    final useRemoteFonts = GoogleFonts.config.allowRuntimeFetching;
-    final bodyFont = useRemoteFonts
-        ? GoogleFonts.ibmPlexSansThai(color: tokens.ink)
-        : TextStyle(color: tokens.ink);
-    final displayStyle = useRemoteFonts
-        ? GoogleFonts.anuphan(color: tokens.ink)
-        : TextStyle(color: tokens.ink);
+    final bodyFont = TextStyle(
+      fontFamily: AppDimensions.fontBody,
+      color: tokens.ink,
+    );
+    final displayStyle = TextStyle(
+      fontFamily: AppDimensions.fontDisplay,
+      color: tokens.ink,
+    );
     final textTheme = baseTheme.textTheme.copyWith(
       displayLarge: displayStyle.copyWith(
         fontSize: 28,

@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 /// Color tone for [Pill] (`tone` in `prototype/index.html`).
 enum PillTone { neutral, orange, green, red }
 
-/// Status badge / pill component (`Pill` in `prototype/index.html` & Figma).
+/// Status badge / pill component (`Pill` in `prototype/index.html` & Figma
+/// Order Status / Stock Status in `design/figma/cashier.png` &
+/// `design/figma/supply_list.png`): small rounded rectangle with soft fill
+/// and no dot.
 class Pill extends StatelessWidget {
   const new({
     super.key,
@@ -22,42 +25,25 @@ class Pill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final (bg, fg, border) = switch (tone) {
-      PillTone.orange => (
-        tokens.primarySoft,
-        tokens.primaryInk,
-        tokens.primarySoft,
-      ),
-      PillTone.green => (
-        tokens.successSoft,
-        tokens.successInk,
-        tokens.successSoft,
-      ),
-      PillTone.red => (tokens.dangerSoft, tokens.dangerInk, tokens.dangerSoft),
-      PillTone.neutral => (tokens.surface2, tokens.muted, tokens.line),
+    final (bg, fg) = switch (tone) {
+      PillTone.orange => (tokens.primarySoft, tokens.primaryInk),
+      PillTone.green => (tokens.successSoft, tokens.successInk),
+      PillTone.red => (tokens.dangerSoft, tokens.dangerInk),
+      PillTone.neutral => (tokens.surface2, tokens.muted),
     };
 
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.space2_5,
+        horizontal: AppDimensions.space2,
         vertical: AppDimensions.space1,
       ),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusXs),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (showDot) ...[
-            Container(
-              width: AppDimensions.statusDotSm,
-              height: AppDimensions.statusDotSm,
-              decoration: BoxDecoration(color: fg, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: AppDimensions.space1_5),
-          ],
           if (child != null)
             DefaultTextStyle.merge(
               style: TextStyle(

@@ -2,7 +2,6 @@ import 'package:app/core/theme/app_theme.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 Widget _wrap(Widget child) => MaterialApp(
   theme: AppTheme.build(brightness: Brightness.light),
@@ -10,10 +9,6 @@ Widget _wrap(Widget child) => MaterialApp(
 );
 
 void main() {
-  setUpAll(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
-  });
-
   group('Shared Input Components', () {
     testWidgets(
       'Btn triggers onPressed when enabled and blocks when disabled',

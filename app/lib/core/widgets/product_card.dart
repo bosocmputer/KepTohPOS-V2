@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 
 /// Product / menu card with image or placeholder (`ProductCard` per Figma
 /// `design/figma/cashier.png`). Never embeds the Figma burger photos.
+/// Selected state uses an orange border with normal card/image background in
+/// both light and dark modes.
 class ProductCard extends StatelessWidget {
   const new({
     required this.name,
@@ -59,7 +61,7 @@ class ProductCard extends StatelessWidget {
                 Container(
                   height: AppDimensions.productCardImgH,
                   decoration: BoxDecoration(
-                    color: selected ? tokens.primarySoft : tokens.surface2,
+                    color: tokens.surface2,
                     borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
                   ),
                   child: Stack(

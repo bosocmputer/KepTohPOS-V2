@@ -4,13 +4,8 @@ import 'package:app/core/theme/app_theme.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 void main() {
-  setUpAll(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
-  });
-
   group('AppShell responsive layout & role permissions', () {
     testWidgets(
       'width >= 761 (1366x1024) renders 88px header and 365px drawer',
