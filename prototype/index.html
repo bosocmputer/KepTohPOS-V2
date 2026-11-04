@@ -33,7 +33,7 @@
    สี/มุมโค้ง/ระยะห่าง/ฟอนต์ ทั้งหมดมาจาก theme.css (ห้ามเขียนค่าตรงในไฟล์นี้) */
 *,*::before,*::after{box-sizing:border-box}
 html{height:100%;-webkit-text-size-adjust:100%}
-body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;-webkit-tap-highlight-color:transparent}
 #app{height:100%}
 h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;line-height:1.25}
 h1{font-size:22px} h2{font-size:18px} h3{font-size:16px}
@@ -140,7 +140,7 @@ button,input,select,textarea,a{touch-action:manipulation}
 .input,select.input,textarea.input{width:100%;min-width:0;min-height:44px;border:1.5px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);color:var(--ink);padding:8px 12px;font:inherit}
 textarea.input{min-height:76px;resize:vertical}
 .input:focus{outline:none;border-color:var(--primary)}
-.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:14px}
 .toggle{display:flex;align-items:center;gap:10px;cursor:pointer;min-height:44px}
 .toggle input{width:22px;height:22px;accent-color:var(--primary)}
 
@@ -287,7 +287,7 @@ textarea.input{min-height:76px;resize:vertical}
 .dt tr.active td{background:var(--primary-soft)}
 .dt tr.active td:first-child{box-shadow:inset 3px 0 0 var(--primary)}
 .loc-h{display:flex;align-items:baseline;gap:var(--space-2)}
-.sup-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:var(--space-3)}
+.sup-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr));gap:var(--space-3)}
 .today-hero{display:flex;align-items:center;gap:var(--space-4);flex-wrap:wrap}
 .hero-v{font:700 30px/1.25 var(--font-display);font-variant-numeric:tabular-nums}
 a.pill{text-decoration:none}
@@ -299,7 +299,7 @@ a.pill{text-decoration:none}
   .count-pad .np-key{height:46px}
   .count-pad .numpad{gap:6px}
   .count-pad .cp-actions{flex-direction:row}
-  .count-pad .cp-actions .btn{flex:1}
+  .count-pad .cp-actions .btn{flex:1;min-width:0;white-space:normal;line-height:1.25;padding:6px 10px}   /* จอแคบ (320px): ให้ข้อความขึ้นบรรทัดใหม่แทนการล้น */
 }
 .open-strip{display:flex;gap:var(--space-2);overflow-x:auto;padding:var(--space-1) var(--space-1) var(--space-2)}
 .open-strip>.tcard{flex:0 0 150px}
@@ -336,8 +336,18 @@ a.pill{text-decoration:none}
 @media (max-width:600px){.lines-edit{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 /* ต้องอยู่หลังกฎ .input/.search-input (ที่ใช้ font:inherit) · 16px กัน iOS ซูมหน้าเองตอนแตะช่องกรอก */
 @media (max-width:760px){.input,select.input,textarea.input,.search-input{font-size:16px}}
+/* มือถือแนวนอน (จอเตี้ย): นับของใช้ 2 คอลัมน์ รายการซ้าย · แป้นขวา แทนแป้นติดล่างที่จะสูงกว่าจอ */
+@media (max-height:520px) and (min-width:600px){
+  .stock-count{padding-right:296px}   /* เว้นที่ให้แป้นที่ตรึงด้านขวา ทั้งแถบเครื่องมือและรายการ */
+  .count-layout{grid-template-columns:minmax(0,1fr)}
+  .count-pad{position:fixed;top:76px;right:max(12px,env(safe-area-inset-right,0px));bottom:12px;width:272px;overflow-y:auto;z-index:5;box-shadow:var(--shadow-pop)}
+  .count-pad .np-key{height:36px}
+  .count-pad .numpad{gap:4px}
+  .count-pad .big-val{font-size:22px}
+  .count-pad .cp-head h2{font-size:15px}
+}
 /* จอสัมผัส: ปุ่มเล็กต้องกดด้วยนิ้วได้ (อยู่ท้ายไฟล์เพื่อไม่ถูก .btn-sm ทับ) */
-@media (pointer:coarse){.btn-sm{min-height:44px}.seg button{min-height:40px}}
+@media (pointer:coarse){.btn-sm{min-height:44px}.seg button{min-height:40px}a.pill{min-height:40px;padding:0 var(--space-4)}}
 </style>
 
 <div id="app"></div>
@@ -1404,7 +1414,7 @@ function StockView({ s, update, ledger, toast }) {
   const [tab, setTab] = useState('count');
   const [date, setDate] = useState(todayKey());
   const p = { s, update, ledger, date, toast };
-  return html`<div class="stack">
+  return html`<div class=${'stack' + (tab === 'count' ? ' stock-count' : '')}>
     <${Toolbar} end=${tab !== 'balance' && html`<${Field} label="วันที่"><input id="stock-date" class="input" type="date" value=${date} min=${s.startDate} max=${todayKey()} onInput=${e => e.target.value && setDate(e.target.value)}/><//>`}>
       <${Seg} label="เมนูสต็อก" value=${tab} onChange=${setTab} items=${[['count', 'นับของเหลือ (ปิดวัน)'], ['purchase', 'รับของเข้า'], ['expense', 'ค่าใช้จ่าย'], ['balance', 'คงเหลือและสั่งซื้อ']]}/>
     <//>
@@ -1470,7 +1480,7 @@ function DashboardView({ s, ledger }) {
     </div>
     ${days.length > 1 && html`<div class="card stack" style="gap:8px"><div class="row between"><h2>${fieldName}รายวัน</h2><span class="sub">เขียว = กำไร · แดง = ขาดทุน · เทา = ยังไม่ปิดยอด</span></div><${ProfitChart} days=${days} field=${field}/>
       ${best && html`<div class="row"><${Pill} tone="green">ดีที่สุด ${thDateShort(best.date)} ${baht(best[field])}<//><${Pill} tone=${worst[field] < 0 ? 'red' : ''}>ต่ำสุด ${thDateShort(worst.date)} ${baht(worst[field])}<//></div>`}</div>`}
-    <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:start">
+    <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));align-items:start">
       <div class="card stack" style="gap:10px"><h2>ต้นทุนวัตถุดิบแยกรายการ</h2>
         <${DataTable} label="ต้นทุนวัตถุดิบแยกรายการ" head=${false} rows=${ingShare.filter(x => x.v > 0).slice(0, 8)} empty=${html`<${Empty} title="ยังไม่มีวันที่ปิดยอดในช่วงนี้"/>`} columns=${[
           { key: 'n', label: 'วัตถุดิบ', render: x => x.i.name }, { key: 'bar', label: 'สัดส่วน', render: x => html`<div class="share"><i style=${'width:' + (x.v / ingShare[0].v * 100) + '%'}></i></div>` },
@@ -1535,7 +1545,7 @@ function ShopForm({ s, update, toast }) {
   const o = calcOrder({ ...v, servicePct: +v.servicePct || 0 }, { name: 'บุฟเฟต์หมูกระทะ', adultPrice: 199, childPrice: 99 }, 2, 1, 0, [{ addon: { id: 'x', name: 'น้ำแข็งถัง', price: 20, cost: 6 }, qty: 1 }]);
   const recv = Math.ceil(o.total / 100) * 100;
   const sample = { ...o, no: '261103-001', at: new Date().toISOString(), tableName: 'A1', staffName: 'น้องมุก', received: recv, change: recv - o.total, methodName: 'เงินสด', methodType: 'cash', voided: false };
-  return html`<div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));align-items:start">
+  return html`<div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));align-items:start">
     <div class="stack"><h2>ข้อมูลร้านและใบเสร็จ</h2><${FormFields} schema=${schema} val=${v} set=${(k, x) => setV(o => ({ ...o, [k]: x }))}/>
       <div><${Btn} kind="primary" icon="check" onClick=${() => { if (!v.name) return; update(st => { st.shop = { ...v, servicePct: +v.servicePct || 0, defaultFloat: +v.defaultFloat || 0 }; }); toast('บันทึกข้อมูลร้านแล้ว'); }}>บันทึก<//></div></div>
     <div class="stack"><h3>ตัวอย่างใบเสร็จ</h3><${Receipt} shop=${v} bill=${sample}/></div>
