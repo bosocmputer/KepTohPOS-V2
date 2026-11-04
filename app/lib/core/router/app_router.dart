@@ -14,6 +14,9 @@ import 'package:app/features/bills/presentation/pages/bills_page.dart';
 import 'package:app/features/sale/presentation/pages/sale_page.dart';
 import 'package:app/features/shift/presentation/bloc/shift_bloc.dart';
 import 'package:app/features/shift/presentation/pages/shift_page.dart';
+import 'package:app/features/stock/presentation/bloc/stock_count_bloc.dart';
+import 'package:app/features/stock/presentation/cubit/stock_cubit.dart';
+import 'package:app/features/stock/presentation/pages/stock_page.dart';
 import 'package:app/features/tables/presentation/pages/tables_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -117,11 +120,35 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
 
   @override
   Widget build(BuildContext context) {
+    final repo = _maybe<PosRepository>(context, watch: false);
+    final existingStockCubit = _maybe<StockCubit>(context, watch: false);
+    final existingStockBloc = _maybe<StockCountBloc>(context, watch: false);
+    if (widget.viewSpec.id == 'stock' &&
+        repo != null &&
+        (existingStockCubit == null || existingStockBloc == null)) {
+      return MultiBlocProvider(
+        key: const ValueKey('stock-scope'),
+        providers: [
+          if (existingStockCubit == null)
+            BlocProvider<StockCubit>(create: (_) => StockCubit(repo)),
+          if (existingStockBloc == null)
+            BlocProvider<StockCountBloc>(
+              create: (_) => StockCountBloc(repository: repo),
+            ),
+        ],
+        child: Builder(builder: _buildShell),
+      );
+    }
+    return _buildShell(context);
+  }
+
+  Widget _buildShell(BuildContext context) {
     final tokens = context.tokens;
     final authCubit = _maybe<AuthCubit>(context);
     final shiftBloc = _maybe<ShiftBloc>(context);
     final tablesCubit = _maybe<TablesCubit>(context);
     final billsCubit = _maybe<BillsCubit>(context);
+    final stockCubit = _maybe<StockCubit>(context);
     final existingSaleBloc = _maybe<SaleBloc>(context, watch: false);
     final repo = _maybe<PosRepository>(context, watch: false);
     final activeShift = shiftBloc?.state.activeShift;
@@ -153,6 +180,7 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
         !isSaleView && widget.viewSpec.id == 'tables' && tablesCubit != null;
     final isBillsView =
         widget.viewSpec.id == 'bills' && (billsCubit != null || repo != null);
+    final isStockView = widget.viewSpec.id == 'stock' && stockCubit != null;
 
     final Widget body;
     if (isSaleView) {
@@ -184,6 +212,8 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
               create: (_) => BillsCubit(repo!),
               child: billsPage,
             );
+    } else if (isStockView) {
+      body = StockPage(staff: me);
     } else if (widget.viewSpec.id == 'shift' && shiftBloc != null) {
       body = ShiftPage(
         staffId: me.id,
@@ -254,19 +284,25 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
           ],
           searchQuery: isTablesView
               ? tablesCubit.state.searchQuery
-              : (isBillsView && billsCubit != null
-                    ? billsCubit.state.searchQuery
-                    : ''),
+              : isBillsView && billsCubit != null
+              ? billsCubit.state.searchQuery
+              : isStockView
+              ? stockCubit.state.searchQuery
+              : '',
           searchPlaceholder: isTablesView
               ? 'ค้นหาชื่อโต๊ะ'
-              : (isBillsView
-                    ? 'ค้นหาเลขที่บิล โต๊ะ ช่องทาง แคชเชียร์'
-                    : 'ค้นหา'),
+              : isBillsView
+              ? 'ค้นหาเลขที่บิล โต๊ะ ช่องทาง แคชเชียร์'
+              : isStockView
+              ? 'ค้นหาวัตถุดิบ แหล่งซื้อ สถานที่เก็บ'
+              : 'ค้นหา',
           onSearchChanged: isTablesView
               ? tablesCubit.setSearchQuery
-              : (isBillsView && billsCubit != null
-                    ? billsCubit.setSearchQuery
-                    : null),
+              : isBillsView && billsCubit != null
+              ? billsCubit.setSearchQuery
+              : isStockView
+              ? stockCubit.setSearchQuery
+              : null,
           onNavigate: (viewId) => viewId == 'dev/components'
               ? unawaited(context.push('/dev/components'))
               : context.go('/$viewId'),
