@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="KepToh">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>KepToh POS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,17 +32,18 @@
 /* Layout: แท็บเล็ตแนวนอน = แถบเมนูซ้าย (rail) + ลิ้นชักเมนู (drawer) + พื้นที่ทำงาน / มือถือ = เมนูล่าง
    สี/มุมโค้ง/ระยะห่าง/ฟอนต์ ทั้งหมดมาจาก theme.css (ห้ามเขียนค่าตรงในไฟล์นี้) */
 *,*::before,*::after{box-sizing:border-box}
-html{height:100%}
-body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+html{height:100%;-webkit-text-size-adjust:100%}
+body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;-webkit-tap-highlight-color:transparent}
 #app{height:100%}
 h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;line-height:1.25}
 h1{font-size:22px} h2{font-size:18px} h3{font-size:16px}
 .num,.dt td,.dt th{font-variant-numeric:tabular-nums}
 button{font:inherit;color:inherit}
+button,input,select,textarea,a{touch-action:manipulation}
 :focus-visible{outline:3px solid var(--primary);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
-.app{display:grid;grid-template-columns:var(--rail-w) minmax(0,1fr);height:100%}
+.app{display:grid;grid-template-columns:var(--rail-w) minmax(0,1fr);height:100%;height:100dvh}
 .side{background:var(--side);color:var(--side-ink);border-right:1px solid var(--side-line);display:flex;flex-direction:column;gap:var(--space-1);padding-block:14px;padding-left:env(safe-area-inset-left,0px);overflow-y:auto}
 .brand{display:flex;flex-direction:column;align-items:center;gap:2px;margin-bottom:12px;color:var(--side-ink-strong);font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:.02em}
 .brand-mark{width:44px;height:44px;border-radius:var(--radius-md);background:var(--primary);color:var(--on-primary);display:grid;place-items:center}
@@ -54,12 +59,26 @@ button{font:inherit;color:inherit}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .between{justify-content:space-between}
 .grow{flex:1;min-width:0}
+.nav-more{display:none}
 @media (max-width:760px){
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}
-  .side{order:2;border-right:0;border-top:1px solid var(--side-line);flex-direction:row;padding:6px max(8px,env(safe-area-inset-right,0px)) 6px max(8px,env(safe-area-inset-left,0px));overflow-x:auto;gap:2px}
+  .side{order:2;border-right:0;border-top:1px solid var(--side-line);flex-direction:row;padding:6px max(6px,env(safe-area-inset-right,0px)) max(6px,env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px));overflow:visible;gap:2px}
   .brand{display:none}
-  .nav-btn{margin:0;min-width:62px;flex:1}
-  .topbar,.content{padding-left:max(16px,env(safe-area-inset-left,0px))}
+  .nav-btn{margin:0;min-width:0;flex:1;font-size:12px;padding:8px 2px}
+  .nav-btn.mob-hide{display:none}
+  .nav-more{display:flex}
+  .topbar{flex-wrap:nowrap;gap:var(--space-2);padding-block:var(--space-2);padding-left:max(var(--space-2),env(safe-area-inset-left,0px));padding-right:max(var(--space-2),env(safe-area-inset-right,0px))}
+  .topbar>.pill{display:none}
+  .topbar h1{font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .topbar .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:var(--fs-xs)}
+  .topbar .btn:not(.icon-btn){min-height:40px;padding:0 var(--space-3)}
+  .content{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+  .toolbar-main{width:100%}
+  .toolbar-main>.search{flex:1 1 100%;min-width:0}
+  .toolbar-main>.field{flex:1 1 140px;min-width:0}
+  .seg{display:flex;width:100%}
+  .seg button{flex:1 1 auto}
+  .today-hero{flex-direction:column;align-items:flex-start;gap:var(--space-2)}
 }
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 16px;border-radius:var(--radius-md);border:1.5px solid var(--line);background:var(--surface);cursor:pointer;font-weight:500;white-space:nowrap}
@@ -118,10 +137,10 @@ button{font:inherit;color:inherit}
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}
 .field>span{font-size:13.5px;font-weight:600;color:var(--muted)}
 .field small{color:var(--muted);font-size:12.5px}
-.input,select.input,textarea.input{width:100%;min-height:44px;border:1.5px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);color:var(--ink);padding:8px 12px;font:inherit}
+.input,select.input,textarea.input{width:100%;min-width:0;min-height:44px;border:1.5px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);color:var(--ink);padding:8px 12px;font:inherit}
 textarea.input{min-height:76px;resize:vertical}
 .input:focus{outline:none;border-color:var(--primary)}
-.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:14px}
 .toggle{display:flex;align-items:center;gap:10px;cursor:pointer;min-height:44px}
 .toggle input{width:22px;height:22px;accent-color:var(--primary)}
 
@@ -166,7 +185,8 @@ textarea.input{min-height:76px;resize:vertical}
 .setup-nav{display:flex;flex-direction:column;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px}
 .setup-nav button{border:0;background:none;text-align:left;padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;font-weight:500}
 .setup-nav button[aria-current="true"]{background:var(--primary-soft);color:var(--primary-ink);font-weight:600}
-@media (max-width:860px){.setup{grid-template-columns:minmax(0,1fr)}.setup-nav{flex-direction:row;overflow-x:auto}.setup-nav button{white-space:nowrap}}
+.setup-sel{display:none}
+@media (max-width:860px){.setup{grid-template-columns:minmax(0,1fr)}.setup-nav{display:none}.setup-sel{display:block}}
 
 .banner{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-radius:var(--r);background:var(--primary-soft);color:var(--ink);border:1px solid transparent}
 .banner.info{background:var(--surface-2);border-color:var(--line)}
@@ -260,20 +280,32 @@ textarea.input{min-height:76px;resize:vertical}
 @media (max-width:900px){.login{grid-template-columns:minmax(0,1fr)}.login-hero{display:none}}
 .count-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:var(--space-4);align-items:start}
 .count-pad{position:sticky;top:0;display:flex;flex-direction:column;gap:var(--space-3)}
+.cp-sum{display:flex;flex-direction:column;gap:var(--space-2)}
+.cp-actions{display:flex;flex-direction:column;gap:var(--space-2)}
 .big-val{display:block;text-align:center;font:700 40px/1.2 var(--font-display);font-variant-numeric:tabular-nums;padding:var(--space-2);border-radius:var(--radius-md);background:var(--surface-2)}
 .big-val small{font:500 var(--fs-sm) var(--font-body)}
 .dt tr.active td{background:var(--primary-soft)}
 .dt tr.active td:first-child{box-shadow:inset 3px 0 0 var(--primary)}
 .loc-h{display:flex;align-items:baseline;gap:var(--space-2)}
-.sup-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:var(--space-3)}
+.sup-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr));gap:var(--space-3)}
 .today-hero{display:flex;align-items:center;gap:var(--space-4);flex-wrap:wrap}
 .hero-v{font:700 30px/1.25 var(--font-display);font-variant-numeric:tabular-nums}
 a.pill{text-decoration:none}
-@media (max-width:860px){.count-layout{grid-template-columns:minmax(0,1fr)}.count-pad{position:static}}
+@media (max-width:860px){
+  .count-layout{grid-template-columns:minmax(0,1fr)}
+  .count-pad{position:sticky;top:auto;bottom:0;z-index:5;gap:var(--space-2);padding:var(--space-2) var(--space-3);box-shadow:0 -10px 28px rgba(0,0,0,.18)}
+  .count-pad .cp-head .eyebrow,.count-pad .cp-head .sub,.count-pad .cp-sum{display:none}
+  .count-pad .big-val{font-size:28px;padding:2px}
+  .count-pad .np-key{height:46px}
+  .count-pad .numpad{gap:6px}
+  .count-pad .cp-actions{flex-direction:row}
+  .count-pad .cp-actions .btn{flex:1;min-width:0;white-space:normal;line-height:1.25;padding:6px 10px}   /* จอแคบ (320px): ให้ข้อความขึ้นบรรทัดใหม่แทนการล้น */
+}
 .open-strip{display:flex;gap:var(--space-2);overflow-x:auto;padding:var(--space-1) var(--space-1) var(--space-2)}
 .open-strip>.tcard{flex:0 0 150px}
 .sale{display:grid;grid-template-columns:minmax(0,1fr) 396px;gap:var(--space-4);align-items:start}
 .sale-main{display:flex;flex-direction:column;gap:var(--space-4);min-width:0}
+.sale-bar{display:none}
 .sale-panel{position:sticky;top:0;display:flex;flex-direction:column;padding:0;max-height:calc(100vh - 130px);max-height:calc(100dvh - 130px)}
 .sale-head{display:flex;flex-direction:column;gap:var(--space-2);padding:var(--space-3);border-bottom:1px solid var(--line)}
 .sale-body{flex:1;min-height:0;overflow-y:auto;padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-4)}
@@ -298,9 +330,24 @@ a.pill{text-decoration:none}
 .prod-name{font-size:var(--fs-sm);line-height:1.3}
 .prod-price{font-weight:700}
 .prod-badge{position:absolute;top:-8px;right:-6px;background:var(--primary);color:var(--on-primary);font-weight:700;border-radius:999px;min-width:26px;height:26px;display:grid;place-items:center;font-size:13px;padding:0 6px}
-@media (max-width:900px){.sale{grid-template-columns:minmax(0,1fr)}.sale-panel{position:static;max-height:none}}
+@media (max-width:900px){.sale{grid-template-columns:minmax(0,1fr)}.sale-panel{position:static;max-height:none}
+  .sale-bar{display:flex;position:sticky;bottom:0;z-index:4;align-items:center;justify-content:space-between;gap:var(--space-3);min-height:var(--tap);padding:var(--space-3) var(--space-4);border:0;border-radius:var(--radius-md);background:var(--primary);color:var(--on-primary);font:600 var(--fs-md) var(--font-body);cursor:pointer;box-shadow:var(--shadow-pop);text-align:left}}
 .lines-edit{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:end}
 @media (max-width:600px){.lines-edit{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+/* ต้องอยู่หลังกฎ .input/.search-input (ที่ใช้ font:inherit) · 16px กัน iOS ซูมหน้าเองตอนแตะช่องกรอก */
+@media (max-width:760px){.input,select.input,textarea.input,.search-input{font-size:16px}}
+/* มือถือแนวนอน (จอเตี้ย): นับของใช้ 2 คอลัมน์ รายการซ้าย · แป้นขวา แทนแป้นติดล่างที่จะสูงกว่าจอ */
+@media (max-height:520px) and (min-width:600px){
+  .stock-count{padding-right:296px}   /* เว้นที่ให้แป้นที่ตรึงด้านขวา ทั้งแถบเครื่องมือและรายการ */
+  .count-layout{grid-template-columns:minmax(0,1fr)}
+  .count-pad{position:fixed;top:76px;right:max(12px,env(safe-area-inset-right,0px));bottom:12px;width:272px;overflow-y:auto;z-index:5;box-shadow:var(--shadow-pop)}
+  .count-pad .np-key{height:36px}
+  .count-pad .numpad{gap:4px}
+  .count-pad .big-val{font-size:22px}
+  .count-pad .cp-head h2{font-size:15px}
+}
+/* จอสัมผัส: ปุ่มเล็กต้องกดด้วยนิ้วได้ (อยู่ท้ายไฟล์เพื่อไม่ถูก .btn-sm ทับ) */
+@media (pointer:coarse){.btn-sm{min-height:44px}.seg button{min-height:40px}a.pill{min-height:40px;padding:0 var(--space-4)}}
 </style>
 
 <div id="app"></div>
@@ -663,6 +710,7 @@ const ICONS = {
   chevron: html`<path d="M6 9l6 6 6-6"/>`,
   search: html`<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>`,
   backspace: html`<path d="M21 5H9l-6 7 6 7h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z"/><path d="M12 9l5 6M17 9l-5 6"/>`,
+  menu: html`<path d="M4 6h16M4 12h16M4 18h16"/>`,
   cup: html`<path d="M6 4h12l-1.5 16h-9z"/><path d="M6.5 9h11"/>`,
   back: html`<path d="M15 6l-6 6 6 6"/>`,
   filter: html`<path d="M4 5h16l-6 8v6l-4-2v-4z"/>`
@@ -982,6 +1030,7 @@ function SaleView({ s, update, me, toast, tableId }) {
   const [cart, setCart] = useState(() => blankCart(s, o));
   const [cat, setCat] = useState(null);
   const [step, setStep] = useState('order');
+  const panelRef = useRef(null);
   const [modal, setModal] = useState(null);   // note | shift | close | rm:{kind,key} | rcpt:{id,fresh}
   const home = () => { location.hash = 'tables'; };
   if (!t) return html`<div class="card"><${Empty} title="ไม่พบโต๊ะนี้" text="โต๊ะอาจถูกลบไปแล้ว"><${Btn} kind="primary" onClick=${home}>กลับหน้าโต๊ะ<//><//></div>`;
@@ -1028,9 +1077,10 @@ function SaleView({ s, update, me, toast, tableId }) {
       ${bills.length > 0 && html`<div class="stack" style="gap:8px"><h3>บิลของโต๊ะนี้ (ชำระแล้ว)</h3><${DataTable} label="บิลของโต๊ะนี้" head=${false} rows=${bills} onRowClick=${b => setModal({ rcpt: b.id })} columns=${[
         { key: 'no', label: 'เลขที่' }, { key: 'at', label: 'เวลา', render: b => thTime(b.at) }, { key: 'methodName', label: 'ชำระโดย' },
         { key: 'total', label: 'ยอด', align: 'r', className: b => b.voided ? 'strike' : '', render: b => baht(b.total, 2) }]}/></div>`}
+      ${step === 'order' && (hasCart || payOrder.total > 0) && html`<button type="button" class="sale-bar" onClick=${() => panelRef.current && panelRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })}><span>ดูออเดอร์โต๊ะ ${t.name}</span><span class="num">${baht(payOrder.total, payOrder.total % 1 ? 2 : 0)} ›</span></button>`}
     </div>
 
-    <aside class="sale-panel card" aria-label=${'ออเดอร์โต๊ะ ' + t.name}>
+    <aside class="sale-panel card" ref=${panelRef} aria-label=${'ออเดอร์โต๊ะ ' + t.name}>
       <div class="sale-head">
         <${Dropdown} label="เลือกโต๊ะ" value=${tableId} options=${tableOpts} onChange=${v => { location.hash = 'tables/' + v; }}/>
         <div class="row between">${o ? html`<${Pill} tone=${timing === 'after' ? 'orange' : ''}>${PAY_TIMING[timing]}<//>` : html`<${Seg} label="รูปแบบชำระเงิน" value=${cart.timing} onChange=${v => patch({ timing: v })} items=${Object.entries(PAY_TIMING)}/>`}
@@ -1239,7 +1289,16 @@ function StockCount({ s, update, ledger, date, toast }) {
   };
   const cur = active && order.some(i => i.id === active) ? active : (order.find(i => vals[i.id] === '') || order[0] || {}).id;
   const curIng = s.ingredients.find(i => i.id === cur);
-  const next = () => { const i = order.findIndex(x => x.id === cur); const n = order.slice(i + 1).find(x => vals[x.id] === '') || order[i + 1]; if (n) setActive(n.id); };
+  // เลื่อนแถวที่เลือกให้เห็นเหนือแป้นตัวเลข (มือถือ: แป้นติดล่างจอ)
+  const scrollActive = () => setTimeout(() => {
+    const el = document.querySelector('.count-layout tr.active'), sc = document.querySelector('.content'), pad = document.querySelector('.count-pad');
+    if (!el || !sc || !sc.scrollBy) return;
+    const r = el.getBoundingClientRect(), c = sc.getBoundingClientRect();
+    const floor = pad && matchMedia('(max-width:860px)').matches ? pad.getBoundingClientRect().top : c.bottom;   // ขอบล่างที่แถวต้องไม่เกิน (แป้นติดล่างบนมือถือ)
+    if (r.bottom > floor - 8) sc.scrollBy({ top: r.bottom - floor + 16, behavior: 'smooth' });
+    else if (r.top < c.top + 8) sc.scrollBy({ top: r.top - c.top - 16, behavior: 'smooth' });
+  }, 80);
+  const next = () => { const i = order.findIndex(x => x.id === cur); const n = order.slice(i + 1).find(x => vals[x.id] === '') || order[i + 1]; if (n) { setActive(n.id); scrollActive(); } };
   const setVal = v => { if (active !== cur) setActive(cur); setDraft(d => ({ ...(d || vals), [cur]: v })); };   // ล็อกรายการที่กำลังพิมพ์ ไม่ให้กระโดดเมื่อช่องไม่ว่างแล้ว
   const doneDue = due.filter(i => vals[i.id] !== '').length;
   const save = () => { update(st => { st.counts[date] = Object.fromEntries(s.ingredients.filter(i => vals[i.id] !== '').map(i => [i.id, +vals[i.id]])); }); setDraft(null); toast('บันทึกยอดคงเหลือและปิดวันแล้ว'); };
@@ -1255,19 +1314,19 @@ function StockCount({ s, update, ledger, date, toast }) {
         <label class="toggle"><input id="count-all" type="checkbox" checked=${showAll} onChange=${e => setShowAll(e.target.checked)}/><span>แสดงทุกรายการ</span></label></div>
       ${due.length < s.ingredients.length && html`<p class="sub" style="margin:0">ของนับรายสัปดาห์ (นับวัน${DOW[+s.shop.weeklyCountDow]}) ${s.ingredients.length - due.length} รายการ ระบบใช้ค่าประมาณจากอัตราใช้ต่อหัว</p>`}
       ${groups.map(([loc, items]) => html`<div class="stack" style="gap:8px"><h3 class="loc-h">${LOCATION[loc]}<span class="sub">${items.length} รายการ</span></h3>
-        <${DataTable} label=${'นับของเหลือ ' + LOCATION[loc]} columns=${cols} rows=${items} onRowClick=${i => setActive(i.id)} rowClass=${i => i.id === cur ? 'active' : ''}/></div>`)}
+        <${DataTable} label=${'นับของเหลือ ' + LOCATION[loc]} columns=${cols} rows=${items} onRowClick=${i => { setActive(i.id); scrollActive(); }} rowClass=${i => i.id === cur ? 'active' : ''}/></div>`)}
     </div>
     <aside class="count-pad card" aria-label="ใส่จำนวนที่เหลือ">
-      ${curIng ? html`<div><div class="eyebrow">${LOCATION[curIng.location] || ''}</div><h2>${curIng.name}</h2>
+      ${curIng ? html`<div class="cp-head"><div class="eyebrow">${LOCATION[curIng.location] || ''}</div><h2>${curIng.name}</h2>
           <div class="sub">มีทั้งหมด ${fmtQ(rowOf(cur).avail)} ${curIng.unit}${prevOf(cur) != null ? ' · ครั้งก่อน ' + fmtQ(prevOf(cur)) : ''}</div></div>
         <output class="big-val" aria-live="polite">${vals[cur] || html`<span class="m">0</span>`} <small class="sub">${curIng.unit}</small></output>
-        <${NumPad} value=${vals[cur] || ''} onChange=${setVal} decimal keyboard maxLen=${7} onEnter=${next}/>
-        <${Btn} block onClick=${next}>รายการถัดไป<//>` : html`<${Empty} title="ไม่มีรายการให้นับวันนี้"/>`}
-      <div class="line"><span>นับแล้ว</span><strong>${doneDue}/${due.length}</strong></div>
-      <div class="line"><span>ต้นทุนจากที่นับ</span><strong class="num">${baht(sum(order, i => calc(i).cost))}</strong></div>
-      <${Btn} kind="primary" size="lg" block icon="check" disabled=${doneDue !== due.length} title=${doneDue !== due.length ? 'ใส่ให้ครบทุกรายการที่ต้องนับ (ไม่มีของเหลือใส่ 0)' : ''} onClick=${save}>บันทึกและปิดวัน<//>
-      ${draft && html`<${Btn} kind="ghost" block onClick=${() => setDraft(null)}>ยกเลิกที่แก้<//>`}
-      ${day.closed && !draft && html`<${Btn} kind="ghost" block onClick=${() => { update(st => { delete st.counts[date]; }); toast('ยกเลิกการปิดวันแล้ว'); }}>ยกเลิกการปิดวัน<//>`}
+        <${NumPad} value=${vals[cur] || ''} onChange=${setVal} decimal keyboard maxLen=${7} onEnter=${next}/>` : html`<${Empty} title="ไม่มีรายการให้นับวันนี้"/>`}
+      <div class="cp-sum"><div class="line"><span>นับแล้ว</span><strong>${doneDue}/${due.length}</strong></div>
+        <div class="line"><span>ต้นทุนจากที่นับ</span><strong class="num">${baht(sum(order, i => calc(i).cost))}</strong></div></div>
+      <div class="cp-actions">${curIng && html`<${Btn} block onClick=${next}>รายการถัดไป<//>`}
+        <${Btn} kind="primary" size="lg" block icon="check" disabled=${doneDue !== due.length} title=${doneDue !== due.length ? 'ใส่ให้ครบทุกรายการที่ต้องนับ (ไม่มีของเหลือใส่ 0)' : ''} onClick=${save}>บันทึกและปิดวัน<//></div>
+      ${draft && html`<${Btn} kind="ghost" size="sm" block onClick=${() => setDraft(null)}>ยกเลิกที่แก้<//>`}
+      ${day.closed && !draft && html`<${Btn} kind="ghost" size="sm" block onClick=${() => { update(st => { delete st.counts[date]; }); toast('ยกเลิกการปิดวันแล้ว'); }}>ยกเลิกการปิดวัน<//>`}
     </aside></div>`;
 }
 
@@ -1355,7 +1414,7 @@ function StockView({ s, update, ledger, toast }) {
   const [tab, setTab] = useState('count');
   const [date, setDate] = useState(todayKey());
   const p = { s, update, ledger, date, toast };
-  return html`<div class="stack">
+  return html`<div class=${'stack' + (tab === 'count' ? ' stock-count' : '')}>
     <${Toolbar} end=${tab !== 'balance' && html`<${Field} label="วันที่"><input id="stock-date" class="input" type="date" value=${date} min=${s.startDate} max=${todayKey()} onInput=${e => e.target.value && setDate(e.target.value)}/><//>`}>
       <${Seg} label="เมนูสต็อก" value=${tab} onChange=${setTab} items=${[['count', 'นับของเหลือ (ปิดวัน)'], ['purchase', 'รับของเข้า'], ['expense', 'ค่าใช้จ่าย'], ['balance', 'คงเหลือและสั่งซื้อ']]}/>
     <//>
@@ -1421,7 +1480,7 @@ function DashboardView({ s, ledger }) {
     </div>
     ${days.length > 1 && html`<div class="card stack" style="gap:8px"><div class="row between"><h2>${fieldName}รายวัน</h2><span class="sub">เขียว = กำไร · แดง = ขาดทุน · เทา = ยังไม่ปิดยอด</span></div><${ProfitChart} days=${days} field=${field}/>
       ${best && html`<div class="row"><${Pill} tone="green">ดีที่สุด ${thDateShort(best.date)} ${baht(best[field])}<//><${Pill} tone=${worst[field] < 0 ? 'red' : ''}>ต่ำสุด ${thDateShort(worst.date)} ${baht(worst[field])}<//></div>`}</div>`}
-    <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:start">
+    <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));align-items:start">
       <div class="card stack" style="gap:10px"><h2>ต้นทุนวัตถุดิบแยกรายการ</h2>
         <${DataTable} label="ต้นทุนวัตถุดิบแยกรายการ" head=${false} rows=${ingShare.filter(x => x.v > 0).slice(0, 8)} empty=${html`<${Empty} title="ยังไม่มีวันที่ปิดยอดในช่วงนี้"/>`} columns=${[
           { key: 'n', label: 'วัตถุดิบ', render: x => x.i.name }, { key: 'bar', label: 'สัดส่วน', render: x => html`<div class="share"><i style=${'width:' + (x.v / ingShare[0].v * 100) + '%'}></i></div>` },
@@ -1486,7 +1545,7 @@ function ShopForm({ s, update, toast }) {
   const o = calcOrder({ ...v, servicePct: +v.servicePct || 0 }, { name: 'บุฟเฟต์หมูกระทะ', adultPrice: 199, childPrice: 99 }, 2, 1, 0, [{ addon: { id: 'x', name: 'น้ำแข็งถัง', price: 20, cost: 6 }, qty: 1 }]);
   const recv = Math.ceil(o.total / 100) * 100;
   const sample = { ...o, no: '261103-001', at: new Date().toISOString(), tableName: 'A1', staffName: 'น้องมุก', received: recv, change: recv - o.total, methodName: 'เงินสด', methodType: 'cash', voided: false };
-  return html`<div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));align-items:start">
+  return html`<div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));align-items:start">
     <div class="stack"><h2>ข้อมูลร้านและใบเสร็จ</h2><${FormFields} schema=${schema} val=${v} set=${(k, x) => setV(o => ({ ...o, [k]: x }))}/>
       <div><${Btn} kind="primary" icon="check" onClick=${() => { if (!v.name) return; update(st => { st.shop = { ...v, servicePct: +v.servicePct || 0, defaultFloat: +v.defaultFloat || 0 }; }); toast('บันทึกข้อมูลร้านแล้ว'); }}>บันทึก<//></div></div>
     <div class="stack"><h3>ตัวอย่างใบเสร็จ</h3><${Receipt} shop=${v} bill=${sample}/></div>
@@ -1599,7 +1658,7 @@ function SetupView({ s, update, toast, me, initial }) {
     <div class="row"><${Btn} icon="copy" onClick=${exportJson}>ส่งออกข้อมูล (JSON)<//><${Btn} icon="plus" onClick=${() => document.getElementById('import-file').click()}>นำเข้าข้อมูล (JSON)<//>
       <input id="import-file" type="file" accept="application/json,.json" hidden onChange=${e => { const f = e.target.files[0]; e.target.value = ''; f && importJson(f); }}/></div>
     <div><${Btn} kind="danger" onClick=${() => setReset(true)}>รีเซ็ตกลับเป็นข้อมูลตัวอย่างเริ่มต้น<//></div></div>`;
-  return html`<div class="setup"><nav class="setup-nav" aria-label="หมวดตั้งค่า">${SECS.map(([k, l]) => html`<button type="button" aria-current=${sec === k} onClick=${() => setSec(k)}>${l}</button>`)}</nav><div style="min-width:0">${body}</div>
+  return html`<div class="setup"><select class="input setup-sel" aria-label="หมวดตั้งค่า" value=${sec} onChange=${e => setSec(e.target.value)}>${SECS.map(([k, l]) => html`<option value=${k}>${l}</option>`)}</select><nav class="setup-nav" aria-label="หมวดตั้งค่า">${SECS.map(([k, l]) => html`<button type="button" aria-current=${sec === k} onClick=${() => setSec(k)}>${l}</button>`)}</nav><div style="min-width:0">${body}</div>
     ${reset && html`<${Confirm} title="รีเซ็ตข้อมูล?" text="ข้อมูลทั้งหมดที่ทดลองคีย์จะหายและกลับเป็นข้อมูลตัวอย่าง" yes="รีเซ็ต" danger onNo=${() => setReset(false)} onYes=${() => { update(st => { Object.keys(st).forEach(k => delete st[k]); Object.assign(st, seed()); }); setReset(false); toast('รีเซ็ตแล้ว'); }}/>`}</div>`;
 }
 
@@ -1677,13 +1736,15 @@ function App() {
   if (!me) return html`<${Login} s=${s} onLogin=${login}/>`;
   const allowed = v => !v.roles || v.roles.includes(me.role);
   const base = view.split('/')[0], cur = VIEWS.find(v => v.id === base);
+  const railViews = VIEWS.filter(allowed), keep = railViews.length > 5 ? 4 : railViews.length;   // มือถือ: แสดง 4 รายการ + ปุ่ม เพิ่มเติม (เปิด Drawer)
   const shift = openShiftOf(s);
   const props = { s, update, me, ledger, toast: setToast };
   const go = id => { setMenuOpen(false); if (location.hash !== '#' + id) location.hash = id; else setView(id); };   // id อาจเป็น view/section
   return html`<div class="app">
     <nav class="side" aria-label="เมนูหลัก">
       <div class="brand"><span class="brand-mark"><${Icon} n="flame" s=${26}/></span>KepToh</div>
-      ${VIEWS.filter(allowed).map(v => html`<button type="button" class="nav-btn" aria-current=${base === v.id ? 'page' : null} onClick=${() => go(v.id)}><${Icon} n=${v.icon} s=${22}/>${v.label}</button>`)}
+      ${railViews.map((v, i) => html`<button type="button" class=${'nav-btn' + (i >= keep ? ' mob-hide' : '')} aria-current=${base === v.id ? 'page' : null} onClick=${() => go(v.id)}><${Icon} n=${v.icon} s=${22}/>${v.label}</button>`)}
+      ${railViews.length > keep && html`<button type="button" class="nav-btn nav-more" aria-current=${railViews.slice(keep).some(v => v.id === base) ? 'page' : null} onClick=${() => setMenuOpen(true)}><${Icon} n="menu" s=${22}/>เพิ่มเติม</button>`}
     </nav>
     <main class="main">
       <header class="topbar">
