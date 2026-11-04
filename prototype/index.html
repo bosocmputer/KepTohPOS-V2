@@ -104,23 +104,7 @@ button,input,select,textarea,a{touch-action:manipulation}
 .dot{width:8px;height:8px;border-radius:50%;background:currentColor}
 .eyebrow{font-size:12px;letter-spacing:.06em;color:var(--muted);font-weight:600}
 
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
-.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:2px;min-width:0}
-.stat .v{font-family:var(--font-display);font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}
-.stat .v.green{color:var(--success-ink)} .stat .v.red{color:var(--danger-ink)}
 
-.tables{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
-.tcard{border:1.5px solid var(--line);background:var(--surface);border-radius:var(--radius-lg);padding:14px;text-align:left;min-height:128px;display:flex;flex-direction:column;gap:4px;cursor:pointer;transition:transform .08s}
-.tcard:active{transform:scale(.98)}
-.tcard .tname{font-family:var(--font-display);font-size:26px;font-weight:700;line-height:1.1}
-.tcard.busy{border-color:var(--primary);background:var(--primary-soft)}
-.tcard.late{border-color:var(--danger);background:var(--danger-soft)}
-.tcard.due{box-shadow:inset 0 -4px 0 var(--primary)}
-.tcard.compact{min-height:96px;padding:10px}
-.tcard.compact .tname{font-size:20px}
-.tcard.active{box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 35%,transparent)}
-.tcard.active.due{box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 35%,transparent),inset 0 -4px 0 var(--primary)}
-.tcard .free{color:var(--muted);font-size:13px;margin-top:auto}
 
 .seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-md);padding:3px;gap:2px;flex-wrap:wrap}
 .seg button{border:0;background:none;padding:7px 14px;border-radius:var(--radius-sm);cursor:pointer;font-size:14px;color:var(--muted);font-weight:500}
@@ -144,11 +128,7 @@ textarea.input{min-height:76px;resize:vertical}
 .toggle{display:flex;align-items:center;gap:10px;cursor:pointer;min-height:44px}
 .toggle input{width:22px;height:22px;accent-color:var(--primary)}
 
-.stepper{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:var(--radius-md);overflow:hidden;background:var(--surface)}
-.stepper button{width:48px;height:48px;border:0;background:var(--surface-2);cursor:pointer;display:grid;place-items:center}
-.stepper output{min-width:52px;text-align:center;font-family:var(--font-display);font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
 
-.summary{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-lg);padding:16px;display:flex;flex-direction:column;gap:8px;align-self:start}
 .line{display:flex;justify-content:space-between;gap:10px;font-variant-numeric:tabular-nums}
 .line .q{color:var(--muted)}
 .total{font-family:var(--font-display);font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -188,13 +168,11 @@ textarea.input{min-height:76px;resize:vertical}
 .setup-sel{display:none}
 @media (max-width:860px){.setup{grid-template-columns:minmax(0,1fr)}.setup-nav{display:none}.setup-sel{display:block}}
 
-.banner{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-radius:var(--r);background:var(--primary-soft);color:var(--ink);border:1px solid transparent}
-.banner.info{background:var(--surface-2);border-color:var(--line)}
 .empty{text-align:center;padding:36px 16px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:10px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);top:max(16px,calc(env(safe-area-inset-top,0px) + 12px));background:var(--dark);color:var(--on-dark);padding:12px 18px;border-radius:var(--radius-md);z-index:80;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:calc(100% - 32px)}
 .chart text{fill:var(--muted);font-size:11px;font-family:var(--font-body)}
-.chart .pos{fill:var(--success)} .chart .neg{fill:var(--danger)} .chart .open{fill:var(--line)}
-.chart .axis{stroke:var(--line)} .chart .zero{stroke:var(--muted);stroke-width:1}
+.chart .pos{fill:color-mix(in srgb,var(--success) 72%,var(--surface))} .chart .neg{fill:var(--danger)} .chart .open{fill:var(--line)}
+.chart .axis{stroke:var(--line);stroke-dasharray:3 3} .chart .zero{stroke:var(--muted);stroke-width:1}
 .share{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;min-width:60px}
 .share>i{display:block;height:100%;background:var(--primary)}
 .pins{display:flex;gap:12px;justify-content:center;margin:8px 0 16px}
@@ -209,10 +187,6 @@ textarea.input{min-height:76px;resize:vertical}
 .pager .pages .btn{min-width:40px;padding:0 var(--space-2)}
 .pager .pages .btn[aria-current="page"]{background:var(--primary);border-color:var(--primary);color:var(--on-primary);font-weight:600}
 /* ===== shared: header / toolbar / search / avatar ===== */
-.who{display:inline-flex;align-items:center;gap:var(--space-2)}
-.who-t{display:flex;flex-direction:column;line-height:1.25}
-.who-t .sub{font-size:var(--fs-xs)}
-@media (max-width:760px){.who-t{display:none}}
 .page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap}
 .toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap}
 .toolbar-main,.toolbar-end{display:flex;align-items:flex-end;gap:var(--space-3);flex-wrap:wrap;min-width:0}
@@ -264,14 +238,10 @@ textarea.input{min-height:76px;resize:vertical}
 /* ===== login ===== */
 .login{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(380px,1fr);height:100%;background:var(--surface);color:var(--ink)}
 .login-hero{position:relative;overflow:hidden;margin:var(--space-2);border-radius:var(--radius-md);padding:clamp(24px,4vw,48px);display:flex;flex-direction:column;gap:var(--space-6);background:var(--primary);color:var(--on-primary)}
-.login-hero::before{content:"";position:absolute;right:-14%;bottom:-20%;width:80%;aspect-ratio:1;border-radius:34%;transform:rotate(35deg);background:color-mix(in srgb,var(--on-primary) 12%,transparent);pointer-events:none}
 .login-hero>*{position:relative}
 .hero-brand{display:flex;align-items:center;gap:var(--space-3);font:700 22px var(--font-display)}
 .hero-brand .brand-mark{background:var(--on-primary);color:var(--primary)}
 .login-hero h1{font-size:clamp(28px,4vw,44px);line-height:1.25}
-.hero-points{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--space-3)}
-.hero-points li{display:flex;align-items:center;gap:var(--space-3);font-size:var(--fs-md)}
-.hero-points .ic{width:36px;height:36px;border-radius:var(--radius-sm);display:grid;place-items:center;background:color-mix(in srgb,var(--on-primary) 16%,transparent)}
 .hero-foot{margin:auto 0 0;font-size:var(--fs-xs)}
 .login-panel{display:flex;align-items:center;justify-content:center;padding:var(--space-6);overflow-y:auto}
 .login-form{width:min(400px,100%);display:flex;flex-direction:column;gap:var(--space-4)}
@@ -282,6 +252,8 @@ textarea.input{min-height:76px;resize:vertical}
 .count-pad{position:sticky;top:0;display:flex;flex-direction:column;gap:var(--space-3)}
 .cp-sum{display:flex;flex-direction:column;gap:var(--space-2)}
 .cp-actions{display:flex;flex-direction:column;gap:var(--space-2)}
+.cp-head{display:block}
+.cp-toggle,.cp-cur,.lbl-short,.show-sm{display:none}
 .big-val{display:block;text-align:center;font:700 40px/1.2 var(--font-display);font-variant-numeric:tabular-nums;padding:var(--space-2);border-radius:var(--radius-md);background:var(--surface-2)}
 .big-val small{font:500 var(--fs-sm) var(--font-body)}
 .dt tr.active td{background:var(--primary-soft)}
@@ -301,8 +273,6 @@ a.pill{text-decoration:none}
   .count-pad .cp-actions{flex-direction:row}
   .count-pad .cp-actions .btn{flex:1;min-width:0;white-space:normal;line-height:1.25;padding:6px 10px}   /* จอแคบ (320px): ให้ข้อความขึ้นบรรทัดใหม่แทนการล้น */
 }
-.open-strip{display:flex;gap:var(--space-2);overflow-x:auto;padding:var(--space-1) var(--space-1) var(--space-2)}
-.open-strip>.tcard{flex:0 0 150px}
 .sale{display:grid;grid-template-columns:minmax(0,1fr) 396px;gap:var(--space-4);align-items:start}
 .sale-main{display:flex;flex-direction:column;gap:var(--space-4);min-width:0}
 .sale-bar{display:none}
@@ -318,24 +288,128 @@ a.pill{text-decoration:none}
 .oline{padding:var(--space-2) 0;border-bottom:1px solid var(--line)}
 .oline .q{min-width:44px;text-align:right;font-weight:600}
 .big-val.sm{font-size:26px;padding:var(--space-1) var(--space-3)}
-.cat-tabs{display:flex;gap:var(--space-2);overflow-x:auto;padding:var(--space-1)}
-.cat-tab{flex:none;display:flex;align-items:center;gap:var(--space-3);min-height:56px;padding:0 var(--space-4);border:1.5px solid var(--line);border-radius:var(--radius-md);background:var(--surface);color:var(--muted);cursor:pointer;text-align:left;font:inherit}
-.cat-tab.on{border-color:var(--primary);background:var(--primary-soft);color:var(--primary-ink)}
-.cat-t{display:flex;flex-direction:column;line-height:1.3}
-.prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--space-3)}
-.prod{position:relative;display:flex;flex-direction:column;gap:var(--space-1);padding:var(--space-2);border:1.5px solid var(--line);border-radius:var(--radius-md);background:var(--surface);color:var(--ink);cursor:pointer;text-align:left;font:inherit}
-.prod:disabled{opacity:.45;cursor:not-allowed}
-.prod.on{border-color:var(--primary);background:var(--primary-soft)}
-.prod-img{display:grid;place-items:center;height:84px;border-radius:var(--radius-sm);background:var(--surface-2);color:var(--muted)}
-.prod-name{font-size:var(--fs-sm);line-height:1.3}
-.prod-price{font-weight:700}
-.prod-badge{position:absolute;top:-8px;right:-6px;background:var(--primary);color:var(--on-primary);font-weight:700;border-radius:999px;min-width:26px;height:26px;display:grid;place-items:center;font-size:13px;padding:0 6px}
 @media (max-width:900px){.sale{grid-template-columns:minmax(0,1fr)}.sale-panel{position:static;max-height:none}
   .sale-bar{display:flex;position:sticky;bottom:0;z-index:4;align-items:center;justify-content:space-between;gap:var(--space-3);min-height:var(--tap);padding:var(--space-3) var(--space-4);border:0;border-radius:var(--radius-md);background:var(--primary);color:var(--on-primary);font:600 var(--fs-md) var(--font-body);cursor:pointer;box-shadow:var(--shadow-pop);text-align:left}}
 .lines-edit{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:end}
 @media (max-width:600px){.lines-edit{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 /* ต้องอยู่หลังกฎ .input/.search-input (ที่ใช้ font:inherit) · 16px กัน iOS ซูมหน้าเองตอนแตะช่องกรอก */
 @media (max-width:760px){.input,select.input,textarea.input,.search-input{font-size:16px}}
+/* ===== Design v2 — พื้นเรียบ · สีส้มเฉพาะจุดเน้น (ปุ่มหลัก/รายการที่เลือก/เมนูที่ใช้อยู่) · แถวและเส้นคั่นแทนการ์ดซ้อนการ์ด ===== */
+:root{--sidebar-w:232px}
+/* เมนูตรึงด้านข้าง (จอกว้าง) · เนื้อหา NavPanel ใช้ร่วมกับ Drawer */
+.sidebar{display:none;flex-direction:column;gap:var(--space-4);padding:var(--space-4) var(--space-3);background:var(--side);border-right:1px solid var(--side-line);overflow-y:auto;padding-left:max(var(--space-3),env(safe-area-inset-left,0px));--ink:var(--side-ink-strong);--muted:var(--side-ink);--surface-2:var(--side-hover);--line:var(--side-line)}
+.sidebar .dr-link{min-height:46px}
+.dr-user{background:none;border:0;padding:0 var(--space-1)}
+.dr-shift{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-3);border:1px solid var(--line);border-radius:var(--radius-md);font-size:var(--fs-sm)}
+.dr-shift .dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--primary)}
+.dr-shift.on .dot{background:var(--success)}
+.sh-text{flex:1;min-width:0;line-height:1.3;font-weight:600}
+.sh-text .sub{display:block;font-weight:400;font-size:var(--fs-xs)}
+.sh-btn{flex:none;min-height:36px;padding:0 var(--space-3);border:1.5px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);color:var(--ink);font:600 var(--fs-sm) var(--font-body);cursor:pointer}
+.sh-btn:hover{border-color:var(--muted)}
+.dr-demo{margin-bottom:var(--space-2);text-align:center;font-size:var(--fs-xs);color:var(--muted)}
+.hdr-user{position:relative;flex:none;display:grid;place-items:center;width:var(--tap);height:var(--tap);padding:0;border:0;background:none;cursor:pointer}
+.hdr-user .st{position:absolute;right:3px;bottom:3px;width:12px;height:12px;border-radius:50%;border:2px solid var(--surface);background:var(--success)}
+.hdr-user .st.off{background:var(--primary)}
+@media (min-width:1100px){
+  .app{grid-template-columns:var(--sidebar-w) minmax(0,1fr)}
+  .side{display:none}
+  .sidebar{display:flex}
+  .menu-btn,.hdr-user{display:none}
+}
+/* ตัวเลขสรุป: แถบเดียวคั่นด้วยเส้นบางๆ แทนการ์ดแยกใบ */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));padding:var(--space-1) 0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md)}
+.stat{position:relative;display:flex;flex-direction:column;gap:2px;min-width:0;padding:var(--space-3) var(--space-5);background:none;border:0}
+.stat+.stat::before{content:"";position:absolute;left:0;top:var(--space-3);bottom:var(--space-3);width:1px;background:var(--line)}
+.stat .v{font-family:var(--font-display);font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.25}
+.stat .v.green{color:var(--success-ink)} .stat .v.red{color:var(--danger-ink)}
+.banner{display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap;padding:var(--space-3) var(--space-4);background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--primary);border-radius:var(--radius-md);color:var(--ink)}
+.banner.info{border-left-color:var(--line)}
+/* โต๊ะ: จัดตามโซน · สถานะด้วยแถบสีข้างการ์ด ไม่ถมสีทั้งใบ */
+.zone{display:flex;flex-direction:column;gap:var(--space-2)}
+.zone-h{display:flex;align-items:baseline;gap:var(--space-3);font-size:var(--fs-md)}
+.tables{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(190px,100%),1fr));gap:var(--space-3)}
+.tcard{position:relative;display:flex;flex-direction:column;gap:2px;min-height:116px;padding:var(--space-3) var(--space-4);border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface);color:var(--ink);text-align:left;font:inherit;cursor:pointer;transition:border-color .12s}
+.tcard:hover{border-color:var(--muted)}
+.tcard:active{transform:scale(.985)}
+.tcard .trow{display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-2)}
+.tcard .tname{font-family:var(--font-display);font-size:26px;font-weight:700;line-height:1.1}
+.tcard .tcount{font-weight:600;font-size:var(--fs-sm)}
+.tcard .free{margin-top:auto;font-size:var(--fs-sm);color:var(--muted)}
+.tcard .ttime{margin-top:auto;font-weight:600;font-size:var(--fs-sm)}
+.tcard .tdue{font-size:var(--fs-sm);font-weight:600;color:var(--primary-ink)}
+.tcard.busy::before{content:"";position:absolute;left:-1px;top:14px;bottom:14px;width:4px;border-radius:0 4px 4px 0;background:var(--ink)}
+.tcard.due::before{background:var(--primary)}
+.tcard.late::before{background:var(--danger)}
+/* หน้าขาย */
+.sale-top{display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap}
+.sale-top .sub{margin-left:auto}
+.chips{display:flex;gap:var(--space-2);overflow-x:auto;padding-bottom:2px}
+.tchip{flex:none;display:inline-flex;align-items:center;gap:var(--space-2);min-height:40px;padding:0 var(--space-3);border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font:600 var(--fs-sm) var(--font-body);cursor:pointer}
+.tchip .sub{font-weight:400}
+.tchip.active{border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary)}
+.tchip.due::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--primary)}
+.tchip.late::after{background:var(--danger)}
+.tinfo{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap;padding:var(--space-3) var(--space-4);border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface)}
+.tinfo-main{display:flex;align-items:baseline;gap:var(--space-1) var(--space-4);flex-wrap:wrap;min-width:0}
+.t-due{font-weight:600;color:var(--primary-ink)}
+.t-late{font-weight:600;color:var(--danger-ink)}
+.tabs{display:flex;gap:var(--space-5);overflow-x:auto;border-bottom:1px solid var(--line)}
+.tab{flex:none;display:inline-flex;align-items:baseline;gap:6px;min-height:var(--tap);padding:var(--space-2) 2px;margin-bottom:-1px;border:0;border-bottom:2px solid transparent;background:none;color:var(--muted);font:600 var(--fs-md) var(--font-body);cursor:pointer}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--primary)}
+.tab .n{font-weight:500;font-size:var(--fs-xs)}
+.plist{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:var(--space-2)}
+.prow{display:flex;align-items:center;gap:var(--space-3);width:100%;min-height:64px;padding:var(--space-2) var(--space-3);border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface);color:var(--ink);text-align:left;font:inherit}
+button.prow{cursor:pointer}
+.prow.on{border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary)}
+.prow .pn{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.35}
+.prow .pn strong{font-size:var(--fs-md);font-weight:600}
+.prow .pp{flex:none;font-weight:700;font-variant-numeric:tabular-nums}
+.prow .pp small{font-weight:400;color:var(--muted)}
+.prow .radio{flex:none;width:20px;height:20px;border:2px solid var(--line);border-radius:50%}
+.prow.on .radio{border:6px solid var(--primary)}
+.add-btn{flex:none;display:grid;place-items:center;width:var(--tap);height:var(--tap);border:1.5px solid var(--primary);border-radius:50%;background:none;color:var(--primary);cursor:pointer}
+.add-btn:disabled{opacity:.4;cursor:not-allowed}
+.note-line{display:flex;align-items:flex-start;gap:6px;font-size:var(--fs-sm);color:var(--ink)}
+.note-line svg{flex:none;margin-top:3px;color:var(--muted)}
+.stepper{display:inline-flex;align-items:center;gap:var(--space-1);border:0;border-radius:0;background:none;overflow:visible}
+.stepper button{width:var(--tap);height:var(--tap);border:1.5px solid var(--line);border-radius:50%;background:var(--surface);cursor:pointer;display:grid;place-items:center}
+.stepper button:hover{border-color:var(--muted)}
+.stepper output{min-width:34px;text-align:center;font-family:var(--font-display);font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.summary{display:flex;flex-direction:column;gap:var(--space-2);padding:0;background:none;border:0;align-self:stretch}
+.ph{color:var(--muted);opacity:.35}
+@media (max-width:760px){.tables{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-2)}.tcard{min-height:104px;padding:var(--space-3)}.tcard .tname{font-size:24px}}
+.stats.minor .stat .v{font-size:20px}
+.stats.minor .stat{padding-top:var(--space-2);padding-bottom:var(--space-2)}
+.hero-card{max-width:360px;padding:var(--space-5);border-radius:var(--radius-lg);background:var(--surface);color:var(--ink)}
+.hero-profit{margin-top:var(--space-1);font:700 32px/1.2 var(--font-display);font-variant-numeric:tabular-nums}
+.hero-rows{display:grid;gap:var(--space-2);margin:var(--space-3) 0 0}
+.hero-rows div{display:flex;justify-content:space-between;gap:var(--space-3);font-size:var(--fs-sm)}
+.hero-rows dt{color:var(--muted)}
+.hero-rows dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
+/* ปุ่มแก้ไข/ลบในตาราง: เบาลง (เดิมเป็นกล่องแดงเรียงทั้งคอลัมน์) · แดงเฉพาะตอนชี้ */
+.dt .btn-sm,.oline .btn-sm{border-color:transparent;background:none;color:var(--muted)}
+.dt .btn-sm:hover,.oline .btn-sm:hover{background:var(--surface-2);color:var(--ink)}
+.dt .btn-danger:hover,.oline .btn-danger:hover{background:var(--danger-soft);color:var(--danger-ink)}
+/* มือถือแนวตั้ง/iPad แนวตั้ง: แป้นเป็นแผงย่อได้ — ย่อ = แถบเดียว (ชื่อ + ค่าที่ใส่ + ป้อน + บันทึก) เห็นรายการเต็มจอ · เปิด = แป้นเต็ม */
+@media (max-width:860px) and (min-height:521px){
+  .count-pad .cp-head{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2)}
+  .count-pad .cp-title{min-width:0;flex:1}
+  .count-pad .cp-title h2{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cp-toggle{display:inline-flex;align-items:center;gap:4px;flex:none;min-height:44px;padding:0 var(--space-3);border:1.5px solid var(--line);border-radius:var(--radius-md);background:var(--surface);color:var(--ink);cursor:pointer;font:600 var(--fs-sm) var(--font-body)}
+  .cp-toggle svg{transition:transform .15s}
+  .count-pad.collapsed .cp-toggle svg{transform:rotate(180deg)}
+  .count-pad .np-key{height:40px}
+  .count-pad .numpad{gap:6px}
+  .count-pad .big-val{font-size:26px;padding:2px 12px;min-width:84px;flex:none}
+  .count-pad .cp-actions .btn{min-height:46px}
+  .count-pad.collapsed{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-3)}
+  .count-pad.collapsed .numpad,.count-pad.collapsed .big-val,.count-pad.collapsed .cp-sum,.count-pad.collapsed .cp-actions .btn:not(.btn-primary),.count-pad.collapsed>.btn-ghost{display:none}
+  .count-pad.collapsed .cp-cur{display:block;font-size:var(--fs-xs);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .count-pad.collapsed .cp-actions .btn-primary{padding:0 var(--space-3);width:auto}
+  .count-pad.collapsed .cp-actions .lbl-full{display:none}
+  .count-pad.collapsed .cp-actions .lbl-short{display:inline}
+}
 /* มือถือแนวนอน (จอเตี้ย): นับของใช้ 2 คอลัมน์ รายการซ้าย · แป้นขวา แทนแป้นติดล่างที่จะสูงกว่าจอ */
 @media (max-height:520px) and (min-width:600px){
   .stock-count{padding-right:296px}   /* เว้นที่ให้แป้นที่ตรึงด้านขวา ทั้งแถบเครื่องมือและรายการ */
@@ -347,6 +421,13 @@ a.pill{text-decoration:none}
   .count-pad .cp-head h2{font-size:15px}
 }
 /* จอสัมผัส: ปุ่มเล็กต้องกดด้วยนิ้วได้ (อยู่ท้ายไฟล์เพื่อไม่ถูก .btn-sm ทับ) */
+@media (max-width:760px){
+  .hide-sm{display:none}
+  .show-sm{display:inline}
+  .seg{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .seg button{white-space:nowrap;flex:1 0 auto}
+  .toolbar-end .field>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}   /* ป้ายช่องวันที่ซ่อนเฉพาะตา (ยังอ่านออกเสียงได้) เพื่อประหยัดที่ */
+}
 @media (pointer:coarse){.btn-sm{min-height:44px}.seg button{min-height:40px}a.pill{min-height:40px;padding:0 var(--space-4)}}
 </style>
 
@@ -742,6 +823,8 @@ function Stepper({ value, onChange, min = 0, label }) {
     <button type="button" aria-label="เพิ่ม" onClick=${() => onChange(value + 1)}><${Icon} n="plus"/></button></div>`;
 }
 const Stat = ({ label, value, sub, tone }) => html`<div class="stat"><span class="eyebrow">${label}</span><span class=${'v ' + (tone || '')}>${value}</span>${sub && html`<span class="sub">${sub}</span>`}</div>`;
+/* แท็บขีดเส้นใต้ — ใช้สลับส่วนของหน้า (Seg เก็บไว้สำหรับตัวเลือกเล็กๆ) · items: [[key, label, count?]] */
+const Tabs = ({ items, value, onChange, label }) => html`<div class="tabs" role="tablist" aria-label=${label}>${items.map(([k, l, n]) => html`<button type="button" role="tab" class="tab" aria-selected=${value === k} onClick=${() => onChange(k)}>${l}${n != null && html`<span class="n">${n}</span>`}</button>`)}</div>`;
 function Seg({ items, value, onChange, label }) {
   return html`<div class="seg" role="group" aria-label=${label}>${items.map(([k, l]) => html`<button type="button" aria-pressed=${value === k} onClick=${() => onChange(k)}>${l}</button>`)}</div>`;
 }
@@ -837,20 +920,18 @@ function NumPad({ value, onChange, maxLen = 12, decimal = false, keyboard = fals
 const PinDots = ({ length = 4, value }) => html`<div class="pins" role="img" aria-label=${'ใส่แล้ว ' + value.length + ' จาก ' + length + ' หลัก'}>${Array.from({ length }, (_, i) => html`<i class=${i < value.length ? 'on' : ''}></i>`)}</div>`;
 
 /* ---- ขาย ---- */
-function TableCard({ s, t, o, onClick, compact, active }) {
-  const cls = 'tcard' + (compact ? ' compact' : '') + (active ? ' active' : '');
-  if (!o) return html`<button type="button" class=${cls} onClick=${onClick}><span class="tname">${t.name}</span><span class="sub">${t.zone} · ${t.seats} ที่นั่ง</span><span class="free">ว่าง · แตะเพื่อเปิดโต๊ะ</span></button>`;
+function TableCard({ s, t, o, onClick }) {
+  if (!o) return html`<button type="button" class="tcard" onClick=${onClick}><span class="trow"><span class="tname">${t.name}</span></span><span class="sub">${t.seats} ที่นั่ง</span><span class="free">ว่าง</span></button>`;
   const pkg = s.packages.find(p => p.id === o.packageId), tm = tableTimer(s, o), due = tableDue(s, o);
-  return html`<button type="button" class=${cls + ' busy' + (tm.late ? ' late' : '') + (due ? ' due' : '')} onClick=${onClick}>
-    <div class="row between"><span class="tname">${t.name}</span><${Pill} tone=${tm.late ? 'red' : 'orange'}>${o.heads.a + o.heads.c + o.heads.f} คน<//></div>
+  return html`<button type="button" class=${'tcard busy' + (tm.late ? ' late' : '') + (due ? ' due' : '')} onClick=${onClick}>
+    <span class="trow"><span class="tname">${t.name}</span><span class="tcount">${o.heads.a + o.heads.c + o.heads.f} คน</span></span>
     <span class="sub">${pkg ? pkg.name : ''}${o.timing === 'after' ? ' · กินก่อนจ่าย' : ''}</span>
-    ${due > 0 && html`<${Pill} tone="orange">รอชำระ ${baht(due)}<//>`}
-    <span style="margin-top:auto;font-weight:600" class=${tm.late ? 'rd' : ''}>${tm.text}</span></button>`;
+    ${due > 0 && html`<span class="tdue">รอชำระ ${baht(due)}</span>`}
+    <span class=${'ttime' + (tm.late ? ' rd' : '')}>${tm.text}</span></button>`;
 }
-const CategoryTab = ({ icon, label, count, active, onClick }) => html`<button type="button" class=${'cat-tab' + (active ? ' on' : '')} aria-pressed=${active} onClick=${onClick}><${Icon} n=${icon} s=${22}/><span class="cat-t"><strong>${label}</strong><span class="sub">${count} รายการ</span></span></button>`;
-const ProductCard = ({ icon, name, sub, price, qty, selected, disabled, onClick }) => html`<button type="button" class=${'prod' + (selected ? ' on' : '')} aria-pressed=${selected} disabled=${disabled} onClick=${onClick}>
-  ${qty > 0 && html`<span class="prod-badge">${qty}</span>`}<span class="prod-img" aria-hidden="true"><${Icon} n=${icon} s=${34}/></span>
-  <strong class="prod-name">${name}</strong><span class="sub">${sub}</span><span class="prod-price num">${price}</span></button>`;
+/* ชิปโต๊ะ (แถบสลับโต๊ะในหน้าขาย) */
+const TableChip = ({ s, t, o, active, onClick }) => { const due = o ? tableDue(s, o) : 0, tm = o ? tableTimer(s, o) : null;
+  return html`<button type="button" class=${'tchip' + (active ? ' active' : '') + (due ? ' due' : '') + (tm && tm.late ? ' late' : '')} title=${due ? 'รอชำระ ' + baht(due) : ''} onClick=${onClick}>${t.name}${o ? html`<span class="sub">${o.heads.a + o.heads.c + o.heads.f} คน</span>` : html`<span class="sub">ใหม่</span>`}</button>`; };
 const PeopleRow = ({ label, sub, value, onChange }) => html`<div class="people-row"><div class="grow"><strong>${label}</strong><div class="sub">${sub}</div></div><${Stepper} label=${label} value=${value} onChange=${onChange}/></div>`;
 const OrderLine = ({ name, sub, qty, onChange, onRemove, removeLabel, removeOff }) => html`<div class="oline"><div class="grow"><strong>${name}</strong><div class="sub">${sub}</div></div>
   ${onChange ? html`<${Stepper} label=${name} value=${qty} onChange=${onChange}/>` : html`<span class="num q">× ${qty}</span>`}
@@ -971,7 +1052,6 @@ function OpenShiftForm({ s, update, me, onDone }) {
     <${Btn} kind="primary" size="lg" icon="clock" onClick=${() => { update(st => st.shifts.push({ id: uid('sh'), staffId: me.id, openedAt: new Date().toISOString(), float: +float || 0, closedAt: null, counted: null })); onDone && onDone(); }}>เปิดกะ<//></div>`;
 }
 
-const CAT_ICON = { 'แพ็กเกจ': 'flame', 'เครื่องดื่ม': 'cup' };
 const addonCat = x => x.category || 'เครื่องดื่ม';
 const blankCart = (s, o) => ({ pkgId: o ? o.packageId : (s.packages.find(p => p.active) || {}).id, a: o ? 0 : 2, c: 0, f: 0, ad: {}, timing: o ? o.timing : (s.shop.payTiming || 'before'), notes: '' });
 
@@ -1061,19 +1141,20 @@ function SaleView({ s, update, me, toast, tableId }) {
   const sentRows = o && timing === 'after' ? sentLines(s, pkg, sent) : [];
   return html`<div class="sale">
     <div class="sale-main">
-      <div class="row between"><${Btn} kind="ghost" icon="back" onClick=${home}>กลับหน้าโต๊ะ<//><h2>โต๊ะ ${t.name} · ${o ? 'มีลูกค้า' : 'เปิดโต๊ะใหม่'}</h2></div>
-      ${Object.keys(s.openTables).length > 0 && html`<div class="open-strip" aria-label="โต๊ะที่เปิดอยู่">${s.tables.filter(x => s.openTables[x.id]).map(x => html`<${TableCard} s=${s} t=${x} o=${s.openTables[x.id]} compact active=${x.id === tableId} onClick=${() => { location.hash = 'tables/' + x.id; }}/>`)}</div>`}
-      ${o && html`<div class="card row between"><div class="row">
-          <${Pill} tone="orange">${o.heads.a + o.heads.c + o.heads.f} คน · ผู้ใหญ่ ${o.heads.a} · เด็ก ${o.heads.c} · ฟรี ${o.heads.f}<//>
-          <${Pill} tone=${tm.late ? 'red' : ''}>${tm.text}<//>
-          ${timing === 'after' ? (due > 0 ? html`<${Pill} tone="orange">รอชำระ ${baht(due)}<//>` : html`<${Pill} tone="green">ชำระแล้ว<//>`) : html`<${Pill} tone="green">จ่ายก่อนกิน<//>`}</div>
-        <${Btn} kind="dark" icon="check" onClick=${() => setModal('close')}>เก็บโต๊ะ<//></div>`}
+      <div class="sale-top"><${Btn} kind="ghost" icon="back" onClick=${home}>โต๊ะ<//><h2>โต๊ะ ${t.name}</h2><span class="sub">${o ? 'มีลูกค้า' : 'เปิดโต๊ะใหม่'}</span></div>
+      <div class="chips" aria-label="โต๊ะที่เปิดอยู่">${!o ? html`<${TableChip} s=${s} t=${t} o=${null} active onClick=${() => { }}/>` : null}${s.tables.filter(x => s.openTables[x.id]).map(x => html`<${TableChip} s=${s} t=${x} o=${s.openTables[x.id]} active=${x.id === tableId} onClick=${() => { location.hash = 'tables/' + x.id; }}/>`)}</div>
+      ${o && html`<div class="tinfo"><div class="tinfo-main"><strong>${o.heads.a + o.heads.c + o.heads.f} คน</strong><span class="sub">ผู้ใหญ่ ${o.heads.a} · เด็ก ${o.heads.c} · ฟรี ${o.heads.f}</span><span class=${tm.late ? 't-late' : 'sub'}>${tm.text}</span>
+          ${timing === 'after' ? (due > 0 ? html`<span class="t-due">รอชำระ ${baht(due)}</span>` : html`<span class="sub">ชำระแล้ว</span>`) : html`<span class="sub">จ่ายก่อนกิน</span>`}</div>
+        <${Btn} icon="check" onClick=${() => setModal('close')}>เก็บโต๊ะ<//></div>`}
       ${!shift && html`<div class="banner"><span class="grow">ยังไม่เปิดกะ ต้องเปิดกะก่อนจึงรับเงินได้ (ส่งออเดอร์ได้ตามปกติ)</span><${Btn} kind="primary" onClick=${() => setModal('shift')}>เปิดกะ<//></div>`}
       ${!tabs.length ? html`<div class="card"><${Empty} title="ยังไม่มีรายการขาย" text="เพิ่มแพ็กเกจหรือสินค้าขายเสริมที่ ตั้งค่า"/></div>` : html`
-        <div class="cat-tabs" role="group" aria-label="หมวดสินค้า">${tabs.map(c => html`<${CategoryTab} icon=${CAT_ICON[c] || 'box'} label=${c} count=${c === 'แพ็กเกจ' ? pkgs.length : addons.filter(x => addonCat(x) === c).length} active=${c === curCat} onClick=${() => setCat(c)}/>`)}</div>
-        <div class="prod-grid">${curCat === 'แพ็กเกจ'
-          ? pkgs.map(p => html`<${ProductCard} icon="flame" name=${p.name} sub=${'เด็ก ' + baht(p.childPrice) + ' · ' + (p.timeLimit ? p.timeLimit + ' นาที' : 'ไม่จำกัดเวลา')} price=${baht(p.adultPrice) + ' / ผู้ใหญ่'} selected=${p.id === cart.pkgId} onClick=${() => patch({ pkgId: p.id })}/>`)
-          : addons.filter(x => addonCat(x) === curCat).map(x => html`<${ProductCard} icon=${CAT_ICON[curCat] || 'box'} name=${x.name} sub=${'เหลือ ' + fmt(x.stock)} price=${baht(x.price)} qty=${cart.ad[x.id] || 0} disabled=${x.stock <= (cart.ad[x.id] || 0)} onClick=${() => setDrink(x.id, (cart.ad[x.id] || 0) + 1)}/>`)}</div>`}
+        <${Tabs} label="หมวดสินค้า" value=${curCat} onChange=${setCat} items=${tabs.map(c => [c, c, c === 'แพ็กเกจ' ? pkgs.length : addons.filter(x => addonCat(x) === c).length])}/>
+        <div class="plist">${curCat === 'แพ็กเกจ'
+          ? pkgs.map(p => html`<button type="button" class=${'prow' + (p.id === cart.pkgId ? ' on' : '')} aria-pressed=${p.id === cart.pkgId} onClick=${() => patch({ pkgId: p.id })}>
+              <span class="radio" aria-hidden="true"></span><span class="pn"><strong>${p.name}</strong><span class="sub">เด็ก ${baht(p.childPrice)} · ${p.timeLimit ? p.timeLimit + ' นาที' : 'ไม่จำกัดเวลา'}</span></span><span class="pp">${baht(p.adultPrice)}<small> / ผู้ใหญ่</small></span></button>`)
+          : addons.filter(x => addonCat(x) === curCat).map(x => { const q = cart.ad[x.id] || 0; return html`<div class=${'prow' + (q ? ' on' : '')}>
+              <span class="pn"><strong>${x.name}</strong><span class="sub">เหลือ ${fmt(x.stock)}</span></span><span class="pp">${baht(x.price)}</span>
+              ${q > 0 ? html`<${Stepper} label=${x.name} value=${q} onChange=${n => setDrink(x.id, Math.min(n, x.stock))}/>` : html`<button type="button" class="add-btn" aria-label=${'เพิ่ม ' + x.name} disabled=${x.stock <= 0} onClick=${() => setDrink(x.id, 1)}><${Icon} n="plus" s=${20}/></button>`}</div>`; })}</div>`}
       ${bills.length > 0 && html`<div class="stack" style="gap:8px"><h3>บิลของโต๊ะนี้ (ชำระแล้ว)</h3><${DataTable} label="บิลของโต๊ะนี้" head=${false} rows=${bills} onRowClick=${b => setModal({ rcpt: b.id })} columns=${[
         { key: 'no', label: 'เลขที่' }, { key: 'at', label: 'เวลา', render: b => thTime(b.at) }, { key: 'methodName', label: 'ชำระโดย' },
         { key: 'total', label: 'ยอด', align: 'r', className: b => b.voided ? 'strike' : '', render: b => baht(b.total, 2) }]}/></div>`}
@@ -1085,7 +1166,7 @@ function SaleView({ s, update, me, toast, tableId }) {
         <${Dropdown} label="เลือกโต๊ะ" value=${tableId} options=${tableOpts} onChange=${v => { location.hash = 'tables/' + v; }}/>
         <div class="row between">${o ? html`<${Pill} tone=${timing === 'after' ? 'orange' : ''}>${PAY_TIMING[timing]}<//>` : html`<${Seg} label="รูปแบบชำระเงิน" value=${cart.timing} onChange=${v => patch({ timing: v })} items=${Object.entries(PAY_TIMING)}/>`}
           <${Btn} size="sm" icon="edit" onClick=${() => setModal('note')}>${note ? 'แก้โน้ต' : 'โน้ต'}<//></div>
-        ${note && html`<div class="sub" style="color:var(--ink)">📝 ${note}</div>`}
+        ${note && html`<div class="note-line"><${Icon} n="edit" s=${14}/><span>${note}</span></div>`}
       </div>
       <div class="sale-body">
         ${step === 'order' && html`
@@ -1132,6 +1213,7 @@ function TablesView({ s, update, me, toast }) {
   const occ = Object.values(s.openTables);
   const inStore = sum(occ, o => o.heads.a + o.heads.c + o.heads.f);
   const owing = occ.filter(o => tableDue(s, o) > 0);
+  const zones = [...new Set(s.tables.map(t => t.zone || 'โต๊ะ'))];
   return html`<div class="stack">
     <div class="stats">
       <${Stat} label="โต๊ะว่าง" value=${(s.tables.length - occ.length) + ' / ' + s.tables.length}/>
@@ -1140,7 +1222,8 @@ function TablesView({ s, update, me, toast }) {
       ${owing.length > 0 && html`<${Stat} label="ค้างชำระ (กินก่อนจ่าย)" value=${baht(sum(owing, o => tableDue(s, o)))} tone="red" sub=${owing.length + ' โต๊ะ'}/>`}
     </div>
     ${!shift && html`<div class="banner"><span class="grow">ยังไม่เปิดกะ ต้องเปิดกะก่อนจึงรับเงินได้</span><${Btn} kind="primary" onClick=${() => setNeedShift(true)}>เปิดกะ<//></div>`}
-    ${s.tables.length ? html`<div class="tables">${s.tables.map(t => html`<${TableCard} s=${s} t=${t} o=${s.openTables[t.id]} onClick=${() => { location.hash = 'tables/' + t.id; }}/>`)}</div>`
+    ${s.tables.length ? zones.map(z => { const ts = s.tables.filter(t => (t.zone || 'โต๊ะ') === z), free = ts.filter(t => !s.openTables[t.id]).length;
+        return html`<section class="zone" aria-label=${z}><h3 class="zone-h">${z}<span class="sub">ว่าง ${free} จาก ${ts.length}</span></h3><div class="tables">${ts.map(t => html`<${TableCard} s=${s} t=${t} o=${s.openTables[t.id]} onClick=${() => { location.hash = 'tables/' + t.id; }}/>`)}</div></section>`; })
       : html`<div class="card"><${Empty} title="ยังไม่มีโต๊ะ" text="เพิ่มโต๊ะที่ ตั้งค่า › โต๊ะ"><a class="btn btn-primary" href="#setup/tables">ไปตั้งค่าโต๊ะ</a><//></div>`}
     ${needShift && html`<${Modal} title="เปิดกะการขาย" onClose=${() => setNeedShift(false)}><${OpenShiftForm} s=${s} update=${update} me=${me} onDone=${() => { setNeedShift(false); toast('เปิดกะแล้ว'); }}/><//>`}
   </div>`;
@@ -1171,7 +1254,7 @@ function BillsView({ s, update, me, toast }) {
     { key: 'methodName', label: 'ชำระโดย' }, { key: 'staffName', label: 'แคชเชียร์' },
     { key: 'total', label: 'ยอด', align: 'r', className: b => b.voided ? 'strike' : '', render: b => baht(b.total, 2) }];
   return html`<div class="stack">
-    <${Toolbar} end=${Object.entries(byMethod).map(([k, v]) => html`<${Pill}>${k} ${baht(v)}<//>`)}>
+    <${Toolbar} end=${Object.entries(byMethod).map(([k, v]) => html`<span class="sub">${k} <strong style="color:var(--ink)">${baht(v)}</strong></span>`)}>
       <${SearchBox} value=${q} onChange=${v => { setQ(v); setPage(1); }} placeholder="ค้นหาเลขที่บิล โต๊ะ ผู้รับเงิน" label="ค้นหาบิล"/>
       <${Field} label="วันที่"><input id="bills-date" class="input" type="date" value=${date} max=${todayKey()} min=${s.startDate} onInput=${e => { if (e.target.value) { setDate(e.target.value); setPage(1); } }}/><//>
       <${Btn} icon="filter" onClick=${() => setFOpen(true)}>ตัวกรอง${fCount ? ' (' + fCount + ')' : ''}<//>
@@ -1270,7 +1353,8 @@ function StockCount({ s, update, ledger, date, toast }) {
   const [draft, setDraft] = useState(null);
   const [showAll, setShowAll] = useState(false);
   const [active, setActive] = useState(null);
-  useEffect(() => { setDraft(null); setActive(null); setShowAll(false); }, [date]);
+  const [padOpen, setPadOpen] = useState(false);   // มือถือ: แป้นเป็นแผงย่อได้ เริ่มต้นย่อไว้เพื่อให้เห็นรายการเต็มจอ
+  useEffect(() => { setDraft(null); setActive(null); setShowAll(false); setPadOpen(false); }, [date]);
   const day = ledger.byDate[date];
   if (!day) return null;
   const saved = s.counts[date] || {};
@@ -1305,28 +1389,30 @@ function StockCount({ s, update, ledger, date, toast }) {
   const cols = [
     { key: 'name', label: 'วัตถุดิบ', render: i => { const pv = prevOf(i.id); return html`<strong>${i.name}</strong><div class="sub">${i.unit}${pv != null ? ' · ครั้งก่อน ' + fmtQ(pv) : ''}${i.countFreq === 'weekly' ? ' · นับรายสัปดาห์' : ''}</div>`; } },
     { key: 'avail', label: 'มีทั้งหมด', align: 'r', render: i => fmtQ(rowOf(i.id).avail) },
-    { key: 'val', label: 'เหลือจริง', align: 'r', render: i => vals[i.id] === '' ? html`<span class="m">—</span>` : html`<strong>${vals[i.id]}</strong>` },
-    { key: 'used', label: 'ใช้ไป', align: 'r', render: i => { const c = calc(i), r = rowOf(i.id); return c.over ? html`<span class="rd">เกินที่มี</span>` : c.used != null ? fmtQ(c.used) : r.est ? html`<span class="m" title="ค่าประมาณจากอัตราใช้ต่อหัว">≈ ${fmtQ(r.used)}</span>` : '–'; } },
-    { key: 'cost', label: 'มูลค่า', align: 'r', render: i => { const c = calc(i); return c.cost == null ? '–' : fmt(c.cost); } }];
+    { key: 'val', label: 'เหลือจริง', align: 'r', render: i => vals[i.id] === '' ? html`<span class="ph">–</span>` : html`<strong>${vals[i.id]}</strong>` },
+    { key: 'used', label: 'ใช้ไป', align: 'r', render: i => { const c = calc(i), r = rowOf(i.id); return c.over ? html`<span class="rd">เกินที่มี</span>` : c.used != null ? fmtQ(c.used) : r.est ? html`<span class="m" title="ค่าประมาณจากอัตราใช้ต่อหัว">≈ ${fmtQ(r.used)}</span>` : html`<span class="ph">–</span>`; } },
+    { key: 'cost', label: 'มูลค่า', align: 'r', render: i => { const c = calc(i); return c.cost == null ? html`<span class="ph">–</span>` : fmt(c.cost); } }];
   return html`<div class="count-layout">
     <div class="stack">
-      <div class=${'banner ' + (day.closed ? 'info' : '')}><span class="grow">${day.closed ? 'วันนี้ปิดยอดแล้ว แก้ตัวเลขแล้วกดบันทึกได้ ระบบคำนวณใหม่ให้ทั้งหมด' : 'เดินนับตามที่เก็บ ตู้เย็น → ตู้แช่ → ชั้นแห้ง · แตะรายการแล้วกดตัวเลข · Enter = รายการถัดไป'}</span>
+      <div class=${'banner ' + (day.closed ? 'info' : '')}><span class="grow">${day.closed ? 'ปิดยอดแล้ว · แก้ตัวเลขแล้วกดบันทึกได้' : 'แตะรายการแล้วป้อนจำนวนที่เหลือ · Enter = รายการถัดไป'}</span>
         <label class="toggle"><input id="count-all" type="checkbox" checked=${showAll} onChange=${e => setShowAll(e.target.checked)}/><span>แสดงทุกรายการ</span></label></div>
-      ${due.length < s.ingredients.length && html`<p class="sub" style="margin:0">ของนับรายสัปดาห์ (นับวัน${DOW[+s.shop.weeklyCountDow]}) ${s.ingredients.length - due.length} รายการ ระบบใช้ค่าประมาณจากอัตราใช้ต่อหัว</p>`}
+      ${due.length < s.ingredients.length && html`<p class="sub hide-sm" style="margin:0">ของนับรายสัปดาห์ (นับวัน${DOW[+s.shop.weeklyCountDow]}) ${s.ingredients.length - due.length} รายการ ระบบใช้ค่าประมาณจากอัตราใช้ต่อหัว</p>`}
       ${groups.map(([loc, items]) => html`<div class="stack" style="gap:8px"><h3 class="loc-h">${LOCATION[loc]}<span class="sub">${items.length} รายการ</span></h3>
-        <${DataTable} label=${'นับของเหลือ ' + LOCATION[loc]} columns=${cols} rows=${items} onRowClick=${i => { setActive(i.id); scrollActive(); }} rowClass=${i => i.id === cur ? 'active' : ''}/></div>`)}
+        <${DataTable} label=${'นับของเหลือ ' + LOCATION[loc]} columns=${cols} rows=${items} onRowClick=${i => { setActive(i.id); setPadOpen(true); scrollActive(); }} rowClass=${i => i.id === cur ? 'active' : ''}/></div>`)}
     </div>
-    <aside class="count-pad card" aria-label="ใส่จำนวนที่เหลือ">
-      ${curIng ? html`<div class="cp-head"><div class="eyebrow">${LOCATION[curIng.location] || ''}</div><h2>${curIng.name}</h2>
-          <div class="sub">มีทั้งหมด ${fmtQ(rowOf(cur).avail)} ${curIng.unit}${prevOf(cur) != null ? ' · ครั้งก่อน ' + fmtQ(prevOf(cur)) : ''}</div></div>
-        <output class="big-val" aria-live="polite">${vals[cur] || html`<span class="m">0</span>`} <small class="sub">${curIng.unit}</small></output>
+    <aside class=${'count-pad card' + (padOpen ? '' : ' collapsed')} aria-label="ใส่จำนวนที่เหลือ">
+      ${curIng ? html`<div class="cp-head"><div class="cp-title"><div class="eyebrow">${LOCATION[curIng.location] || ''}</div><h2>${curIng.name}</h2>
+          <div class="sub">มีทั้งหมด ${fmtQ(rowOf(cur).avail)} ${curIng.unit}${prevOf(cur) != null ? ' · ครั้งก่อน ' + fmtQ(prevOf(cur)) : ''}</div>
+          <div class="cp-cur">${vals[cur] !== '' && vals[cur] != null ? 'ใส่แล้ว ' + vals[cur] + ' ' + curIng.unit : 'แตะ ป้อน เพื่อใส่จำนวน'} · นับแล้ว ${doneDue}/${due.length}</div></div>
+          <output class="big-val" aria-live="polite">${vals[cur] || html`<span class="m">0</span>`} <small class="sub">${curIng.unit}</small></output>
+          <button type="button" class="cp-toggle" aria-expanded=${padOpen} aria-label=${padOpen ? 'ย่อแป้นตัวเลข' : 'เปิดแป้นตัวเลข'} onClick=${() => setPadOpen(!padOpen)}><${Icon} n="chevron" s=${18}/><span>${padOpen ? 'ย่อ' : 'ป้อน'}</span></button></div>
         <${NumPad} value=${vals[cur] || ''} onChange=${setVal} decimal keyboard maxLen=${7} onEnter=${next}/>` : html`<${Empty} title="ไม่มีรายการให้นับวันนี้"/>`}
       <div class="cp-sum"><div class="line"><span>นับแล้ว</span><strong>${doneDue}/${due.length}</strong></div>
-        <div class="line"><span>ต้นทุนจากที่นับ</span><strong class="num">${baht(sum(order, i => calc(i).cost))}</strong></div></div>
+        <div class="line"><span>ต้นทุนจากที่นับ</span><strong class="num">${baht(sum(order, i => calc(i).cost))}</strong></div>
+        ${draft && html`<${Btn} kind="ghost" size="sm" block onClick=${() => setDraft(null)}>ยกเลิกที่แก้<//>`}
+        ${day.closed && !draft && html`<${Btn} kind="ghost" size="sm" block onClick=${() => { update(st => { delete st.counts[date]; }); toast('ยกเลิกการปิดวันแล้ว'); }}>ยกเลิกการปิดวัน<//>`}</div>
       <div class="cp-actions">${curIng && html`<${Btn} block onClick=${next}>รายการถัดไป<//>`}
-        <${Btn} kind="primary" size="lg" block icon="check" disabled=${doneDue !== due.length} title=${doneDue !== due.length ? 'ใส่ให้ครบทุกรายการที่ต้องนับ (ไม่มีของเหลือใส่ 0)' : ''} onClick=${save}>บันทึกและปิดวัน<//></div>
-      ${draft && html`<${Btn} kind="ghost" size="sm" block onClick=${() => setDraft(null)}>ยกเลิกที่แก้<//>`}
-      ${day.closed && !draft && html`<${Btn} kind="ghost" size="sm" block onClick=${() => { update(st => { delete st.counts[date]; }); toast('ยกเลิกการปิดวันแล้ว'); }}>ยกเลิกการปิดวัน<//>`}
+        <${Btn} kind="primary" size="lg" block icon="check" disabled=${doneDue !== due.length} title=${doneDue !== due.length ? 'ใส่ให้ครบทุกรายการที่ต้องนับ (ไม่มีของเหลือใส่ 0)' : ''} onClick=${save}><span class="lbl-full">บันทึกและปิดวัน</span><span class="lbl-short">บันทึก</span><//></div>
     </aside></div>`;
 }
 
@@ -1416,7 +1502,7 @@ function StockView({ s, update, ledger, toast }) {
   const p = { s, update, ledger, date, toast };
   return html`<div class=${'stack' + (tab === 'count' ? ' stock-count' : '')}>
     <${Toolbar} end=${tab !== 'balance' && html`<${Field} label="วันที่"><input id="stock-date" class="input" type="date" value=${date} min=${s.startDate} max=${todayKey()} onInput=${e => e.target.value && setDate(e.target.value)}/><//>`}>
-      <${Seg} label="เมนูสต็อก" value=${tab} onChange=${setTab} items=${[['count', 'นับของเหลือ (ปิดวัน)'], ['purchase', 'รับของเข้า'], ['expense', 'ค่าใช้จ่าย'], ['balance', 'คงเหลือและสั่งซื้อ']]}/>
+      <${Tabs} label="เมนูสต็อก" value=${tab} onChange=${setTab} items=${[['count', 'นับของเหลือ (ปิดวัน)'], ['purchase', 'รับของเข้า'], ['expense', 'ค่าใช้จ่าย'], ['balance', 'คงเหลือและสั่งซื้อ']]}/>
     <//>
     ${tab === 'count' ? html`<${StockCount} ...${p}/>` : tab === 'purchase' ? html`<${StockPurchase} ...${p}/>` : tab === 'expense' ? html`<${StockExpense} ...${p}/>` : html`<${StockBalance} ...${p}/>`}
   </div>`;
@@ -1430,8 +1516,7 @@ function ProfitChart({ days, field = 'profit' }) {
   const y = v => top + (max - v) / (max - min) * (H - top - bottom);
   const bw = (W - left * 2) / days.length;
   return html`<div style="overflow-x:auto"><svg class="chart" viewBox=${`0 0 ${W} ${H}`} width="100%" style=${`min-width:${Math.min(W, 520)}px;height:auto`} role="img" aria-label="กราฟกำไรรายวัน">
-    <line class="axis" x1="0" x2=${W} y1=${y(max)} y2=${y(max)}/>
-    <text x=${W - 4} y=${y(max) - 4} text-anchor="end">${fmt(max)}</text>
+    ${[1, 2, 3].map(k => { const v = max * k / 3; return html`<g><line class="axis" x1="0" x2=${W} y1=${y(v)} y2=${y(v)}/><text x=${W - 4} y=${y(v) - 4} text-anchor="end">${fmt(v)}</text></g>`; })}
     ${days.map((d, i) => { const x = left + i * bw + bw * .18, w = bw * .64; if (d[field] == null) return html`<rect class="open" x=${x} y=${y(0) - 4} width=${w} height="4" rx="1"><title>${thDateShort(d.date)} ยังไม่ปิดยอด</title></rect>`;
       const y0 = y(Math.max(0, d[field])), hgt = Math.max(1, Math.abs(y(d[field]) - y(0)));
       return html`<rect class=${d[field] >= 0 ? 'pos' : 'neg'} x=${x} y=${y0} width=${w} height=${hgt} rx="2"><title>${thDateShort(d.date)} กำไร ${baht(d[field])}</title></rect>`; })}
@@ -1470,10 +1555,12 @@ function DashboardView({ s, ledger }) {
       <${PendingBadge}/></div>`}
     ${todayOpen && html`<div class="banner"><span class="grow">วันนี้ยังไม่ได้นับของเหลือ กำไรของวันนี้จึงยังไม่รวมในตัวเลขด้านล่าง</span><a class="btn btn-primary" href="#stock">ไปนับของเหลือ</a></div>`}
     <div class="stats">
-      ${showNet && html`<${Stat} label="กำไรสุทธิ (ประมาณ)" value=${closed.length ? baht(netProfit) : '–'} tone=${netProfit >= 0 ? 'green' : 'red'} sub=${'หักค่าใช้จ่าย ' + baht(spend)}/>`}
-      <${Stat} label="กำไรขั้นต้น" value=${closed.length ? baht(profit) : '–'} tone=${profit >= 0 ? 'green' : 'red'} sub=${closed.length + ' วันที่ปิดยอดแล้ว'}/>
       <${Stat} label="ยอดขาย (ก่อน VAT)" value=${baht(net)} sub=${sum(days, d => d.bills) + ' บิล'}/>
       <${Stat} label="ต้นทุนวัตถุดิบที่ใช้" value=${closed.length ? baht(ingCost) : '–'} sub=${'ต้นทุนเครื่องดื่ม ' + baht(addonCost)}/>
+      <${Stat} label="กำไรขั้นต้น" value=${closed.length ? baht(profit) : '–'} tone=${profit >= 0 ? 'green' : 'red'} sub=${closed.length + ' วันที่ปิดยอดแล้ว'}/>
+      ${showNet && html`<${Stat} label="กำไรสุทธิ (ประมาณ)" value=${closed.length ? baht(netProfit) : '–'} tone=${netProfit >= 0 ? 'green' : 'red'} sub=${'หักค่าใช้จ่าย ' + baht(spend)}/>`}
+    </div>
+    <div class="stats minor">
       <${Stat} label="ลูกค้า" value=${fmt(heads) + ' หัว'} sub=${days.length ? 'เฉลี่ย ' + fmt(heads / days.length) + ' หัว/วัน' : ''}/>
       <${Stat} label="ต้นทุนวัตถุดิบต่อหัว" value=${cHeadsW ? baht(ingCost / cHeadsW, 2) : '–'} sub=${'เด็กนับ ' + sh.childHeadWeight + ' หัว' + (s.packages[0] ? ' · ราคา ' + baht(s.packages[0].adultPrice) : '')}/>
       <${Stat} label="Food cost บุฟเฟต์" value=${cBuffet ? fmt(ingCost / cBuffet * 100, 1) + '%' : '–'} tone=${cBuffet && ingCost / cBuffet > .4 ? 'red' : ''} sub="ต้นทุนวัตถุดิบ ÷ ยอดขายบุฟเฟต์"/>
@@ -1672,6 +1759,8 @@ function Login({ s, onLogin }) {
   const [id, setId] = useState((staff.find(x => x.id === s.currentStaffId) || staff[0] || {}).id);
   const [pin, setPin] = useState('');
   const [err, setErr] = useState('');
+  const last = useMemo(() => computeLedger(s).days.slice().reverse().find(d => d.closed), []);   // ปิดยอดล่าสุด (ข้อมูลตัวอย่างโชว์ก่อนเข้าระบบ)
+  const heroV = last ? (s.shop.showNetProfit !== false ? last.netProfit : last.profit) : 0;   // ใช้ตัวเลขเดียวกับหน้าภาพรวม
   const who = staff.find(x => x.id === id);
   const submit = (v = pin) => {
     if (!who) return;
@@ -1679,12 +1768,13 @@ function Login({ s, onLogin }) {
     if (v !== who.pin) { setPin(''); return setErr('PIN ไม่ถูกต้อง ลองใหม่อีกครั้ง'); }
     onLogin(who);
   };
-  const POINTS = [['chart', 'ต้นทุนต่อหัวและ Food cost รายวัน'], ['box', 'นับของเหลือ แล้วระบบคิดต้นทุนให้'], ['receipt', 'รับเงินสด พร้อมเพย์ โอน ในหน้าเดียว']];
   return html`<div class="login">
     <aside class="login-hero" aria-hidden="false">
       <div class="hero-brand"><span class="brand-mark"><${Icon} n="flame" s=${26}/></span>KepToh</div>
       <h1>วันนี้ขายบุฟเฟต์<br/>ได้กำไรหรือขาดทุน?</h1>
-      <ul class="hero-points">${POINTS.map(([ic, tx]) => html`<li><span class="ic"><${Icon} n=${ic} s=${20}/></span>${tx}</li>`)}</ul>
+      ${last && html`<div class="hero-card"><div class="eyebrow">ตัวอย่างปิดยอดล่าสุด · ${thDateShort(last.date)}</div>
+        <div class=${'hero-profit ' + (heroV >= 0 ? 'g' : 'rd')}>${heroV >= 0 ? 'กำไร' : 'ขาดทุน'} ${baht(Math.abs(heroV))}</div>
+        <dl class="hero-rows"><div><dt>ยอดขาย (ก่อน VAT)</dt><dd>${baht(last.net)}</dd></div><div><dt>ต้นทุนวัตถุดิบ</dt><dd>${baht(last.ingCost)}</dd></div><div><dt>Food cost</dt><dd>${last.foodPct != null ? fmt(last.foodPct, 1) + '%' : '–'}</dd></div></dl></div>`}
       <p class="hero-foot">ต้นแบบสำหรับทดลองกด · ข้อมูลทั้งหมดเป็นข้อมูลจำลอง</p>
     </aside>
     <main class="login-panel"><div class="login-form">
@@ -1709,15 +1799,18 @@ const VIEWS = [
 ];
 const readHash = () => { const h = location.hash.replace('#', ''); return VIEWS.some(v => v.id === h.split('/')[0]) ? h : 'tables'; };   // #setup/costing = เปิดหมวดย่อย
 
-function NavDrawer({ s, me, shift, view, go, allowed, onClose, onLogout }) {
-  const who = shift && (s.staff.find(x => x.id === shift.staffId) || {}).name;
-  return html`<${Drawer} label="เมนูหลัก" onClose=${onClose}>
-    <div class="dr-head"><div class="brand-row"><span class="brand-mark sm"><${Icon} n="flame" s=${20}/></span>KepToh</div><${Btn} kind="ghost" icon="sidebar" aria-label="ปิดเมนู" onClick=${onClose}/></div>
-    <div class="dr-user"><${Avatar} name=${me.name} size=${44}/><div class="grow"><strong>${me.name}</strong><span class="sub">${ROLE[me.role]} · ${shift ? 'กะเปิด ' + thTime(shift.openedAt) + ' น. (' + who + ')' : 'ยังไม่เปิดกะ'}</span></div></div>
-    <nav class="dr-nav" aria-label="เมนู">${VIEWS.filter(allowed).map(v => html`<button type="button" class="dr-link" aria-current=${view.split('/')[0] === v.id ? 'page' : null} onClick=${() => go(v.id)}><${Icon} n=${v.icon} s=${22}/>${v.label}</button>`)}</nav>
-    <div class="dr-foot"><${Btn} block icon="logout" onClick=${onLogout}>ออกจากระบบ<//></div>
-  <//>`;
+/* เนื้อหาเมนูหลัก ใช้ร่วมกันระหว่าง Sidebar ตรึง (จอกว้าง) กับ Drawer (แท็บเล็ตแนวตั้ง/มือถือ) */
+function NavPanel({ s, me, shift, view, go, allowed, onLogout, onShift, onClose }) {
+  const base = view.split('/')[0], who = shift && (s.staff.find(x => x.id === shift.staffId) || {}).name;
+  return html`
+    <div class="dr-head"><div class="brand-row"><span class="brand-mark sm"><${Icon} n="flame" s=${20}/></span>KepToh</div>${onClose && html`<${Btn} kind="ghost" icon="sidebar" aria-label="ปิดเมนู" onClick=${onClose}/>`}</div>
+    <div class="dr-user"><${Avatar} name=${me.name} size=${40}/><div class="grow"><strong>${me.name}</strong><span class="sub">${ROLE[me.role]}</span></div></div>
+    <div class=${'dr-shift' + (shift ? ' on' : '')}><span class="dot" aria-hidden="true"></span><span class="sh-text">${shift ? 'กะเปิด ' + thTime(shift.openedAt) + ' น.' : 'ยังไม่เปิดกะ'}${shift ? html`<span class="sub">${who}</span>` : ''}</span>
+      <button type="button" class="sh-btn" onClick=${() => shift ? go('shift') : onShift()}>${shift ? 'ปิดกะ' : 'เปิดกะ'}</button></div>
+    <nav class="dr-nav" aria-label="เมนู">${VIEWS.filter(allowed).map(v => html`<button type="button" class="dr-link" aria-current=${base === v.id ? 'page' : null} onClick=${() => go(v.id)}><${Icon} n=${v.icon} s=${22}/>${v.label}</button>`)}</nav>
+    <div class="dr-foot"><div class="dr-demo">ข้อมูลตัวอย่างสำหรับทดลอง</div><${Btn} block icon="logout" onClick=${onLogout}>ออกจากระบบ<//></div>`;
 }
+const NavDrawer = ({ onClose, ...p }) => html`<${Drawer} label="เมนูหลัก" onClose=${onClose}><${NavPanel} ...${p} onClose=${onClose}/><//>`;
 
 function App() {
   const [s, setS] = useState(loadState);
@@ -1746,14 +1839,12 @@ function App() {
       ${railViews.map((v, i) => html`<button type="button" class=${'nav-btn' + (i >= keep ? ' mob-hide' : '')} aria-current=${base === v.id ? 'page' : null} onClick=${() => go(v.id)}><${Icon} n=${v.icon} s=${22}/>${v.label}</button>`)}
       ${railViews.length > keep && html`<button type="button" class="nav-btn nav-more" aria-current=${railViews.slice(keep).some(v => v.id === base) ? 'page' : null} onClick=${() => setMenuOpen(true)}><${Icon} n="menu" s=${22}/>เพิ่มเติม</button>`}
     </nav>
+    <aside class="sidebar" aria-label="เมนูหลัก"><${NavPanel} s=${s} me=${me} shift=${shift} view=${view} go=${go} allowed=${allowed} onLogout=${logout} onShift=${() => setShiftAsk(true)}/></aside>
     <main class="main">
       <header class="topbar">
-        <${Btn} kind="ghost" icon="sidebar" aria-label="เปิดเมนู" aria-expanded=${menuOpen} onClick=${() => setMenuOpen(true)}/>
+        <span class="menu-btn"><${Btn} kind="ghost" icon="sidebar" aria-label="เปิดเมนู" aria-expanded=${menuOpen} onClick=${() => setMenuOpen(true)}/></span>
         <div class="grow"><h1>${cur.title}</h1><div class="sub">${s.shop.name} · ${thDate(todayKey())}</div></div>
-        <${Pill} tone="orange">ข้อมูลตัวอย่าง<//>
-        ${shift ? html`<${Pill} tone="green"><span class="dot"></span>กะเปิด · ${(s.staff.find(x => x.id === shift.staffId) || {}).name}<//>` : html`<${Pill} tone="red">ยังไม่เปิดกะ<//>`}
-        ${shift ? html`<${Btn} kind="danger-solid" onClick=${() => go('shift')}>ปิดกะ<//>` : html`<${Btn} kind="primary" onClick=${() => setShiftAsk(true)}>เปิดกะ<//>`}
-        <span class="who"><${Avatar} name=${me.name} size=${36}/><span class="who-t"><strong>${me.name}</strong><span class="sub">${ROLE[me.role]}</span></span></span>
+        <button type="button" class="hdr-user" aria-label=${'บัญชีและกะ · ' + me.name + (shift ? ' · กะเปิด' : ' · ยังไม่เปิดกะ')} onClick=${() => setMenuOpen(true)}><${Avatar} name=${me.name} size=${38}/><span class=${'st' + (shift ? '' : ' off')}></span></button>
       </header>
       <section class="content">
         ${!allowed(cur) ? html`<div class="card"><${Empty} title="ไม่มีสิทธิ์เข้าหน้านี้" text=${ROLE[me.role] + ' เข้าหน้านี้ไม่ได้'}><${Btn} kind="primary" onClick=${logout}>ออกจากระบบเพื่อเปลี่ยนผู้ใช้<//><//></div>`
@@ -1761,7 +1852,7 @@ function App() {
           : base === 'shift' ? html`<${ShiftView} ...${props}/>` : base === 'dashboard' ? html`<${DashboardView} ...${props}/>` : base === 'reports' ? html`<${ReportsView} ...${props}/>` : html`<${SetupView} ...${props} initial=${view.split('/')[1]}/>`}
       </section>
     </main>
-    ${menuOpen && html`<${NavDrawer} s=${s} me=${me} shift=${shift} view=${view} go=${go} allowed=${allowed} onClose=${() => setMenuOpen(false)} onLogout=${logout}/>`}
+    ${menuOpen && html`<${NavDrawer} s=${s} me=${me} shift=${shift} view=${view} go=${go} allowed=${allowed} onClose=${() => setMenuOpen(false)} onLogout=${logout} onShift=${() => { setMenuOpen(false); setShiftAsk(true); }}/>`}
     ${shiftAsk && !shift && html`<${Modal} title="เปิดกะการขาย" onClose=${() => setShiftAsk(false)}><${OpenShiftForm} s=${s} update=${update} me=${me} onDone=${() => { setShiftAsk(false); setToast('เปิดกะแล้ว'); }}/><//>`}
     ${toastMsg && html`<div class="toast" role="status">${toastMsg}</div>`}
   </div>`;
