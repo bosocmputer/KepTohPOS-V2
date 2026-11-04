@@ -62,8 +62,9 @@ void main() {
 
   group('AuthCubit bloc_test (PIN validation, ledger hero, logout)', () {
     test('initial state computes lastClosedDay & netProfit matching JS', () {
-      final repo = _createSeededRepo();
-      final cubit = AuthCubit(repo);
+      final fixedNow = DateTime(2026, 11, 4, 12);
+      final repo = _createSeededRepo(now: fixedNow);
+      final cubit = AuthCubit(repo, now: fixedNow);
       addTearDown(cubit.close);
 
       expect(cubit.state.isAuthenticated, isFalse);
@@ -78,7 +79,8 @@ void main() {
 
     blocTest<AuthCubit, AuthState>(
       'wrong PIN clears input and emits error message',
-      build: () => AuthCubit(_createSeededRepo()),
+      build: () =>
+          AuthCubit(_createSeededRepo(), now: DateTime(2026, 11, 4, 12)),
       act: (cubit) {
         cubit
           ..setPin('9999')
@@ -94,7 +96,10 @@ void main() {
     blocTest<AuthCubit, AuthState>(
       'correct PIN logs in staff, sets shouldPromptOpenShift, '
       'and logout clears session',
-      build: () => AuthCubit(_createSeededRepo(closeActiveShift: true)),
+      build: () => AuthCubit(
+        _createSeededRepo(closeActiveShift: true),
+        now: DateTime(2026, 11, 4, 12),
+      ),
       act: (cubit) {
         cubit
           ..selectStaff('st3')

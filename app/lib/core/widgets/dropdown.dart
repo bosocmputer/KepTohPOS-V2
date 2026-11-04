@@ -227,6 +227,13 @@ class _DropdownState<T> extends State<Dropdown<T>> {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final selected = _selected;
+    final hasRichItems =
+        widget.leadingBuilder != null ||
+        widget.options.any((o) => o.sub != null && o.sub!.isNotEmpty);
+    final minH = hasRichItems ? AppDimensions.dropdownMinH : AppDimensions.tap;
+    final radius = hasRichItems
+        ? AppDimensions.radiusMd
+        : AppDimensions.radiusSm;
 
     return CompositedTransformTarget(
       link: _layerLink,
@@ -237,7 +244,7 @@ class _DropdownState<T> extends State<Dropdown<T>> {
           key: _triggerKey,
           color: tokens.surface,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+            borderRadius: BorderRadius.circular(radius),
             side: BorderSide(
               color: _open ? tokens.primary : tokens.line,
               width: AppDimensions.borderThick,
@@ -245,15 +252,15 @@ class _DropdownState<T> extends State<Dropdown<T>> {
           ),
           child: InkWell(
             onTap: _toggleMenu,
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+            borderRadius: BorderRadius.circular(radius),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                minHeight: AppDimensions.dropdownMinH,
-              ),
+              constraints: BoxConstraints(minHeight: minH),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
+                padding: EdgeInsets.symmetric(
                   horizontal: AppDimensions.space3,
-                  vertical: AppDimensions.space2,
+                  vertical: hasRichItems
+                      ? AppDimensions.space2
+                      : AppDimensions.space1_5,
                 ),
                 child: Row(
                   children: [

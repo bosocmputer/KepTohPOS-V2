@@ -23,6 +23,7 @@ class KepTohApp extends StatefulWidget {
     this.shiftBloc,
     this.tablesCubit,
     this.billsCubit,
+    this.now,
     this.initialLocation = '/tables',
   });
 
@@ -32,6 +33,7 @@ class KepTohApp extends StatefulWidget {
   final ShiftBloc? shiftBloc;
   final TablesCubit? tablesCubit;
   final BillsCubit? billsCubit;
+  final DateTime? now;
   final String initialLocation;
 
   @override
@@ -49,18 +51,21 @@ class _KepTohAppState extends State<KepTohApp> {
       widget.themeCubit ??
       (sl.isRegistered<ThemeCubit>() ? sl<ThemeCubit>() : ThemeCubit());
 
-  late final AuthCubit _authCubit = widget.authCubit ?? AuthCubit(_repo);
+  late final AuthCubit _authCubit =
+      widget.authCubit ?? AuthCubit(_repo, now: widget.now);
 
   late final ShiftBloc _shiftBloc = widget.shiftBloc ?? ShiftBloc(_repo);
 
   late final TablesCubit _tablesCubit =
-      widget.tablesCubit ?? TablesCubit(_repo);
+      widget.tablesCubit ?? TablesCubit(_repo, now: widget.now);
 
-  late final BillsCubit _billsCubit = widget.billsCubit ?? BillsCubit(_repo);
+  late final BillsCubit _billsCubit =
+      widget.billsCubit ?? BillsCubit(_repo, now: widget.now);
 
   late final GoRouter _router = createAppRouter(
     initialLocation: widget.initialLocation,
     authCubit: _authCubit,
+    now: widget.now,
   );
 
   @override

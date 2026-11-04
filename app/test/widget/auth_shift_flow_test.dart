@@ -42,7 +42,9 @@ void main() {
       addTearDown(tester.view.reset);
 
       final repo = _buildTestRepo();
-      await tester.pumpWidget(KepTohApp(repository: repo));
+      await tester.pumpWidget(
+        KepTohApp(repository: repo, now: DateTime(2026, 11, 4, 12)),
+      );
       await tester.pumpAndSettle();
 
       // Unauthenticated user is redirected to /login
@@ -109,7 +111,9 @@ void main() {
       addTearDown(tester.view.reset);
 
       final repo = _buildTestRepo(closeInitialShift: false);
-      await tester.pumpWidget(KepTohApp(repository: repo));
+      await tester.pumpWidget(
+        KepTohApp(repository: repo, now: DateTime(2026, 11, 4, 12)),
+      );
       await tester.pumpAndSettle();
 
       // Default selected staff is st1 (คุณแอน, owner, PIN 1234)

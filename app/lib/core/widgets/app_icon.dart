@@ -87,6 +87,15 @@ abstract final class AppIcons {
     'card' => 'card',
     _ => 'transfer',
   };
+
+  /// Resolves a semantic icon key for an order/sent line (`head` -> `'user'`,
+  /// `pkg`/`buffet` -> `'package'`, `addon` -> [forCategory]).
+  static String forLineKind(String kind, {String? addonCategory}) =>
+      switch (kind) {
+        'head' => 'user',
+        'pkg' || 'buffet' => 'package',
+        _ => forCategory(addonCategory ?? 'เครื่องดื่ม'),
+      };
 }
 
 /// Shared icon component (`Icon` in `prototype/index.html`).

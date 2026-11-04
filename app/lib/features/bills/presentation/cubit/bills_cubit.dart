@@ -194,23 +194,12 @@ class BillsCubit extends Cubit<BillsState> {
   final DateTime? _fixedNow;
   StreamSubscription<PosState>? _sub;
 
-  static String _resolveToday(PosState s, DateTime? now) {
-    final currentNow = now ?? DateTime.now();
-    var tk = dkey(currentNow);
-    if (!s.sales.any((b) => b.date == tk) && s.sales.isNotEmpty) {
-      tk = s.sales
-          .map((b) => b.date)
-          .reduce((a, b) => a.compareTo(b) > 0 ? a : b);
-    }
-    return tk;
-  }
-
   static BillsState _initialState(
     PosState s, {
     DateTime? now,
     String? initialDate,
   }) {
-    final tk = _resolveToday(s, now);
+    final tk = dkey(now ?? DateTime.now());
     return BillsState(
       posState: s,
       selectedDate: initialDate ?? tk,

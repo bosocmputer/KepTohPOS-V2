@@ -11,6 +11,7 @@ class NumPad extends StatefulWidget {
     super.key,
     this.maxLen = 12,
     this.decimal = false,
+    this.maxDecimalPlaces,
     this.keyboard = false,
     this.keyHeight = AppDimensions.numPadKeyH,
     this.rowGap = AppDimensions.space2,
@@ -21,6 +22,7 @@ class NumPad extends StatefulWidget {
   final ValueChanged<String> onChanged;
   final int maxLen;
   final bool decimal;
+  final int? maxDecimalPlaces;
   final bool keyboard;
   final double keyHeight;
   final double rowGap;
@@ -65,6 +67,12 @@ class _NumPadState extends State<NumPad> {
 
   void _push(String digit) {
     if (digit == '.' && (!widget.decimal || _current.contains('.'))) return;
+    if (digit != '.' &&
+        widget.maxDecimalPlaces != null &&
+        _current.contains('.')) {
+      final dotIdx = _current.indexOf('.');
+      if (_current.length - dotIdx - 1 >= widget.maxDecimalPlaces!) return;
+    }
     if (_current.length >= widget.maxLen) return;
     final next = (digit == '.' && _current.isEmpty) ? '0.' : '$_current$digit';
     _current = next;

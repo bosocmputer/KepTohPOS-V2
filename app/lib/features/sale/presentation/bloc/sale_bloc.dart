@@ -86,26 +86,22 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
     );
   }
 
-  void _onTableSelected(SaleTableSelected event, Emitter<SaleState> emit) {
-    emit(_blankCartState(_repository.state, event.tableId, now: _fixedNow));
-  }
+  void _onTableSelected(SaleTableSelected event, Emitter<SaleState> emit) =>
+      emit(_blankCartState(_repository.state, event.tableId, now: _fixedNow));
 
-  void _onHeadsChanged(SaleHeadsChanged event, Emitter<SaleState> emit) {
-    emit(
-      state.copyWith(
-        a: event.a != null ? math.max(0, event.a!) : state.a,
-        c: event.c != null ? math.max(0, event.c!) : state.c,
-        f: event.f != null ? math.max(0, event.f!) : state.f,
-      ),
-    );
-  }
+  void _onHeadsChanged(SaleHeadsChanged event, Emitter<SaleState> emit) => emit(
+    state.copyWith(
+      a: event.a != null ? math.max(0, event.a!) : state.a,
+      c: event.c != null ? math.max(0, event.c!) : state.c,
+      f: event.f != null ? math.max(0, event.f!) : state.f,
+    ),
+  );
 
   void _onAddonQtyChanged(SaleAddonQtyChanged event, Emitter<SaleState> emit) {
     final addon = state.posState.addons
         .where((x) => x.id == event.addonId)
         .firstOrNull;
-    final maxStock = addon?.stock ?? event.qty;
-    final clamped = math.min(math.max(0, event.qty), maxStock);
+    final clamped = math.min(math.max(0, event.qty), addon?.stock ?? event.qty);
     final nextAd = Map<String, int>.from(state.ad);
     if (clamped > 0) {
       nextAd[event.addonId] = clamped;
@@ -118,20 +114,20 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
   void _onAddonIncremented(
     SaleAddonIncremented event,
     Emitter<SaleState> emit,
-  ) {
-    final cur = state.ad[event.addonId] ?? 0;
-    _onAddonQtyChanged(
-      SaleAddonQtyChanged(addonId: event.addonId, qty: cur + 1),
-      emit,
-    );
-  }
+  ) => _onAddonQtyChanged(
+    SaleAddonQtyChanged(
+      addonId: event.addonId,
+      qty: (state.ad[event.addonId] ?? 0) + 1,
+    ),
+    emit,
+  );
 
   void _onNotesSaved(SaleNotesSaved event, Emitter<SaleState> emit) {
     final trimmed = event.notes.trim();
     if (state.openTable != null) {
-      final nextPos = _repository.update((s) {
-        s.openTables[state.tableId]?.notes = trimmed;
-      });
+      final nextPos = _repository.update(
+        (s) => s.openTables[state.tableId]?.notes = trimmed,
+      );
       emit(state.copyWith(posState: nextPos, toastMessage: 'บันทึกโน้ตแล้ว'));
     } else {
       emit(state.copyWith(notes: trimmed, toastMessage: 'บันทึกโน้ตแล้ว'));
@@ -280,9 +276,9 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
   void _onTableClosed(SaleTableClosed event, Emitter<SaleState> emit) {
     final tb = state.table;
     if (tb == null || state.due > 0) return;
-    final nextPos = _repository.update((s) {
-      s.openTables.remove(state.tableId);
-    });
+    final nextPos = _repository.update(
+      (s) => s.openTables.remove(state.tableId),
+    );
     emit(
       _blankCartState(
         nextPos,
@@ -293,9 +289,8 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
     );
   }
 
-  void _onPosStateUpdated(SalePosStateUpdated event, Emitter<SaleState> emit) {
-    emit(state.copyWith(posState: _repository.state));
-  }
+  void _onPosStateUpdated(SalePosStateUpdated event, Emitter<SaleState> emit) =>
+      emit(state.copyWith(posState: _repository.state));
 
   @override
   Future<void> close() async {

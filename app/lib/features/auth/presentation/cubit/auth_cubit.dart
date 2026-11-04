@@ -80,20 +80,28 @@ class AuthState extends Equatable {
 
 /// Manages PIN authentication, session staff, and Login hero ledger summary.
 class AuthCubit extends Cubit<AuthState> {
-  new(PosRepository repository)
+  new(PosRepository repository, {DateTime? now, DateTime Function()? clock})
     : _repository = repository,
-      super(_buildStateFromRepo(repository)) {
+      _clock = clock ?? (now != null ? () => now : DateTime.now),
+      super(
+        _buildStateFromRepo(
+          repository,
+          now: (clock ?? (now != null ? () => now : DateTime.now))(),
+        ),
+      ) {
     _sub = _repository.stream.listen((_) {
       if (!_mutatingSession) _syncFromRepo();
     });
   }
 
   final PosRepository _repository;
+  final DateTime Function() _clock;
   StreamSubscription<PosState>? _sub;
   bool _mutatingSession = false;
 
   static AuthState _buildStateFromRepo(
     PosRepository repo, {
+    required DateTime now,
     String? selectedStaffId,
     String pin = '',
     String error = '',
@@ -105,7 +113,7 @@ class AuthCubit extends Cubit<AuthState> {
     if (!activeStaff.any((x) => x.id == selId)) {
       selId = activeStaff.isNotEmpty ? activeStaff.first.id : '';
     }
-    final ledger = computeLedger(s);
+    final ledger = computeLedger(s, today: dkey(now));
     LedgerDaySummary? lastClosed;
     for (var i = ledger.days.length - 1; i >= 0; i--) {
       if (ledger.days[i].closed) {
@@ -137,6 +145,7 @@ class AuthCubit extends Cubit<AuthState> {
     emit(
       _buildStateFromRepo(
         _repository,
+        now: _clock(),
         selectedStaffId: state.selectedStaffId,
         pin: state.pin,
         error: state.error,
@@ -188,7 +197,11 @@ class AuthCubit extends Cubit<AuthState> {
     _repository.setSessionStaffId(null);
     _mutatingSession = false;
     emit(
-      _buildStateFromRepo(_repository, selectedStaffId: state.selectedStaffId),
+      _buildStateFromRepo(
+        _repository,
+        now: _clock(),
+        selectedStaffId: state.selectedStaffId,
+      ),
     );
   }
 

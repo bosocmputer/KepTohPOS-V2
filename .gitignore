@@ -11,3 +11,7 @@ node_modules/
 *.key
 *.sqlite
 *.db
+.DS_Store
+
+.serena/
+.vscode/
