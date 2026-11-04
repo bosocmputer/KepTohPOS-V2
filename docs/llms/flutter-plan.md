@@ -1,4 +1,4 @@
-# แผน: ย้ายไป Flutter — แกะ UI จาก Figma ให้ตรง 100% ก่อน แล้วค่อยปรับเป็น KepTohPOS — v0.1 (ร่าง รอผู้ใช้ยืนยัน)
+# แผน: ย้ายไป Flutter — แกะ UI จาก Figma ให้ตรง 100% ก่อน แล้วค่อยปรับเป็น KepTohPOS — v0.2 (ยืนยันแล้ว: ระยะ A + BLoC)
 
 > อ่านคู่กับ `keptoh-blueprint.md` (กติกาธุรกิจ) · prototype HTML (`prototype/`) ทีมอนุมัติแล้ว ใช้เป็น **ต้นแบบ flow และสูตรคำนวณ** ไม่ต้องแก้ต่อ
 > Figma: [Makaryo POS (Community)](https://www.figma.com/design/zWOF0W01I3hFtoKNXAFmVZ/Makaryo-Point-Of-Sales-Free--Community-?node-id=1-3517) · fileKey `zWOF0W01I3hFtoKNXAFmVZ` · หน้า `1:3517 🍏 UI Design`
@@ -37,33 +37,43 @@
 
 **ยังต้องตรวจในขั้น 0:** ฟอนต์จริง, ชุดไอคอน (ดูเหมือน Hugeicons), ขนาดตัวอักษร/ระยะ/เงา, สิทธิ์ใช้รูปอาหารในไฟล์ community
 
-## 2. Stack ที่เสนอ (รอยืนยัน — ห้ามเพิ่ม package นอกรายการโดยไม่ถาม)
-| เรื่อง | เลือก | เหตุผล |
-|---|---|---|
-| เป้าหมายแรก | **Flutter web** บนแท็บเล็ตแนวนอน แล้วค่อย Android/iPad | ตรงกับขนาด Figma, ส่งลิงก์ให้ทีมได้เหมือนเดิม |
-| State | `flutter_riverpod` | ทดสอบง่าย ไม่ผูกกับ widget |
-| Routing | `go_router` | URL บน web, deep link |
-| ฟอนต์/ไอคอน | ตามผลตรวจขั้น 0 (เช่น `google_fonts`, ชุดไอคอนเดียวกับ Figma หรือ SVG ที่ export) | ให้ตรง Figma |
-| ข้อมูล | mock JSON ใน `assets/mock/` (เหมือน prototype) | ยังไม่ต่อ backend |
-| ทดสอบ | `flutter_test` (unit + widget + **golden**) | วัดความตรง Figma |
+## 2. Stack (ยืนยันแล้ว — ห้ามเพิ่ม package นอกรายการโดยไม่ถาม)
+- เครื่องพัฒนา: **Flutter 3.47.9 / Dart 3.13.7** (ตั้ง `environment.sdk` ใน pubspec ให้ตรง)
+- `flutter create --platforms=android,ios,web` · ระยะ A รัน/ดูผลบน Chrome หรือ iPad ได้ · web ใช้ส่งลิงก์ให้ทีมดู
+- **ข้อมูลระยะ A = mock JSON เท่านั้น** ยังไม่มีฐานข้อมูล ไม่มี backend ไม่มี license
 
-## 3. โครงโฟลเดอร์ (แยกไฟล์ตั้งแต่แรก)
+| เรื่อง | package | หมายเหตุ |
+|---|---|---|
+| State | `flutter_bloc`, `equatable` | **Cubit** หน้าทั่วไป (ตั้งค่า/รายการ/ตัวกรอง) · **Bloc** flow ซับซ้อน (ออเดอร์/ชำระเงิน) |
+| Routing | `go_router` | |
+| DI | `get_it` | ลงทะเบียน repository ที่เดียว (`core/di/`) |
+| Model | `freezed`, `json_serializable` (+ `build_runner` dev) | model immutable + อ่าน mock JSON |
+| ฟอนต์/ไอคอน | ตามผลตรวจขั้น A0 | ให้ตรง Figma |
+| ทดสอบ | `flutter_test` (unit/widget/**golden**), `bloc_test`, `mocktail` | |
+| Lint | `very_good_analysis` | `flutter analyze` ต้อง 0 issue |
+
+## 3. โครงโฟลเดอร์ (Clean Architecture แบบ feature-first, แยกไฟล์ตั้งแต่แรก)
 ```
-app/                         ← โปรเจกต์ Flutter (อยู่ repo เดียวกับ prototype)
+app/                              ← โปรเจกต์ Flutter (repo เดียวกับ prototype)
   lib/
-    main.dart · app.dart     ← MaterialApp + router
-    core/theme/              ← tokens.dart (สี/ระยะ/มุม/เงา), typography.dart, app_theme.dart
-    core/widgets/            ← component กลาง 1 ไฟล์ต่อ 1 component
-    core/layout/             ← AppShell (Header + Sidebar drawer + body)
-    features/<screen>/       ← login, cashier, table, history, report, supply, payment
-      <screen>_page.dart · widgets/ · <screen>_controller.dart
-    domain/                  ← (ระยะ B) สูตรคำนวณ port จาก prototype: order, bill, ledger
-    data/                    ← model + repository อ่าน mock JSON
+    main.dart · app.dart          ← MaterialApp.router + BlocProviders ระดับแอป
+    core/
+      theme/                      ← tokens.dart (สี/ระยะ/มุม/เงา), typography.dart, app_theme.dart
+      widgets/                    ← component กลาง 1 ไฟล์ต่อ 1 component
+      layout/                     ← AppShell (Header + Sidebar drawer + body)
+      router/ · di/ · utils/
+    features/<feature>/           ← login, cashier, table, history, report, supply, payment
+      presentation/               ← pages/, widgets/, bloc/ หรือ cubit/
+      domain/                     ← entities/, repositories/ (abstract)
+      data/                       ← models/ (freezed), datasources/ (mock_*.dart อ่าน assets/mock), repositories/ (impl)
   assets/{images,icons,mock}/
-  test/{unit,widget,golden}/ + test/golden/figma/   ← ภาพอ้างอิงจาก Figma
-docs/llms/figma-spec/        ← สเปกทีละหน้า (Opus เขียน)
+  test/{unit,bloc,widget,golden}/ + test/golden/figma/   ← ภาพอ้างอิงจาก Figma
+docs/llms/figma-spec/             ← สเปกทีละหน้า (Opus เขียน)
 ```
-กติกา: ไฟล์ละไม่เกิน ~300 บรรทัด · หน้าจอประกอบจาก `core/widgets` เท่านั้น
+กติกา:
+- ไฟล์ละไม่เกิน ~300 บรรทัด · หน้าจอประกอบจาก `core/widgets` เท่านั้น
+- UI → Bloc/Cubit → Repository (abstract) เท่านั้น ห้าม widget อ่าน JSON หรือเรียก datasource ตรง
+- ภายหลังเปลี่ยนแหล่งข้อมูล (SQLite) ได้โดยเปลี่ยนแค่ `data/` ไม่แตะ UI
 
 ## 4. Component กลาง (ถอดจาก Figma)
 | กลุ่ม | widget |
@@ -108,8 +118,13 @@ docs/llms/figma-spec/        ← สเปกทีละหน้า (Opus เ�
 - container ของ Claude บนคลาวด์ตอนนี้ **ยังไม่มี Flutter SDK** → ทำบนเครื่องผู้ใช้ (clone repo) หรือเพิ่มการติดตั้ง Flutter ใน setup script ของ environment
 - ทุกขั้นต้องรันจริงก่อนรายงาน: `flutter analyze` · `flutter test` · (golden) `flutter test test/golden`
 
-## 8. คำถามที่ต้องตอบก่อนเริ่ม A1
-1. วางโค้ด Flutter ในโฟลเดอร์ `app/` ของ repo นี้ (แนะนำ) หรือแยก repo
-2. ใช้ Riverpod + go_router ตามข้อ 2 ได้ไหม
-3. ทำงานบนเครื่องตัวเอง หรือให้เพิ่ม Flutter ใน environment คลาวด์
-4. เป้าหมายแรก Flutter web อย่างเดียว หรือต้องรันบน Android/iPad ด้วยตั้งแต่ระยะ A
+## 8. สิ่งที่ตัดสินใจแล้ว
+- โค้ดอยู่ `app/` ใน repo นี้ · พัฒนาบนเครื่อง local ของผู้ใช้ (Flutter พร้อมแล้ว)
+- BLoC/Cubit + Repository + go_router + get_it (ข้อ 2)
+- ระยะ A = UI ตรง Figma + mock JSON เท่านั้น
+
+## 9. ภาพรวมระยะยาว (บันทึกไว้เป็นทิศทาง — **ไม่อยู่ในขอบเขตระยะ A/B ห้ามเขียนโค้ดเผื่อ**)
+- ผู้ให้บริการคือ **สำนักงานบัญชี** ติดตั้ง POS ให้ร้านลูกค้า เพื่อได้ข้อมูลขาย/ต้นทุนของร้านโดยไม่ต้องขอ · เริ่มจากร้านหมูกระทะ
+- แนวทาง: **แอปติดตั้งในเครื่อง** (ไม่ใช้ cloud สำหรับการขาย) ฐานข้อมูลในเครื่อง (SQLite/`drift`) · ไม่ใช้ Redis/Kafka
+- **License key มีวันหมดอายุ** (key เซ็นลายเซ็นดิจิทัล ตรวจได้แบบ offline, กันย้อนนาฬิกา, มี grace period, หมดอายุแล้วยังดู/ส่งออกข้อมูลได้)
+- ยังต้องตัดสินใจภายหลัง: วิธีส่งข้อมูลให้สำนักงาน (ส่งไฟล์เอง vs ส่งขึ้นเครื่องสำนักงานอัตโนมัติ), อุปกรณ์ร้าน, รูปแบบไฟล์ให้ตรงโปรแกรมบัญชีของสำนักงาน, สัญญา/PDPA
