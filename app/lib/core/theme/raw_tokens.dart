@@ -51,15 +51,20 @@ abstract final class AppDimensions {
   static const String fontDisplay = 'Anuphan';
   static const String fontBody = 'IBM Plex Sans Thai';
 
+  // Typography scale: H1 = 24, H2 = 18, body = 15–16, money = 28–32
   static const double fs2xs = 11;
   static const double fsXs = 12;
   static const double fsSm = 14;
   static const double fsBase = 15;
   static const double fsMd = 16;
   static const double fsLg = 18;
+  static const double fsH2 = 18;
   static const double fsXl = 20;
   static const double fs2xl = 22;
   static const double fs3xl = 24;
+  static const double fsH1 = 24;
+  static const double fsMoney = 28;
+  static const double fsMoneyLg = 32;
 
   static const double iconXs = 16;
   static const double iconSm = 18;
@@ -73,6 +78,7 @@ abstract final class AppDimensions {
   static const double borderBold = 2;
   static const double borderAccent = 3;
 
+  // Radius scale: buttons & cards = 12
   static const double radiusXs = 4;
   static const double radiusSm = 8;
   static const double radiusMd = 12;
@@ -80,47 +86,75 @@ abstract final class AppDimensions {
   static const double radiusPill = 999;
   static const double r = radiusMd;
 
+  // Strict 6-step spacing scale: 4 / 8 / 12 / 16 / 24 / 32
   static const double space0 = 0;
-  static const double spaceHalf = 2;
+  static const double spaceHalf = 4;
   static const double space1 = 4;
-  static const double space1_5 = 6;
+  static const double space1_5 = 4;
   static const double space2 = 8;
-  static const double space2_5 = 10;
+  static const double space2_5 = 8;
   static const double space3 = 12;
-  static const double space3_5 = 14;
+  static const double space3_5 = 12;
   static const double space4 = 16;
-  static const double space4_5 = 18;
-  static const double space5 = 20;
-  static const double space5_5 = 22;
+  static const double space4_5 = 16;
+  static const double space5 = 16;
+  static const double space5_5 = 24;
   static const double space6 = 24;
-  static const double space7 = 28;
+  static const double space7 = 24;
   static const double space8 = 32;
-  static const double space9 = 36;
-  static const double space10 = 40;
-  static const double space12 = 48;
+  static const double space9 = 32;
+  static const double space10 = 32;
+  static const double space12 = 32;
 
+  // Component heights & widths
   static const double tap = 44;
   static const double btnSmH = 36;
   static const double btnMdH = 44;
-  static const double btnLgH = 56;
-  static const double dropdownMinH = 56;
+  static const double btnLgH = 52;
+  static const double dropdownMinH = 44;
   static const double dropdownMaxListH = 320;
-  static const double numPadKeyH = 60;
+  static const double numPadKeyH = 56;
+  static const double numPadKeyCompactH = 48;
   static const double numPadMaxW = 320;
   static const double pinDotSize = 16;
   static const double avatarSm = 36;
   static const double avatarMd = 40;
+  static const double avatarLg = 48;
   static const double statusDotSm = 8;
   static const double statusDotMd = 12;
   static const double modalW = 560;
   static const double modalWideW = 1000;
+  static const double modalMaxHeightFactor = 0.90;
   static const double productCardImgH = 92;
   static const double topbarSearchW = 292;
 
+  // Responsive layout breakpoints & dimensions
+  static const double mobileBp = 760;
+  static const double wideBp = 1180;
+  static const double headerCompactH = 72;
   static const double headerH = 88;
   static const double sidebarW = 232;
   static const double railW = 96;
   static const double drawerW = 365;
+  static const double orderPanelCompactW = 360;
   static const double orderPanelW = 396;
-  static const double mobileBp = 760;
+
+  /// Screen content & topbar horizontal padding: `24` at `>= 1180`, `16` at
+  /// `< 1180`.
+  static double pagePadding(double screenWidth) =>
+      screenWidth >= wideBp ? space6 : space4;
+
+  /// Topbar height: `88` at `>= 1180`, `72` at `761..1179`, `52` on mobile.
+  static double topbarHeight(double screenWidth) => screenWidth <= mobileBp
+      ? btnLgH
+      : (screenWidth >= wideBp ? headerH : headerCompactH);
+
+  /// Right order/payment panel width: `396` at `>= 1180`, `360` at `< 1180`.
+  static double rightPanelWidth(double screenWidth) =>
+      screenWidth >= wideBp ? orderPanelW : orderPanelCompactW;
+
+  /// Product catalog grid columns: `4` at `>= 1180`, `3` at `761..1179`,
+  /// `2` at `<= 760`.
+  static int productGridColumns(double screenWidth) =>
+      screenWidth >= wideBp ? 4 : (screenWidth <= mobileBp ? 2 : 3);
 }

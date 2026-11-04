@@ -225,8 +225,8 @@ class ReceiptModal extends StatelessWidget {
     return Material(
       key: const ValueKey('receipt-modal'),
       color: t.scrim,
-      child: Center(
-        child: SingleChildScrollView(
+      child: SafeArea(
+        child: Padding(
           padding: const EdgeInsets.all(AppDimensions.space4),
           child: Modal(
             title: fresh ? 'รับเงินเรียบร้อย' : 'ใบเสร็จ ${bill.no}',

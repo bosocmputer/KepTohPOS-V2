@@ -115,7 +115,9 @@ class SaleAddonsGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final w = constraints.maxWidth;
-        final cols = w >= 780 ? 4 : (w >= 520 ? 3 : 2);
+        final cols = AppDimensions.productGridColumns(
+          MediaQuery.sizeOf(context).width,
+        );
         const spacing = AppDimensions.space3;
         final itemW = (w - (cols - 1) * spacing) / cols;
 

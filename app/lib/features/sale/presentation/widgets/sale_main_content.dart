@@ -73,21 +73,13 @@ class SaleMainContent extends StatelessWidget {
             const SizedBox(width: AppDimensions.space2),
             Text(
               'โต๊ะ ${table.name}',
-              style: tt.headlineLarge?.copyWith(color: t.ink),
+              style: tt.displayMedium?.copyWith(color: t.ink),
             ),
-            const SizedBox(width: AppDimensions.space2_5),
+            const SizedBox(width: AppDimensions.space2),
             Pill(
               label: o != null ? 'มีลูกค้า' : 'เปิดโต๊ะใหม่',
               tone: o != null ? PillTone.orange : PillTone.neutral,
             ),
-            const Spacer(),
-            if (o != null)
-              Btn(
-                key: const ValueKey('sale-close-table-btn'),
-                icon: 'check',
-                label: 'เก็บโต๊ะ',
-                onPressed: onRequestCloseTable,
-              ),
           ],
         ),
         const SizedBox(height: AppDimensions.space3),

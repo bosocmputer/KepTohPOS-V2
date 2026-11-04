@@ -12,6 +12,8 @@ class NumPad extends StatefulWidget {
     this.maxLen = 12,
     this.decimal = false,
     this.keyboard = false,
+    this.keyHeight = AppDimensions.numPadKeyH,
+    this.rowGap = AppDimensions.space2,
     this.onEnter,
   });
 
@@ -20,6 +22,8 @@ class NumPad extends StatefulWidget {
   final int maxLen;
   final bool decimal;
   final bool keyboard;
+  final double keyHeight;
+  final double rowGap;
   final ValueChanged<String>? onEnter;
 
   @override
@@ -106,6 +110,10 @@ class _NumPadState extends State<NumPad> {
       <String>['7', '8', '9'],
     ];
 
+    final keyH = widget.keyHeight < AppDimensions.numPadKeyCompactH
+        ? AppDimensions.numPadKeyCompactH
+        : widget.keyHeight;
+
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: AppDimensions.numPadMaxW),
       child: Column(
@@ -119,6 +127,7 @@ class _NumPadState extends State<NumPad> {
                   Expanded(
                     child: _NumKey(
                       label: row[i],
+                      height: keyH,
                       onTap: () => _push(row[i]),
                       tokens: tokens,
                     ),
@@ -126,7 +135,7 @@ class _NumPadState extends State<NumPad> {
                 ],
               ],
             ),
-            const SizedBox(height: AppDimensions.space2),
+            SizedBox(height: widget.rowGap),
           ],
           Row(
             children: [
@@ -134,23 +143,29 @@ class _NumPadState extends State<NumPad> {
                 child: widget.decimal
                     ? _NumKey(
                         label: '.',
+                        height: keyH,
                         semanticLabel: 'จุดทศนิยม',
                         onTap: () => _push('.'),
                         tokens: tokens,
                       )
-                    : const SizedBox(height: AppDimensions.numPadKeyH),
+                    : SizedBox(height: keyH),
               ),
               const SizedBox(width: AppDimensions.space2),
               Expanded(
                 child: _NumKey(
                   label: '0',
+                  height: keyH,
                   onTap: () => _push('0'),
                   tokens: tokens,
                 ),
               ),
               const SizedBox(width: AppDimensions.space2),
               Expanded(
-                child: _BackspaceKey(onTap: _back, tokens: tokens),
+                child: _BackspaceKey(
+                  height: keyH,
+                  onTap: _back,
+                  tokens: tokens,
+                ),
               ),
             ],
           ),
@@ -163,12 +178,14 @@ class _NumPadState extends State<NumPad> {
 class _NumKey extends StatelessWidget {
   const new({
     required this.label,
+    required this.height,
     required this.onTap,
     required this.tokens,
     this.semanticLabel,
   });
 
   final String label;
+  final double height;
   final VoidCallback onTap;
   final AppTokens tokens;
   final String? semanticLabel;
@@ -184,7 +201,7 @@ class _NumKey extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
         child: SizedBox(
-          height: AppDimensions.numPadKeyH,
+          height: height,
           child: Center(
             child: Text(
               label,
@@ -202,8 +219,9 @@ class _NumKey extends StatelessWidget {
 }
 
 class _BackspaceKey extends StatelessWidget {
-  const new({required this.onTap, required this.tokens});
+  const new({required this.height, required this.onTap, required this.tokens});
 
+  final double height;
   final VoidCallback onTap;
   final AppTokens tokens;
 
@@ -218,7 +236,7 @@ class _BackspaceKey extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
         child: SizedBox(
-          height: AppDimensions.numPadKeyH,
+          height: height,
           child: Center(
             child: AppIcon(
               'backspace',

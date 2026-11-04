@@ -142,6 +142,147 @@ class SaleOrderPanel extends StatelessWidget {
       ),
     );
 
+    final column = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: fullHeight ? MainAxisSize.max : MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(AppDimensions.space4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Dropdown<String>(
+                key: const ValueKey('sale-table-dropdown'),
+                label: 'เลือกโต๊ะ',
+                value: state.tableId,
+                options: tableOpts,
+                onChanged: onSelectTable,
+              ),
+              const SizedBox(height: AppDimensions.space3),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (o != null)
+                    Pill(
+                      label: timing == 'after' ? 'กินก่อนจ่าย' : 'จ่ายก่อนกิน',
+                      tone: timing == 'after'
+                          ? PillTone.orange
+                          : PillTone.neutral,
+                    )
+                  else
+                    Flexible(
+                      child: Seg<String>(
+                        key: const ValueKey('sale-timing-seg'),
+                        value: state.timing,
+                        items: const [
+                          SegItem(value: 'before', label: 'จ่ายก่อนกิน'),
+                          SegItem(value: 'after', label: 'กินก่อนจ่าย'),
+                        ],
+                        onChanged: (v) => bloc.add(SaleTimingChanged(v)),
+                      ),
+                    ),
+                  const SizedBox(width: AppDimensions.space2),
+                  Btn(
+                    key: const ValueKey('sale-note-btn'),
+                    size: BtnSize.sm,
+                    icon: 'edit',
+                    label: note.isNotEmpty ? 'แก้โน้ต' : 'โน้ต',
+                    onPressed: onOpenNoteModal,
+                  ),
+                ],
+              ),
+              if (note.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: AppDimensions.space2),
+                  child: Text(
+                    '✎ $note',
+                    style: tt.labelSmall?.copyWith(color: t.muted),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        Divider(color: t.line, height: 1),
+        if (fullHeight)
+          Expanded(child: SingleChildScrollView(child: bodyContent))
+        else
+          bodyContent,
+        Divider(color: t.line, height: 1),
+        Padding(
+          padding: const EdgeInsets.all(AppDimensions.space4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              OrderSummary(
+                shop: s.shop,
+                order: payOrder,
+                noTotal: true,
+                showLines: false,
+              ),
+              const SizedBox(height: AppDimensions.space2),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    timing == 'after' && state.due > 0
+                        ? 'ยอดชำระ (รวมที่ส่งแล้ว)'
+                        : 'ยอดชำระ',
+                    style: tt.bodyMedium?.copyWith(
+                      color: t.ink,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    key: const ValueKey('sale-total-amount'),
+                    totalTxt,
+                    style: tt.displayLarge?.copyWith(
+                      color: t.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppDimensions.space2),
+              PaymentPicker(
+                methods: s.payments,
+                value: methodId,
+                onChanged:
+                    onSelectMethod ??
+                    (id) => bloc.add(SalePaymentMethodSelected(id)),
+              ),
+              const SizedBox(height: AppDimensions.space3),
+              if (timing == 'after') ...[
+                Btn(
+                  key: const ValueKey('sale-send-round-btn'),
+                  label: 'ส่งออเดอร์',
+                  size: BtnSize.lg,
+                  block: true,
+                  icon: 'plus',
+                  disabled: !state.canSend,
+                  onPressed: () => bloc.add(SaleRoundSent(staff: staff)),
+                ),
+                const SizedBox(height: AppDimensions.space2),
+              ],
+              Btn(
+                key: const ValueKey('sale-pay-btn'),
+                label: timing == 'after'
+                    ? 'เช็กบิล $totalTxt'
+                    : 'ไปชำระเงิน $totalTxt',
+                kind: BtnKind.primary,
+                size: BtnSize.lg,
+                block: true,
+                icon: 'receipt',
+                disabled: !state.canPay,
+                onPressed:
+                    onPayPressed ??
+                    () => bloc.add(const SalePaymentStepChanged('pay')),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
     return Container(
       key: const ValueKey('sale-order-panel'),
       height: fullHeight ? double.infinity : null,
@@ -155,148 +296,7 @@ class SaleOrderPanel extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
               border: Border.all(color: t.line),
             ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: fullHeight ? MainAxisSize.max : MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(AppDimensions.space4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Dropdown<String>(
-                  key: const ValueKey('sale-table-dropdown'),
-                  label: 'เลือกโต๊ะ',
-                  value: state.tableId,
-                  options: tableOpts,
-                  onChanged: onSelectTable,
-                ),
-                const SizedBox(height: AppDimensions.space3),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    if (o != null)
-                      Pill(
-                        label: timing == 'after'
-                            ? 'กินก่อนจ่าย'
-                            : 'จ่ายก่อนกิน',
-                        tone: timing == 'after'
-                            ? PillTone.orange
-                            : PillTone.neutral,
-                      )
-                    else
-                      Flexible(
-                        child: Seg<String>(
-                          key: const ValueKey('sale-timing-seg'),
-                          value: state.timing,
-                          items: const [
-                            SegItem(value: 'before', label: 'จ่ายก่อนกิน'),
-                            SegItem(value: 'after', label: 'กินก่อนจ่าย'),
-                          ],
-                          onChanged: (v) => bloc.add(SaleTimingChanged(v)),
-                        ),
-                      ),
-                    const SizedBox(width: AppDimensions.space2),
-                    Btn(
-                      key: const ValueKey('sale-note-btn'),
-                      size: BtnSize.sm,
-                      icon: 'edit',
-                      label: note.isNotEmpty ? 'แก้โน้ต' : 'โน้ต',
-                      onPressed: onOpenNoteModal,
-                    ),
-                  ],
-                ),
-                if (note.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: AppDimensions.space2),
-                    child: Text(
-                      '✎ $note',
-                      style: tt.labelSmall?.copyWith(color: t.muted),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          Divider(color: t.line, height: 1),
-          if (fullHeight)
-            Expanded(child: SingleChildScrollView(child: bodyContent))
-          else
-            bodyContent,
-          Divider(color: t.line, height: 1),
-          Padding(
-            padding: const EdgeInsets.all(AppDimensions.space4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                OrderSummary(
-                  shop: s.shop,
-                  order: payOrder,
-                  noTotal: true,
-                  showLines: false,
-                ),
-                const SizedBox(height: AppDimensions.space2_5),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      timing == 'after' && state.due > 0
-                          ? 'ยอดชำระ (รวมที่ส่งแล้ว)'
-                          : 'ยอดชำระ',
-                      style: tt.bodyMedium?.copyWith(
-                        color: t.ink,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(
-                      key: const ValueKey('sale-total-amount'),
-                      totalTxt,
-                      style: tt.displaySmall?.copyWith(
-                        color: t.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppDimensions.space2_5),
-                PaymentPicker(
-                  methods: s.payments,
-                  value: methodId,
-                  onChanged:
-                      onSelectMethod ??
-                      (id) => bloc.add(SalePaymentMethodSelected(id)),
-                ),
-                const SizedBox(height: AppDimensions.space3),
-                if (timing == 'after') ...[
-                  Btn(
-                    key: const ValueKey('sale-send-round-btn'),
-                    label: 'ส่งออเดอร์',
-                    size: BtnSize.lg,
-                    block: true,
-                    icon: 'plus',
-                    disabled: !state.canSend,
-                    onPressed: () => bloc.add(SaleRoundSent(staff: staff)),
-                  ),
-                  const SizedBox(height: AppDimensions.space2),
-                ],
-                Btn(
-                  key: const ValueKey('sale-pay-btn'),
-                  label: timing == 'after'
-                      ? 'เช็กบิล $totalTxt'
-                      : 'ไปชำระเงิน $totalTxt',
-                  kind: BtnKind.primary,
-                  size: BtnSize.lg,
-                  block: true,
-                  icon: 'receipt',
-                  disabled: !state.canPay,
-                  onPressed:
-                      onPayPressed ??
-                      () => bloc.add(const SalePaymentStepChanged('pay')),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+      child: fullHeight ? SafeArea(left: false, child: column) : column,
     );
   }
 }

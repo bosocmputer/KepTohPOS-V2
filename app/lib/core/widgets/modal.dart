@@ -26,10 +26,12 @@ class Modal extends StatelessWidget {
     final tokens = context.tokens;
     final textTheme = Theme.of(context).textTheme;
     final maxWidth = wide ? AppDimensions.modalWideW : AppDimensions.modalW;
+    final screenH = MediaQuery.sizeOf(context).height;
+    final maxHeight = screenH * AppDimensions.modalMaxHeightFactor;
 
     return Center(
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
+        constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: maxHeight),
         child: Container(
           decoration: BoxDecoration(
             color: tokens.surface,

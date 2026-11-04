@@ -24,24 +24,32 @@ abstract final class AppTheme {
     );
     final textTheme = baseTheme.textTheme.copyWith(
       displayLarge: displayStyle.copyWith(
-        fontSize: 28,
+        fontSize: AppDimensions.fsMoney,
         fontWeight: FontWeight.w700,
       ),
       displayMedium: displayStyle.copyWith(
-        fontSize: 24,
+        fontSize: AppDimensions.fsH1,
         fontWeight: FontWeight.w700,
       ),
       displaySmall: displayStyle.copyWith(
-        fontSize: 20,
+        fontSize: AppDimensions.fsH1,
+        fontWeight: FontWeight.w700,
+      ),
+      headlineLarge: displayStyle.copyWith(
+        fontSize: AppDimensions.fsH1,
         fontWeight: FontWeight.w700,
       ),
       headlineMedium: displayStyle.copyWith(
-        fontSize: 18,
+        fontSize: AppDimensions.fsH2,
         fontWeight: FontWeight.w700,
       ),
       titleLarge: displayStyle.copyWith(
-        fontSize: AppDimensions.fsMd,
+        fontSize: AppDimensions.fsH2,
         fontWeight: FontWeight.w600,
+      ),
+      titleMedium: displayStyle.copyWith(
+        fontSize: AppDimensions.fsMd,
+        fontWeight: FontWeight.w700,
       ),
       bodyLarge: bodyFont.copyWith(
         fontSize: AppDimensions.fsMd,

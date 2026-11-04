@@ -3,17 +3,13 @@ import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/roles.dart';
 import 'package:flutter/material.dart';
 
-/// Top header bar for `AppShell` (`88px` on `>= 761`, compact on mobile).
+/// Top header bar for `AppShell` (`72px` at `1024`, `88px` at `>= 1180`,
+/// compact on mobile).
 ///
-/// Desktop (`>= 761`, `design/figma/table.png` & `cashier.png`):
-/// - Left: `44x44` bordered rounded-square Sidebar toggle button + Search box
-///   (`height: 44`, `width: ~292`).
-/// - Right (flush right via `Spacer`): Primary page action button (e.g.
-///   `"เปิดโต๊ะ"` on `/tables`, `"เก็บโต๊ะ"` on `/tables/:tableId`) + shift
-///   status pill + `Avatar`.
-///
-/// Mobile (`<= 760`):
-/// - Sidebar button + Page title + Search icon button + `Avatar`.
+/// Extends its surface background under the top status bar (`SafeArea`), while
+/// keeping all interactive controls below `MediaQuery.paddingOf(context).top`
+/// and aligned horizontally with the page content padding (`16` at `1024`,
+/// `24` at `>= 1180`).
 class ShellHeaderBar extends StatelessWidget {
   const new({
     required this.height,
@@ -23,6 +19,7 @@ class ShellHeaderBar extends StatelessWidget {
     required this.actions,
     required this.onOpenDrawer,
     super.key,
+    this.horizontalPadding,
     this.pageTitle = 'โต๊ะและขาย',
     this.searchQuery = '',
     this.searchPlaceholder = 'ค้นหา',
@@ -35,6 +32,7 @@ class ShellHeaderBar extends StatelessWidget {
   final bool isShiftOpen;
   final List<Widget> actions;
   final VoidCallback onOpenDrawer;
+  final double? horizontalPadding;
   final String pageTitle;
   final String searchQuery;
   final String searchPlaceholder;
@@ -44,13 +42,16 @@ class ShellHeaderBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final textTheme = Theme.of(context).textTheme;
+    final topInset = MediaQuery.paddingOf(context).top;
+    final screenW = MediaQuery.sizeOf(context).width;
+    final hPad =
+        horizontalPadding ??
+        (isMobile ? AppDimensions.space3 : AppDimensions.pagePadding(screenW));
 
     return Container(
       key: const ValueKey('shell-header'),
-      height: height,
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? AppDimensions.space3 : AppDimensions.space6,
-      ),
+      height: height + topInset,
+      padding: EdgeInsets.only(top: topInset, left: hPad, right: hPad),
       decoration: BoxDecoration(
         color: tokens.surface,
         border: Border(bottom: BorderSide(color: tokens.line)),
@@ -64,7 +65,7 @@ class ShellHeaderBar extends StatelessWidget {
             onPressed: onOpenDrawer,
           ),
           if (isMobile) ...[
-            const SizedBox(width: AppDimensions.space2_5),
+            const SizedBox(width: AppDimensions.space2),
             Expanded(
               child: Text(
                 pageTitle,
@@ -83,19 +84,15 @@ class ShellHeaderBar extends StatelessWidget {
               semanticLabel: 'ค้นหา',
               onPressed: () {},
             ),
-            const SizedBox(width: AppDimensions.space1_5),
+            const SizedBox(width: AppDimensions.space1),
           ] else ...[
             const SizedBox(width: AppDimensions.space3),
-            Flexible(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: AppDimensions.topbarSearchW,
-                ),
-                child: SearchBox(
-                  value: searchQuery,
-                  placeholder: searchPlaceholder,
-                  onChanged: onSearchChanged ?? (_) {},
-                ),
+            SizedBox(
+              width: AppDimensions.topbarSearchW,
+              child: SearchBox(
+                value: searchQuery,
+                placeholder: searchPlaceholder,
+                onChanged: onSearchChanged ?? (_) {},
               ),
             ),
             const Spacer(),
@@ -107,7 +104,7 @@ class ShellHeaderBar extends StatelessWidget {
               label: isShiftOpen ? 'กะเปิด' : 'ยังไม่เปิดกะ',
               tone: isShiftOpen ? PillTone.green : PillTone.neutral,
             ),
-            const SizedBox(width: AppDimensions.space2_5),
+            const SizedBox(width: AppDimensions.space2),
           ],
           Semantics(
             button: true,
@@ -189,8 +186,8 @@ class MobileBottomNavBar extends StatelessWidget {
     return Container(
       key: const ValueKey('shell-bottom-nav'),
       padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.space1_5,
-        vertical: AppDimensions.space1_5,
+        horizontal: AppDimensions.space1,
+        vertical: AppDimensions.space1,
       ),
       decoration: BoxDecoration(
         color: tokens.side,
@@ -254,7 +251,7 @@ class _BottomNavButton extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(
             vertical: AppDimensions.space2,
-            horizontal: AppDimensions.spaceHalf,
+            horizontal: AppDimensions.space1,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

@@ -30,9 +30,10 @@ class LoginPage extends StatelessWidget {
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final isWide = constraints.maxWidth >= 860;
+                final pagePad = AppDimensions.pagePadding(constraints.maxWidth);
                 if (isWide) {
                   return Padding(
-                    padding: const EdgeInsets.all(AppDimensions.space5),
+                    padding: EdgeInsets.all(pagePad),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -43,7 +44,7 @@ class LoginPage extends StatelessWidget {
                             child: SingleChildScrollView(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: AppDimensions.space6,
-                                vertical: AppDimensions.space4,
+                                vertical: AppDimensions.space3,
                               ),
                               child: ConstrainedBox(
                                 constraints: const BoxConstraints(
@@ -101,21 +102,25 @@ class _LoginFormPanel extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final cubit = context.read<AuthCubit>();
 
+    final compactH = MediaQuery.sizeOf(context).height < 900;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
         const Center(
           child: BrandLogo(
-            size: AppDimensions.space12,
+            size: AppDimensions.avatarLg,
             radius: AppDimensions.radiusMd,
           ),
         ),
-        const SizedBox(height: AppDimensions.space3),
+        SizedBox(
+          height: compactH ? AppDimensions.space2 : AppDimensions.space3,
+        ),
         Text(
           'เข้าสู่ระบบ',
           textAlign: TextAlign.center,
-          style: textTheme.displaySmall?.copyWith(color: tokens.ink),
+          style: textTheme.displayMedium?.copyWith(color: tokens.ink),
         ),
         const SizedBox(height: AppDimensions.space1),
         Text(
@@ -123,7 +128,9 @@ class _LoginFormPanel extends StatelessWidget {
           textAlign: TextAlign.center,
           style: textTheme.bodySmall?.copyWith(color: tokens.muted),
         ),
-        const SizedBox(height: AppDimensions.space5),
+        SizedBox(
+          height: compactH ? AppDimensions.space3 : AppDimensions.space4,
+        ),
         Dropdown<String>(
           label: 'พนักงาน',
           value: state.selectedStaffId,
@@ -139,7 +146,9 @@ class _LoginFormPanel extends StatelessWidget {
           leadingBuilder: (o) => Avatar(name: o.label),
           onChanged: cubit.selectStaff,
         ),
-        const SizedBox(height: AppDimensions.space3),
+        SizedBox(
+          height: compactH ? AppDimensions.space2 : AppDimensions.space3,
+        ),
         PinDots(value: state.pin),
         if (state.error.isNotEmpty)
           Padding(
@@ -157,10 +166,16 @@ class _LoginFormPanel extends StatelessWidget {
         NumPad(
           value: state.pin,
           maxLen: 4,
+          keyHeight: compactH
+              ? AppDimensions.numPadKeyCompactH
+              : AppDimensions.numPadKeyH,
+          rowGap: compactH ? AppDimensions.space1 : AppDimensions.space2,
           onChanged: cubit.setPin,
           onEnter: cubit.submitPin,
         ),
-        const SizedBox(height: AppDimensions.space4),
+        SizedBox(
+          height: compactH ? AppDimensions.space3 : AppDimensions.space4,
+        ),
         Btn(
           key: const ValueKey('login-submit-btn'),
           label: state.hasOpenShift ? 'เข้าสู่ระบบ' : 'เข้าสู่ระบบและเปิดกะ',

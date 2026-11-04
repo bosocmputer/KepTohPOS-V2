@@ -11,6 +11,17 @@ Widget _buildGoldenShell({bool drawerOpen = false}) => BlocProvider(
   child: MaterialApp(
     debugShowCheckedModeBanner: false,
     theme: AppTheme.build(brightness: Brightness.light),
+    builder: (context, child) {
+      final mq = MediaQuery.of(context);
+      return LayoutBuilder(
+        builder: (context, constraints) => MediaQuery(
+          data: mq.copyWith(
+            size: Size(constraints.maxWidth, constraints.maxHeight),
+          ),
+          child: child!,
+        ),
+      );
+    },
     home: ShellPlaceholderPage(
       viewSpec: kAppViews.first,
       initialDrawerOpen: drawerOpen,

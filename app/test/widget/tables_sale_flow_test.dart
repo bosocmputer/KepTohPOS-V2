@@ -131,4 +131,26 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'opening zone dropdown on /tables floats in overlay without shifting StatsGroup',
+    (tester) async {
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final repo = MockPosRepository.createFallback();
+      await tester.pumpWidget(KepTohApp(repository: repo));
+      await tester.pumpAndSettle();
+
+      final statsFinder = find.text('โต๊ะว่าง');
+      final beforeTopLeft = tester.getTopLeft(statsFinder);
+
+      await tester.tap(find.byKey(const ValueKey('tables-zone-dropdown')));
+      await tester.pumpAndSettle();
+
+      final afterTopLeft = tester.getTopLeft(statsFinder);
+      expect(afterTopLeft, equals(beforeTopLeft));
+    },
+  );
 }

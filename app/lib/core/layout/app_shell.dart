@@ -82,10 +82,12 @@ class _AppShellState extends State<AppShell> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isMobile = constraints.maxWidth <= AppDimensions.mobileBp;
-        final headerHeight = isMobile
-            ? AppDimensions.btnLgH
-            : AppDimensions.headerH;
+        final screenW = constraints.maxWidth;
+        final isMobile = screenW <= AppDimensions.mobileBp;
+        final headerHeight = AppDimensions.topbarHeight(screenW);
+        final pagePad = isMobile
+            ? AppDimensions.space3
+            : AppDimensions.pagePadding(screenW);
         final delegateHeader =
             !isMobile && widget.delegateDesktopHeader && hasAccess;
 
@@ -93,6 +95,7 @@ class _AppShellState extends State<AppShell> {
             ShellHeaderBar(
               height: headerHeight,
               isMobile: isMobile,
+              horizontalPadding: pagePad,
               pageTitle: widget.pageTitle,
               staffName: widget.staffName,
               isShiftOpen: widget.shiftOpenTimeText != null,
@@ -118,26 +121,35 @@ class _AppShellState extends State<AppShell> {
                                   headerBuilder: buildHeader,
                                   child: widget.child,
                                 )
-                              : widget.child)
-                        : Padding(
-                            padding: const EdgeInsets.all(AppDimensions.space6),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: tokens.surface,
-                                borderRadius: BorderRadius.circular(
-                                  AppDimensions.r,
+                              : SafeArea(
+                                  top: false,
+                                  bottom: !isMobile,
+                                  child: widget.child,
+                                ))
+                        : SafeArea(
+                            top: false,
+                            bottom: !isMobile,
+                            child: Padding(
+                              padding: EdgeInsets.all(pagePad),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: tokens.surface,
+                                  borderRadius: BorderRadius.circular(
+                                    AppDimensions.r,
+                                  ),
+                                  border: Border.all(color: tokens.line),
                                 ),
-                                border: Border.all(color: tokens.line),
-                              ),
-                              child: Empty(
-                                title: 'ไม่มีสิทธิ์เข้าหน้านี้',
-                                text:
-                                    '${kRoles[widget.staffRole] ?? ""}'
-                                    ' เข้าหน้านี้ไม่ได้',
-                                action: Btn(
-                                  label: 'กลับหน้าโต๊ะ',
-                                  kind: BtnKind.primary,
-                                  onPressed: () => _handleSelectView('tables'),
+                                child: Empty(
+                                  title: 'ไม่มีสิทธิ์เข้าหน้านี้',
+                                  text:
+                                      '${kRoles[widget.staffRole] ?? ""}'
+                                      ' เข้าหน้านี้ไม่ได้',
+                                  action: Btn(
+                                    label: 'กลับหน้าโต๊ะ',
+                                    kind: BtnKind.primary,
+                                    onPressed: () =>
+                                        _handleSelectView('tables'),
+                                  ),
                                 ),
                               ),
                             ),

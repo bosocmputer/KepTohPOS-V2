@@ -45,8 +45,12 @@ class TablesPage extends StatelessWidget {
             ),
         ];
 
+        final pagePad = AppDimensions.pagePadding(
+          MediaQuery.sizeOf(context).width,
+        );
+
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(AppDimensions.space6),
+          padding: EdgeInsets.all(pagePad),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -54,15 +58,6 @@ class TablesPage extends StatelessWidget {
                 title: 'โต๊ะและการขาย',
                 desc: 'ภาพรวมโต๊ะว่าง ลูกค้าในร้าน และสถานะรอชำระ',
                 actions: [
-                  SizedBox(
-                    width: 200,
-                    child: SearchBox(
-                      key: const ValueKey('tables-search-box'),
-                      value: state.searchQuery,
-                      placeholder: 'ค้นหาโต๊ะ',
-                      onChanged: cubit.setSearchQuery,
-                    ),
-                  ),
                   SizedBox(
                     width: 180,
                     child: Dropdown<String>(
@@ -74,7 +69,7 @@ class TablesPage extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: AppDimensions.space5),
+              const SizedBox(height: AppDimensions.space4),
               StatsGroup(
                 children: [
                   Stat(

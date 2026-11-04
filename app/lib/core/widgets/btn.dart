@@ -84,7 +84,7 @@ class Btn extends StatelessWidget {
         AppDimensions.btnSmH,
         AppDimensions.space3,
         AppDimensions.fsSm,
-        AppDimensions.radiusSm,
+        AppDimensions.radiusMd,
       ),
       BtnSize.md => (
         AppDimensions.btnMdH,
@@ -94,7 +94,7 @@ class Btn extends StatelessWidget {
       ),
       BtnSize.lg => (
         AppDimensions.btnLgH,
-        AppDimensions.space5_5,
+        AppDimensions.space6,
         AppDimensions.fsLg,
         AppDimensions.radiusMd,
       ),

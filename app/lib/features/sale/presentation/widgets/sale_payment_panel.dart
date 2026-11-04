@@ -45,6 +45,11 @@ class SalePaymentPanel extends StatelessWidget {
     final note = state.effectiveNotes;
     if (tb == null || method == null) return const SizedBox.shrink();
 
+    final screenH = MediaQuery.sizeOf(context).height;
+    final compactH = screenH < 900;
+    final gap = compactH ? AppDimensions.space2 : AppDimensions.space3;
+    final vPad = compactH ? AppDimensions.space3 : AppDimensions.space4;
+
     final confirmLabel = switch (method.type) {
       'cash' => 'ยืนยันรับเงินสด',
       'qr' => 'ได้รับเงินแล้ว · ออกใบเสร็จ',
@@ -52,36 +57,29 @@ class SalePaymentPanel extends StatelessWidget {
     };
 
     final content = Padding(
-      padding: const EdgeInsets.all(AppDimensions.space4),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppDimensions.space4,
+        vertical: vPad,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (note.isNotEmpty) ...[
             Container(
-              padding: const EdgeInsets.all(AppDimensions.space3),
+              padding: const EdgeInsets.all(AppDimensions.space2),
               decoration: BoxDecoration(
                 color: t.surface2,
                 borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'โน้ตลูกค้า',
-                    style: tt.labelSmall?.copyWith(
-                      color: t.muted,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: AppDimensions.space1),
-                  Text(note, style: tt.bodySmall?.copyWith(color: t.ink)),
-                ],
+              child: Text(
+                'โน้ตลูกค้า: $note',
+                style: tt.bodySmall?.copyWith(color: t.ink),
               ),
             ),
-            const SizedBox(height: AppDimensions.space3),
+            SizedBox(height: gap),
           ],
-          OrderSummary(shop: s.shop, order: payOrder),
-          const SizedBox(height: AppDimensions.space3),
+          OrderSummary(shop: s.shop, order: payOrder, showLines: !compactH),
+          SizedBox(height: gap),
           Text(
             'วิธีชำระเงิน',
             style: tt.labelSmall?.copyWith(
@@ -89,15 +87,15 @@ class SalePaymentPanel extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: AppDimensions.space1_5),
+          const SizedBox(height: AppDimensions.space1),
           PaymentPicker(
             methods: s.payments,
             value: method.id,
             onChanged: (id) => bloc.add(SalePaymentMethodSelected(id)),
           ),
-          const SizedBox(height: AppDimensions.space3),
+          SizedBox(height: gap),
           if (method.type == 'cash')
-            CashPaymentSection(state: state, staff: staff)
+            CashPaymentSection(state: state, staff: staff, compact: compactH)
           else if (method.type == 'qr')
             PromptPayQR(promptpayId: s.shop.promptpay, amount: payOrder.total)
           else
@@ -108,6 +106,82 @@ class SalePaymentPanel extends StatelessWidget {
             ),
         ],
       ),
+    );
+
+    final column = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: fullHeight ? MainAxisSize.max : MainAxisSize.min,
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppDimensions.space4,
+            vertical: compactH ? AppDimensions.space2 : AppDimensions.space4,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'ชำระเงิน · โต๊ะ ${tb.name}',
+                    style: tt.titleLarge?.copyWith(color: t.ink),
+                  ),
+                  Text(
+                    state.effectiveTiming == 'after'
+                        ? 'กินก่อนจ่าย'
+                        : 'จ่ายก่อนกิน',
+                    style: tt.labelSmall?.copyWith(color: t.muted),
+                  ),
+                ],
+              ),
+              Btn(
+                key: const ValueKey('pay-back-btn'),
+                kind: BtnKind.ghost,
+                icon: 'x',
+                semanticLabel: 'กลับไปแก้รายการ',
+                onPressed: () =>
+                    bloc.add(const SalePaymentStepChanged('order')),
+              ),
+            ],
+          ),
+        ),
+        Divider(color: t.line, height: 1),
+        if (fullHeight)
+          Expanded(child: SingleChildScrollView(child: content))
+        else
+          content,
+        Divider(color: t.line, height: 1),
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppDimensions.space4,
+            vertical: vPad,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Btn(
+                key: const ValueKey('pay-confirm-btn'),
+                kind: BtnKind.primary,
+                size: BtnSize.lg,
+                block: true,
+                icon: 'check',
+                label: confirmLabel,
+                disabled: !state.canConfirmPayment,
+                onPressed: () => bloc.add(SalePaymentSubmitted(staff: staff)),
+              ),
+              const SizedBox(height: AppDimensions.space2),
+              Btn(
+                key: const ValueKey('pay-cancel-btn'),
+                label: 'กลับไปแก้รายการ',
+                block: true,
+                onPressed: () =>
+                    bloc.add(const SalePaymentStepChanged('order')),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
 
     return Container(
@@ -123,75 +197,7 @@ class SalePaymentPanel extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
               border: Border.all(color: t.line),
             ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: fullHeight ? MainAxisSize.max : MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(AppDimensions.space4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'ชำระเงิน · โต๊ะ ${tb.name}',
-                      style: tt.titleLarge?.copyWith(color: t.ink),
-                    ),
-                    Text(
-                      state.effectiveTiming == 'after'
-                          ? 'กินก่อนจ่าย'
-                          : 'จ่ายก่อนกิน',
-                      style: tt.labelSmall?.copyWith(color: t.muted),
-                    ),
-                  ],
-                ),
-                Btn(
-                  key: const ValueKey('pay-back-btn'),
-                  kind: BtnKind.ghost,
-                  icon: 'x',
-                  semanticLabel: 'กลับไปแก้รายการ',
-                  onPressed: () =>
-                      bloc.add(const SalePaymentStepChanged('order')),
-                ),
-              ],
-            ),
-          ),
-          Divider(color: t.line, height: 1),
-          if (fullHeight)
-            Expanded(child: SingleChildScrollView(child: content))
-          else
-            content,
-          Divider(color: t.line, height: 1),
-          Padding(
-            padding: const EdgeInsets.all(AppDimensions.space4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Btn(
-                  key: const ValueKey('pay-confirm-btn'),
-                  kind: BtnKind.primary,
-                  size: BtnSize.lg,
-                  block: true,
-                  icon: 'check',
-                  label: confirmLabel,
-                  disabled: !state.canConfirmPayment,
-                  onPressed: () => bloc.add(SalePaymentSubmitted(staff: staff)),
-                ),
-                const SizedBox(height: AppDimensions.space2),
-                Btn(
-                  key: const ValueKey('pay-cancel-btn'),
-                  label: 'กลับไปแก้รายการ',
-                  block: true,
-                  onPressed: () =>
-                      bloc.add(const SalePaymentStepChanged('order')),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+      child: fullHeight ? SafeArea(left: false, child: column) : column,
     );
   }
 }

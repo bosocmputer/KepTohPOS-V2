@@ -10,10 +10,16 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 /// Cash received + quick bank buttons + change + `NumPad` (`payment_cash.png`).
 class CashPaymentSection extends StatelessWidget {
-  const new({required this.state, required this.staff, super.key});
+  const new({
+    required this.state,
+    required this.staff,
+    super.key,
+    this.compact = false,
+  });
 
   final SaleState state;
   final StaffMember staff;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +29,7 @@ class CashPaymentSection extends StatelessWidget {
     final total = state.payOrder.total;
     final recv = state.cashReceivedAmount;
     final quicks = SalePaymentPanel.quickCashAmounts(total);
+    final gap = compact ? AppDimensions.space2 : AppDimensions.space3;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -45,16 +52,16 @@ class CashPaymentSection extends StatelessWidget {
               ),
           ],
         ),
-        const SizedBox(height: AppDimensions.space2_5),
+        SizedBox(height: gap),
         Container(
           key: const ValueKey('cash-received-box'),
           padding: const EdgeInsets.symmetric(
             horizontal: AppDimensions.space3,
-            vertical: AppDimensions.space2_5,
+            vertical: AppDimensions.space2,
           ),
           decoration: BoxDecoration(
             color: t.surface2,
-            borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
             border: Border.all(color: t.line),
           ),
           child: Row(
@@ -71,7 +78,7 @@ class CashPaymentSection extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: AppDimensions.space2),
+        SizedBox(height: gap),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -94,10 +101,14 @@ class CashPaymentSection extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: AppDimensions.space2_5),
+        SizedBox(height: gap),
         NumPad(
           value: state.cashReceived,
           maxLen: 7,
+          keyHeight: compact
+              ? AppDimensions.numPadKeyCompactH
+              : AppDimensions.numPadKeyH,
+          rowGap: compact ? AppDimensions.space1 : AppDimensions.space2,
           onChanged: (v) => bloc.add(SaleCashReceivedChanged(v)),
           onEnter: state.canConfirmPayment
               ? (_) => bloc.add(SalePaymentSubmitted(staff: staff))

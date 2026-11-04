@@ -87,7 +87,14 @@ class _SalePageState extends State<SalePage> {
           curr.toastMessage.isNotEmpty &&
           curr.toastMessage != prev.toastMessage,
       listener: (context, state) {
-        showAppToast(context, state.toastMessage);
+        final hasModal =
+            state.settledBill != null ||
+            _showNoteModal ||
+            _removeSelection != null ||
+            _showCloseConfirm;
+        if (!hasModal) {
+          showAppToast(context, state.toastMessage);
+        }
         context.read<SaleBloc>().add(const SaleToastCleared());
       },
       builder: (context, state) {
@@ -123,7 +130,10 @@ class _SalePageState extends State<SalePage> {
           children: [
             LayoutBuilder(
               builder: (context, constraints) {
-                if (constraints.maxWidth > AppDimensions.mobileBp) {
+                final screenW = constraints.maxWidth;
+                if (screenW > AppDimensions.mobileBp) {
+                  final pagePad = AppDimensions.pagePadding(screenW);
+                  final panelW = AppDimensions.rightPanelWidth(screenW);
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -133,18 +143,20 @@ class _SalePageState extends State<SalePage> {
                           children: [
                             ?desktopHeader,
                             Expanded(
-                              child: SingleChildScrollView(
-                                padding: const EdgeInsets.all(
-                                  AppDimensions.space5,
+                              child: SafeArea(
+                                top: false,
+                                right: false,
+                                child: SingleChildScrollView(
+                                  padding: EdgeInsets.all(pagePad),
+                                  child: _buildMain(state, tb),
                                 ),
-                                child: _buildMain(state, tb),
                               ),
                             ),
                           ],
                         ),
                       ),
                       SizedBox(
-                        width: AppDimensions.orderPanelW,
+                        width: panelW,
                         height: double.infinity,
                         child: _buildPanel(state, fullHeight: true),
                       ),

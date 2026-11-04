@@ -45,29 +45,52 @@ Future<void> _precacheImages(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-Widget _buildTablesGolden(MockPosRepository repo, DateTime now) =>
-    RepositoryProvider<PosRepository>.value(
-      value: repo,
-      child: MultiBlocProvider(
-        providers: [
-          BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
-          BlocProvider<AuthCubit>(create: (_) => AuthCubit(repo)),
-          BlocProvider<ShiftBloc>(create: (_) => ShiftBloc(repo)),
-          BlocProvider<TablesCubit>(create: (_) => TablesCubit(repo, now: now)),
-        ],
-        child: MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.build(brightness: Brightness.light),
-          home: ShellPlaceholderPage(viewSpec: kAppViews.first),
-        ),
-      ),
-    );
+const _kSpecs = <(String, Size, EdgeInsets)>[
+  ('1024x768', Size(1024, 768), EdgeInsets.only(top: 24)),
+  ('1180x820', Size(1180, 820), EdgeInsets.only(top: 24, bottom: 20)),
+  ('1366x1024', Size(1366, 1024), EdgeInsets.zero),
+];
+
+Widget _buildTablesGolden(
+  MockPosRepository repo,
+  DateTime now, {
+  EdgeInsets safePad = EdgeInsets.zero,
+}) => RepositoryProvider<PosRepository>.value(
+  value: repo,
+  child: MultiBlocProvider(
+    providers: [
+      BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
+      BlocProvider<AuthCubit>(create: (_) => AuthCubit(repo)),
+      BlocProvider<ShiftBloc>(create: (_) => ShiftBloc(repo)),
+      BlocProvider<TablesCubit>(create: (_) => TablesCubit(repo, now: now)),
+    ],
+    child: MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.build(brightness: Brightness.light),
+      builder: (context, child) {
+        final mq = MediaQuery.of(context);
+        return LayoutBuilder(
+          builder: (context, constraints) => MediaQuery(
+            data: mq.copyWith(
+              size: Size(constraints.maxWidth, constraints.maxHeight),
+              padding: safePad,
+              viewPadding: safePad,
+            ),
+            child: child!,
+          ),
+        );
+      },
+      home: ShellPlaceholderPage(viewSpec: kAppViews.first),
+    ),
+  ),
+);
 
 Widget _buildSaleGolden(
   MockPosRepository repo,
   DateTime now, {
   String tableId = 't2',
   SaleBloc? saleBloc,
+  EdgeInsets safePad = EdgeInsets.zero,
 }) => RepositoryProvider<PosRepository>.value(
   value: repo,
   child: MultiBlocProvider(
@@ -86,6 +109,19 @@ Widget _buildSaleGolden(
     child: MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.build(brightness: Brightness.light),
+      builder: (context, child) {
+        final mq = MediaQuery.of(context);
+        return LayoutBuilder(
+          builder: (context, constraints) => MediaQuery(
+            data: mq.copyWith(
+              size: Size(constraints.maxWidth, constraints.maxHeight),
+              padding: safePad,
+              viewPadding: safePad,
+            ),
+            child: child!,
+          ),
+        );
+      },
       home: ShellPlaceholderPage(
         viewSpec: kAppViews.first,
         saleTableId: tableId,
@@ -98,19 +134,140 @@ void main() {
   final fixedNow = DateTime(2026, 11, 4, 19, 30);
 
   group('Tables, Sale & Payment Golden Tests', () {
-    testWidgets('TablesPage at 1366x1024', (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1366, 1024));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
+    for (final (name, size, pad) in _kSpecs) {
+      testWidgets('TablesPage at $name', (tester) async {
+        await tester.binding.setSurfaceSize(size);
+        addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final repo = _createSeededRepo(fixedNow);
-      await tester.pumpWidget(_buildTablesGolden(repo, fixedNow));
-      await tester.pumpAndSettle();
+        final repo = _createSeededRepo(fixedNow);
+        await tester.pumpWidget(
+          _buildTablesGolden(repo, fixedNow, safePad: pad),
+        );
+        await tester.pumpAndSettle();
 
-      await expectLater(
-        find.byType(MaterialApp),
-        matchesGoldenFile('tables_1366x1024.png'),
-      );
-    });
+        await expectLater(
+          find.byType(MaterialApp),
+          matchesGoldenFile('tables_$name.png'),
+        );
+      });
+
+      testWidgets('TablesPage with dropdown open at $name', (tester) async {
+        await tester.binding.setSurfaceSize(size);
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final repo = _createSeededRepo(fixedNow);
+        await tester.pumpWidget(
+          _buildTablesGolden(repo, fixedNow, safePad: pad),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const ValueKey('tables-zone-dropdown')));
+        await tester.pumpAndSettle();
+
+        await expectLater(
+          find.byType(MaterialApp),
+          matchesGoldenFile('tables_dropdown_$name.png'),
+        );
+      });
+
+      testWidgets('SalePage at $name', (tester) async {
+        await tester.binding.setSurfaceSize(size);
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final repo = _createSeededRepo(fixedNow);
+        final saleBloc = SaleBloc(repo, initialTableId: 't2', now: fixedNow)
+          ..add(const SaleAddonQtyChanged(addonId: 'ad1', qty: 2));
+        addTearDown(saleBloc.close);
+
+        await tester.pumpWidget(
+          _buildSaleGolden(repo, fixedNow, saleBloc: saleBloc, safePad: pad),
+        );
+        await tester.pumpAndSettle();
+
+        await expectLater(
+          find.byType(MaterialApp),
+          matchesGoldenFile('sale_$name.png'),
+        );
+      });
+
+      testWidgets('Payment Cash at $name', (tester) async {
+        await tester.binding.setSurfaceSize(size);
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final repo = _createSeededRepo(fixedNow);
+        final saleBloc = SaleBloc(repo, initialTableId: 't2', now: fixedNow)
+          ..add(const SaleCategorySelected('เครื่องดื่ม'))
+          ..add(const SaleAddonQtyChanged(addonId: 'ad1', qty: 2))
+          ..add(const SalePaymentStepChanged('pay'))
+          ..add(const SalePaymentMethodSelected('pm1'))
+          ..add(const SaleCashReceivedChanged('1000'));
+        addTearDown(saleBloc.close);
+
+        await tester.pumpWidget(
+          _buildSaleGolden(repo, fixedNow, saleBloc: saleBloc, safePad: pad),
+        );
+        await tester.pumpAndSettle();
+
+        await expectLater(
+          find.byType(MaterialApp),
+          matchesGoldenFile('payment_cash_$name.png'),
+        );
+      });
+
+      testWidgets('Payment PromptPay at $name', (tester) async {
+        await tester.binding.setSurfaceSize(size);
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final repo = _createSeededRepo(fixedNow);
+        final saleBloc = SaleBloc(repo, initialTableId: 't2', now: fixedNow)
+          ..add(const SaleCategorySelected('เครื่องดื่ม'))
+          ..add(const SaleAddonQtyChanged(addonId: 'ad1', qty: 2))
+          ..add(const SalePaymentStepChanged('pay'))
+          ..add(const SalePaymentMethodSelected('pm2'));
+        addTearDown(saleBloc.close);
+
+        await tester.pumpWidget(
+          _buildSaleGolden(repo, fixedNow, saleBloc: saleBloc, safePad: pad),
+        );
+        await tester.pumpAndSettle();
+
+        await expectLater(
+          find.byType(MaterialApp),
+          matchesGoldenFile('payment_promptpay_$name.png'),
+        );
+      });
+
+      testWidgets('Receipt Modal at $name', (tester) async {
+        await tester.binding.setSurfaceSize(size);
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final repo = _createSeededRepo(fixedNow);
+        final staff = repo.state.staff.first;
+        final saleBloc = SaleBloc(repo, initialTableId: 't2', now: fixedNow)
+          ..add(const SalePaymentStepChanged('pay'))
+          ..add(const SalePaymentMethodSelected('pm1'))
+          ..add(const SaleCashReceivedChanged('1000'))
+          ..add(
+            SalePaymentSubmitted(
+              staff: staff,
+              billId: 'b_golden',
+              now: fixedNow,
+            ),
+          );
+        addTearDown(saleBloc.close);
+
+        await tester.pumpWidget(
+          _buildSaleGolden(repo, fixedNow, saleBloc: saleBloc, safePad: pad),
+        );
+        await tester.pumpAndSettle();
+        await _precacheImages(tester);
+
+        await expectLater(
+          find.byType(MaterialApp),
+          matchesGoldenFile('receipt_$name.png'),
+        );
+      });
+    }
 
     testWidgets('TablesPage at 390x844', (tester) async {
       await tester.binding.setSurfaceSize(const Size(390, 844));
@@ -126,26 +283,6 @@ void main() {
       );
     });
 
-    testWidgets('SalePage at 1366x1024', (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1366, 1024));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-
-      final repo = _createSeededRepo(fixedNow);
-      final saleBloc = SaleBloc(repo, initialTableId: 't2', now: fixedNow)
-        ..add(const SaleAddonQtyChanged(addonId: 'ad1', qty: 2));
-      addTearDown(saleBloc.close);
-
-      await tester.pumpWidget(
-        _buildSaleGolden(repo, fixedNow, saleBloc: saleBloc),
-      );
-      await tester.pumpAndSettle();
-
-      await expectLater(
-        find.byType(MaterialApp),
-        matchesGoldenFile('sale_1366x1024.png'),
-      );
-    });
-
     testWidgets('SalePage at 390x844', (tester) async {
       await tester.binding.setSurfaceSize(const Size(390, 844));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -157,80 +294,6 @@ void main() {
       await expectLater(
         find.byType(MaterialApp),
         matchesGoldenFile('sale_390x844.png'),
-      );
-    });
-
-    testWidgets('Payment Cash at 1366x1024', (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1366, 1024));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-
-      final repo = _createSeededRepo(fixedNow);
-      final saleBloc = SaleBloc(repo, initialTableId: 't2', now: fixedNow)
-        ..add(const SaleCategorySelected('เครื่องดื่ม'))
-        ..add(const SaleAddonQtyChanged(addonId: 'ad1', qty: 2))
-        ..add(const SalePaymentStepChanged('pay'))
-        ..add(const SalePaymentMethodSelected('pm1'))
-        ..add(const SaleCashReceivedChanged('1000'));
-      addTearDown(saleBloc.close);
-
-      await tester.pumpWidget(
-        _buildSaleGolden(repo, fixedNow, saleBloc: saleBloc),
-      );
-      await tester.pumpAndSettle();
-
-      await expectLater(
-        find.byType(MaterialApp),
-        matchesGoldenFile('payment_cash_1366x1024.png'),
-      );
-    });
-
-    testWidgets('Payment PromptPay at 1366x1024', (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1366, 1024));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-
-      final repo = _createSeededRepo(fixedNow);
-      final saleBloc = SaleBloc(repo, initialTableId: 't2', now: fixedNow)
-        ..add(const SaleCategorySelected('เครื่องดื่ม'))
-        ..add(const SaleAddonQtyChanged(addonId: 'ad1', qty: 2))
-        ..add(const SalePaymentStepChanged('pay'))
-        ..add(const SalePaymentMethodSelected('pm2'));
-      addTearDown(saleBloc.close);
-
-      await tester.pumpWidget(
-        _buildSaleGolden(repo, fixedNow, saleBloc: saleBloc),
-      );
-      await tester.pumpAndSettle();
-
-      await expectLater(
-        find.byType(MaterialApp),
-        matchesGoldenFile('payment_promptpay_1366x1024.png'),
-      );
-    });
-
-    testWidgets('Receipt Modal at 1366x1024', (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1366, 1024));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-
-      final repo = _createSeededRepo(fixedNow);
-      final staff = repo.state.staff.first;
-      final saleBloc = SaleBloc(repo, initialTableId: 't2', now: fixedNow)
-        ..add(const SalePaymentStepChanged('pay'))
-        ..add(const SalePaymentMethodSelected('pm1'))
-        ..add(const SaleCashReceivedChanged('1000'))
-        ..add(
-          SalePaymentSubmitted(staff: staff, billId: 'b_golden', now: fixedNow),
-        );
-      addTearDown(saleBloc.close);
-
-      await tester.pumpWidget(
-        _buildSaleGolden(repo, fixedNow, saleBloc: saleBloc),
-      );
-      await tester.pumpAndSettle();
-      await _precacheImages(tester);
-
-      await expectLater(
-        find.byType(MaterialApp),
-        matchesGoldenFile('receipt_1366x1024.png'),
       );
     });
   });

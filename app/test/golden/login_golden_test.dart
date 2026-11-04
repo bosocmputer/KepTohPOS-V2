@@ -28,39 +28,60 @@ MockPosRepository _createGoldenRepo() {
   return MockPosRepository.fromJsonStrings(jsonByName, now: fixedNow);
 }
 
+const _kSpecs = <(String, Size, EdgeInsets)>[
+  ('1024x768', Size(1024, 768), EdgeInsets.only(top: 24)),
+  ('1180x820', Size(1180, 820), EdgeInsets.only(top: 24, bottom: 20)),
+  ('1366x1024', Size(1366, 1024), EdgeInsets.zero),
+];
+
 void main() {
   group('Login Screen Golden Test', () {
-    testWidgets('LoginPage at 1366x1024 matches golden', (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1366, 1024));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
+    for (final (name, size, pad) in _kSpecs) {
+      testWidgets('LoginPage at $name matches golden', (tester) async {
+        await tester.binding.setSurfaceSize(size);
+        addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final repo = _createGoldenRepo();
-      final authCubit = AuthCubit(repo)..setPin('12');
-      addTearDown(authCubit.close);
+        final repo = _createGoldenRepo();
+        final authCubit = AuthCubit(repo)..setPin('12');
+        addTearDown(authCubit.close);
 
-      await tester.pumpWidget(
-        BlocProvider<AuthCubit>.value(
-          value: authCubit,
-          child: MaterialApp(
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.build(brightness: Brightness.light),
-            home: const LoginPage(),
+        await tester.pumpWidget(
+          BlocProvider<AuthCubit>.value(
+            value: authCubit,
+            child: MaterialApp(
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.build(brightness: Brightness.light),
+              builder: (context, child) {
+                final mq = MediaQuery.of(context);
+                return LayoutBuilder(
+                  builder: (context, constraints) => MediaQuery(
+                    data: mq.copyWith(
+                      size: Size(constraints.maxWidth, constraints.maxHeight),
+                      padding: pad,
+                      viewPadding: pad,
+                    ),
+                    child: child!,
+                  ),
+                );
+              },
+              home: const LoginPage(),
+            ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      await tester.runAsync(() async {
-        for (final el in find.byType(Image).evaluate()) {
-          final img = el.widget as Image;
-          await precacheImage(img.image, el);
-        }
-      });
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
+        await tester.runAsync(() async {
+          for (final el in find.byType(Image).evaluate()) {
+            final img = el.widget as Image;
+            await precacheImage(img.image, el);
+          }
+        });
+        await tester.pumpAndSettle();
 
-      await expectLater(
-        find.byType(MaterialApp),
-        matchesGoldenFile('login_1366x1024.png'),
-      );
-    });
+        await expectLater(
+          find.byType(MaterialApp),
+          matchesGoldenFile('login_$name.png'),
+        );
+      });
+    }
   });
 }

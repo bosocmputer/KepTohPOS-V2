@@ -23,7 +23,10 @@ class PageHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(title, style: textTheme.displaySmall?.copyWith(color: tokens.ink)),
+        Text(
+          title,
+          style: textTheme.displayMedium?.copyWith(color: tokens.ink),
+        ),
         if (desc != null && desc!.isNotEmpty) ...[
           const SizedBox(height: AppDimensions.space1),
           Text(
@@ -59,7 +62,12 @@ class PageHeader extends StatelessWidget {
           children: [
             Expanded(child: titleBlock),
             const SizedBox(width: AppDimensions.space3),
-            Flexible(child: actionsWrap),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: constraints.maxWidth * 0.65,
+              ),
+              child: actionsWrap,
+            ),
           ],
         );
       },
@@ -115,19 +123,18 @@ class SearchBox extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     return Container(
-      constraints: const BoxConstraints(
-        minHeight: AppDimensions.tap,
-        minWidth: 200,
-      ),
+      height: AppDimensions.tap,
+      constraints: const BoxConstraints(minWidth: 200),
       padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space3),
       decoration: BoxDecoration(
         color: tokens.surface,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
         border: Border.all(
           color: tokens.line,
           width: AppDimensions.borderThick,
         ),
       ),
+      alignment: Alignment.centerLeft,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
