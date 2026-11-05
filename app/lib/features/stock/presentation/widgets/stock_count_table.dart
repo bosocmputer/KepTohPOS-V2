@@ -226,4 +226,3 @@ class LocationCountTable extends StatelessWidget {
     );
   }
 }
-

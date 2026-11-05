@@ -176,4 +176,3 @@ class OrderSummary extends StatelessWidget {
     );
   }
 }
-

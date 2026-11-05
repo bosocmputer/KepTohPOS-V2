@@ -9,12 +9,12 @@ import 'package:app/domain/domain.dart';
 import 'package:app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:app/features/bills/presentation/cubit/bills_cubit.dart';
 import 'package:app/features/bills/presentation/pages/bills_page.dart';
+import 'package:app/features/dashboard/presentation/pages/dashboard_page.dart';
+import 'package:app/features/reports/presentation/pages/reports_page.dart';
 import 'package:app/features/sale/presentation/pages/sale_page.dart';
 import 'package:app/features/shift/presentation/bloc/shift_bloc.dart';
-import 'package:app/features/shift/presentation/pages/shift_page.dart';
 import 'package:app/features/stock/presentation/bloc/stock_count_bloc.dart';
 import 'package:app/features/stock/presentation/cubit/stock_cubit.dart';
-import 'package:app/features/stock/presentation/pages/stock_page.dart';
 import 'package:app/features/tables/presentation/pages/tables_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,6 +28,7 @@ class ShellPlaceholderPage extends StatefulWidget {
     this.staffRole = 'owner',
     this.initialDrawerOpen = false,
     this.saleTableId,
+    this.billsDate,
     this.now,
   });
 
@@ -35,6 +36,7 @@ class ShellPlaceholderPage extends StatefulWidget {
   final String staffRole;
   final bool initialDrawerOpen;
   final String? saleTableId;
+  final String? billsDate;
   final DateTime? now;
 
   @override
@@ -49,6 +51,30 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
       return watch ? context.watch<T>() : context.read<T>();
     } on Object {
       return null;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _syncBillsDate();
+  }
+
+  @override
+  void didUpdateWidget(covariant ShellPlaceholderPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.billsDate != oldWidget.billsDate ||
+        widget.viewSpec.id != oldWidget.viewSpec.id) {
+      _syncBillsDate();
+    }
+  }
+
+  void _syncBillsDate() {
+    final targetDate = widget.billsDate;
+    if (widget.viewSpec.id != 'bills' || targetDate == null) return;
+    final cubit = _maybe<BillsCubit>(context, watch: false);
+    if (cubit != null && cubit.state.selectedDate != targetDate) {
+      cubit.setDate(targetDate);
     }
   }
 
@@ -117,51 +143,6 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
         viewId == 'bills' && (billsCubit != null || repo != null);
     final isStockView = viewId == 'stock' && stockCubit != null;
 
-    final Widget body;
-    if (isSaleView) {
-      final salePage = SalePage(
-        staff: me,
-        onBackToTables: () => context.go('/tables'),
-        onSelectTable: (id) => context.go('/tables/$id'),
-        onRequestOpenShift: () => setState(() => _manualOpenShiftModal = true),
-      );
-      body = existingSaleBloc != null
-          ? salePage
-          : BlocProvider(
-              key: ValueKey('sale-bloc-${widget.saleTableId}'),
-              create: (_) => SaleBloc(
-                repo!,
-                initialTableId: widget.saleTableId!,
-                now: widget.now,
-              ),
-              child: salePage,
-            );
-    } else if (isTablesView) {
-      body = TablesPage(
-        onSelectTable: (id) => context.go('/tables/$id'),
-        onRequestOpenShift: () => setState(() => _manualOpenShiftModal = true),
-        onGoSetupTables: () => context.go('/setup'),
-      );
-    } else if (isBillsView) {
-      final billsPage = BillsPage(staff: me);
-      body = billsCubit != null
-          ? billsPage
-          : BlocProvider(
-              create: (_) => BillsCubit(repo!, now: widget.now),
-              child: billsPage,
-            );
-    } else if (isStockView) {
-      body = StockPage(staff: me);
-    } else if (viewId == 'shift' && shiftBloc != null) {
-      body = ShiftPage(
-        staffId: me.id,
-        staffName: me.name,
-        onGoTables: () => context.go('/tables'),
-      );
-    } else {
-      body = _buildPlaceholderBody(tokens);
-    }
-
     return Stack(
       children: [
         AppShell(
@@ -222,7 +203,18 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
             authCubit?.logout();
             context.go('/login');
           },
-          child: body,
+          child: _buildBody(
+            context,
+            viewId: viewId,
+            me: me,
+            repo: repo,
+            existingSaleBloc: existingSaleBloc,
+            tablesCubit: tablesCubit,
+            billsCubit: billsCubit,
+            stockCubit: stockCubit,
+            shiftBloc: shiftBloc,
+            tokens: tokens,
+          ),
         ),
         if (showOpenShiftModal)
           OpenShiftModal(
@@ -237,31 +229,71 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
     );
   }
 
-  Widget _buildPlaceholderBody(AppTokens tokens) => SingleChildScrollView(
-    padding: const EdgeInsets.all(AppDimensions.space6),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        PageHeader(title: widget.viewSpec.title, desc: 'ร้านหมูกระทะ เก็บโต๊ะ'),
-        if (widget.viewSpec.id == 'setup') ...[
-          const SizedBox(height: AppDimensions.space5),
-          const SetupThemeSection(),
-        ],
-        const SizedBox(height: AppDimensions.space5),
-        Container(
-          decoration: BoxDecoration(
-            color: tokens.surface,
-            borderRadius: BorderRadius.circular(AppDimensions.r),
-            border: Border.all(color: tokens.line),
-          ),
-          child: Empty(
-            title: widget.viewSpec.title,
-            text:
-                'หน้าจอ ${widget.viewSpec.label} '
-                '(เตรียมเชื่อมข้อมูลในขั้นถัดไป)',
-          ),
-        ),
-      ],
-    ),
-  );
+  Widget _buildBody(
+    BuildContext context, {
+    required String viewId,
+    required StaffMember me,
+    required PosRepository? repo,
+    required SaleBloc? existingSaleBloc,
+    required TablesCubit? tablesCubit,
+    required BillsCubit? billsCubit,
+    required StockCubit? stockCubit,
+    required ShiftBloc? shiftBloc,
+    required AppTokens tokens,
+  }) {
+    if (viewId == 'tables' &&
+        widget.saleTableId != null &&
+        (existingSaleBloc != null || repo != null)) {
+      final page = SalePage(
+        staff: me,
+        onBackToTables: () => context.go('/tables'),
+        onSelectTable: (id) => context.go('/tables/$id'),
+        onRequestOpenShift: () => setState(() => _manualOpenShiftModal = true),
+      );
+      return existingSaleBloc != null
+          ? page
+          : BlocProvider(
+              key: ValueKey('sale-bloc-${widget.saleTableId}'),
+              create: (_) => SaleBloc(
+                repo!,
+                initialTableId: widget.saleTableId!,
+                now: widget.now,
+              ),
+              child: page,
+            );
+    }
+    if (viewId == 'tables' && tablesCubit != null) {
+      return TablesPage(
+        onSelectTable: (id) => context.go('/tables/$id'),
+        onRequestOpenShift: () => setState(() => _manualOpenShiftModal = true),
+        onGoSetupTables: () => context.go('/setup'),
+      );
+    }
+    if (viewId == 'bills' && (billsCubit != null || repo != null)) {
+      final page = BillsPage(staff: me);
+      return billsCubit != null
+          ? page
+          : BlocProvider(
+              create: (_) => BillsCubit(
+                repo!,
+                now: widget.now,
+                initialDate: widget.billsDate,
+              ),
+              child: page,
+            );
+    }
+    return buildAnalyticsOrPlaceholderBody(
+      context,
+      viewSpec: widget.viewSpec,
+      me: me,
+      tokens: tokens,
+      repo: repo,
+      stockCubit: stockCubit,
+      shiftBloc: shiftBloc,
+      billsCubit: billsCubit,
+      existingDash: _maybe<DashboardCubit>(context, watch: false),
+      existingRep: _maybe<ReportsCubit>(context, watch: false),
+      now: widget.now,
+    );
+  }
 }
