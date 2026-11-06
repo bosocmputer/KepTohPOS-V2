@@ -10,7 +10,7 @@ export 'package:app/domain/ledger_models.dart';
 /// weekly count estimation/reconciliation, and gross/net profit
 /// (`computeLedger` in `prototype/index.html`).
 LedgerResult computeLedger(PosState s, {String? today}) {
-  final tk = today ?? dkey(DateTime.now());
+  final tk = today ?? businessDayKey(DateTime.now(), s.shop.dayCutoffMinutes);
   final sh = s.shop;
   final w = sh.childHeadWeight;
   final activeFixedSum = s.fixedCosts
@@ -20,7 +20,13 @@ LedgerResult computeLedger(PosState s, {String? today}) {
     1,
     sh.openDaysPerMonth > 0 ? sh.openDaysPerMonth : 30,
   );
-  final fixedPerDay = activeFixedSum / openDays;
+  double fixedPerDayFor(DateTime d) {
+    if (sh.fixedCostDivisor == 'calendar') {
+      final daysInMonth = DateTime(d.year, d.month + 1, 0).day;
+      return activeFixedSum / daysInMonth;
+    }
+    return activeFixedSum / openDays;
+  }
 
   final salesBy = <String, List<BillRecord>>{};
   final purchBy = <String, List<PurchaseRecord>>{};
@@ -58,6 +64,7 @@ LedgerResult computeLedger(PosState s, {String? today}) {
     d = addDays(d, 1)
   ) {
     final k = dkey(d);
+    final fixedPerDay = fixedPerDayFor(d);
     final cnt = s.counts[k];
     final purch = purchBy[k] ?? const <PurchaseRecord>[];
     final closed = cnt != null;

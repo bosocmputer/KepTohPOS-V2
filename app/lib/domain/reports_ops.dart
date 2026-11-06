@@ -27,6 +27,9 @@ class MonthlyReportSummary {
     required this.closedBuffetNet,
     required this.closedCostPerHead,
     required this.closedFoodPct,
+    this.fixedDeducted = 0,
+    this.fixedFullMonth = 0,
+    this.salesDays = 0,
   });
 
   final List<String> availableMonths;
@@ -50,6 +53,9 @@ class MonthlyReportSummary {
   final double closedBuffetNet;
   final double? closedCostPerHead;
   final double? closedFoodPct;
+  final double fixedDeducted;
+  final double fixedFullMonth;
+  final int salesDays;
 }
 
 /// Computes `MonthlyReportSummary` for [month] (`YYYY-MM`), defaulting to the
@@ -91,6 +97,11 @@ MonthlyReportSummary computeMonthlyReport(
   );
   final closedHeadsW = closed.fold<double>(0, (a, d) => a + d.headsW);
   final closedBuffetNet = closed.fold<double>(0, (a, d) => a + d.buffetNet);
+  final fixedDeducted = closed.fold<double>(0, (a, d) => a + d.fixed);
+  final fixedFullMonth = s.fixedCosts
+      .where((x) => x.active)
+      .fold<double>(0, (a, x) => a + x.amount);
+  final salesDays = days.where((d) => d.bills > 0).length;
 
   return MonthlyReportSummary(
     availableMonths: months,
@@ -116,5 +127,8 @@ MonthlyReportSummary computeMonthlyReport(
     closedFoodPct: closedBuffetNet > 0
         ? closedIngCost / closedBuffetNet * 100
         : null,
+    fixedDeducted: fixedDeducted,
+    fixedFullMonth: fixedFullMonth,
+    salesDays: salesDays,
   );
 }

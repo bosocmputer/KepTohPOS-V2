@@ -183,6 +183,29 @@ class _SetupCrudEditorModalState extends State<SetupCrudEditorModal> {
           numKey: true,
         ),
       ),
+      Padding(
+        padding: const EdgeInsets.only(bottom: AppDimensions.space3),
+        child: Wrap(
+          spacing: AppDimensions.space1_5,
+          runSpacing: AppDimensions.space1_5,
+          children: [
+            for (final p in const <(int, String)>[
+              (0, 'ไม่จำกัด (0)'),
+              (90, '90 นาที'),
+              (120, '2 ชม. (120)'),
+              (180, '3 ชม. (180)'),
+            ])
+              Btn(
+                key: ValueKey('pkg-timelimit-preset-${p.$1}'),
+                size: BtnSize.sm,
+                kind: _pkg.timeLimit == p.$1 ? BtnKind.primary : BtnKind.normal,
+                label: p.$2,
+                onPressed: () =>
+                    setState(() => _pkg = _pkg.copyWith(timeLimit: p.$1)),
+              ),
+          ],
+        ),
+      ),
       _row(
         _txt(
           'ราคาผู้ใหญ่ (บาท) *',

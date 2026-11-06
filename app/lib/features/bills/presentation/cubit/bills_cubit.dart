@@ -198,7 +198,7 @@ class BillsCubit extends Cubit<BillsState> {
     DateTime? now,
     String? initialDate,
   }) {
-    final tk = dkey(now ?? DateTime.now());
+    final tk = businessDayKey(now ?? DateTime.now(), s.shop.dayCutoffMinutes);
     return BillsState(
       posState: s,
       selectedDate: initialDate ?? tk,

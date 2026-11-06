@@ -1,6 +1,7 @@
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
+import 'package:app/domain/domain.dart';
 import 'package:app/features/sale/presentation/widgets/sale_receipt_modal.dart';
 import 'package:app/features/tables/presentation/cubit/tables_cubit.dart';
 import 'package:app/features/tables/presentation/widgets/table_card.dart';
@@ -186,6 +187,11 @@ class _TablesPageState extends State<TablesPage> {
                 fresh: false,
                 staff: defaultStaff,
                 allowCashierVoid: true,
+                tableSummary: buildTableSummarySlip(
+                  state.posState,
+                  _slipTableId!,
+                  now: state.now,
+                ),
                 onPrint: () =>
                     showAppToast(context, 'ส่งพิมพ์สลิป POS แล้ว (จำลอง)'),
                 onVoid: defaultStaff == null
@@ -197,6 +203,12 @@ class _TablesPageState extends State<TablesPage> {
                           context,
                           'ยกเลิกบิลและคืนสถานะโต๊ะเรียบร้อย',
                         );
+                      },
+                onVoidSubBill: defaultStaff == null
+                    ? null
+                    : (billId, reason) {
+                        cubit.voidTableBill(billId, reason, defaultStaff);
+                        showAppToast(context, 'ยกเลิกบิลย่อยเรียบร้อย');
                       },
                 onCancelTable: () {
                   cubit.cancelTable(_slipTableId!);

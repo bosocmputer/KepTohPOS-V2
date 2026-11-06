@@ -74,7 +74,10 @@ class DashboardCubit extends Cubit<DashboardState> {
          _buildState(
            repository.state,
            range: initialRange,
-           today: dkey((clock ?? (() => now ?? DateTime.now()))()),
+           today: businessDayKey(
+             (clock ?? (() => now ?? DateTime.now()))(),
+             repository.state.shop.dayCutoffMinutes,
+           ),
          ),
        ) {
     _sub = _repository.stream.listen((s) {
@@ -83,7 +86,7 @@ class DashboardCubit extends Cubit<DashboardState> {
           _buildState(
             s,
             range: state.range,
-            today: dkey(_clock()),
+            today: businessDayKey(_clock(), s.shop.dayCutoffMinutes),
             selectedBarDate: state.selectedBarDate,
           ),
         );

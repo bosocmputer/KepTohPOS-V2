@@ -45,13 +45,22 @@ class ReportsCubit extends Cubit<ReportsState> {
        super(
          _buildState(
            repository.state,
-           today: dkey((clock ?? (() => now ?? DateTime.now()))()),
+           today: businessDayKey(
+             (clock ?? (() => now ?? DateTime.now()))(),
+             repository.state.shop.dayCutoffMinutes,
+           ),
            month: initialMonth,
          ),
        ) {
     _sub = _repository.stream.listen((s) {
       if (!isClosed) {
-        emit(_buildState(s, today: dkey(_clock()), month: state.selectedMonth));
+        emit(
+          _buildState(
+            s,
+            today: businessDayKey(_clock(), s.shop.dayCutoffMinutes),
+            month: state.selectedMonth,
+          ),
+        );
       }
     });
   }

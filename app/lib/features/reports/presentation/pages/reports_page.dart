@@ -56,12 +56,7 @@ Widget _profitText(AppTokens t, double? v) => v == null
         ),
       );
 
-/// Builds the metric columns for [DailyReportTable].
-///
-/// Column widths are calibrated so that on a 1024px tablet (`availRight=776`),
-/// the first 4 sales-detail columns sum to `280px` and the remaining 9 core
-/// columns (`รวมขาย` .. `Food cost`) sum to `776px`, preventing horizontal
-/// scroll from slicing `รวมขาย` (`118,379`) in half at `maxScrollExtent`.
+/// Builds metric columns for [DailyReportTable].
 List<ReportColSpec> buildReportColumns(
   MonthlyReportSummary report,
   AppTokens t,
@@ -134,33 +129,26 @@ List<ReportColSpec> buildReportColumns(
   ];
 }
 
-/// Builds the month dropdown (`reports-month-dropdown`) for `/reports`, shown
-/// in the unified Topbar on tablet/desktop and inline on mobile.
-Widget buildReportsMonthDropdown(ReportsCubit cubit) {
-  final rep = cubit.state.report;
-  return SizedBox(
-    width: 210,
-    child: Dropdown<String>(
-      key: const ValueKey('reports-month-dropdown'),
-      label: 'เดือน',
-      value: rep.selectedMonth,
-      options: [
-        for (final m in rep.availableMonths)
-          DropdownOption<String>(value: m, label: thMonth(m)),
-      ],
-      onChanged: cubit.setMonth,
-    ),
-  );
-}
+/// Builds the month dropdown (`reports-month-dropdown`) for `/reports`.
+Widget buildReportsMonthDropdown(ReportsCubit cubit) => SizedBox(
+  width: 210,
+  child: Dropdown<String>(
+    key: const ValueKey('reports-month-dropdown'),
+    label: 'เดือน',
+    value: cubit.state.report.selectedMonth,
+    options: [
+      for (final m in cubit.state.report.availableMonths)
+        DropdownOption<String>(value: m, label: thMonth(m)),
+    ],
+    onChanged: cubit.setMonth,
+  ),
+);
 
-/// Daily monthly report screen (`function ReportsView` in
-/// `prototype/index.html:1585-1615` & `design/figma/report.png`).
+/// Daily monthly report screen (`ReportsView` in `prototype/index.html`).
 class ReportsPage extends StatefulWidget {
   const new({super.key, this.onSelectDateForBills, this.onGoSetupCosting});
-
   final ValueChanged<String>? onSelectDateForBills;
   final VoidCallback? onGoSetupCosting;
-
   @override
   State<ReportsPage> createState() => _ReportsPageState();
 }
@@ -180,12 +168,10 @@ class _ReportsPageState extends State<ReportsPage> {
     super.dispose();
   }
 
-  void _setColMode(String mode) {
-    setState(() {
-      _colMode = mode;
-      _activeReportColMode = mode;
-    });
-  }
+  void _setColMode(String mode) => setState(() {
+    _colMode = mode;
+    _activeReportColMode = mode;
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -196,6 +182,8 @@ class _ReportsPageState extends State<ReportsPage> {
     return BlocBuilder<ReportsCubit, ReportsState>(
       builder: (context, state) {
         final rep = state.report;
+        final partialFixed =
+            rep.showNetProfit && rep.fixedDeducted + 0.01 < rep.fixedFullMonth;
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -208,6 +196,12 @@ class _ReportsPageState extends State<ReportsPage> {
                 children: [
                   Toolbar(
                     end: [
+                      if (partialFixed)
+                        const Pill(
+                          key: ValueKey('reports-partial-fixed-pill'),
+                          tone: PillTone.orange,
+                          label: 'หักค่าคงที่ยังไม่ครบเดือน',
+                        ),
                       Pill(
                         tone: PillTone.green,
                         label:
@@ -263,7 +257,11 @@ class _ReportsPageState extends State<ReportsPage> {
                           tone: rep.closedNetProfit >= 0
                               ? StatTone.green
                               : StatTone.red,
-                          sub: 'ค่าใช้จ่าย ${baht(rep.closedSpend)}',
+                          sub:
+                              'ค่าใช้จ่าย ${baht(rep.closedSpend)} · '
+                              'ค่าคงที่หักแล้ว ${baht(rep.fixedDeducted)} '
+                              'จาก ${baht(rep.fixedFullMonth)} · '
+                              'ขาย ${rep.salesDays} วัน',
                         ),
                       Stat(
                         label: 'ซื้อของเข้า',

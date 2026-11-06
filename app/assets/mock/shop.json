@@ -17,6 +17,7 @@
   "childHeadWeight": 0.5,
   "openDaysPerMonth": 30,
   "weeklyCountDow": 1,
+  "dayCutoffMinutes": 300,
   "rounding": "down",
   "bankAccounts": [
     {

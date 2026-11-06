@@ -232,7 +232,9 @@ class SetupFinanceCatalogPanel extends StatelessWidget {
             Stat(
               label: 'เฉลี่ยต่อวันที่เปิดร้าน',
               value: baht(state.dailyFixedCost),
-              sub: 'หาร ${s.shop.openDaysPerMonth} วัน/เดือน',
+              sub: s.shop.fixedCostDivisor == 'calendar'
+                  ? 'ตามปฏิทิน (${state.effectiveFixedCostDivisor} วัน)'
+                  : 'หาร ${s.shop.openDaysPerMonth} วัน/เดือน',
             ),
           ],
         ),

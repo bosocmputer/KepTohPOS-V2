@@ -110,16 +110,19 @@ BillRecord makeBill(
   String? shiftId,
   BankAccountItem? bankAccount,
 }) {
-  final date = dkey(DateTime.parse(at).toLocal());
+  final date = businessDayKey(
+    DateTime.parse(at).toLocal(),
+    s.shop.dayCutoffMinutes,
+  );
   final nextSeq = (s.seq[date] ?? 0) + 1;
   s.seq[date] = nextSeq;
   final table = s.tables.where((t) => t.id == tableId).firstOrNull;
   final staff = s.staff.where((x) => x.id == staffId).firstOrNull;
   final isCash = method.type == 'cash';
-  final isTransfer = method.type == 'transfer';
-  final acct = isTransfer
+  final acct = method.type == 'transfer'
       ? (bankAccount ?? s.shop.activeBankAccounts.firstOrNull)
       : null;
+  final (eatUntil, limitMin) = billTimerSnapshot(s, tableId, packageId, at);
   final shortDate = date.substring(2).replaceAll('-', '');
   final bill = BillRecord(
     id: id,
@@ -148,13 +151,14 @@ BillRecord makeBill(
     vatRate: s.shop.vatRate,
     bankAccountId: acct?.id,
     bankAccountInfo: acct?.shortLabel,
+    eatUntil: eatUntil,
+    timeLimitMin: limitMin,
   );
   s.sales.add(bill);
   return bill;
 }
 
-/// Settles an order for both pay-before-eating and eat-before-paying modes
-/// (`settle` in `prototype/index.html`).
+/// Settles an order for both pay-before-eating and eat-before-paying modes.
 CalculatedOrder settle(
   PosState st,
   DiningTable table,

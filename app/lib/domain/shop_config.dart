@@ -20,7 +20,9 @@ class ShopConfig {
     this.showNetProfit = true,
     this.childHeadWeight = 0.5,
     this.openDaysPerMonth = 30,
+    this.fixedCostDivisor = 'custom',
     this.weeklyCountDow = 1,
+    this.dayCutoffMinutes = 0,
     this.rounding = 'down',
     this.themeMode = 'light',
     this.themePalette = 'orange',
@@ -45,7 +47,9 @@ class ShopConfig {
     showNetProfit: (json['showNetProfit'] as bool?) ?? true,
     childHeadWeight: (json['childHeadWeight'] as num?)?.toDouble() ?? 0.5,
     openDaysPerMonth: (json['openDaysPerMonth'] as num?)?.toInt() ?? 30,
+    fixedCostDivisor: (json['fixedCostDivisor'] as String?) ?? 'custom',
     weeklyCountDow: (json['weeklyCountDow'] as num?)?.toInt() ?? 1,
+    dayCutoffMinutes: (json['dayCutoffMinutes'] as num?)?.toInt() ?? 0,
     rounding: (json['rounding'] as String?) ?? 'down',
     themeMode: (json['themeMode'] as String?) ?? 'light',
     themePalette: (json['themePalette'] as String?) ?? 'orange',
@@ -74,7 +78,9 @@ class ShopConfig {
   final bool showNetProfit;
   final double childHeadWeight;
   final int openDaysPerMonth;
+  final String fixedCostDivisor;
   final int weeklyCountDow;
+  final int dayCutoffMinutes;
   final String rounding;
   final String themeMode;
   final String themePalette;
@@ -101,7 +107,9 @@ class ShopConfig {
     bool? showNetProfit,
     double? childHeadWeight,
     int? openDaysPerMonth,
+    String? fixedCostDivisor,
     int? weeklyCountDow,
+    int? dayCutoffMinutes,
     String? rounding,
     String? themeMode,
     String? themePalette,
@@ -124,7 +132,9 @@ class ShopConfig {
     showNetProfit: showNetProfit ?? this.showNetProfit,
     childHeadWeight: childHeadWeight ?? this.childHeadWeight,
     openDaysPerMonth: openDaysPerMonth ?? this.openDaysPerMonth,
+    fixedCostDivisor: fixedCostDivisor ?? this.fixedCostDivisor,
     weeklyCountDow: weeklyCountDow ?? this.weeklyCountDow,
+    dayCutoffMinutes: dayCutoffMinutes ?? this.dayCutoffMinutes,
     rounding: rounding ?? this.rounding,
     themeMode: themeMode ?? this.themeMode,
     themePalette: themePalette ?? this.themePalette,
@@ -150,7 +160,9 @@ class ShopConfig {
     'showNetProfit': showNetProfit,
     'childHeadWeight': childHeadWeight,
     'openDaysPerMonth': openDaysPerMonth,
+    'fixedCostDivisor': fixedCostDivisor,
     'weeklyCountDow': weeklyCountDow,
+    'dayCutoffMinutes': dayCutoffMinutes,
     'rounding': rounding,
     'themeMode': themeMode,
     'themePalette': themePalette,

@@ -15,6 +15,7 @@ export 'package:app/domain/seed.dart';
 export 'package:app/domain/settle.dart';
 export 'package:app/domain/setup_ops.dart';
 export 'package:app/domain/stock_ops.dart';
+export 'package:app/domain/table_summary.dart';
 
 /// Builds a [BillRecord] representing the POS Slip (`ใบแจ้งยอด` or settled
 /// receipt) of an occupied table (`s.openTables[tableId]`), or `null` if the
@@ -43,10 +44,16 @@ BillRecord? buildTablePosSlip(
       : TableTotals(a: o.heads.a, c: o.heads.c, f: o.heads.f);
   final order = orderOf(s, pkg, totals);
   final current = now ?? DateTime.now();
+  final (eatUntil, limitMin) = billTimerSnapshot(
+    s,
+    tb.id,
+    o.packageId,
+    o.openedAt,
+  );
   return BillRecord(
     id: 'slip-${tb.id}',
     no: 'SLIP-${tb.name}',
-    date: dkey(current.toLocal()),
+    date: businessDayKey(current.toLocal(), s.shop.dayCutoffMinutes),
     at: o.openedAt,
     tableId: tb.id,
     tableName: tb.name,
@@ -67,6 +74,8 @@ BillRecord? buildTablePosSlip(
     change: 0,
     vatMode: s.shop.vatMode,
     vatRate: s.shop.vatRate,
+    eatUntil: eatUntil,
+    timeLimitMin: limitMin,
     isSlipPreview: true,
   );
 }

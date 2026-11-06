@@ -124,7 +124,7 @@ class TablesCubit extends Cubit<TablesState> {
     final currentNow = now ?? DateTime.now();
     // Derive today's date key from latest sales date if available in mock seed,
     // or dkey(currentNow).
-    var tk = dkey(currentNow);
+    var tk = businessDayKey(currentNow, s.shop.dayCutoffMinutes);
     if (!s.sales.any((b) => b.date == tk) && s.sales.isNotEmpty) {
       tk = s.sales
           .map((b) => b.date)

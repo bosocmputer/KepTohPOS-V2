@@ -113,7 +113,10 @@ class AuthCubit extends Cubit<AuthState> {
     if (!activeStaff.any((x) => x.id == selId)) {
       selId = activeStaff.isNotEmpty ? activeStaff.first.id : '';
     }
-    final ledger = computeLedger(s, today: dkey(now));
+    final ledger = computeLedger(
+      s,
+      today: businessDayKey(now, s.shop.dayCutoffMinutes),
+    );
     LedgerDaySummary? lastClosed;
     for (var i = ledger.days.length - 1; i >= 0; i--) {
       if (ledger.days[i].closed) {

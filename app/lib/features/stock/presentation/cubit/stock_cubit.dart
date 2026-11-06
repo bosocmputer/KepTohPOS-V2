@@ -35,7 +35,7 @@ class StockCubit extends Cubit<StockState> {
     String initialTab,
   ) {
     final s = repo.state;
-    final today = dkey(now);
+    final today = businessDayKey(now, s.shop.dayCutoffMinutes);
     final ledger = computeLedger(s, today: today);
     return StockState(
       posState: s,
@@ -47,7 +47,7 @@ class StockCubit extends Cubit<StockState> {
   }
 
   void _onRepositoryUpdated(PosState s) {
-    final today = dkey(_clock());
+    final today = businessDayKey(_clock(), s.shop.dayCutoffMinutes);
     final ledger = computeLedger(s, today: today);
     emit(state.copyWith(posState: s, ledger: ledger, todayDate: today));
   }
@@ -139,7 +139,7 @@ class StockCubit extends Cubit<StockState> {
     });
     if (!ok) return false;
     final s = _repository.state;
-    final today = dkey(now);
+    final today = businessDayKey(now, s.shop.dayCutoffMinutes);
     final ledger = computeLedger(s, today: today);
     emit(
       state.copyWith(
@@ -164,7 +164,7 @@ class StockCubit extends Cubit<StockState> {
     });
     if (!ok) return false;
     final s = _repository.state;
-    final today = dkey(_clock());
+    final today = businessDayKey(_clock(), s.shop.dayCutoffMinutes);
     final ledger = computeLedger(s, today: today);
     emit(
       state.copyWith(
@@ -199,7 +199,7 @@ class StockCubit extends Cubit<StockState> {
     });
     if (!ok) return false;
     final s = _repository.state;
-    final today = dkey(now);
+    final today = businessDayKey(now, s.shop.dayCutoffMinutes);
     final ledger = computeLedger(s, today: today);
     emit(
       state.copyWith(
@@ -221,7 +221,7 @@ class StockCubit extends Cubit<StockState> {
     });
     if (!ok) return false;
     final s = _repository.state;
-    final today = dkey(_clock());
+    final today = businessDayKey(_clock(), s.shop.dayCutoffMinutes);
     final ledger = computeLedger(s, today: today);
     emit(
       state.copyWith(
