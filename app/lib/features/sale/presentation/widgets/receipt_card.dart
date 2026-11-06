@@ -91,6 +91,23 @@ class ReceiptCard extends StatelessWidget {
             '${bill.heads.f > 0 ? " · ฟรี ${bill.heads.f}" : ""}',
             style: tt.labelSmall?.copyWith(color: t.muted),
           ),
+          if (shop.useTimer)
+            Padding(
+              padding: const EdgeInsets.only(top: AppDimensions.space1),
+              child: Text(
+                key: const ValueKey('receipt-eat-until'),
+                bill.eatUntil != null && bill.timeLimitMin > 0
+                    ? 'ทานได้ถึงเวลา ${thTime(bill.eatUntil!)} น. '
+                          '(จำกัด ${formatTimeLimitLabel(bill.timeLimitMin)})'
+                    : 'ไม่จำกัดเวลา',
+                style: tt.labelSmall?.copyWith(
+                  color: bill.timeLimitMin > 0 ? t.primaryInk : t.muted,
+                  fontWeight: bill.timeLimitMin > 0
+                      ? FontWeight.w700
+                      : FontWeight.w500,
+                ),
+              ),
+            ),
           const SizedBox(height: AppDimensions.space2),
           Divider(color: t.line, height: 1),
           const SizedBox(height: AppDimensions.space2),
@@ -189,24 +206,8 @@ class ReceiptCard extends StatelessWidget {
     ),
     child: Row(
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.space2,
-            vertical: 2,
-          ),
-          decoration: BoxDecoration(
-            color: t.danger,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            'ยกเลิก',
-            style: tt.labelSmall?.copyWith(
-              color: AppRawTokens.white,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        const SizedBox(width: AppDimensions.space2_5),
+        const Pill(tone: PillTone.red, label: 'ยกเลิก'),
+        const SizedBox(width: AppDimensions.space2),
         Expanded(
           child: Text(
             'ยกเลิกโดย ${bill.voidBy ?? "-"} · $reasonTxt',
@@ -220,48 +221,45 @@ class ReceiptCard extends StatelessWidget {
     ),
   );
 
-  Widget _qrSection(AppTokens t, TextTheme tt) {
-    final payload = promptPayPayload(shop.promptpay, bill.total);
-    return Container(
-      key: const ValueKey('receipt-qr-box'),
-      padding: const EdgeInsets.all(AppDimensions.space2_5),
-      decoration: BoxDecoration(
-        color: t.surface2,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-        border: Border.all(color: t.line),
-      ),
-      child: Column(
-        children: [
-          Text(
-            'สแกน QR พร้อมเพย์เพื่อชำระเงิน',
-            style: tt.bodySmall?.copyWith(
-              color: t.ink,
-              fontWeight: FontWeight.w700,
-            ),
+  Widget _qrSection(AppTokens t, TextTheme tt) => Container(
+    key: const ValueKey('receipt-qr-box'),
+    padding: const EdgeInsets.all(AppDimensions.space2_5),
+    decoration: BoxDecoration(
+      color: t.surface2,
+      borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+      border: Border.all(color: t.line),
+    ),
+    child: Column(
+      children: [
+        Text(
+          'สแกน QR พร้อมเพย์เพื่อชำระเงิน',
+          style: tt.bodySmall?.copyWith(
+            color: t.ink,
+            fontWeight: FontWeight.w700,
           ),
-          Text(
-            'พร้อมเพย์ ${shop.promptpay} · ยอดโอน '
-            '${baht(bill.total, bill.total % 1 != 0 ? 2 : 0)}',
-            style: tt.labelSmall?.copyWith(color: t.muted),
+        ),
+        Text(
+          'พร้อมเพย์ ${shop.promptpay} · ยอดโอน '
+          '${baht(bill.total, bill.total % 1 != 0 ? 2 : 0)}',
+          style: tt.labelSmall?.copyWith(color: t.muted),
+        ),
+        const SizedBox(height: AppDimensions.space2),
+        Container(
+          padding: const EdgeInsets.all(AppDimensions.space1_5),
+          decoration: BoxDecoration(
+            color: AppRawTokens.paper,
+            borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+            border: Border.all(color: t.primary),
           ),
-          const SizedBox(height: AppDimensions.space2),
-          Container(
-            padding: const EdgeInsets.all(AppDimensions.space1_5),
-            decoration: BoxDecoration(
-              color: AppRawTokens.paper,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-              border: Border.all(color: t.primary),
-            ),
-            child: QrImageView(
-              data: payload,
-              size: 120,
-              backgroundColor: AppRawTokens.paper,
-            ),
+          child: QrImageView(
+            data: promptPayPayload(shop.promptpay, bill.total),
+            size: 120,
+            backgroundColor: AppRawTokens.paper,
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 }
 
 class _ReceiptRow extends StatelessWidget {

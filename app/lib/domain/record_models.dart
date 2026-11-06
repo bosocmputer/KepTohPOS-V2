@@ -30,6 +30,8 @@ class BillRecord {
     this.vatRate,
     this.bankAccountId,
     this.bankAccountInfo,
+    this.eatUntil,
+    this.timeLimitMin = 0,
     this.isSlipPreview = false,
     this.voided = false,
     this.voidReason,
@@ -69,6 +71,8 @@ class BillRecord {
     vatRate: (json['vatRate'] as num?)?.toDouble(),
     bankAccountId: json['bankAccountId'] as String?,
     bankAccountInfo: json['bankAccountInfo'] as String?,
+    eatUntil: json['eatUntil'] as String?,
+    timeLimitMin: (json['timeLimitMin'] as num?)?.toInt() ?? 0,
     voided: (json['voided'] as bool?) ?? false,
     voidReason: json['voidReason'] as String?,
     voidBy: json['voidBy'] as String?,
@@ -101,6 +105,8 @@ class BillRecord {
   final double? vatRate;
   final String? bankAccountId;
   final String? bankAccountInfo;
+  final String? eatUntil;
+  final int timeLimitMin;
   final bool isSlipPreview;
   bool voided;
   String? voidReason;
@@ -134,6 +140,8 @@ class BillRecord {
     vatRate: vatRate,
     bankAccountId: bankAccountId,
     bankAccountInfo: bankAccountInfo,
+    eatUntil: eatUntil,
+    timeLimitMin: timeLimitMin,
     isSlipPreview: isSlipPreview,
     voided: voided,
     voidReason: voidReason,
@@ -168,6 +176,8 @@ class BillRecord {
     if (vatRate != null) 'vatRate': vatRate,
     if (bankAccountId != null) 'bankAccountId': bankAccountId,
     if (bankAccountInfo != null) 'bankAccountInfo': bankAccountInfo,
+    if (eatUntil != null) 'eatUntil': eatUntil,
+    if (timeLimitMin > 0) 'timeLimitMin': timeLimitMin,
     'voided': voided,
     if (voidReason != null) 'voidReason': voidReason,
     if (voidBy != null) 'voidBy': voidBy,

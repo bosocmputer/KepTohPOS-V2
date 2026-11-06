@@ -1,4 +1,5 @@
 import 'package:app/core/data/mock_pos_repository.dart';
+import 'package:app/core/utils/formatters.dart';
 import 'package:app/domain/domain.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -200,6 +201,64 @@ void main() {
         expect(rep.fixedFullMonth, 46100);
         expect(rep.fixedDeducted, closeTo(46100 / 30, 1e-6));
         expect(rep.fixedDeducted < rep.fixedFullMonth, isTrue);
+      });
+    },
+  );
+
+  group(
+    'Item 2 + B5: Eat-until time & shared table deadline for added heads',
+    () {
+      test('settle with timeLimit=120 snapshots eatUntil=openedAt+120m and '
+          'customers added later share the same eatUntil deadline', () {
+        final repo = MockPosRepository.createFallback(
+          now: DateTime(2026, 11, 6, 18),
+        );
+        final s = repo.state.copy();
+        final t1 = s.tables.first;
+        final staff = s.staff.first;
+        final pmCash = s.payments.first;
+
+        // Open table at 18:00 with pk2 (timeLimit: 120 mins -> eatUntil 20:00)
+        settle(
+          s,
+          t1,
+          TableTotals(a: 7),
+          staff,
+          timing: 'before',
+          pkgId: 'pk2',
+          method: pmCash,
+          received: 2000,
+          billId: 'b_open_1800',
+          now: DateTime(2026, 11, 6, 18),
+        );
+
+        // Add 1 more person at 18:45 on the same table -> eatUntil still 20:00
+        settle(
+          s,
+          t1,
+          TableTotals(a: 1),
+          staff,
+          timing: 'before',
+          pkgId: 'pk2',
+          method: pmCash,
+          received: 300,
+          billId: 'b_add_1845',
+          now: DateTime(2026, 11, 6, 18, 45),
+        );
+
+        final b1 = s.sales[0];
+        final b2 = s.sales[1];
+        expect(b1.timeLimitMin, 120);
+        expect(b2.timeLimitMin, 120);
+        expect(thTime(b1.eatUntil!), '20:00');
+        expect(thTime(b2.eatUntil!), '20:00');
+        expect(b2.eatUntil, b1.eatUntil);
+
+        // Overtime check at 20:20 (+20 mins late)
+        final o = s.openTables[t1.id]!;
+        final tm = tableTimer(s, o, now: DateTime(2026, 11, 6, 20, 20));
+        expect(tm.late, isTrue);
+        expect(tm.text, 'เกินเวลา 20 น.');
       });
     },
   );

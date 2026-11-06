@@ -201,6 +201,45 @@ TableTimerStatus tableTimer(PosState s, OpenTableState o, {DateTime? now}) {
   return TableTimerStatus(mins: mins, limit: limit, late: late, text: text);
 }
 
+/// Returns the local deadline (`openedAt + pkg.timeLimit`) for [o] when
+/// `s.shop.useTimer && pkg.timeLimit > 0`, or `null` if unlimited/disabled.
+DateTime? eatUntilOf(PosState s, OpenTableState o) {
+  if (!s.shop.useTimer) return null;
+  final pkg = s.packages.where((p) => p.id == o.packageId).firstOrNull;
+  if (pkg == null || pkg.timeLimit <= 0) return null;
+  return DateTime.parse(o.openedAt)
+      .toLocal()
+      .add(Duration(minutes: pkg.timeLimit));
+}
+
+/// Computes `(eatUntilIso, timeLimitMin)` for a bill or POS slip on [tableId]
+/// so customers added later share the open table's `openedAt` deadline.
+(String? eatUntil, int timeLimitMin) billTimerSnapshot(
+  PosState s,
+  String tableId,
+  String packageId,
+  String fallbackAt,
+) {
+  if (!s.shop.useTimer) return (null, 0);
+  final pkg = s.packages.where((p) => p.id == packageId).firstOrNull;
+  if (pkg == null || pkg.timeLimit <= 0) return (null, 0);
+  final baseIso = s.openTables[tableId]?.openedAt ?? fallbackAt;
+  final until = DateTime.parse(baseIso)
+      .toUtc()
+      .add(Duration(minutes: pkg.timeLimit));
+  return (until.toIso8601String(), pkg.timeLimit);
+}
+
+/// Formats `timeLimitMin` (e.g. `120` -> `'2 ชม.'`, `90` -> `'1 ชม. 30 นาที'`).
+String formatTimeLimitLabel(int mins) {
+  if (mins <= 0) return 'ไม่จำกัดเวลา';
+  final h = mins ~/ 60;
+  final m = mins % 60;
+  if (h > 0 && m > 0) return '$h ชม. $m นาที';
+  if (h > 0) return '$h ชม.';
+  return '$m นาที';
+}
+
 /// Lists sent lines with positive quantity (`sentLines` in `index.html`).
 List<SentLineItem> sentLines(PosState s, PackageItem? pkg, TableTotals t) {
   final result = <SentLineItem>[];

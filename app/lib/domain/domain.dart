@@ -43,6 +43,12 @@ BillRecord? buildTablePosSlip(
       : TableTotals(a: o.heads.a, c: o.heads.c, f: o.heads.f);
   final order = orderOf(s, pkg, totals);
   final current = now ?? DateTime.now();
+  final (eatUntil, limitMin) = billTimerSnapshot(
+    s,
+    tb.id,
+    o.packageId,
+    o.openedAt,
+  );
   return BillRecord(
     id: 'slip-${tb.id}',
     no: 'SLIP-${tb.name}',
@@ -67,6 +73,8 @@ BillRecord? buildTablePosSlip(
     change: 0,
     vatMode: s.shop.vatMode,
     vatRate: s.shop.vatRate,
+    eatUntil: eatUntil,
+    timeLimitMin: limitMin,
     isSlipPreview: true,
   );
 }

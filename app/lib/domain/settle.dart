@@ -119,10 +119,10 @@ BillRecord makeBill(
   final table = s.tables.where((t) => t.id == tableId).firstOrNull;
   final staff = s.staff.where((x) => x.id == staffId).firstOrNull;
   final isCash = method.type == 'cash';
-  final isTransfer = method.type == 'transfer';
-  final acct = isTransfer
+  final acct = method.type == 'transfer'
       ? (bankAccount ?? s.shop.activeBankAccounts.firstOrNull)
       : null;
+  final (eatUntil, limitMin) = billTimerSnapshot(s, tableId, packageId, at);
   final shortDate = date.substring(2).replaceAll('-', '');
   final bill = BillRecord(
     id: id,
@@ -151,13 +151,14 @@ BillRecord makeBill(
     vatRate: s.shop.vatRate,
     bankAccountId: acct?.id,
     bankAccountInfo: acct?.shortLabel,
+    eatUntil: eatUntil,
+    timeLimitMin: limitMin,
   );
   s.sales.add(bill);
   return bill;
 }
 
-/// Settles an order for both pay-before-eating and eat-before-paying modes
-/// (`settle` in `prototype/index.html`).
+/// Settles an order for both pay-before-eating and eat-before-paying modes.
 CalculatedOrder settle(
   PosState st,
   DiningTable table,

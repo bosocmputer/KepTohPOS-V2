@@ -4,8 +4,7 @@ import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:flutter/material.dart';
 
-/// Dining table status card (`function TableCard` in `prototype/index.html` &
-/// `design/figma/table.png`).
+/// Dining table status card (`function TableCard` in `prototype/index.html`).
 class TableCard extends StatelessWidget {
   const new({
     required this.posState,
@@ -16,7 +15,6 @@ class TableCard extends StatelessWidget {
     this.now,
     this.onViewSlip,
   });
-
   final PosState posState;
   final DiningTable table;
   final OpenTableState? openTable;
@@ -29,9 +27,9 @@ class TableCard extends StatelessWidget {
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
     final o = openTable;
-    final pkg = o == null
-        ? null
-        : posState.packages.where((p) => p.id == o.packageId).firstOrNull;
+    final pkg = posState.packages
+        .where((p) => p.id == o?.packageId)
+        .firstOrNull;
     final tm = o == null ? null : tableTimer(posState, o, now: now);
     final due = o == null ? 0.0 : tableDue(posState, o);
     final isLate = tm?.late ?? false;
@@ -156,6 +154,9 @@ class TableCard extends StatelessWidget {
                   children: [
                     Flexible(
                       child: Text(
+                        key: isLate
+                            ? ValueKey('table-overtime-${table.id}')
+                            : null,
                         tm!.text,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
