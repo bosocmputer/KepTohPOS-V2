@@ -205,12 +205,14 @@ void main() {
       );
       expect(find.text('หักค่าคงที่ยังไม่ครบเดือน'), findsOneWidget);
       expect(
-        find.textContaining('ค่าคงที่หักแล้ว ฿4,610 จาก ฿46,100'),
+        find.textContaining('รายวัน ฿720 · คงที่ ฿4,610 / ฿46,100'),
         findsOneWidget,
       );
       expect(
-        find.textContaining('ตามปฏิทิน พฤศจิกายน 2569 (30 วัน)'),
-        findsNWidgets(2),
+        find.textContaining(
+          'ตามปฏิทิน พฤศจิกายน 2569 (30 วัน) (ขายแล้ว 4 วัน)',
+        ),
+        findsOneWidget,
       );
     },
   );

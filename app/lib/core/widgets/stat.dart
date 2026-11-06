@@ -59,6 +59,8 @@ class Stat extends StatelessWidget {
             const SizedBox(height: AppDimensions.spaceHalf),
             Text(
               sub!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: textTheme.bodySmall?.copyWith(
                 color: tokens.muted,
                 fontSize: AppDimensions.fsSm,

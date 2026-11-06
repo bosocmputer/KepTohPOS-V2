@@ -54,10 +54,16 @@ class DashboardPage extends StatelessWidget {
         final pkgSub = firstPkg != null
             ? ' · ราคา ${baht(firstPkg.adultPrice)}'
             : '';
+        final td = parseKey(sum.todayKey);
+        final mDays = DateTime(td.year, td.month + 1, 0).day;
+        final divLbl = sh.fixedCostDivisor == 'calendar'
+            ? 'ตามปฏิทิน ${thMonth(sum.todayKey.substring(0, 7))} ($mDays วัน)'
+            : 'ต่อวันที่เปิดร้าน (${sh.openDaysPerMonth} วัน)';
         final netFormula = showNet
             ? ' · กำไรสุทธิ = กำไรขั้นต้น − ค่าใช้จ่ายรายวัน − '
-                  'ค่าคงที่รายเดือน ÷ ${sh.openDaysPerMonth} วัน'
+                  'ค่าคงที่รายเดือนเฉลี่ย$divLbl (ขายแล้ว ${sum.salesDays} วัน)'
             : '';
+        final dailyExp = sum.spend - sum.fixedDeducted;
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -93,21 +99,24 @@ class DashboardPage extends StatelessWidget {
                       Stat(
                         label: 'กำไรขั้นต้น',
                         value: closed.isNotEmpty ? baht(sum.profit) : '–',
-                        tone: sum.profit >= 0 ? StatTone.green : StatTone.red,
+                        tone: closed.isEmpty
+                            ? StatTone.neutral
+                            : (sum.profit >= 0 ? StatTone.green : StatTone.red),
                         sub: '${closed.length} วันที่ปิดยอดแล้ว',
                       ),
                       if (showNet)
                         Stat(
                           label: 'กำไรสุทธิ (ประมาณ)',
                           value: closed.isNotEmpty ? baht(sum.netProfit) : '–',
-                          tone: sum.netProfit >= 0
-                              ? StatTone.green
-                              : StatTone.red,
+                          tone: closed.isEmpty
+                              ? StatTone.neutral
+                              : (sum.netProfit >= 0
+                                    ? StatTone.green
+                                    : StatTone.red),
                           sub:
-                              'หักค่าใช้จ่าย ${baht(sum.spend)} · '
-                              'ค่าคงที่หักแล้ว ${baht(sum.fixedDeducted)} '
-                              'จาก ${baht(sum.fixedFullMonth)} · '
-                              'ขาย ${sum.salesDays} วัน',
+                              'รายวัน ${baht(dailyExp)} · '
+                              'คงที่ ${baht(sum.fixedDeducted)} / '
+                              '${baht(sum.fixedFullMonth)}',
                         ),
                     ],
                   ),

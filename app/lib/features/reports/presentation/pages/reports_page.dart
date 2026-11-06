@@ -192,6 +192,11 @@ class _ReportsPageState extends State<ReportsPage> {
             rep.showNetProfit && rep.fixedDeducted + 0.01 < rep.fixedFullMonth;
         final closedLbl =
             'ปิดยอดแล้ว ${rep.closedDays.length}/${rep.days.length} วัน';
+        final hasClosed = rep.closedDays.isNotEmpty;
+        final dailyExp = rep.closedSpend - rep.fixedDeducted;
+        StatTone pTone(double v) => !hasClosed
+            ? StatTone.neutral
+            : (v >= 0 ? StatTone.green : StatTone.red);
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -210,7 +215,6 @@ class _ReportsPageState extends State<ReportsPage> {
                           tone: PillTone.orange,
                           label: 'หักค่าคงที่ยังไม่ครบเดือน',
                         ),
-                      Pill(tone: PillTone.green, label: closedLbl),
                       PendingBadge(onTap: widget.onGoSetupCosting),
                     ],
                     children: [
@@ -240,29 +244,24 @@ class _ReportsPageState extends State<ReportsPage> {
                       ),
                       Stat(
                         label: 'ต้นทุนวัตถุดิบ',
-                        value: baht(rep.closedIngCost),
+                        value: hasClosed ? baht(rep.closedIngCost) : '–',
                         sub: 'เครื่องดื่ม ${baht(rep.closedAddonCost)}',
                       ),
                       Stat(
                         label: 'กำไรขั้นต้น',
-                        value: baht(rep.closedProfit),
-                        tone: rep.closedProfit >= 0
-                            ? StatTone.green
-                            : StatTone.red,
+                        value: hasClosed ? baht(rep.closedProfit) : '–',
+                        tone: pTone(rep.closedProfit),
                         sub: closedLbl,
                       ),
                       if (rep.showNetProfit)
                         Stat(
                           label: 'กำไรสุทธิ (ประมาณ)',
-                          value: baht(rep.closedNetProfit),
-                          tone: rep.closedNetProfit >= 0
-                              ? StatTone.green
-                              : StatTone.red,
+                          value: hasClosed ? baht(rep.closedNetProfit) : '–',
+                          tone: pTone(rep.closedNetProfit),
                           sub:
-                              'ค่าใช้จ่าย ${baht(rep.closedSpend)} · '
-                              'ค่าคงที่หักแล้ว ${baht(rep.fixedDeducted)} '
-                              'จาก ${baht(rep.fixedFullMonth)} · '
-                              'ขาย ${rep.salesDays} วัน ($divTxt)',
+                              'รายวัน ${baht(dailyExp)} · '
+                              'คงที่ ${baht(rep.fixedDeducted)} / '
+                              '${baht(rep.fixedFullMonth)}',
                         ),
                       Stat(
                         label: 'ซื้อของเข้า',
@@ -282,7 +281,8 @@ class _ReportsPageState extends State<ReportsPage> {
                     'ซื้อเข้า ≠ ต้นทุน: ซื้อเข้าคือเงินที่จ่ายออกวันนั้น '
                     'ส่วนต้นทุนคือมูลค่าวัตถุดิบที่ใช้ไปจริง '
                     '(ยกมา + ซื้อเข้า − เหลือ) · ค่าใช้จ่าย = รายวัน + '
-                    'ค่าคงที่รายเดือนเฉลี่ย$divTxt',
+                    'ค่าคงที่รายเดือนเฉลี่ย$divTxt '
+                    '(ขายแล้ว ${rep.salesDays} วัน)',
                     style: tt.bodySmall?.copyWith(color: t.muted),
                   ),
                 ],
