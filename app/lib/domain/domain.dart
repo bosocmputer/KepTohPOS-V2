@@ -15,6 +15,7 @@ export 'package:app/domain/seed.dart';
 export 'package:app/domain/settle.dart';
 export 'package:app/domain/setup_ops.dart';
 export 'package:app/domain/stock_ops.dart';
+export 'package:app/domain/table_summary.dart';
 
 /// Builds a [BillRecord] representing the POS Slip (`ใบแจ้งยอด` or settled
 /// receipt) of an occupied table (`s.openTables[tableId]`), or `null` if the

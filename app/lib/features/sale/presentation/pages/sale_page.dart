@@ -247,6 +247,11 @@ class _SalePageState extends State<SalePage> {
           fresh: isSettled,
           staff: widget.staff,
           allowCashierVoid: true,
+          tableSummary: buildTableSummarySlip(
+            state.posState,
+            tb.id,
+            now: state.now,
+          ),
           doneLabel:
               isSettled &&
                   state.effectiveTiming == 'after' &&
@@ -264,6 +269,13 @@ class _SalePageState extends State<SalePage> {
             );
             setState(() => _showPosSlipModal = false);
           },
+          onVoidSubBill: (billId, r) => bloc.add(
+            SaleSettledBillVoided(
+              staff: widget.staff,
+              billId: billId,
+              reason: r,
+            ),
+          ),
           onCancelTable: () {
             bloc.add(const SaleOpenTableCancelled());
             setState(() => _showPosSlipModal = false);

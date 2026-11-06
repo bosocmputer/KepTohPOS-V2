@@ -3,9 +3,11 @@ import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/sale/presentation/widgets/receipt_card.dart';
+import 'package:app/features/sale/presentation/widgets/table_summary_modal.dart';
 import 'package:flutter/material.dart';
 
 export 'package:app/features/sale/presentation/widgets/receipt_card.dart';
+export 'package:app/features/sale/presentation/widgets/table_summary_modal.dart';
 
 /// Modal dialog displayed after settling a bill, previewing an open table's
 /// POS slip, or viewing a historical bill (`const ReceiptModal`).
@@ -20,6 +22,8 @@ class ReceiptModal extends StatefulWidget {
     this.onPrint,
     this.staff,
     this.onVoid,
+    this.onVoidSubBill,
+    this.tableSummary,
     this.allowCashierVoid = false,
     this.onCancelTable,
   });
@@ -32,6 +36,8 @@ class ReceiptModal extends StatefulWidget {
   final VoidCallback? onPrint;
   final StaffMember? staff;
   final void Function(String reason)? onVoid;
+  final void Function(String billId, String reason)? onVoidSubBill;
+  final TableSummarySlip? tableSummary;
   final bool allowCashierVoid;
   final VoidCallback? onCancelTable;
 
@@ -45,6 +51,18 @@ class _ReceiptModalState extends State<ReceiptModal> {
 
   @override
   Widget build(BuildContext context) {
+    final sum = widget.tableSummary;
+    if (!widget.fresh && sum != null && sum.bills.length >= 2) {
+      return TableSummaryModal(
+        shop: widget.shop,
+        summary: sum,
+        onDone: widget.onDone,
+        onPrint: widget.onPrint,
+        staff: widget.staff,
+        allowCashierVoid: widget.allowCashierVoid,
+        onVoidSubBill: widget.onVoidSubBill,
+      );
+    }
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
     final bill = widget.bill;

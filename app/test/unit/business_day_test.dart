@@ -262,4 +262,83 @@ void main() {
       });
     },
   );
+
+  group(
+    'Item 1 + B2: TableSummarySlip across sub-bills & voided sub-bills',
+    () {
+      test('buildTableSummarySlip aggregates 7 heads + 1 added head and '
+          'retains voided sub-bills while excluding them from total', () {
+        final repo = MockPosRepository.createFallback(
+          now: DateTime(2026, 11, 6, 18),
+        );
+        final s = repo.state.copy();
+        final t1 = s.tables.first;
+        final staff = s.staff.first;
+        final pmCash = s.payments.first;
+
+        // Sub-bill #1: 7 adults @ 199 = 1393
+        settle(
+          s,
+          t1,
+          TableTotals(a: 7),
+          staff,
+          timing: 'before',
+          pkgId: 'pk1',
+          method: pmCash,
+          received: 1500,
+          billId: 'b_sub_1',
+          now: DateTime(2026, 11, 6, 18),
+        );
+
+        // Sub-bill #2: 1 adult @ 199 = 199
+        settle(
+          s,
+          t1,
+          TableTotals(a: 1),
+          staff,
+          timing: 'before',
+          pkgId: 'pk1',
+          method: pmCash,
+          received: 200,
+          billId: 'b_sub_2',
+          now: DateTime(2026, 11, 6, 18, 25),
+        );
+
+        final sum1 = buildTableSummarySlip(
+          s,
+          t1.id,
+          now: DateTime(2026, 11, 6, 18, 30),
+        )!;
+        expect(sum1.bills.length, 2);
+        expect(sum1.activeBillCount, 2);
+        expect(sum1.voidedCount, 0);
+        expect(sum1.heads.a, 8);
+        expect(sum1.total, 8 * 199);
+        expect(sum1.mergedLines.single.qty, 8);
+
+        // Void sub-bill #2 -> still in summary.bills with voided=true,
+        // but excluded from total and heads
+        voidBill(
+          s,
+          billId: 'b_sub_2',
+          me: staff,
+          reason: 'คีย์ผิด',
+          now: DateTime(2026, 11, 6, 18, 28),
+        );
+
+        final sum2 = buildTableSummarySlip(
+          s,
+          t1.id,
+          now: DateTime(2026, 11, 6, 18, 30),
+        )!;
+        expect(sum2.bills.length, 2);
+        expect(sum2.activeBillCount, 1);
+        expect(sum2.voidedCount, 1);
+        expect(sum2.bills[1].voided, isTrue);
+        expect(sum2.heads.a, 7);
+        expect(sum2.total, 7 * 199);
+        expect(sum2.mergedLines.single.qty, 7);
+      });
+    },
+  );
 }
