@@ -72,7 +72,12 @@ class _SetupCostingPanelState extends State<SetupCostingPanel> {
   Widget build(BuildContext context) {
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
-    final openDays = _v.openDaysPerMonth <= 0 ? 30 : _v.openDaysPerMonth;
+    final now = DateTime.now();
+    final calDays = DateTime(now.year, now.month + 1, 0).day;
+    final isCal = _v.fixedCostDivisor == 'calendar';
+    final openDays = isCal
+        ? calDays
+        : (_v.openDaysPerMonth <= 0 ? 30 : _v.openDaysPerMonth);
     final dailyFixed = widget.totalMonthlyFixedCost / openDays;
     final methodLabel = _v.costMethod == 'avg'
         ? 'เฉลี่ยถ่วงน้ำหนัก'
@@ -109,7 +114,10 @@ class _SetupCostingPanelState extends State<SetupCostingPanel> {
             _st(
               'ค่าคงที่เฉลี่ยต่อวัน',
               baht(dailyFixed),
-              '${baht(widget.totalMonthlyFixedCost)} ÷ $openDays วัน',
+              isCal
+                  ? '${baht(widget.totalMonthlyFixedCost)} ÷ $calDays วัน'
+                        ' (ตามปฏิทิน)'
+                  : '${baht(widget.totalMonthlyFixedCost)} ÷ $openDays วัน',
             ),
             _st(
               'สัดส่วนหัวเด็ก',
@@ -142,17 +150,45 @@ class _SetupCostingPanelState extends State<SetupCostingPanel> {
                 ),
               ),
               _row(
-                Field(
-                  label: 'จำนวนวันเปิดร้านต่อเดือน',
-                  hint: 'ตัวหารค่าคงที่รายเดือนเป็นรายวัน',
-                  child: AppTextInput(
-                    value: _v.openDaysPerMonth.toString(),
-                    keyboardType: TextInputType.number,
-                    onChanged: (s) {
-                      final d = (int.tryParse(s) ?? 30).clamp(1, 31);
-                      setState(() => _v = _v.copyWith(openDaysPerMonth: d));
-                    },
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Field(
+                      label: 'วิธีหารค่าคงที่รายเดือนเป็นรายวัน',
+                      hint: 'คำนวณตามจำนวนวันจริงของเดือน (28–31) หรือกำหนดเอง',
+                      child: Seg<String>(
+                        key: const ValueKey('setup-fixed-divisor-seg'),
+                        value: _v.fixedCostDivisor,
+                        items: const [
+                          SegItem(
+                            value: 'calendar',
+                            label: 'ตามปฏิทิน (28–31 วัน)',
+                          ),
+                          SegItem(value: 'custom', label: 'กำหนดเอง'),
+                        ],
+                        onChanged: (m) => setState(
+                          () => _v = _v.copyWith(fixedCostDivisor: m),
+                        ),
+                      ),
+                    ),
+                    if (!isCal) ...[
+                      const SizedBox(height: AppDimensions.space2_5),
+                      Field(
+                        label: 'จำนวนวันเปิดร้านต่อเดือน',
+                        hint: 'ตัวหารค่าคงที่รายเดือนเป็นรายวัน',
+                        child: AppTextInput(
+                          value: _v.openDaysPerMonth.toString(),
+                          keyboardType: TextInputType.number,
+                          onChanged: (s) {
+                            final d = (int.tryParse(s) ?? 30).clamp(1, 31);
+                            setState(
+                              () => _v = _v.copyWith(openDaysPerMonth: d),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 _dd(
                   'วันตรวจนับวัตถุดิบประจำสัปดาห์',

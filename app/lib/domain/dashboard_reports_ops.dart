@@ -66,6 +66,9 @@ class DashboardSummary {
     required this.worstDay,
     required this.ingredientShares,
     required this.addonSales,
+    this.fixedDeducted = 0,
+    this.fixedFullMonth = 0,
+    this.salesDays = 0,
   });
 
   final String range;
@@ -92,6 +95,9 @@ class DashboardSummary {
   final LedgerDaySummary? worstDay;
   final List<IngredientCostShareRow> ingredientShares;
   final List<AddonSalesSummaryRow> addonSales;
+  final double fixedDeducted;
+  final double fixedFullMonth;
+  final int salesDays;
 
   String get field => showNetProfit ? 'netProfit' : 'profit';
   String get fieldName => showNetProfit ? 'กำไรสุทธิ' : 'กำไรขั้นต้น';
@@ -227,5 +233,10 @@ DashboardSummary computeDashboardSummary(
     worstDay: worstDay,
     ingredientShares: ingredientShares,
     addonSales: addonSales,
+    fixedDeducted: closed.fold<double>(0, (a, d) => a + d.fixed),
+    fixedFullMonth: s.fixedCosts
+        .where((x) => x.active)
+        .fold<double>(0, (a, x) => a + x.amount),
+    salesDays: days.where((d) => d.bills > 0).length,
   );
 }

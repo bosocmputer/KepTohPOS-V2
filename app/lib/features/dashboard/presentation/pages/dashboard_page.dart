@@ -103,7 +103,11 @@ class DashboardPage extends StatelessWidget {
                           tone: sum.netProfit >= 0
                               ? StatTone.green
                               : StatTone.red,
-                          sub: 'หักค่าใช้จ่าย ${baht(sum.spend)}',
+                          sub:
+                              'หักค่าใช้จ่าย ${baht(sum.spend)} · '
+                              'ค่าคงที่หักแล้ว ${baht(sum.fixedDeducted)} '
+                              'จาก ${baht(sum.fixedFullMonth)} · '
+                              'ขาย ${sum.salesDays} วัน',
                         ),
                     ],
                   ),

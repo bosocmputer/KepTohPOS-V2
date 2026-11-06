@@ -90,13 +90,21 @@ class SetupState extends Equatable {
       .where((f) => f.active)
       .fold<double>(0, (sum, f) => sum + f.amount);
 
-  /// Average daily fixed cost (`totalMonthlyFixedCost / openDaysPerMonth`).
-  double get dailyFixedCost {
-    final days = posState.shop.openDaysPerMonth <= 0
+  /// Effective divisor for monthly fixed cost (current month's calendar days
+  /// when `fixedCostDivisor == 'calendar'`, or `openDaysPerMonth`).
+  int get effectiveFixedCostDivisor {
+    if (posState.shop.fixedCostDivisor == 'calendar') {
+      final now = DateTime.now();
+      return DateTime(now.year, now.month + 1, 0).day;
+    }
+    return posState.shop.openDaysPerMonth <= 0
         ? 30
         : posState.shop.openDaysPerMonth;
-    return totalMonthlyFixedCost / days;
   }
+
+  /// Average daily fixed cost (`totalMonthlyFixedCost / effectiveFixedCostDivisor`).
+  double get dailyFixedCost =>
+      totalMonthlyFixedCost / effectiveFixedCostDivisor;
 
   /// Item count for a given catalog tab ID (`null` for form-only tabs).
   int? itemCountOf(String tabId) => switch (tabId) {

@@ -164,7 +164,10 @@ class MockPosRepository implements PosRepository {
       sessionStaffId: sessionStaffId,
     );
     if (!seedTransactions) {
-      repo.update((s) => clearDailyTransactionsInState(s, now: now));
+      repo.update((s) {
+        clearDailyTransactionsInState(s, now: now);
+        s.shop = s.shop.copyWith(fixedCostDivisor: 'calendar');
+      });
     }
     return repo;
   }
