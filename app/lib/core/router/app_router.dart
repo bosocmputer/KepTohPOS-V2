@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:app/core/router/shell_placeholder_page.dart';
-import 'package:app/core/theme/app_theme.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/widgets/dev_components_page.dart';
 import 'package:app/core/widgets/widgets.dart';
@@ -9,18 +8,25 @@ import 'package:app/domain/domain.dart';
 import 'package:app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:app/features/auth/presentation/pages/login_page.dart';
 import 'package:app/features/bills/presentation/cubit/bills_cubit.dart';
+import 'package:app/features/bills/presentation/pages/bills_page.dart';
 import 'package:app/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:app/features/reports/presentation/pages/reports_page.dart';
+import 'package:app/features/setup/presentation/cubit/setup_cubit.dart';
+import 'package:app/features/setup/presentation/pages/setup_page.dart';
 import 'package:app/features/shift/presentation/bloc/shift_bloc.dart';
 import 'package:app/features/shift/presentation/pages/shift_page.dart';
+import 'package:app/features/stock/presentation/bloc/stock_count_bloc.dart';
 import 'package:app/features/stock/presentation/cubit/stock_cubit.dart';
 import 'package:app/features/stock/presentation/pages/stock_page.dart';
+import 'package:app/features/tables/presentation/pages/tables_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 export 'package:app/core/router/shell_placeholder_page.dart';
+export 'package:app/features/setup/presentation/pages/setup_page.dart'
+    show SetupPage, SetupThemeSection;
 export 'package:app/features/shift/presentation/pages/shift_page.dart'
     show OpenShiftModal;
 
@@ -95,19 +101,97 @@ GoRouter createAppRouter({
   ],
 );
 
+/// Wraps [builder] with route-level Cubit/Bloc providers when not already
+/// provided above [ShellPlaceholderPage].
+Widget wrapViewScope({
+  required String viewId,
+  required PosRepository? repo,
+  required DateTime? now,
+  required String? billsDate,
+  required BillsCubit? existingBills,
+  required StockCubit? existingStockCubit,
+  required StockCountBloc? existingStockBloc,
+  required DashboardCubit? existingDash,
+  required ReportsCubit? existingRep,
+  required WidgetBuilder builder,
+  SetupCubit? existingSetup,
+}) {
+  if (repo == null) return Builder(builder: builder);
+  final providers = [
+    if (viewId == 'bills' && existingBills == null)
+      BlocProvider(
+        create: (_) => BillsCubit(repo, now: now, initialDate: billsDate),
+      ),
+    if (viewId == 'stock' && existingStockCubit == null)
+      BlocProvider(create: (_) => StockCubit(repo, now: now)),
+    if (viewId == 'stock' && existingStockBloc == null)
+      BlocProvider(
+        create: (_) => StockCountBloc(repository: repo, now: now),
+      ),
+    if (viewId == 'dashboard' && existingDash == null)
+      BlocProvider(create: (_) => DashboardCubit(repo, now: now)),
+    if (viewId == 'reports' && existingRep == null)
+      BlocProvider(create: (_) => ReportsCubit(repo, now: now)),
+    if (viewId == 'setup' && existingSetup == null)
+      BlocProvider(create: (_) => SetupCubit(repo, now: now)),
+  ];
+  if (providers.isEmpty) return Builder(builder: builder);
+  return MultiBlocProvider(
+    key: ValueKey('$viewId-scope'),
+    providers: providers,
+    child: Builder(builder: builder),
+  );
+}
+
+/// Builds contextual Topbar action widgets for the active view.
+List<Widget> buildViewHeaderActions(
+  BuildContext context, {
+  required String viewId,
+  required bool isTablesView,
+  required TablesCubit? tablesCubit,
+  required BillsCubit? billsCubit,
+  required StockCubit? stockCubit,
+  required StockCountBloc? stockCountBloc,
+  required DashboardCubit? dashCubit,
+  required ReportsCubit? repCubit,
+}) => <Widget>[
+  if (isTablesView && tablesCubit != null) ...[
+    buildTablesZoneDropdown(tablesCubit, tablesCubit.state),
+    Btn(
+      key: const ValueKey('topbar-open-table-btn'),
+      kind: BtnKind.primary,
+      label: 'เปิดโต๊ะ',
+      onPressed: () {
+        final s = tablesCubit.state.posState;
+        final free = s.tables
+            .where((t) => !s.openTables.containsKey(t.id))
+            .firstOrNull;
+        context.go('/tables/${free?.id ?? s.tables.firstOrNull?.id ?? 't1'}');
+      },
+    ),
+  ],
+  if (viewId == 'bills' && billsCubit != null)
+    ...buildBillsHeaderActions(billsCubit),
+  if (viewId == 'stock' && stockCubit != null && stockCountBloc != null)
+    ...buildStockHeaderActions(stockCubit, stockCountBloc),
+  if (viewId == 'dashboard' && dashCubit != null)
+    buildDashboardRangeSeg(dashCubit),
+  if (viewId == 'reports' && repCubit != null)
+    buildReportsMonthDropdown(repCubit),
+];
+
 /// Builds `/stock`, `/shift`, `/dashboard`, `/reports`, or `/setup` body.
 Widget buildAnalyticsOrPlaceholderBody(
   BuildContext context, {
   required AppViewSpec viewSpec,
   required StaffMember me,
   required AppTokens tokens,
-  required PosRepository? repo,
   required StockCubit? stockCubit,
   required ShiftBloc? shiftBloc,
   required BillsCubit? billsCubit,
   required DashboardCubit? existingDash,
   required ReportsCubit? existingRep,
-  required DateTime? now,
+  SetupCubit? existingSetup,
 }) {
   if (viewSpec.id == 'stock' && stockCubit != null) return StockPage(staff: me);
   if (viewSpec.id == 'shift' && shiftBloc != null) {
@@ -117,40 +201,29 @@ Widget buildAnalyticsOrPlaceholderBody(
       onGoTables: () => context.go('/tables'),
     );
   }
-  if (viewSpec.id == 'dashboard' && (existingDash != null || repo != null)) {
-    final page = DashboardPage(
+  if (viewSpec.id == 'dashboard' && existingDash != null) {
+    return DashboardPage(
       onGoStockCount: () => context.go('/stock'),
       onGoSetupCosting: () => context.go('/setup'),
     );
-    return existingDash != null
-        ? page
-        : BlocProvider(
-            key: const ValueKey('dashboard-scope'),
-            create: (_) => DashboardCubit(repo!, now: now),
-            child: page,
-          );
   }
-  if (viewSpec.id == 'reports' && (existingRep != null || repo != null)) {
-    final page = ReportsPage(
+  if (viewSpec.id == 'reports' && existingRep != null) {
+    return ReportsPage(
       onSelectDateForBills: (d) {
         billsCubit?.setDate(d);
         context.go('/bills?date=$d');
       },
       onGoSetupCosting: () => context.go('/setup'),
     );
-    return existingRep != null
-        ? page
-        : BlocProvider(
-            key: const ValueKey('reports-scope'),
-            create: (_) => ReportsCubit(repo!, now: now),
-            child: page,
-          );
+  }
+  if (viewSpec.id == 'setup' && existingSetup != null) {
+    return SetupPage(staffRole: me.role, currentStaffId: me.id);
   }
   return buildSetupOrPlaceholderBody(viewSpec: viewSpec, tokens: tokens);
 }
 
 /// Builds the fallback placeholder body (including [SetupThemeSection] for
-/// `/setup`).
+/// `/setup` when no [PosRepository] is provided).
 Widget buildSetupOrPlaceholderBody({
   required AppViewSpec viewSpec,
   required AppTokens tokens,
@@ -159,12 +232,10 @@ Widget buildSetupOrPlaceholderBody({
   child: Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      PageHeader(title: viewSpec.title, desc: 'ร้านหมูกระทะ เก็บโต๊ะ'),
       if (viewSpec.id == 'setup') ...[
-        const SizedBox(height: AppDimensions.space5),
         const SetupThemeSection(),
+        const SizedBox(height: AppDimensions.space5),
       ],
-      const SizedBox(height: AppDimensions.space5),
       Container(
         decoration: BoxDecoration(
           color: tokens.surface,
@@ -179,50 +250,3 @@ Widget buildSetupOrPlaceholderBody({
     ],
   ),
 );
-
-/// Theme switcher card shown inside the Setup placeholder screen.
-class SetupThemeSection extends StatelessWidget {
-  const new({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.tokens;
-    final tt = Theme.of(context).textTheme;
-    final mode = context.watch<ThemeCubit>().state.mode;
-    return Container(
-      padding: const EdgeInsets.all(AppDimensions.space5),
-      decoration: BoxDecoration(
-        color: t.surface,
-        borderRadius: BorderRadius.circular(AppDimensions.r),
-        border: Border.all(color: t.line),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('ธีมและการแสดงผล', style: tt.titleLarge),
-              Text('เลือกโหมดสว่าง มืด หรือตามเครื่อง', style: tt.bodySmall),
-            ],
-          ),
-          Row(
-            children: [
-              for (final m in AppThemeMode.values)
-                Padding(
-                  padding: const EdgeInsets.only(left: AppDimensions.space2),
-                  child: Btn(
-                    key: ValueKey('setup-mode-${m.name}'),
-                    label: m.label,
-                    size: BtnSize.sm,
-                    kind: mode == m ? BtnKind.primary : BtnKind.normal,
-                    onPressed: () => context.read<ThemeCubit>().setMode(m),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}

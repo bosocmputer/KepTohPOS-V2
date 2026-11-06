@@ -47,18 +47,11 @@ class _DropdownState<T> extends State<Dropdown<T>> {
 
   bool get _open => _portalController.isShowing;
 
-  DropdownOption<T>? get _selected {
-    for (final opt in widget.options) {
-      if (opt.value == widget.value) return opt;
-    }
-    return null;
-  }
+  DropdownOption<T>? get _selected =>
+      widget.options.where((o) => o.value == widget.value).firstOrNull;
 
   void _toggleMenu() {
-    if (_open) {
-      _closeMenu();
-      return;
-    }
+    if (_open) return _closeMenu();
     final box = _triggerKey.currentContext?.findRenderObject() as RenderBox?;
     if (box != null && box.hasSize) {
       _triggerSize = box.size;
@@ -68,14 +61,36 @@ class _DropdownState<T> extends State<Dropdown<T>> {
   }
 
   void _closeMenu() {
-    if (_open) {
-      setState(_portalController.hide);
-    }
+    if (_open) setState(_portalController.hide);
   }
 
-  Widget _buildOptionContent(BuildContext context, DropdownOption<T> opt) {
-    final tokens = context.tokens;
-    final textTheme = Theme.of(context).textTheme;
+  Widget _buildOptionContent(
+    BuildContext context,
+    DropdownOption<T> opt, {
+    bool inlineSub = false,
+  }) {
+    final t = context.tokens;
+    final tt = Theme.of(context).textTheme;
+    final hasSub = opt.sub != null && opt.sub!.isNotEmpty;
+    final labelStyle = tt.bodyMedium?.copyWith(
+      color: t.ink,
+      fontWeight: FontWeight.w600,
+    );
+    final subStyle = tt.labelSmall?.copyWith(
+      color: t.muted,
+      fontSize: AppDimensions.fsXs,
+    );
+    if (inlineSub && widget.leadingBuilder == null) {
+      return Row(
+        children: [
+          Flexible(child: Text(opt.label, maxLines: 1, style: labelStyle)),
+          if (hasSub) ...[
+            Text(' · ', style: subStyle),
+            Text(opt.sub!, maxLines: 1, style: subStyle),
+          ],
+        ],
+      );
+    }
     return Row(
       children: [
         if (widget.leadingBuilder != null) ...[
@@ -87,23 +102,8 @@ class _DropdownState<T> extends State<Dropdown<T>> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                opt.label,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: tokens.ink,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              if (opt.sub != null && opt.sub!.isNotEmpty)
-                Text(
-                  opt.sub!,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.labelSmall?.copyWith(
-                    color: tokens.muted,
-                    fontSize: AppDimensions.fsXs,
-                  ),
-                ),
+              Text(opt.label, maxLines: 1, style: labelStyle),
+              if (hasSub) Text(opt.sub!, maxLines: 1, style: subStyle),
             ],
           ),
         ),
@@ -227,13 +227,8 @@ class _DropdownState<T> extends State<Dropdown<T>> {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final selected = _selected;
-    final hasRichItems =
-        widget.leadingBuilder != null ||
-        widget.options.any((o) => o.sub != null && o.sub!.isNotEmpty);
-    final minH = hasRichItems ? AppDimensions.dropdownMinH : AppDimensions.tap;
-    final radius = hasRichItems
-        ? AppDimensions.radiusMd
-        : AppDimensions.radiusSm;
+    final hasLeading = widget.leadingBuilder != null;
+    const radius = AppDimensions.radiusMd;
 
     return CompositedTransformTarget(
       link: _layerLink,
@@ -254,19 +249,23 @@ class _DropdownState<T> extends State<Dropdown<T>> {
             onTap: _toggleMenu,
             borderRadius: BorderRadius.circular(radius),
             child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: minH),
+              constraints: hasLeading
+                  ? const BoxConstraints(minHeight: AppDimensions.tap)
+                  : const BoxConstraints.tightFor(height: AppDimensions.tap),
               child: Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: AppDimensions.space3,
-                  vertical: hasRichItems
-                      ? AppDimensions.space2
-                      : AppDimensions.space1_5,
+                  vertical: hasLeading ? AppDimensions.space2 : 0,
                 ),
                 child: Row(
                   children: [
                     Expanded(
                       child: selected != null
-                          ? _buildOptionContent(context, selected)
+                          ? _buildOptionContent(
+                              context,
+                              selected,
+                              inlineSub: !hasLeading,
+                            )
                           : Text(
                               widget.placeholder,
                               style: Theme.of(context).textTheme.bodyMedium

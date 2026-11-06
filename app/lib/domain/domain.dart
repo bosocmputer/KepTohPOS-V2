@@ -1,4 +1,5 @@
 export 'package:app/domain/dashboard_reports_ops.dart';
+export 'package:app/domain/demo_sim_ops.dart';
 export 'package:app/domain/ledger.dart';
 export 'package:app/domain/models.dart';
 export 'package:app/domain/order_calc.dart';
@@ -6,4 +7,5 @@ export 'package:app/domain/pos_repository.dart';
 export 'package:app/domain/roles.dart';
 export 'package:app/domain/seed.dart';
 export 'package:app/domain/settle.dart';
+export 'package:app/domain/setup_ops.dart';
 export 'package:app/domain/stock_ops.dart';

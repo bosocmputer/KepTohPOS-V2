@@ -100,4 +100,26 @@ class ShopConfig {
     weeklyCountDow: weeklyCountDow ?? this.weeklyCountDow,
     rounding: rounding ?? this.rounding,
   );
+
+  /// Serializes this [ShopConfig] to a JSON map matching `shop.json`.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'name': name,
+    'branch': branch,
+    'address': address,
+    'phone': phone,
+    'taxId': taxId,
+    'promptpay': promptpay,
+    'vatMode': vatMode,
+    'servicePct': servicePct,
+    'defaultFloat': defaultFloat,
+    'receiptFooter': receiptFooter,
+    'useTimer': useTimer,
+    'payTiming': payTiming,
+    'costMethod': costMethod,
+    'showNetProfit': showNetProfit,
+    'childHeadWeight': childHeadWeight,
+    'openDaysPerMonth': openDaysPerMonth,
+    'weeklyCountDow': weeklyCountDow,
+    'rounding': rounding,
+  };
 }

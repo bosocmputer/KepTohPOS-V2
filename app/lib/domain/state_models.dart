@@ -1,7 +1,5 @@
 import 'package:app/domain/entities.dart';
 
-export 'package:app/domain/pos_state.dart';
-
 /// Head counts for adult (`a`), child (`c`), and free toddler (`f`).
 class HeadsCount {
   new({int a = 0, int c = 0, int f = 0, bool frozen = false}) {
@@ -10,6 +8,12 @@ class HeadsCount {
     _f = f;
     _frozen = frozen;
   }
+
+  factory fromJson(Map<String, dynamic> json) => HeadsCount(
+    a: (json['a'] as num?)?.toInt() ?? 0,
+    c: (json['c'] as num?)?.toInt() ?? 0,
+    f: (json['f'] as num?)?.toInt() ?? 0,
+  );
 
   late int _a;
   late int _c;
@@ -55,6 +59,8 @@ class HeadsCount {
   HeadsCount copy() => HeadsCount(a: _a, c: _c, f: _f);
 
   HeadsCount freeze() => HeadsCount(a: _a, c: _c, f: _f, frozen: true);
+
+  Map<String, dynamic> toJson() => <String, dynamic>{'a': _a, 'c': _c, 'f': _f};
 }
 
 /// Input line for `calcOrder` (`{ addon, qty }`).
@@ -76,12 +82,30 @@ class OrderLineItem {
     this.cost,
   });
 
+  factory fromJson(Map<String, dynamic> json) => OrderLineItem(
+    type: (json['type'] as String?) ?? 'buffet',
+    id: json['id'] as String?,
+    name: json['name'] as String,
+    qty: (json['qty'] as num).toInt(),
+    price: (json['price'] as num).toDouble(),
+    cost: (json['cost'] as num?)?.toDouble(),
+  );
+
   final String type;
   final String? id;
   final String name;
   final int qty;
   final double price;
   final double? cost;
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'type': type,
+    if (id != null) 'id': id,
+    'name': name,
+    'qty': qty,
+    'price': price,
+    if (cost != null) 'cost': cost,
+  };
 }
 
 /// Result of `calcOrder` / `orderOf`.
@@ -135,6 +159,17 @@ class TableRound {
     Map<String, int>? ad,
   }) : ad = ad ?? <String, int>{};
 
+  factory fromJson(Map<String, dynamic> json) => TableRound(
+    id: json['id'] as String,
+    at: json['at'] as String,
+    staffId: (json['staffId'] as String?) ?? '',
+    a: (json['a'] as num?)?.toInt() ?? 0,
+    c: (json['c'] as num?)?.toInt() ?? 0,
+    f: (json['f'] as num?)?.toInt() ?? 0,
+    ad: ((json['ad'] as Map<String, dynamic>?) ?? const <String, dynamic>{})
+        .map((k, v) => MapEntry(k, (v as num).toInt())),
+  );
+
   final String id;
   final String at;
   final String staffId;
@@ -162,6 +197,16 @@ class TableRound {
     f: f,
     ad: Map<String, int>.unmodifiable(ad),
   );
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'at': at,
+    'staffId': staffId,
+    'a': a,
+    'c': c,
+    'f': f,
+    'ad': ad,
+  };
 }
 
 /// Adjustment reducing a sent item (`o.adjusts` / `o.log`).
@@ -177,6 +222,17 @@ class TableAdjustment {
     required this.qty,
   });
 
+  factory fromJson(Map<String, dynamic> json) => TableAdjustment(
+    id: json['id'] as String,
+    at: json['at'] as String,
+    by: (json['by'] as String?) ?? '',
+    byName: (json['byName'] as String?) ?? '',
+    reason: (json['reason'] as String?) ?? '',
+    kind: json['kind'] as String,
+    key: json['key'] as String,
+    qty: (json['qty'] as num).toInt(),
+  );
+
   final String id;
   final String at;
   final String by;
@@ -185,59 +241,17 @@ class TableAdjustment {
   final String kind;
   final String key;
   final int qty;
-}
 
-/// Active state of an occupied table (`openTables[tableId]`).
-class OpenTableState {
-  new({
-    required this.openedAt,
-    required this.packageId,
-    this.timing = 'before',
-    this.notes = '',
-    List<String>? billIds,
-    HeadsCount? heads,
-    List<TableRound>? rounds,
-    List<TableAdjustment>? adjusts,
-    List<TableAdjustment>? log,
-  }) : billIds = billIds ?? <String>[],
-       heads = heads ?? HeadsCount(),
-       rounds = rounds ?? <TableRound>[],
-       adjusts = adjusts ?? <TableAdjustment>[],
-       log = log ?? <TableAdjustment>[];
-
-  final String openedAt;
-  final String packageId;
-  String timing;
-  String notes;
-  final List<String> billIds;
-  final HeadsCount heads;
-  List<TableRound> rounds;
-  List<TableAdjustment> adjusts;
-  final List<TableAdjustment> log;
-
-  OpenTableState copy() => OpenTableState(
-    openedAt: openedAt,
-    packageId: packageId,
-    timing: timing,
-    notes: notes,
-    billIds: List<String>.from(billIds),
-    heads: heads.copy(),
-    rounds: rounds.map((r) => r.copy()).toList(),
-    adjusts: List<TableAdjustment>.from(adjusts),
-    log: List<TableAdjustment>.from(log),
-  );
-
-  OpenTableState freeze() => OpenTableState(
-    openedAt: openedAt,
-    packageId: packageId,
-    timing: timing,
-    notes: notes,
-    billIds: List<String>.unmodifiable(billIds),
-    heads: heads.freeze(),
-    rounds: List<TableRound>.unmodifiable(rounds.map((r) => r.freeze())),
-    adjusts: List<TableAdjustment>.unmodifiable(adjusts),
-    log: List<TableAdjustment>.unmodifiable(log),
-  );
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'at': at,
+    'by': by,
+    'byName': byName,
+    'reason': reason,
+    'kind': kind,
+    'key': key,
+    'qty': qty,
+  };
 }
 
 /// Flattened sent line returned by `sentLines`.

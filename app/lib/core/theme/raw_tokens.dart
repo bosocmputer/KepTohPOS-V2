@@ -4,14 +4,26 @@ import 'package:flutter/material.dart';
 /// `prototype/theme.css`).
 abstract final class AppRawTokens {
   // Team brand palette (--team-* in prototype/theme.css lines 27–31)
+  // Core 7 colors:
+  // - Charcoal #20242C
+  // - Orange   #FF7A00
+  // - WarmGray #F4F4F5
+  // - White    #FFFFFF
+  // - NavyText #172033
+  // - Green    #16A36A
+  // - Red      #E5484D
   static const Color teamOrange = Color(0xFFFF7A00);
   static const Color teamOrange600 = Color(0xFFE56D00);
   static const Color teamOrangeSoft = Color(0xFFFFF1E4);
   static const Color teamOrangeSoft2 = Color(0xFFFFE2C7);
   static const Color teamOrangeInk = Color(0xFFB35300);
   static const Color teamCharcoal = Color(0xFF20242C);
+  static const Color teamCharcoalSurface = Color(0xFF282D37);
+  static const Color teamCharcoalLine = Color(0xFF343A46);
+  static const Color teamCharcoalSoft = Color(0xFFEAECEF);
+  static const Color teamCharcoalMuted = Color(0xFFC7CAD2);
   static const Color teamGray = Color(0xFFF4F4F5);
-  static const Color teamSurface2 = Color(0xFFFAFAFB);
+  static const Color teamSurface2 = Color(0xFFF4F4F5);
   static const Color teamNavy = Color(0xFF172033);
   static const Color teamGreen = Color(0xFF16A36A);
   static const Color teamGreenSoft = Color(0xFFE6F6EE);
@@ -20,7 +32,7 @@ abstract final class AppRawTokens {
   static const Color teamRedSoft = Color(0xFFFDECEC);
   static const Color teamRedInk = Color(0xFFB42328);
   static const Color teamMuted = Color(0xFF5B6475);
-  static const Color teamLine = Color(0xFFE2E3E8);
+  static const Color teamLine = Color(0xFFE2E4E9);
   static const Color teamDarkSide = Color(0xFF0C0E12);
   static const Color teamDarkSideInk = Color(0xFFAEB3BE);
 

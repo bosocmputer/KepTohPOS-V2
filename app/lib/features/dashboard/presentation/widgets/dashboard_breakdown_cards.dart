@@ -147,45 +147,57 @@ class DashboardBreakdownGrid extends StatelessWidget {
 
   final DashboardSummary summary;
 
-  Widget _card(BuildContext context, String title, Widget table) {
-    final t = context.tokens;
-    return Container(
-      padding: const EdgeInsets.all(AppDimensions.space4),
-      decoration: BoxDecoration(
-        color: t.surface,
-        borderRadius: BorderRadius.circular(AppDimensions.r),
-        border: Border.all(color: t.line),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: AppDimensions.space2_5),
-          table,
-        ],
-      ),
-    );
-  }
+  Widget _card(
+    BuildContext context,
+    String title,
+    Widget table, {
+    Widget? trailing,
+  }) => Container(
+    padding: const EdgeInsets.all(AppDimensions.space4),
+    decoration: BoxDecoration(
+      color: context.tokens.surface,
+      borderRadius: BorderRadius.circular(AppDimensions.r),
+      border: Border.all(color: context.tokens.line),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(title, style: Theme.of(context).textTheme.titleLarge),
+            ),
+            ?trailing,
+          ],
+        ),
+        const SizedBox(height: AppDimensions.space2_5),
+        table,
+      ],
+    ),
+  );
 
   Widget _buildIngShareCard(BuildContext context) {
     final t = context.tokens;
     return _card(
       context,
       'ต้นทุนวัตถุดิบแยกรายการ',
+      trailing: summary.ingredientShares.isNotEmpty
+          ? Pill(tone: PillTone.orange, label: 'รวม ${baht(summary.ingCost)}')
+          : null,
       PosDataTable<IngredientCostShareRow>(
         label: 'ต้นทุนวัตถุดิบแยกรายการ',
-        showHeader: false,
         rows: summary.ingredientShares,
         empty: const Empty(title: 'ยังไม่มีวันที่ปิดยอดในช่วงนี้'),
         columns: [
-          DataTableCol<IngredientCostShareRow>(
+          DataTableCol(
             key: 'n',
             label: 'วัตถุดิบ',
             flex: 4,
             cellBuilder: (_, x) =>
                 Text(x.ing.name, overflow: TextOverflow.ellipsis),
           ),
-          DataTableCol<IngredientCostShareRow>(
+          DataTableCol(
             key: 'bar',
             label: 'สัดส่วน',
             flex: 3,
@@ -206,14 +218,17 @@ class DashboardBreakdownGrid extends StatelessWidget {
               ),
             ),
           ),
-          DataTableCol<IngredientCostShareRow>(
+          DataTableCol(
             key: 'v',
             label: 'บาท',
             align: ColAlign.right,
             flex: 2,
-            cellBuilder: (_, x) => Text(fmt(x.cost)),
+            cellBuilder: (_, x) => Text(
+              fmt(x.cost),
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
-          DataTableCol<IngredientCostShareRow>(
+          DataTableCol(
             key: 'p',
             label: '%',
             align: ColAlign.right,
@@ -227,36 +242,43 @@ class DashboardBreakdownGrid extends StatelessWidget {
 
   Widget _buildAddonSalesCard(BuildContext context) {
     final t = context.tokens;
+    final totalGp = summary.addonSales.fold<double>(
+      0,
+      (sum, x) => sum + x.grossProfit,
+    );
     return _card(
       context,
       'ขายเสริม · เครื่องดื่ม',
+      trailing: summary.addonSales.isNotEmpty
+          ? Pill(tone: PillTone.green, label: 'กำไรรวม ${baht(totalGp)}')
+          : null,
       PosDataTable<AddonSalesSummaryRow>(
         label: 'ขายเสริม',
         rows: summary.addonSales,
         empty: const Empty(title: 'ยังไม่มีการขายเสริม'),
         columns: [
-          DataTableCol<AddonSalesSummaryRow>(
+          DataTableCol(
             key: 'name',
             label: 'สินค้า',
             flex: 4,
             cellBuilder: (_, x) =>
                 Text(x.name, overflow: TextOverflow.ellipsis),
           ),
-          DataTableCol<AddonSalesSummaryRow>(
+          DataTableCol(
             key: 'q',
             label: 'จำนวน',
             align: ColAlign.right,
             flex: 2,
             cellBuilder: (_, x) => Text(fmt(x.qty)),
           ),
-          DataTableCol<AddonSalesSummaryRow>(
+          DataTableCol(
             key: 'rev',
             label: 'ยอดขาย',
             align: ColAlign.right,
             flex: 2,
             cellBuilder: (_, x) => Text(fmt(x.rev)),
           ),
-          DataTableCol<AddonSalesSummaryRow>(
+          DataTableCol(
             key: 'gp',
             label: 'กำไร',
             align: ColAlign.right,
@@ -275,25 +297,23 @@ class DashboardBreakdownGrid extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) => constraints.maxWidth >= 720
-          ? Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: _buildIngShareCard(context)),
-                const SizedBox(width: AppDimensions.space4),
-                Expanded(child: _buildAddonSalesCard(context)),
-              ],
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildIngShareCard(context),
-                const SizedBox(height: AppDimensions.space4),
-                _buildAddonSalesCard(context),
-              ],
-            ),
-    );
-  }
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => constraints.maxWidth >= 720
+        ? Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _buildIngShareCard(context)),
+              const SizedBox(width: AppDimensions.space4),
+              Expanded(child: _buildAddonSalesCard(context)),
+            ],
+          )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildIngShareCard(context),
+              const SizedBox(height: AppDimensions.space4),
+              _buildAddonSalesCard(context),
+            ],
+          ),
+  );
 }

@@ -51,21 +51,26 @@ class NavPanel extends StatelessWidget {
     final views = allowedViewsForRole(staffRole);
     final isOpen = shiftOpenTimeText != null;
     final themeCubit = _maybeThemeCubit(context);
+    final compactH = MediaQuery.sizeOf(context).height < 840;
+    final gap = compactH ? AppDimensions.space2_5 : AppDimensions.space4;
 
     return Container(
       width: AppDimensions.drawerW,
       height: double.infinity,
-      color: t.side,
-      padding: const EdgeInsets.symmetric(
+      decoration: BoxDecoration(
+        color: t.side,
+        border: Border(right: BorderSide(color: t.sideLine)),
+      ),
+      padding: EdgeInsets.symmetric(
         horizontal: AppDimensions.space4,
-        vertical: AppDimensions.space5,
+        vertical: compactH ? AppDimensions.space3 : AppDimensions.space5,
       ),
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildBrandRow(t, tt),
-            const SizedBox(height: AppDimensions.space4),
+            SizedBox(height: gap),
             NavUserAndShiftCard(
               staffName: staffName,
               staffRole: staffRole,
@@ -73,7 +78,7 @@ class NavPanel extends StatelessWidget {
               shiftOpenTimeText: shiftOpenTimeText,
               onShiftPressed: onShiftAction ?? () => onSelectView('shift'),
             ),
-            const SizedBox(height: AppDimensions.space4),
+            SizedBox(height: gap),
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -103,7 +108,9 @@ class NavPanel extends StatelessWidget {
               const SizedBox(height: AppDimensions.space2),
               NavThemeShortcut(cubit: themeCubit),
             ],
-            const SizedBox(height: AppDimensions.space3),
+            SizedBox(
+              height: compactH ? AppDimensions.space1_5 : AppDimensions.space3,
+            ),
             NavLogoutButton(onLogout: onLogout),
           ],
         ),
@@ -118,7 +125,10 @@ class NavPanel extends StatelessWidget {
         children: [
           const BrandLogo(),
           const SizedBox(width: AppDimensions.space3),
-          Text('KepToh POS', style: tt.displaySmall?.copyWith(color: t.ink)),
+          Text(
+            'KepToh POS',
+            style: tt.displaySmall?.copyWith(color: t.sideInkStrong),
+          ),
         ],
       ),
       if (onClose != null)

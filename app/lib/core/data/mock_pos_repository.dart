@@ -199,5 +199,24 @@ class MockPosRepository implements PosRepository {
     }
   }
 
+  @override
+  String exportStateJson() =>
+      const JsonEncoder.withIndent('  ').convert(_state.toJson());
+
+  @override
+  PosState importStateJson(String rawJson) {
+    final decoded = jsonDecode(rawJson) as Map<String, dynamic>;
+    final next = PosState.fromJson(decoded).copy().freeze();
+    _state = next;
+    if (_sessionStaffId != null &&
+        !_state.staff.any((x) => x.id == _sessionStaffId && x.active)) {
+      _sessionStaffId = _state.staff.where((x) => x.active).firstOrNull?.id;
+    }
+    if (!_controller.isClosed) {
+      _controller.add(_state);
+    }
+    return _state;
+  }
+
   Future<void> dispose() => _controller.close();
 }

@@ -115,18 +115,27 @@ class _StockPurchaseTabState extends State<StockPurchaseTab> {
                 ],
               ),
               const SizedBox(height: AppDimensions.space4),
-              Wrap(
-                spacing: AppDimensions.space3,
-                runSpacing: AppDimensions.space3,
-                children: [
-                  for (final sup in state.posState.suppliers)
-                    SupplierShortcutCard(
-                      supplier: sup,
-                      lastPurchase: state.lastPurchaseOf(sup.id),
-                      onCopyLast: () => _openCopyLast(sup.id),
-                      onNew: () => _openNew(supplierId: sup.id),
-                    ),
-                ],
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final availW = constraints.maxWidth;
+                  final cols = availW >= 1200 ? 4 : (availW >= 560 ? 2 : 1);
+                  const gap = AppDimensions.space3;
+                  final cardW = (availW - gap * (cols - 1)) / cols;
+                  return Wrap(
+                    spacing: gap,
+                    runSpacing: gap,
+                    children: [
+                      for (final sup in state.posState.suppliers)
+                        SupplierShortcutCard(
+                          width: cardW,
+                          supplier: sup,
+                          lastPurchase: state.lastPurchaseOf(sup.id),
+                          onCopyLast: () => _openCopyLast(sup.id),
+                          onNew: () => _openNew(supplierId: sup.id),
+                        ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: AppDimensions.space5),
               Row(

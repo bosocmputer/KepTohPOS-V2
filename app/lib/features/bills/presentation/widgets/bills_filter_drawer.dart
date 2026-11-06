@@ -1,7 +1,114 @@
 import 'package:app/core/theme/tokens.dart';
+import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/features/bills/presentation/cubit/bills_cubit.dart';
 import 'package:flutter/material.dart';
+
+/// Maps payment method type or label to its icon name (`cash`, `qr`, `bank`).
+String billsMethodIcon(String text) => text.contains('เงินสด') || text == 'cash'
+    ? 'cash'
+    : (text.contains('QR') || text.contains('พร้อมเพย์') || text == 'qr'
+          ? 'qr'
+          : 'bank');
+
+/// Summary bar showing daily sales broken down by payment channel.
+class BillsMethodSummaryBar extends StatelessWidget {
+  const new({required this.salesByMethod, super.key});
+
+  final Map<String, double> salesByMethod;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final tt = Theme.of(context).textTheme;
+    return Container(
+      key: const ValueKey('bills-method-summary'),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.space4,
+        vertical: AppDimensions.space2_5,
+      ),
+      decoration: BoxDecoration(
+        color: t.surface,
+        borderRadius: BorderRadius.circular(AppDimensions.r),
+        border: Border.all(color: t.line),
+      ),
+      child: Wrap(
+        spacing: AppDimensions.space2_5,
+        runSpacing: AppDimensions.space2,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text(
+            'แยกตามช่องทาง:',
+            style: tt.labelMedium?.copyWith(color: t.muted),
+          ),
+          for (final entry in salesByMethod.entries)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.space2_5,
+                vertical: AppDimensions.space1,
+              ),
+              decoration: BoxDecoration(
+                color: t.surface2,
+                borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+                border: Border.all(color: t.line),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppIcon(billsMethodIcon(entry.key), size: 14, color: t.muted),
+                  const SizedBox(width: AppDimensions.space1_5),
+                  Text(
+                    '${entry.key}: ',
+                    style: tt.bodySmall?.copyWith(color: t.muted),
+                  ),
+                  Text(
+                    baht(entry.value),
+                    style: tt.bodyMedium?.copyWith(
+                      color: t.ink,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Active filter chips + 1-tap reset button shown above the bills table.
+class BillsActiveFiltersRow extends StatelessWidget {
+  const new({required this.state, required this.onClear, super.key});
+
+  final BillsState state;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+    spacing: AppDimensions.space2,
+    runSpacing: AppDimensions.space2,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    children: [
+      if (state.statusFilter != 'all')
+        Pill(
+          label: state.statusFilter == 'ok' ? 'สถานะ: ปกติ' : 'สถานะ: ยกเลิก',
+          tone: state.statusFilter == 'ok' ? PillTone.green : PillTone.red,
+        ),
+      for (final pm in state.posState.payments.where(
+        (p) => state.selectedMethodIds.contains(p.id),
+      ))
+        Pill(label: pm.name, tone: PillTone.orange),
+      Btn(
+        size: BtnSize.sm,
+        kind: BtnKind.ghost,
+        icon: 'x',
+        label: 'ล้างตัวกรอง',
+        onPressed: onClear,
+      ),
+    ],
+  );
+}
 
 /// Right-side slide-over filter panel for `BillsPage`
 /// (`design/figma/filter_history_supply.png` & `BillsView` in `index.html`).
@@ -68,6 +175,9 @@ class BillsFilterDrawer extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: AppDimensions.space2),
               child: _MethodCheckboxTile(
                 key: ValueKey('filter-method-${pm.id}'),
+                icon: pm.type == 'cash'
+                    ? 'cash'
+                    : (pm.type == 'qr' ? 'qr' : 'bank'),
                 label: pm.name,
                 checked: state.selectedMethodIds.contains(pm.id),
                 onTap: () => onToggleMethod(pm.id),
@@ -90,8 +200,8 @@ class BillsFilterDrawer extends StatelessWidget {
             onChanged: onStatusChanged,
             items: const <SegItem<String>>[
               SegItem(value: 'all', label: 'ทั้งหมด'),
-              SegItem(value: 'ok', label: 'ปกติ'),
-              SegItem(value: 'void', label: 'ยกเลิก'),
+              SegItem(value: 'ok', label: 'ปกติ', tone: SegTone.green),
+              SegItem(value: 'void', label: 'ยกเลิก', tone: SegTone.orange),
             ],
           ),
         ],
@@ -102,12 +212,14 @@ class BillsFilterDrawer extends StatelessWidget {
 
 class _MethodCheckboxTile extends StatelessWidget {
   const new({
+    required this.icon,
     required this.label,
     required this.checked,
     required this.onTap,
     super.key,
   });
 
+  final String icon;
   final String label;
   final bool checked;
   final VoidCallback onTap;
@@ -153,6 +265,8 @@ class _MethodCheckboxTile extends StatelessWidget {
                   : null,
             ),
             const SizedBox(width: AppDimensions.space2_5),
+            AppIcon(icon, size: 16, color: checked ? t.primary : t.muted),
+            const SizedBox(width: AppDimensions.space2),
             Expanded(
               child: Text(
                 label,

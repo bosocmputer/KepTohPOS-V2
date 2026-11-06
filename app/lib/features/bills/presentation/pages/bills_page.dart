@@ -8,6 +8,38 @@ import 'package:app/features/sale/presentation/widgets/sale_receipt_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+/// Builds the date dropdown and filter button for `/bills`, shown in the
+/// unified Topbar on tablet/desktop and inline on mobile (`<= 760px`).
+List<Widget> buildBillsHeaderActions(BillsCubit cubit) {
+  final state = cubit.state;
+  return <Widget>[
+    SizedBox(
+      width: 210,
+      child: Dropdown<String>(
+        key: const ValueKey('bills-date-dropdown'),
+        value: state.selectedDate,
+        onChanged: cubit.setDate,
+        options: [
+          for (final d in state.availableDates)
+            DropdownOption<String>(
+              value: d,
+              label: d == state.todayDate ? 'วันนี้ · ${thDate(d)}' : thDate(d),
+            ),
+        ],
+      ),
+    ),
+    Btn(
+      key: const ValueKey('bills-filter-btn'),
+      icon: 'filter',
+      kind: state.activeFilterCount > 0 ? BtnKind.primary : BtnKind.normal,
+      label: state.activeFilterCount > 0
+          ? 'ตัวกรอง (${state.activeFilterCount})'
+          : 'ตัวกรอง',
+      onPressed: () => cubit.setFilterDrawerOpen(open: true),
+    ),
+  ];
+}
+
 /// Daily sales bills history screen (`BillsView` in `prototype/index.html` &
 /// `design/figma/history.png`).
 class BillsPage extends StatelessWidget {
@@ -22,6 +54,10 @@ class BillsPage extends StatelessWidget {
     final state = context.watch<BillsCubit>().state;
     final cubit = context.read<BillsCubit>();
     final selectedBill = state.selectedBill;
+    final screenW = MediaQuery.sizeOf(context).width;
+    final isMobile = screenW <= AppDimensions.mobileBp;
+    final pagePad = AppDimensions.pagePadding(screenW);
+    Color rowFg(BillRecord b) => b.voided ? t.muted : t.ink;
 
     return BlocListener<BillsCubit, BillsState>(
       listenWhen: (prev, curr) =>
@@ -34,47 +70,18 @@ class BillsPage extends StatelessWidget {
       child: Stack(
         children: [
           SingleChildScrollView(
-            padding: const EdgeInsets.all(AppDimensions.space6),
+            padding: EdgeInsets.all(pagePad),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                PageHeader(
-                  title: 'บิลขาย',
-                  desc:
-                      'รายการใบเสร็จรับเงิน ยอดแยกตามช่องทาง '
-                      'และประวัติการยกเลิกบิล',
-                  actions: [
-                    SizedBox(
-                      width: 220,
-                      child: Dropdown<String>(
-                        key: const ValueKey('bills-date-dropdown'),
-                        value: state.selectedDate,
-                        onChanged: cubit.setDate,
-                        options: [
-                          for (final d in state.availableDates)
-                            DropdownOption<String>(
-                              value: d,
-                              label: d == state.todayDate
-                                  ? 'วันนี้ · ${thDate(d)}'
-                                  : thDate(d),
-                            ),
-                        ],
-                      ),
-                    ),
-                    Btn(
-                      key: const ValueKey('bills-filter-btn'),
-                      icon: 'filter',
-                      kind: state.activeFilterCount > 0
-                          ? BtnKind.primary
-                          : BtnKind.normal,
-                      label: state.activeFilterCount > 0
-                          ? 'ตัวกรอง (${state.activeFilterCount})'
-                          : 'ตัวกรอง',
-                      onPressed: () => cubit.setFilterDrawerOpen(open: true),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppDimensions.space5),
+                if (isMobile) ...[
+                  Wrap(
+                    spacing: AppDimensions.space2_5,
+                    runSpacing: AppDimensions.space2,
+                    children: buildBillsHeaderActions(cubit),
+                  ),
+                  const SizedBox(height: AppDimensions.space4),
+                ],
                 StatsGroup(
                   key: const ValueKey('bills-stats-group'),
                   children: [
@@ -90,6 +97,9 @@ class BillsPage extends StatelessWidget {
                       sub: state.voidedCount > 0
                           ? 'ยกเลิก ${state.voidedCount} บิล'
                           : 'ไม่มีบิลยกเลิก',
+                      tone: state.voidedCount > 0
+                          ? StatTone.red
+                          : StatTone.neutral,
                     ),
                     Stat(
                       label: 'ลูกค้า (หัว)',
@@ -100,45 +110,13 @@ class BillsPage extends StatelessWidget {
                 ),
                 if (state.salesByMethod.isNotEmpty) ...[
                   const SizedBox(height: AppDimensions.space3),
-                  Container(
-                    key: const ValueKey('bills-method-summary'),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.space4,
-                      vertical: AppDimensions.space3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: t.surface,
-                      borderRadius: BorderRadius.circular(AppDimensions.r),
-                      border: Border.all(color: t.line),
-                    ),
-                    child: Wrap(
-                      spacing: AppDimensions.space5,
-                      runSpacing: AppDimensions.space2,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          'แยกตามช่องทาง:',
-                          style: tt.labelMedium?.copyWith(color: t.muted),
-                        ),
-                        for (final entry in state.salesByMethod.entries)
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '${entry.key}: ',
-                                style: tt.bodySmall?.copyWith(color: t.muted),
-                              ),
-                              Text(
-                                baht(entry.value),
-                                style: tt.bodyMedium?.copyWith(
-                                  color: t.ink,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
+                  BillsMethodSummaryBar(salesByMethod: state.salesByMethod),
+                ],
+                if (state.activeFilterCount > 0) ...[
+                  const SizedBox(height: AppDimensions.space3),
+                  BillsActiveFiltersRow(
+                    state: state,
+                    onClear: cubit.clearFilters,
                   ),
                 ],
                 const SizedBox(height: AppDimensions.space4),
@@ -154,18 +132,18 @@ class BillsPage extends StatelessWidget {
                       key: 'no',
                       label: 'เลขที่',
                       flex: 2,
-                      cellBuilder: (context, b) => Row(
+                      cellBuilder: (_, b) => Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Flexible(
                             child: Text(
                               b.no,
                               key: ValueKey('bill-row-no-${b.id}'),
+                              overflow: TextOverflow.ellipsis,
                               style: tt.bodyMedium?.copyWith(
-                                color: t.ink,
+                                color: rowFg(b),
                                 fontWeight: FontWeight.w700,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           if (b.voided) ...[
@@ -178,18 +156,15 @@ class BillsPage extends StatelessWidget {
                     DataTableCol<BillRecord>(
                       key: 'at',
                       label: 'เวลา',
-                      cellBuilder: (context, b) => Text(
-                        thTime(b.at),
-                        style: tt.bodyMedium?.copyWith(color: t.ink),
-                      ),
+                      cellBuilder: (_, b) => Text(thTime(b.at)),
                     ),
                     DataTableCol<BillRecord>(
                       key: 'table',
                       label: 'โต๊ะ',
-                      cellBuilder: (context, b) => Text(
+                      cellBuilder: (_, b) => Text(
                         b.tableName,
                         style: tt.bodyMedium?.copyWith(
-                          color: t.ink,
+                          color: rowFg(b),
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -197,47 +172,93 @@ class BillsPage extends StatelessWidget {
                     DataTableCol<BillRecord>(
                       key: 'heads',
                       label: 'ลูกค้า',
-                      cellBuilder: (context, b) => Text(
-                        '${b.heads.a + b.heads.c + b.heads.f} คน',
-                        style: tt.bodyMedium?.copyWith(color: t.ink),
-                      ),
+                      cellBuilder: (_, b) =>
+                          Text('${b.heads.a + b.heads.c + b.heads.f} คน'),
                     ),
                     DataTableCol<BillRecord>(
                       key: 'method',
                       label: 'ชำระโดย',
                       flex: 2,
-                      cellBuilder: (context, b) => Text(
-                        b.methodName,
-                        style: tt.bodyMedium?.copyWith(color: t.ink),
+                      cellBuilder: (_, b) => Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AppIcon(
+                            billsMethodIcon(b.methodType),
+                            size: 14,
+                            color: t.muted,
+                          ),
+                          const SizedBox(width: AppDimensions.space1_5),
+                          Flexible(
+                            child: Text(
+                              b.methodName,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     DataTableCol<BillRecord>(
                       key: 'staff',
                       label: 'แคชเชียร์',
                       flex: 2,
-                      cellBuilder: (context, b) => Text(
-                        b.staffName,
-                        style: tt.bodyMedium?.copyWith(color: t.ink),
-                      ),
+                      cellBuilder: (_, b) => Text(b.staffName),
                     ),
                     DataTableCol<BillRecord>(
                       key: 'total',
                       label: 'ยอด',
                       flex: 2,
                       align: ColAlign.right,
-                      cellBuilder: (context, b) => Text(
-                        baht(b.total, 2),
-                        textAlign: TextAlign.right,
-                        style: tt.bodyMedium?.copyWith(
-                          color: b.voided ? t.muted : t.ink,
-                          fontWeight: FontWeight.w700,
-                          decoration: b.voided
-                              ? TextDecoration.lineThrough
-                              : null,
-                        ),
+                      cellBuilder: (_, b) => Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            baht(b.total, 2),
+                            textAlign: TextAlign.right,
+                            style: tt.bodyMedium?.copyWith(
+                              color: rowFg(b),
+                              fontWeight: FontWeight.w700,
+                              decoration: b.voided
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(width: AppDimensions.space1_5),
+                          Text('›', style: TextStyle(color: t.muted)),
+                        ],
                       ),
                     ),
                   ],
+                  footerCells: state.pagedBills.isEmpty
+                      ? null
+                      : [
+                          Text(
+                            'รวม (${state.okBills.length} บิล)',
+                            style: tt.bodyMedium?.copyWith(
+                              color: t.ink,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox.shrink(),
+                          const SizedBox.shrink(),
+                          Text(
+                            '${state.totalPaidHeads + state.totalFreeHeads} คน',
+                            style: tt.bodyMedium?.copyWith(
+                              color: t.ink,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox.shrink(),
+                          const SizedBox.shrink(),
+                          Text(
+                            baht(state.totalSales, 2),
+                            textAlign: TextAlign.right,
+                            style: tt.bodyMedium?.copyWith(
+                              color: t.successInk,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                 ),
                 const SizedBox(height: AppDimensions.space3),
                 Pagination(
@@ -266,8 +287,7 @@ class BillsPage extends StatelessWidget {
                 fresh: false,
                 staff: staff,
                 onDone: () => cubit.selectBill(null),
-                onVoid: (reason) =>
-                    cubit.voidBillById(staff: staff, reason: reason),
+                onVoid: (r) => cubit.voidBillById(staff: staff, reason: r),
               ),
             ),
         ],

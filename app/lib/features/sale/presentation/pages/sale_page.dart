@@ -108,14 +108,20 @@ class _SalePageState extends State<SalePage> {
         }
 
         final desktopHeader = headerScope?.headerBuilder(
+          titleWidget: buildSaleTopbarTitle(
+            context,
+            state,
+            tb,
+            widget.onBackToTables,
+          ),
           extraActions: <Widget>[
-            Btn(
-              key: const ValueKey('topbar-close-table-btn'),
-              kind: BtnKind.danger,
-              label: 'เก็บโต๊ะ',
-              disabled: state.openTable == null,
-              onPressed: () => setState(() => _showCloseConfirm = true),
-            ),
+            if (state.openTable != null)
+              Btn(
+                key: const ValueKey('topbar-close-table-btn'),
+                kind: BtnKind.danger,
+                label: 'เก็บโต๊ะ',
+                onPressed: () => setState(() => _showCloseConfirm = true),
+              ),
           ],
         );
 
@@ -260,10 +266,20 @@ class _SalePageState extends State<SalePage> {
               ReceiptModal(
                 shop: state.posState.shop,
                 bill: state.settledBill!,
+                doneLabel:
+                    state.effectiveTiming == 'after' && state.openTable != null
+                    ? 'เสร็จสิ้น · เก็บโต๊ะ'
+                    : null,
                 onPrint: () =>
                     showAppToast(context, 'ส่งพิมพ์ใบเสร็จแล้ว (จำลอง)'),
                 onDone: () {
-                  context.read<SaleBloc>().add(const SaleReceiptDismissed());
+                  final bloc = context.read<SaleBloc>();
+                  if (state.effectiveTiming == 'after' &&
+                      state.openTable != null &&
+                      state.due == 0) {
+                    bloc.add(const SaleTableClosed());
+                  }
+                  bloc.add(const SaleReceiptDismissed());
                   widget.onBackToTables();
                 },
               ),

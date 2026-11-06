@@ -120,18 +120,20 @@ class SalePaymentPanel extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
                 children: [
                   Text(
                     'ชำระเงิน · โต๊ะ ${tb.name}',
                     style: tt.titleLarge?.copyWith(color: t.ink),
                   ),
-                  Text(
-                    state.effectiveTiming == 'after'
+                  const SizedBox(width: AppDimensions.space2),
+                  Pill(
+                    label: state.effectiveTiming == 'after'
                         ? 'กินก่อนจ่าย'
                         : 'จ่ายก่อนกิน',
-                    style: tt.labelSmall?.copyWith(color: t.muted),
+                    tone: state.effectiveTiming == 'after'
+                        ? PillTone.orange
+                        : PillTone.green,
                   ),
                 ],
               ),

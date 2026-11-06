@@ -77,8 +77,9 @@ class PosDataTable<T> extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: LayoutBuilder(
           builder: (context, constraints) {
+            final minW = columns.length > 5 ? 520.0 : 320.0;
             final tableWidth = constraints.hasBoundedWidth
-                ? math.max<double>(constraints.maxWidth, 520)
+                ? math.max<double>(constraints.maxWidth, minW)
                 : 520.0;
             return SingleChildScrollView(
               scrollDirection: Axis.horizontal,

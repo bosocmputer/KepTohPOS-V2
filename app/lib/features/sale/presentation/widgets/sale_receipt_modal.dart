@@ -16,6 +16,7 @@ class ReceiptModal extends StatefulWidget {
     required this.onDone,
     super.key,
     this.fresh = true,
+    this.doneLabel,
     this.onPrint,
     this.staff,
     this.onVoid,
@@ -25,6 +26,7 @@ class ReceiptModal extends StatefulWidget {
   final BillRecord bill;
   final VoidCallback onDone;
   final bool fresh;
+  final String? doneLabel;
   final VoidCallback? onPrint;
   final StaffMember? staff;
   final void Function(String reason)? onVoid;
@@ -59,45 +61,8 @@ class _ReceiptModalState extends State<ReceiptModal> {
             child: Modal(
               title: widget.fresh ? 'รับเงินเรียบร้อย' : 'บิล ${bill.no}',
               onClose: widget.onDone,
-              footer: [
-                if (canVoid && !_voiding)
-                  Btn(
-                    key: const ValueKey('receipt-void-btn'),
-                    kind: BtnKind.danger,
-                    icon: 'trash',
-                    label: 'ยกเลิกบิล',
-                    onPressed: () => setState(() => _voiding = true),
-                  ),
-                Btn(
-                  key: const ValueKey('receipt-print-btn'),
-                  icon: 'printer',
-                  label: 'พิมพ์ใบเสร็จ',
-                  onPressed: widget.onPrint ?? () {},
-                ),
-                Btn(
-                  key: const ValueKey('receipt-done-btn'),
-                  kind: BtnKind.primary,
-                  icon: 'check',
-                  label: widget.fresh ? 'เสร็จสิ้น' : 'ปิด',
-                  onPressed: widget.onDone,
-                ),
-              ],
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (widget.fresh) ...[
-                    ResultState(
-                      title: 'รับเงินเรียบร้อย',
-                      text: bill.methodType == 'cash' && bill.change > 0
-                          ? 'เงินทอน $changeTxt'
-                          : 'ชำระผ่าน ${bill.methodName}',
-                    ),
-                    const SizedBox(height: AppDimensions.space3),
-                  ],
-                  ReceiptCard(shop: widget.shop, bill: bill),
-                  if (_voiding) ...[
-                    const SizedBox(height: AppDimensions.space3),
-                    Container(
+              footerLeading: _voiding
+                  ? Container(
                       key: const ValueKey('void-confirm-box'),
                       padding: const EdgeInsets.all(AppDimensions.space3),
                       decoration: BoxDecoration(
@@ -107,6 +72,7 @@ class _ReceiptModalState extends State<ReceiptModal> {
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             'ยกเลิกบิลนี้ — ยอดจะไม่ถูกนับในยอดขายวันนี้',
@@ -139,8 +105,9 @@ class _ReceiptModalState extends State<ReceiptModal> {
                               const SizedBox(width: AppDimensions.space2),
                               Btn(
                                 key: const ValueKey('confirm-void-btn'),
-                                kind: BtnKind.danger,
+                                kind: BtnKind.dangerSolid,
                                 size: BtnSize.sm,
+                                icon: 'trash',
                                 label: 'ยืนยันยกเลิกบิล',
                                 onPressed: () {
                                   widget.onVoid?.call(_reason);
@@ -151,8 +118,109 @@ class _ReceiptModalState extends State<ReceiptModal> {
                           ),
                         ],
                       ),
+                    )
+                  : null,
+              footer: _voiding
+                  ? const <Widget>[]
+                  : [
+                      if (canVoid)
+                        Btn(
+                          key: const ValueKey('receipt-void-btn'),
+                          kind: BtnKind.danger,
+                          icon: 'trash',
+                          label: 'ยกเลิกบิล',
+                          onPressed: () => setState(() => _voiding = true),
+                        ),
+                      Btn(
+                        key: const ValueKey('receipt-print-btn'),
+                        icon: 'printer',
+                        label: 'พิมพ์ใบเสร็จ',
+                        onPressed: widget.onPrint ?? () {},
+                      ),
+                      Btn(
+                        key: const ValueKey('receipt-done-btn'),
+                        kind: BtnKind.primary,
+                        icon: 'check',
+                        label:
+                            widget.doneLabel ??
+                            (widget.fresh ? 'เสร็จสิ้น' : 'ปิด'),
+                        onPressed: widget.onDone,
+                      ),
+                    ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (widget.fresh) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppDimensions.space4,
+                        vertical: AppDimensions.space3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: t.successSoft,
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.radiusMd,
+                        ),
+                        border: Border.all(color: t.success),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: AppDimensions.space9,
+                            height: AppDimensions.space9,
+                            decoration: BoxDecoration(
+                              color: t.success,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: AppIcon('check', color: t.onPrimary),
+                            ),
+                          ),
+                          const SizedBox(width: AppDimensions.space3),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'รับเงินเรียบร้อย',
+                                  style: tt.titleMedium?.copyWith(
+                                    color: t.success,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                Text(
+                                  'ชำระผ่าน ${bill.methodName}',
+                                  style: tt.labelSmall?.copyWith(color: t.ink),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (bill.methodType == 'cash')
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'เงินทอน',
+                                  style: tt.labelSmall?.copyWith(
+                                    color: t.success,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                Text(
+                                  changeTxt,
+                                  style: tt.headlineMedium?.copyWith(
+                                    color: t.success,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(height: AppDimensions.space3),
                   ],
+                  ReceiptCard(shop: widget.shop, bill: bill),
                 ],
               ),
             ),

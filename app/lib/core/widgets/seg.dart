@@ -1,12 +1,20 @@
 import 'package:app/core/theme/tokens.dart';
 import 'package:flutter/material.dart';
 
+/// Visual tone for a [SegItem] when selected.
+enum SegTone { surface, green, orange }
+
 /// Item in a [Seg] segmented control (`[key, label]` in `index.html`).
 class SegItem<T> {
-  const new({required this.value, required this.label});
+  const new({
+    required this.value,
+    required this.label,
+    this.tone = SegTone.surface,
+  });
 
   final T value;
   final String label;
+  final SegTone tone;
 }
 
 /// Segmented control (`Seg` in `prototype/index.html`).
@@ -32,9 +40,25 @@ class Seg<T> extends StatelessWidget {
     SegItem<T> item,
   ) {
     final selected = item.value == value;
+    final bgColor = switch ((selected, item.tone)) {
+      (true, SegTone.green) => tokens.success,
+      (true, SegTone.orange) => tokens.primary,
+      (true, SegTone.surface) => tokens.dark,
+      (false, SegTone.green) => tokens.successSoft.withValues(alpha: 0.55),
+      (false, SegTone.orange) => tokens.primarySoft.withValues(alpha: 0.55),
+      (false, SegTone.surface) => tokens.surface.withValues(alpha: 0),
+    };
+    final fgColor = switch ((selected, item.tone)) {
+      (true, SegTone.green) => AppRawTokens.white,
+      (true, SegTone.orange) => tokens.onPrimary,
+      (true, SegTone.surface) => tokens.onDark,
+      (false, SegTone.green) => tokens.successInk,
+      (false, SegTone.orange) => tokens.primaryInk,
+      (false, SegTone.surface) => tokens.muted,
+    };
     return Container(
       decoration: BoxDecoration(
-        color: selected ? tokens.surface : tokens.surface.withValues(alpha: 0),
+        color: bgColor,
         borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
         boxShadow: selected ? tokens.shadows : null,
       ),
@@ -55,9 +79,9 @@ class Seg<T> extends StatelessWidget {
               item.label,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: selected ? tokens.ink : tokens.muted,
+                color: fgColor,
                 fontSize: AppDimensions.fsSm,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
               ),
             ),
           ),

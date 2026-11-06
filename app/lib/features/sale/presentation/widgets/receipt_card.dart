@@ -16,10 +16,13 @@ class ReceiptCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
+    final reasonTxt = (bill.voidReason ?? '').trim().isNotEmpty
+        ? bill.voidReason!
+        : 'ไม่ระบุ';
 
     return Container(
       key: const ValueKey('receipt-card'),
-      padding: const EdgeInsets.all(AppDimensions.space5),
+      padding: const EdgeInsets.all(AppDimensions.space4),
       decoration: BoxDecoration(
         color: t.surface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
@@ -29,50 +32,57 @@ class ReceiptCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (bill.voided) ...[
-            Center(
-              child: Container(
-                key: const ValueKey('receipt-void-stamp'),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.space3,
-                  vertical: AppDimensions.spaceHalf,
-                ),
-                decoration: BoxDecoration(
-                  color: t.dangerSoft,
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                  border: Border.all(color: t.danger, width: 1.5),
-                ),
-                child: Text(
-                  'ยกเลิก',
-                  style: tt.labelLarge?.copyWith(
-                    color: t.danger,
-                    fontWeight: FontWeight.w700,
+            Container(
+              key: const ValueKey('receipt-void-stamp'),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.space3,
+                vertical: AppDimensions.space2,
+              ),
+              decoration: BoxDecoration(
+                color: t.dangerSoft,
+                borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+                border: Border.all(color: t.danger),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppDimensions.space2,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: t.danger,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'ยกเลิก',
+                      style: tt.labelSmall?.copyWith(
+                        color: AppRawTokens.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: AppDimensions.space2_5),
+                  Expanded(
+                    child: Text(
+                      'ยกเลิกโดย ${bill.voidBy ?? "-"} · $reasonTxt',
+                      style: tt.bodySmall?.copyWith(
+                        color: t.dangerInk,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: AppDimensions.space1_5),
-            Text(
-              'ยกเลิกโดย ${bill.voidBy ?? "-"} · '
-              '${bill.voidReason ?? "ไม่ระบุ"}',
-              textAlign: TextAlign.center,
-              style: tt.bodySmall?.copyWith(
-                color: t.danger,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: AppDimensions.space2_5),
+            const SizedBox(height: AppDimensions.space3),
           ],
-          const Center(
-            child: BrandLogo(
-              size: AppDimensions.space12,
-              radius: AppDimensions.radiusMd,
-            ),
-          ),
-          const SizedBox(height: AppDimensions.space2_5),
+          const Center(child: BrandLogo(size: AppDimensions.space10)),
+          const SizedBox(height: AppDimensions.space1_5),
           Text(
             shop.name,
             textAlign: TextAlign.center,
-            style: tt.titleLarge?.copyWith(
+            style: tt.titleMedium?.copyWith(
               color: t.ink,
               fontWeight: FontWeight.w700,
             ),
@@ -101,9 +111,9 @@ class ReceiptCard extends StatelessWidget {
               textAlign: TextAlign.center,
               style: tt.labelSmall?.copyWith(color: t.muted),
             ),
-          const SizedBox(height: AppDimensions.space3),
+          const SizedBox(height: AppDimensions.space2),
           Divider(color: t.line, height: 1),
-          const SizedBox(height: AppDimensions.space3),
+          const SizedBox(height: AppDimensions.space2),
           Text(
             shop.vatMode != 'none'
                 ? 'ใบเสร็จรับเงิน/ใบกำกับภาษีอย่างย่อ'
@@ -114,7 +124,7 @@ class ReceiptCard extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: AppDimensions.space2),
+          const SizedBox(height: AppDimensions.space1_5),
           _ReceiptRow('เลขที่ ${bill.no}', 'โต๊ะ ${bill.tableName}'),
           _ReceiptRow(
             '${thDate(bill.date)} · ${thTime(bill.at)} น.',
@@ -126,18 +136,18 @@ class ReceiptCard extends StatelessWidget {
             '${bill.heads.f > 0 ? " · ฟรี ${bill.heads.f}" : ""}',
             style: tt.labelSmall?.copyWith(color: t.muted),
           ),
-          const SizedBox(height: AppDimensions.space3),
+          const SizedBox(height: AppDimensions.space2),
           Divider(color: t.line, height: 1),
-          const SizedBox(height: AppDimensions.space2_5),
+          const SizedBox(height: AppDimensions.space2),
           for (final l in bill.lines)
             _ReceiptRow(
               '${l.name} × ${l.qty}',
               baht(l.qty * l.price),
               boldValue: true,
             ),
-          const SizedBox(height: AppDimensions.space2_5),
+          const SizedBox(height: AppDimensions.space2),
           Divider(color: t.line, height: 1),
-          const SizedBox(height: AppDimensions.space2_5),
+          const SizedBox(height: AppDimensions.space2),
           _ReceiptRow('ยอดรวม', baht(bill.subtotal)),
           if (bill.service > 0)
             _ReceiptRow(
@@ -165,8 +175,9 @@ class ReceiptCard extends StatelessWidget {
                 key: const ValueKey('receipt-total-amount'),
                 baht(bill.total, bill.total % 1 != 0 ? 2 : 0),
                 style: tt.titleLarge?.copyWith(
-                  color: t.primary,
+                  color: bill.voided ? t.muted : t.primary,
                   fontWeight: FontWeight.w700,
+                  decoration: bill.voided ? TextDecoration.lineThrough : null,
                 ),
               ),
             ],
@@ -182,13 +193,6 @@ class ReceiptCard extends StatelessWidget {
             _ReceiptRow(
               'เงินทอน',
               baht(bill.change, bill.change % 1 != 0 ? 2 : 0),
-              boldValue: true,
-            ),
-          if (bill.voided)
-            _ReceiptRow(
-              'ยกเลิกโดย ${bill.voidBy ?? "-"}',
-              bill.voidReason ?? 'ไม่ระบุ',
-              color: t.danger,
               boldValue: true,
             ),
           if (shop.receiptFooter.isNotEmpty) ...[
@@ -208,31 +212,29 @@ class ReceiptCard extends StatelessWidget {
 }
 
 class _ReceiptRow extends StatelessWidget {
-  const new(this.left, this.right, {this.boldValue = false, this.color});
+  const new(this.left, this.right, {this.boldValue = false});
 
   final String left;
   final String right;
   final bool boldValue;
-  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
-    final textColor = color ?? t.ink;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppDimensions.spaceHalf),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Flexible(
-            child: Text(left, style: tt.bodySmall?.copyWith(color: textColor)),
+            child: Text(left, style: tt.bodySmall?.copyWith(color: t.ink)),
           ),
           if (right.isNotEmpty)
             Text(
               right,
               style: tt.bodySmall?.copyWith(
-                color: textColor,
+                color: t.ink,
                 fontWeight: boldValue ? FontWeight.w700 : FontWeight.w500,
               ),
             ),

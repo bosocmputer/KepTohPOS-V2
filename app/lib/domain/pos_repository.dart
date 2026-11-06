@@ -117,4 +117,11 @@ abstract class PosRepository {
 
   /// Updates the active session staff ID (`null` to sign out).
   void setSessionStaffId(String? staffId);
+
+  /// Exports the entire current [PosState] snapshot as formatted JSON.
+  String exportStateJson();
+
+  /// Replaces the repository's [PosState] from a JSON string snapshot and
+  /// broadcasts the imported state to all listeners.
+  PosState importStateJson(String rawJson);
 }

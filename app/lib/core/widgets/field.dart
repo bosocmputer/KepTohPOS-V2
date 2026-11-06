@@ -51,6 +51,7 @@ class AppTextInput extends StatefulWidget {
     this.value = '',
     this.onChanged,
     this.placeholder = '',
+    this.suffixText,
     this.maxLines = 1,
     this.keyboardType,
     this.readOnly = false,
@@ -59,6 +60,7 @@ class AppTextInput extends StatefulWidget {
   final String value;
   final ValueChanged<String>? onChanged;
   final String placeholder;
+  final String? suffixText;
   final int maxLines;
   final TextInputType? keyboardType;
   final bool readOnly;
@@ -96,43 +98,68 @@ class _AppTextInputState extends State<AppTextInput> {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
+    final isSingleLine = widget.maxLines == 1;
     final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
       borderSide: BorderSide(
         color: tokens.line,
         width: AppDimensions.borderThick,
       ),
     );
     final focusedBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
       borderSide: BorderSide(
         color: tokens.primary,
         width: AppDimensions.borderThick,
       ),
     );
 
-    return TextField(
-      controller: _controller,
-      onChanged: widget.onChanged,
-      maxLines: widget.maxLines,
-      keyboardType: widget.keyboardType,
-      readOnly: widget.readOnly,
-      style: Theme.of(context).textTheme.bodyMedium
-          ?.copyWith(color: tokens.ink),
-      decoration: InputDecoration(
-        isDense: true,
-        filled: true,
-        fillColor: tokens.surface,
-        hintText: widget.placeholder,
-        hintStyle: Theme.of(context).textTheme.bodyMedium
-            ?.copyWith(color: tokens.muted),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.space3,
-          vertical: AppDimensions.space2_5,
+    return SizedBox(
+      height: isSingleLine ? AppDimensions.tap : null,
+      child: TextField(
+        controller: _controller,
+        onChanged: widget.onChanged,
+        maxLines: widget.maxLines,
+        keyboardType: widget.keyboardType,
+        readOnly: widget.readOnly,
+        textAlignVertical: isSingleLine ? TextAlignVertical.center : null,
+        style: Theme.of(context).textTheme.bodyMedium
+            ?.copyWith(color: tokens.ink, fontWeight: FontWeight.w500),
+        decoration: InputDecoration(
+          isDense: true,
+          visualDensity: VisualDensity.standard,
+          filled: true,
+          fillColor: tokens.surface,
+          constraints: isSingleLine
+              ? const BoxConstraints.tightFor(height: AppDimensions.tap)
+              : null,
+          hintText: widget.placeholder,
+          hintStyle: Theme.of(context).textTheme.bodyMedium
+              ?.copyWith(color: tokens.muted),
+          suffixIcon: widget.suffixText != null && widget.suffixText!.isNotEmpty
+              ? Padding(
+                  padding: const EdgeInsets.only(
+                    left: AppDimensions.space1_5,
+                    right: AppDimensions.space3,
+                  ),
+                  child: Text(
+                    widget.suffixText!,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: tokens.muted,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                )
+              : null,
+          suffixIconConstraints: const BoxConstraints(),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: AppDimensions.space3,
+            vertical: isSingleLine ? 10 : AppDimensions.space2_5,
+          ),
+          enabledBorder: border,
+          focusedBorder: focusedBorder,
+          border: border,
         ),
-        enabledBorder: border,
-        focusedBorder: focusedBorder,
-        border: border,
       ),
     );
   }

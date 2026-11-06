@@ -9,6 +9,31 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 export 'package:app/features/tables/presentation/cubit/tables_cubit.dart';
 export 'package:app/features/tables/presentation/widgets/table_card.dart';
 
+/// Builds the zone filter dropdown (`tables-zone-dropdown`) shown in the
+/// unified Topbar on tablet/desktop and inline on mobile (`<= 760px`).
+Widget buildTablesZoneDropdown(TablesCubit cubit, TablesState state) =>
+    SizedBox(
+      width: 172,
+      child: Dropdown<String>(
+        key: const ValueKey('tables-zone-dropdown'),
+        value: state.selectedZone,
+        options: <DropdownOption<String>>[
+          DropdownOption<String>(
+            value: 'all',
+            label: 'ทุกโซน',
+            sub: '${state.totalTables} โต๊ะ',
+          ),
+          for (final z in state.zones)
+            DropdownOption<String>(
+              value: z,
+              label: z,
+              sub: 'ว่าง ${state.freeInZone(z)} จาก ${state.totalInZone(z)}',
+            ),
+        ],
+        onChanged: cubit.selectZone,
+      ),
+    );
+
 /// Floor and table overview screen (`function TablesView` in
 /// `prototype/index.html` & `design/figma/table.png`).
 class TablesPage extends StatelessWidget {
@@ -31,45 +56,22 @@ class TablesPage extends StatelessWidget {
     return BlocBuilder<TablesCubit, TablesState>(
       builder: (context, state) {
         final cubit = context.read<TablesCubit>();
-        final zoneOptions = <DropdownOption<String>>[
-          DropdownOption<String>(
-            value: 'all',
-            label: 'ทุกโซน',
-            sub: '${state.totalTables} โต๊ะ',
-          ),
-          for (final z in state.zones)
-            DropdownOption<String>(
-              value: z,
-              label: z,
-              sub: 'ว่าง ${state.freeInZone(z)} จาก ${state.totalInZone(z)}',
-            ),
-        ];
-
-        final pagePad = AppDimensions.pagePadding(
-          MediaQuery.sizeOf(context).width,
-        );
+        final screenW = MediaQuery.sizeOf(context).width;
+        final isMobile = screenW <= AppDimensions.mobileBp;
+        final pagePad = AppDimensions.pagePadding(screenW);
 
         return SingleChildScrollView(
           padding: EdgeInsets.all(pagePad),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              PageHeader(
-                title: 'โต๊ะและการขาย',
-                desc: 'ภาพรวมโต๊ะว่าง ลูกค้าในร้าน และสถานะรอชำระ',
-                actions: [
-                  SizedBox(
-                    width: 180,
-                    child: Dropdown<String>(
-                      key: const ValueKey('tables-zone-dropdown'),
-                      value: state.selectedZone,
-                      options: zoneOptions,
-                      onChanged: cubit.selectZone,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppDimensions.space4),
+              if (isMobile) ...[
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: buildTablesZoneDropdown(cubit, state),
+                ),
+                const SizedBox(height: AppDimensions.space3),
+              ],
               StatsGroup(
                 children: [
                   Stat(

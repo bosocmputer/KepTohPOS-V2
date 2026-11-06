@@ -53,53 +53,81 @@ class CashPaymentSection extends StatelessWidget {
           ],
         ),
         SizedBox(height: gap),
-        Container(
-          key: const ValueKey('cash-received-box'),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.space3,
-            vertical: AppDimensions.space2,
-          ),
-          decoration: BoxDecoration(
-            color: t.surface2,
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-            border: Border.all(color: t.line),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('รับเงินมา', style: tt.bodySmall?.copyWith(color: t.muted)),
-              Text(
-                state.cashReceived.isEmpty ? '฿0' : baht(recv),
-                style: tt.titleLarge?.copyWith(
-                  color: t.ink,
-                  fontWeight: FontWeight.w700,
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                key: const ValueKey('cash-received-box'),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.space3,
+                  vertical: AppDimensions.space2,
+                ),
+                decoration: BoxDecoration(
+                  color: t.surface2,
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                  border: Border.all(color: t.line),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'รับเงินมา',
+                      style: tt.labelSmall?.copyWith(color: t.muted),
+                    ),
+                    const SizedBox(height: AppDimensions.spaceHalf),
+                    Text(
+                      state.cashReceived.isEmpty ? '฿0' : baht(recv),
+                      style: tt.titleLarge?.copyWith(
+                        color: t.ink,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-        SizedBox(height: gap),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              recv >= total || recv == 0 ? 'เงินทอน' : 'ยังขาดอีก',
-              style: tt.bodyMedium?.copyWith(
-                color: recv > 0 && recv < total ? t.danger : t.ink,
-                fontWeight: FontWeight.w700,
-              ),
             ),
-            Text(
-              key: const ValueKey('cash-change-amount'),
-              recv >= total || recv == 0
-                  ? baht(state.cashChange, state.cashChange % 1 != 0 ? 2 : 0)
-                  : baht(
-                      state.cashShortage,
-                      state.cashShortage % 1 != 0 ? 2 : 0,
+            const SizedBox(width: AppDimensions.space2),
+            Expanded(
+              child: Builder(
+                builder: (_) {
+                  final short = recv > 0 && recv < total;
+                  final fg = short ? t.danger : t.success;
+                  final amt = short ? state.cashShortage : state.cashChange;
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppDimensions.space3,
+                      vertical: AppDimensions.space2,
                     ),
-              style: tt.titleLarge?.copyWith(
-                color: recv > 0 && recv < total ? t.danger : t.success,
-                fontWeight: FontWeight.w700,
+                    decoration: BoxDecoration(
+                      color: short ? t.dangerSoft : t.successSoft,
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusMd,
+                      ),
+                      border: Border.all(color: fg),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          short ? 'ยังขาดอีก' : 'เงินทอน',
+                          style: tt.labelSmall?.copyWith(
+                            color: fg,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: AppDimensions.spaceHalf),
+                        Text(
+                          key: const ValueKey('cash-change-amount'),
+                          baht(amt, amt % 1 != 0 ? 2 : 0),
+                          style: tt.titleLarge?.copyWith(
+                            color: fg,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -108,10 +136,13 @@ class CashPaymentSection extends StatelessWidget {
         NumPad(
           value: state.cashReceived,
           maxLen: 7,
+          filledKeys: true,
+          showClear: true,
+          maxWidth: double.infinity,
           keyHeight: compact
               ? AppDimensions.numPadKeyCompactH
               : AppDimensions.numPadKeyH,
-          rowGap: compact ? AppDimensions.space1 : AppDimensions.space2,
+          rowGap: compact ? AppDimensions.space1_5 : AppDimensions.space2,
           onChanged: (v) => bloc.add(SaleCashReceivedChanged(v)),
           onEnter: state.canConfirmPayment
               ? (_) => bloc.add(SalePaymentSubmitted(staff: staff))
@@ -202,6 +233,8 @@ class TransferStatusSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
+    final fail = status == 'failed';
+    final ok = status == 'success';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -229,36 +262,28 @@ class TransferStatusSection extends StatelessWidget {
                 width: AppDimensions.space12,
                 height: AppDimensions.space12,
                 decoration: BoxDecoration(
-                  color: status == 'failed'
-                      ? t.dangerSoft
-                      : (status == 'success' ? t.primary : t.primarySoft),
+                  color: fail ? t.dangerSoft : (ok ? t.primary : t.primarySoft),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
                   child: AppIcon(
-                    status == 'failed'
-                        ? 'x'
-                        : (status == 'success' ? 'check' : 'clock'),
-                    color: status == 'failed'
-                        ? t.danger
-                        : (status == 'success' ? t.onPrimary : t.primaryInk),
+                    fail ? 'x' : (ok ? 'check' : 'clock'),
+                    color: fail ? t.danger : (ok ? t.onPrimary : t.primaryInk),
                   ),
                 ),
               ),
               const SizedBox(height: AppDimensions.space2_5),
               Text(
-                status == 'failed'
+                fail
                     ? 'ชำระเงินไม่สำเร็จ'
-                    : (status == 'success'
+                    : (ok
                           ? 'ชำระเงินสำเร็จ'
                           : 'กำลังรอการชำระเงิน ($methodName)'),
-                style: tt.titleMedium?.copyWith(
-                  color: status == 'failed' ? t.danger : t.ink,
-                ),
+                style: tt.titleMedium?.copyWith(color: fail ? t.danger : t.ink),
               ),
               const SizedBox(height: AppDimensions.space1),
               Text(
-                status == 'failed'
+                fail
                     ? 'รายการไม่สำเร็จ กรุณาตรวจสอบกับลูกค้าอีกครั้ง'
                     : 'ตรวจสอบสลิปหรือยอดเงินเข้าบัญชีก่อนกดยืนยัน',
                 textAlign: TextAlign.center,

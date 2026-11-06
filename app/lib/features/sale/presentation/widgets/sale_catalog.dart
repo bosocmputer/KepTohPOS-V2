@@ -128,36 +128,27 @@ class SaleAddonsGrid extends StatelessWidget {
             for (final x in items)
               SizedBox(
                 width: itemW,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ProductCard(
-                      key: ValueKey('addon-card-${x.id}'),
-                      name: x.name,
-                      category: x.category,
-                      price: x.price,
-                      stock: x.stock,
-                      selected: (state.ad[x.id] ?? 0) > 0,
-                      onTap: x.stock > 0
-                          ? () => bloc.add(SaleAddonIncremented(x.id))
-                          : null,
-                    ),
-                    if ((state.ad[x.id] ?? 0) > 0) ...[
-                      const SizedBox(height: AppDimensions.space1_5),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: PosStepper(
+                child: ProductCard(
+                  key: ValueKey('addon-card-${x.id}'),
+                  name: x.name,
+                  icon: AppIcons.forCategory(x.category),
+                  imageHeight: 60,
+                  price: x.price,
+                  stock: x.stock,
+                  selected: (state.ad[x.id] ?? 0) > 0,
+                  trailingFooter: (state.ad[x.id] ?? 0) > 0
+                      ? PosStepper(
                           key: ValueKey('addon-stepper-${x.id}'),
                           label: x.name,
                           value: state.ad[x.id] ?? 0,
                           onChanged: (q) => bloc.add(
                             SaleAddonQtyChanged(addonId: x.id, qty: q),
                           ),
-                        ),
-                      ),
-                    ],
-                  ],
+                        )
+                      : null,
+                  onTap: x.stock > 0
+                      ? () => bloc.add(SaleAddonIncremented(x.id))
+                      : null,
                 ),
               ),
           ],

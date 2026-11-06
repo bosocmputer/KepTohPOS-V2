@@ -55,7 +55,7 @@ class Btn extends StatelessWidget {
       ),
       BtnKind.dangerSolid => (
         tokens.danger,
-        tokens.onPrimary,
+        AppRawTokens.white,
         tokens.danger,
         FontWeight.w600,
       ),

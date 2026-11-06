@@ -15,6 +15,10 @@ class NumPad extends StatefulWidget {
     this.keyboard = false,
     this.keyHeight = AppDimensions.numPadKeyH,
     this.rowGap = AppDimensions.space2,
+    this.colGap = AppDimensions.space2,
+    this.maxWidth = AppDimensions.numPadMaxW,
+    this.filledKeys = false,
+    this.showClear = false,
     this.onEnter,
   });
 
@@ -26,6 +30,10 @@ class NumPad extends StatefulWidget {
   final bool keyboard;
   final double keyHeight;
   final double rowGap;
+  final double colGap;
+  final double maxWidth;
+  final bool filledKeys;
+  final bool showClear;
   final ValueChanged<String>? onEnter;
 
   @override
@@ -123,7 +131,7 @@ class _NumPadState extends State<NumPad> {
         : widget.keyHeight;
 
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: AppDimensions.numPadMaxW),
+      constraints: BoxConstraints(maxWidth: widget.maxWidth),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -131,11 +139,12 @@ class _NumPadState extends State<NumPad> {
             Row(
               children: [
                 for (var i = 0; i < row.length; i++) ...[
-                  if (i > 0) const SizedBox(width: AppDimensions.space2),
+                  if (i > 0) SizedBox(width: widget.colGap),
                   Expanded(
                     child: _NumKey(
                       label: row[i],
                       height: keyH,
+                      filled: widget.filledKeys,
                       onTap: () => _push(row[i]),
                       tokens: tokens,
                     ),
@@ -152,25 +161,40 @@ class _NumPadState extends State<NumPad> {
                     ? _NumKey(
                         label: '.',
                         height: keyH,
+                        filled: widget.filledKeys,
                         semanticLabel: 'จุดทศนิยม',
                         onTap: () => _push('.'),
                         tokens: tokens,
                       )
+                    : widget.showClear
+                    ? _NumKey(
+                        label: 'C',
+                        height: keyH,
+                        filled: widget.filledKeys,
+                        semanticLabel: 'ล้างตัวเลข',
+                        onTap: () {
+                          _current = '';
+                          widget.onChanged('');
+                        },
+                        tokens: tokens,
+                      )
                     : SizedBox(height: keyH),
               ),
-              const SizedBox(width: AppDimensions.space2),
+              SizedBox(width: widget.colGap),
               Expanded(
                 child: _NumKey(
                   label: '0',
                   height: keyH,
+                  filled: widget.filledKeys,
                   onTap: () => _push('0'),
                   tokens: tokens,
                 ),
               ),
-              const SizedBox(width: AppDimensions.space2),
+              SizedBox(width: widget.colGap),
               Expanded(
                 child: _BackspaceKey(
                   height: keyH,
+                  filled: widget.filledKeys,
                   onTap: _back,
                   tokens: tokens,
                 ),
@@ -187,6 +211,7 @@ class _NumKey extends StatelessWidget {
   const new({
     required this.label,
     required this.height,
+    required this.filled,
     required this.onTap,
     required this.tokens,
     this.semanticLabel,
@@ -194,30 +219,31 @@ class _NumKey extends StatelessWidget {
 
   final String label;
   final double height;
+  final bool filled;
   final VoidCallback onTap;
   final AppTokens tokens;
   final String? semanticLabel;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    label: semanticLabel ?? label,
-    child: Material(
-      color: tokens.surface.withValues(alpha: 0),
+  Widget build(BuildContext context) => Material(
+    color: filled ? tokens.surface2 : tokens.surface.withValues(alpha: 0),
+    shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-        child: SizedBox(
-          height: height,
-          child: Center(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                color: tokens.ink,
-                fontSize: AppDimensions.fs2xl,
-                fontWeight: FontWeight.w600,
-              ),
+      side: filled ? BorderSide(color: tokens.line) : BorderSide.none,
+    ),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+      child: SizedBox(
+        height: height,
+        child: Center(
+          child: Text(
+            label,
+            semanticsLabel: semanticLabel,
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+              color: tokens.ink,
+              fontSize: filled ? AppDimensions.fs3xl : AppDimensions.fs2xl,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -227,29 +253,35 @@ class _NumKey extends StatelessWidget {
 }
 
 class _BackspaceKey extends StatelessWidget {
-  const new({required this.height, required this.onTap, required this.tokens});
-
+  const new({
+    required this.height,
+    required this.filled,
+    required this.onTap,
+    required this.tokens,
+  });
   final double height;
+  final bool filled;
   final VoidCallback onTap;
   final AppTokens tokens;
-
   @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    label: 'ลบตัวเลขท้ายสุด',
-    child: Material(
-      color: tokens.surface.withValues(alpha: 0),
+  Widget build(BuildContext context) => Material(
+    color: filled ? tokens.surface2 : tokens.surface.withValues(alpha: 0),
+    shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+      side: filled ? BorderSide(color: tokens.line) : BorderSide.none,
+    ),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+      child: Semantics(
+        label: 'ลบตัวเลขท้ายสุด',
         child: SizedBox(
           height: height,
           child: Center(
             child: AppIcon(
               'backspace',
               size: AppDimensions.iconXl,
-              color: tokens.muted,
+              color: filled ? tokens.ink : tokens.muted,
             ),
           ),
         ),

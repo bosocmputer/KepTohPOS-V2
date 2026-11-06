@@ -12,6 +12,8 @@ abstract final class AppTheme {
       useMaterial3: true,
       brightness: brightness,
       fontFamily: AppDimensions.fontBody,
+      visualDensity: VisualDensity.standard,
+      materialTapTargetSize: MaterialTapTargetSize.padded,
     );
 
     final bodyFont = TextStyle(

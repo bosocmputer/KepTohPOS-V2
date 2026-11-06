@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:app/core/theme/tokens.dart';
+import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/auth/presentation/cubit/auth_cubit.dart';
@@ -8,9 +11,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 export 'package:app/features/auth/presentation/widgets/login_hero_panel.dart';
 
-/// PIN Login screen combining the Figma two-column layout (`design/figma/login.png`)
-/// with the prototype content and ledger summary card (`function Login` in
-/// `prototype/index.html`).
+/// Full-bleed PIN Login screen supporting Landscape Split-View (`>= 860px`),
+/// Portrait Tablet (`768x1024`), and Mobile (`< 600px`) with iPhone-style
+/// auto-submitting 4-digit PIN entry.
 class LoginPage extends StatelessWidget {
   const new({super.key, this.onLoggedIn});
 
@@ -26,56 +29,79 @@ class LoginPage extends StatelessWidget {
       builder: (context, state) {
         return Scaffold(
           backgroundColor: tokens.surface,
-          body: SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final isWide = constraints.maxWidth >= 860;
-                final pagePad = AppDimensions.pagePadding(constraints.maxWidth);
-                if (isWide) {
-                  return Padding(
-                    padding: EdgeInsets.all(pagePad),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(flex: 5, child: LoginHeroPanel(state: state)),
-                        Expanded(
-                          flex: 6,
-                          child: Center(
-                            child: SingleChildScrollView(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppDimensions.space6,
-                                vertical: AppDimensions.space3,
-                              ),
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxWidth: 420,
-                                ),
-                                child: _LoginFormPanel(state: state),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(AppDimensions.space5),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 440),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _LoginFormPanel(state: state),
-                          const SizedBox(height: AppDimensions.space5),
-                          LoginHeroPanel(state: state, compact: true),
-                        ],
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth >= 860;
+              if (isWide) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(flex: 5, child: LoginHeroPanel(state: state)),
+                    Expanded(
+                      flex: 6,
+                      child: SafeArea(
+                        left: false,
+                        child: _LoginViewport(state: state, isWide: true),
                       ),
                     ),
-                  ),
+                  ],
                 );
-              },
+              }
+              return SafeArea(
+                child: _LoginViewport(state: state, isWide: false),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _LoginViewport extends StatelessWidget {
+  const new({required this.state, required this.isWide});
+
+  final AuthState state;
+  final bool isWide;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = !isWide && constraints.maxWidth < 600;
+        final isCompactH = constraints.maxHeight < 780;
+        final compact = isMobile || constraints.maxHeight < 680;
+        final hPad = isMobile ? AppDimensions.space4 : AppDimensions.space6;
+        final vPad = isCompactH ? AppDimensions.space4 : AppDimensions.space6;
+        final minH = math.max<double>(0, constraints.maxHeight - vPad * 2);
+
+        return SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isMobile ? 380 : 440,
+                minHeight: minH,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox.shrink(),
+                  _LoginFormPanel(
+                    state: state,
+                    compact: compact,
+                    compactKeyHeight: !isMobile && isCompactH,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppDimensions.space3),
+                    child: _LoginFooter(
+                      state: state,
+                      showCompactLedger: !isWide,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -85,24 +111,22 @@ class LoginPage extends StatelessWidget {
 }
 
 class _LoginFormPanel extends StatelessWidget {
-  const new({required this.state});
+  const new({
+    required this.state,
+    required this.compact,
+    this.compactKeyHeight = false,
+  });
 
   final AuthState state;
-
-  String _pinHintForRole(String role) {
-    for (final s in state.staff) {
-      if (s.role == role) return s.pin;
-    }
-    return '-';
-  }
+  final bool compact;
+  final bool compactKeyHeight;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final textTheme = Theme.of(context).textTheme;
     final cubit = context.read<AuthCubit>();
-
-    final compactH = MediaQuery.sizeOf(context).height < 900;
+    final tight = compact || compactKeyHeight;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -114,9 +138,7 @@ class _LoginFormPanel extends StatelessWidget {
             radius: AppDimensions.radiusMd,
           ),
         ),
-        SizedBox(
-          height: compactH ? AppDimensions.space2 : AppDimensions.space3,
-        ),
+        SizedBox(height: tight ? AppDimensions.space2 : AppDimensions.space3),
         Text(
           'เข้าสู่ระบบ',
           textAlign: TextAlign.center,
@@ -128,9 +150,15 @@ class _LoginFormPanel extends StatelessWidget {
           textAlign: TextAlign.center,
           style: textTheme.bodySmall?.copyWith(color: tokens.muted),
         ),
-        SizedBox(
-          height: compactH ? AppDimensions.space3 : AppDimensions.space4,
+        SizedBox(height: tight ? AppDimensions.space3 : AppDimensions.space5),
+        Text(
+          'พนักงาน',
+          style: textTheme.labelMedium?.copyWith(
+            color: tokens.ink,
+            fontWeight: FontWeight.w700,
+          ),
         ),
+        const SizedBox(height: AppDimensions.space1_5),
         Dropdown<String>(
           label: 'พนักงาน',
           value: state.selectedStaffId,
@@ -146,46 +174,124 @@ class _LoginFormPanel extends StatelessWidget {
           leadingBuilder: (o) => Avatar(name: o.label),
           onChanged: cubit.selectStaff,
         ),
-        SizedBox(
-          height: compactH ? AppDimensions.space2 : AppDimensions.space3,
+        SizedBox(height: tight ? AppDimensions.space2_5 : AppDimensions.space4),
+        PinDots(
+          value: state.pin,
+          hasError: state.error.isNotEmpty,
+          boxSize: compact ? 48 : 54,
+          gap: compact ? AppDimensions.space3 : AppDimensions.space4,
         ),
-        PinDots(value: state.pin),
         if (state.error.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(bottom: AppDimensions.space2),
-            child: Text(
-              state.error,
-              key: const ValueKey('login-error'),
-              textAlign: TextAlign.center,
-              style: textTheme.bodySmall?.copyWith(
-                color: tokens.danger,
-                fontWeight: FontWeight.w600,
+            padding: const EdgeInsets.only(bottom: AppDimensions.space3),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.space3,
+                  vertical: AppDimensions.space1_5,
+                ),
+                decoration: BoxDecoration(
+                  color: tokens.dangerSoft,
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppIcon('alert', size: 18, color: tokens.dangerInk),
+                    const SizedBox(width: AppDimensions.space1_5),
+                    Text(
+                      state.error,
+                      key: const ValueKey('login-error'),
+                      style: textTheme.bodySmall?.copyWith(
+                        color: tokens.dangerInk,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         NumPad(
           value: state.pin,
           maxLen: 4,
-          keyHeight: compactH
-              ? AppDimensions.numPadKeyCompactH
-              : AppDimensions.numPadKeyH,
-          rowGap: compactH ? AppDimensions.space1 : AppDimensions.space2,
-          onChanged: cubit.setPin,
+          maxWidth: double.infinity,
+          filledKeys: true,
+          keyboard: true,
+          showClear: true,
+          keyHeight: compact ? 52 : (compactKeyHeight ? 54 : 60),
+          rowGap: tight ? AppDimensions.space2 : AppDimensions.space3,
+          colGap: compact ? AppDimensions.space2 : AppDimensions.space3,
+          onChanged: (v) {
+            cubit.setPin(v);
+            if (v.length == 4) cubit.submitPin(v);
+          },
           onEnter: cubit.submitPin,
         ),
-        SizedBox(
-          height: compactH ? AppDimensions.space3 : AppDimensions.space4,
-        ),
-        Btn(
-          key: const ValueKey('login-submit-btn'),
-          label: state.hasOpenShift ? 'เข้าสู่ระบบ' : 'เข้าสู่ระบบและเปิดกะ',
-          kind: BtnKind.primary,
-          size: BtnSize.lg,
-          block: true,
-          disabled: state.selectedStaff == null,
-          onPressed: cubit.submitPin,
-        ),
-        const SizedBox(height: AppDimensions.space3),
+      ],
+    );
+  }
+}
+
+class _LoginFooter extends StatelessWidget {
+  const new({required this.state, required this.showCompactLedger});
+
+  final AuthState state;
+  final bool showCompactLedger;
+
+  String _pinHintForRole(String role) {
+    for (final s in state.staff) {
+      if (s.role == role) return s.pin;
+    }
+    return '-';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final textTheme = Theme.of(context).textTheme;
+    final last = state.lastClosedDay;
+    final heroV = state.heroProfitValue;
+    final isGain = heroV >= 0;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (showCompactLedger && last != null) ...[
+          Container(
+            key: const ValueKey('login-compact-ledger-banner'),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.space4,
+              vertical: AppDimensions.space3,
+            ),
+            decoration: BoxDecoration(
+              color: tokens.primarySoft,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+              border: Border.all(color: tokens.primarySoft2),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'ปิดยอดล่าสุด · ${thDateShort(last.date)}',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: tokens.ink,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  '${isGain ? "กำไร" : "ขาดทุน"} ${baht(heroV.abs())}',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: isGain ? tokens.successInk : tokens.dangerInk,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppDimensions.space2),
+        ],
         Container(
           padding: const EdgeInsets.all(AppDimensions.space3),
           decoration: BoxDecoration(

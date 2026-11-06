@@ -64,6 +64,45 @@ void main() {
       expect(text, 'ไม่เผ็ด');
     });
 
+    testWidgets(
+      'AppTextInput and Dropdown have identical height inside form Field',
+      (tester) async {
+        await tester.pumpWidget(
+          _wrap(
+            Row(
+              children: [
+                Expanded(
+                  child: Field(
+                    label: 'ชื่อสินค้า',
+                    child: AppTextInput(value: 'น้ำเปล่า', onChanged: (_) {}),
+                  ),
+                ),
+                Expanded(
+                  child: Field(
+                    label: 'หน่วยนับ',
+                    child: Dropdown<String>(
+                      value: 'ขวด',
+                      options: const [
+                        DropdownOption(value: 'ขวด', label: 'ขวด'),
+                      ],
+                      onChanged: (_) {},
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+
+        final inputH = tester.getSize(find.byType(AppTextInput)).height;
+        final dropH = tester.getSize(find.byType(Dropdown<String>)).height;
+        final decoratorH = tester.getSize(find.byType(InputDecorator)).height;
+        expect(inputH, 44.0);
+        expect(dropH, 44.0);
+        expect(decoratorH, 44.0);
+      },
+    );
+
     testWidgets('Dropdown opens option list and selects value', (tester) async {
       String? selected = 'a';
       await tester.pumpWidget(

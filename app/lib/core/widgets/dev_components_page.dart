@@ -8,9 +8,7 @@ import 'package:go_router/go_router.dart';
 /// component in Light and Dark themes.
 class DevComponentsPage extends StatefulWidget {
   const new({super.key, this.forcedBrightness});
-
   final Brightness? forcedBrightness;
-
   @override
   State<DevComponentsPage> createState() => _DevComponentsPageState();
 }
@@ -24,7 +22,10 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
   String _tab = 'all';
   String _pin = '12';
   int _page = 1;
-
+  static const _segItems = <SegItem<String>>[
+    SegItem(value: 'before', label: 'จ่ายก่อนกิน', tone: SegTone.green),
+    SegItem(value: 'after', label: 'กินก่อนจ่าย', tone: SegTone.orange),
+  ];
   static final _sampleCols = <DataTableCol<(String, String, String)>>[
     DataTableCol(key: 'no', label: 'เลขบิล', cellBuilder: (_, r) => Text(r.$1)),
     DataTableCol(key: 'tb', label: 'โต๊ะ', cellBuilder: (_, r) => Text(r.$2)),
@@ -114,7 +115,10 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
         actions: const [Pill(label: 'Figma Brand', tone: PillTone.orange)],
       ),
       Toolbar(
-        end: const [Avatar(name: 'คุณต้อม')],
+        end: const [
+          StaffShiftChip(staffName: 'คุณแอน', isShiftOpen: true),
+          StaffShiftChip(staffName: 'น้องมุก', isShiftOpen: false),
+        ],
         children: [
           SearchBox(
             value: _search,
@@ -173,23 +177,25 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
         ],
         onChanged: (v) => setState(() => _ddValue = v),
       ),
-      Row(
+      Wrap(
+        spacing: AppDimensions.space4,
+        runSpacing: AppDimensions.space2,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           PosStepper(
             value: _step,
             label: 'จำนวนผู้ใหญ่',
             onChanged: (v) => setState(() => _step = v),
           ),
-          const SizedBox(width: AppDimensions.space4),
-          Flexible(
-            child: Seg<String>(
-              value: _seg,
-              items: const [
-                SegItem(value: 'before', label: 'จ่ายก่อนกิน'),
-                SegItem(value: 'after', label: 'กินก่อนจ่าย'),
-              ],
-              onChanged: (v) => setState(() => _seg = v),
-            ),
+          Seg<String>(
+            value: _seg,
+            items: _segItems,
+            onChanged: (v) => setState(() => _seg = v),
+          ),
+          AppSwitch(
+            value: _seg == 'all',
+            label: 'เปิดขาย',
+            onChanged: (on) => setState(() => _seg = on ? 'all' : 'low'),
           ),
         ],
       ),
@@ -255,6 +261,8 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
       NumPad(
         value: _pin,
         maxLen: 4,
+        filledKeys: true,
+        showClear: true,
         onChanged: (v) => setState(() => _pin = v),
       ),
       const Empty(title: 'ยังไม่มีรายการ', text: 'กดเพิ่มรายการเพื่อเริ่ม'),

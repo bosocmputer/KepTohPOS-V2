@@ -17,25 +17,34 @@ class LoginHeroPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final textTheme = Theme.of(context).textTheme;
+    final mqPad = MediaQuery.paddingOf(context);
     final last = state.lastClosedDay;
     final heroV = state.heroProfitValue;
     final isGain = heroV >= 0;
 
+    final hPad = compact ? AppDimensions.space5 : AppDimensions.space8;
+    final topPad =
+        (compact ? 0.0 : mqPad.top) +
+        (compact ? AppDimensions.space5 : AppDimensions.space8);
+    final bottomPad =
+        (compact ? 0.0 : mqPad.bottom) +
+        (compact ? AppDimensions.space5 : AppDimensions.space6);
+
     return Container(
       key: const ValueKey('login-hero-panel'),
-      padding: EdgeInsets.all(
-        compact ? AppDimensions.space5 : AppDimensions.space6,
-      ),
+      padding: EdgeInsets.fromLTRB(hPad, topPad, hPad, bottomPad),
       decoration: BoxDecoration(
         color: tokens.primary,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        borderRadius: compact
+            ? BorderRadius.circular(AppDimensions.radiusLg)
+            : BorderRadius.zero,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
         children: [
           const BrandLogoName(),
-          const SizedBox(height: AppDimensions.space5),
+          if (!compact) const Spacer() else const SizedBox(height: 20),
           Text(
             'วันนี้ขายบุฟเฟต์\nได้กำไรหรือขาดทุน?',
             style: textTheme.displayLarge?.copyWith(
@@ -43,7 +52,14 @@ class LoginHeroPanel extends StatelessWidget {
               height: 1.25,
             ),
           ),
-          if (!compact) const Spacer() else const SizedBox(height: 20),
+          const SizedBox(height: AppDimensions.space2),
+          Text(
+            'ระบบขายหน้าร้าน คุมสต็อกวัตถุดิบ และคำนวณกำไรรายวัน',
+            style: textTheme.bodyMedium?.copyWith(
+              color: tokens.onPrimary.withValues(alpha: 0.9),
+            ),
+          ),
+          const SizedBox(height: AppDimensions.space5),
           if (last != null)
             Container(
               key: const ValueKey('login-hero-ledger-card'),

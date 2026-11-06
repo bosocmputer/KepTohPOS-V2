@@ -44,6 +44,7 @@ class PurchaseModal extends StatefulWidget {
 }
 
 class _PurchaseModalState extends State<PurchaseModal> {
+  final GlobalKey _bottomKey = GlobalKey();
   late String _date = widget.initialDate;
   late String _supplierId = widget.initialSupplierId;
   late String _note = widget.initialNote;
@@ -51,6 +52,22 @@ class _PurchaseModalState extends State<PurchaseModal> {
     widget.initialLines,
   );
   String _error = '';
+
+  void _addLine() {
+    setState(() {
+      _lines.add(const PurchaseModalLineDraft(ingId: ''));
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _bottomKey.currentContext;
+      if (ctx != null && mounted) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 160),
+          alignment: 1,
+        );
+      }
+    });
+  }
 
   double get _total => _lines.fold<double>(
     0,
@@ -122,13 +139,27 @@ class _PurchaseModalState extends State<PurchaseModal> {
               title: widget.editId == null ? 'รับของเข้า' : 'แก้ไขบิลซื้อของ',
               sub: 'ใส่จำนวนและยอดเงินตามบิล ระบบคิดราคาต่อหน่วยให้',
               onClose: widget.onClose,
-              footerLeading: Text(
-                'รวม ${baht(_total, 2)}',
-                key: const ValueKey('purchase-modal-total'),
-                style: tt.titleLarge?.copyWith(
-                  color: t.ink,
-                  fontWeight: FontWeight.w700,
-                ),
+              footerLeading: Wrap(
+                spacing: AppDimensions.space3,
+                runSpacing: AppDimensions.space2,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(
+                    'รวม ${baht(_total, 2)}',
+                    key: const ValueKey('purchase-modal-total'),
+                    style: tt.titleLarge?.copyWith(
+                      color: t.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Btn(
+                    key: const ValueKey('purchase-modal-add-line-btn'),
+                    icon: 'plus',
+                    size: BtnSize.sm,
+                    label: 'เพิ่มบรรทัด',
+                    onPressed: _addLine,
+                  ),
+                ],
               ),
               footer: [
                 Btn(
@@ -232,19 +263,7 @@ class _PurchaseModalState extends State<PurchaseModal> {
                         }
                       }),
                     ),
-                  const SizedBox(height: AppDimensions.space2),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Btn(
-                      key: const ValueKey('purchase-modal-add-line-btn'),
-                      icon: 'plus',
-                      size: BtnSize.sm,
-                      label: 'เพิ่มบรรทัด',
-                      onPressed: () => setState(() {
-                        _lines.add(const PurchaseModalLineDraft(ingId: ''));
-                      }),
-                    ),
-                  ),
+                  SizedBox(key: _bottomKey, height: 1),
                   if (_error.isNotEmpty) ...[
                     const SizedBox(height: AppDimensions.space2),
                     Text(

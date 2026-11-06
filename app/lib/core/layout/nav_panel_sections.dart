@@ -29,7 +29,7 @@ class NavUserAndShiftCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.space3),
       decoration: BoxDecoration(
-        color: t.surface,
+        color: t.surface2,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
         border: Border.all(color: t.line),
       ),
@@ -59,7 +59,10 @@ class NavUserAndShiftCard extends StatelessWidget {
                     ),
                     Text(
                       isOpen ? 'กะเปิด $shiftOpenTimeText น.' : 'ยังไม่เปิดกะ',
-                      style: tt.labelSmall?.copyWith(color: t.muted),
+                      style: tt.labelSmall?.copyWith(
+                        color: isOpen ? t.successInk : t.muted,
+                        fontWeight: isOpen ? FontWeight.w600 : FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
@@ -67,6 +70,7 @@ class NavUserAndShiftCard extends StatelessWidget {
               Btn(
                 key: const ValueKey('sidebar-shift-btn'),
                 label: isOpen ? 'ปิดกะ' : 'เปิดกะ',
+                kind: isOpen ? BtnKind.normal : BtnKind.primary,
                 size: BtnSize.sm,
                 onPressed: onShiftPressed,
               ),
@@ -99,23 +103,28 @@ class NavItemTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
-    final fg = selected ? t.onPrimary : t.muted;
+    final fg = selected ? t.onPrimary : t.sideInk;
     final circleBg = selected ? t.primary.withValues(alpha: 0) : t.surface2;
     final keyName = id == 'dev/components' ? 'dev-components' : id;
+    final compactH = MediaQuery.sizeOf(context).height < 840;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppDimensions.space1_5),
+      padding: EdgeInsets.only(
+        bottom: compactH ? AppDimensions.space1 : AppDimensions.space1_5,
+      ),
       child: Material(
-        color: selected ? t.primary : t.surface.withValues(alpha: 0),
+        color: selected ? t.primary : t.side.withValues(alpha: 0),
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
         child: InkWell(
           key: ValueKey('drawer-nav-$keyName'),
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
           child: Padding(
-            padding: const EdgeInsets.symmetric(
+            padding: EdgeInsets.symmetric(
               horizontal: AppDimensions.space3,
-              vertical: AppDimensions.space2,
+              vertical: compactH
+                  ? AppDimensions.space1_5
+                  : AppDimensions.space2,
             ),
             child: Row(
               children: [
@@ -131,8 +140,8 @@ class NavItemTile extends StatelessWidget {
                     label,
                     overflow: TextOverflow.ellipsis,
                     style: tt.bodyLarge?.copyWith(
-                      color: fg,
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                      color: selected ? t.onPrimary : t.sideInkStrong,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
                 ),
@@ -160,6 +169,7 @@ class NavThemeShortcut extends StatelessWidget {
       decoration: BoxDecoration(
         color: t.surface2,
         borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+        border: Border.all(color: t.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

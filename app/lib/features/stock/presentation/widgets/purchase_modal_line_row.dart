@@ -83,10 +83,11 @@ class PurchaseModalLineRow extends StatelessWidget {
             flex: 2,
             child: Field(
               label: index == 0 ? 'จำนวน' : '',
-              hint: ing?.unit,
               child: AppTextInput(
                 key: ValueKey('purchase-line-qty-$index'),
                 value: line.qty,
+                placeholder: '0',
+                suffixText: ing?.unit,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
@@ -99,10 +100,11 @@ class PurchaseModalLineRow extends StatelessWidget {
             flex: 3,
             child: Field(
               label: index == 0 ? 'ยอดเงิน (บาท)' : '',
-              hint: unitHint,
               child: AppTextInput(
                 key: ValueKey('purchase-line-total-$index'),
                 value: line.total,
+                placeholder: '0',
+                suffixText: unitHint ?? '฿',
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
@@ -111,8 +113,8 @@ class PurchaseModalLineRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppDimensions.space2),
-          Padding(
-            padding: EdgeInsets.only(top: index == 0 ? 25 : 0),
+          Field(
+            label: index == 0 ? ' ' : '',
             child: Btn(
               key: ValueKey('purchase-line-del-$index'),
               kind: BtnKind.ghost,

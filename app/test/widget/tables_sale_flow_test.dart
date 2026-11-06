@@ -129,6 +129,16 @@ void main() {
         find.descendant(of: updatedA1Card, matching: find.text('มีลูกค้า')),
         findsOneWidget,
       );
+
+      // 7. Re-open occupied pay-before-eating table A1 and verify banner notice
+      await tester.tap(updatedA1Card);
+      await tester.pumpAndSettle();
+
+      final bannerCloseBtn = find.byKey(
+        const ValueKey('banner-close-table-btn'),
+      );
+      expect(bannerCloseBtn, findsOneWidget);
+      expect(find.textContaining('ชำระบุฟเฟต์แล้ว'), findsOneWidget);
     },
   );
 
@@ -151,6 +161,53 @@ void main() {
 
       final afterTopLeft = tester.getTopLeft(statsFinder);
       expect(afterTopLeft, equals(beforeTopLeft));
+    },
+  );
+
+  testWidgets(
+    'after-meal (กินก่อนจ่าย) settlement auto-closes table on receipt done',
+    (tester) async {
+      tester.view.physicalSize = const Size(1366, 1024);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final repo = MockPosRepository.createFallback();
+      await tester.pumpWidget(KepTohApp(repository: repo));
+      await tester.pumpAndSettle();
+
+      // 1. Open free table A1 (t1) and select กินก่อนจ่าย
+      await tester.tap(find.byKey(const ValueKey('table-card-t1')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const ValueKey('sale-timing-seg')),
+          matching: find.text('กินก่อนจ่าย'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 2. Send round and settle bill via cash
+      await tester.tap(find.byKey(const ValueKey('sale-send-round-btn')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('sale-pay-btn')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('quick-cash-500')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('pay-confirm-btn')));
+      await tester.pumpAndSettle();
+
+      // 3. Receipt done button says "เสร็จสิ้น · เก็บโต๊ะ" and clears table A1
+      expect(find.text('เสร็จสิ้น · เก็บโต๊ะ'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('receipt-done-btn')));
+      await tester.pumpAndSettle();
+
+      final clearedA1Card = find.byKey(const ValueKey('table-card-t1'));
+      expect(
+        find.descendant(of: clearedA1Card, matching: find.text('ว่าง')),
+        findsOneWidget,
+      );
     },
   );
 }
