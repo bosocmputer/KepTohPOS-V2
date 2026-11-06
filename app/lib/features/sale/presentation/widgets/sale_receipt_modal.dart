@@ -18,6 +18,7 @@ class ReceiptModal extends StatefulWidget {
     required this.onDone,
     super.key,
     this.fresh = true,
+    this.isCopy,
     this.doneLabel,
     this.onPrint,
     this.staff,
@@ -32,6 +33,7 @@ class ReceiptModal extends StatefulWidget {
   final BillRecord bill;
   final VoidCallback onDone;
   final bool fresh;
+  final bool? isCopy;
   final String? doneLabel;
   final VoidCallback? onPrint;
   final StaffMember? staff;
@@ -135,7 +137,11 @@ class _ReceiptModalState extends State<ReceiptModal> {
                     _buildFreshBanner(t, tt, bill, changeTxt),
                     const SizedBox(height: AppDimensions.space3),
                   ],
-                  ReceiptCard(shop: widget.shop, bill: bill),
+                  ReceiptCard(
+                    shop: widget.shop,
+                    bill: bill,
+                    isCopy: widget.isCopy ?? !widget.fresh,
+                  ),
                 ],
               ),
             ),

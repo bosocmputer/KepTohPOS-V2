@@ -134,7 +134,7 @@ class _TableSummaryModalState extends State<TableSummaryModal> {
                   if (bill == null)
                     TableSummaryCard(shop: widget.shop, summary: sum)
                   else
-                    ReceiptCard(shop: widget.shop, bill: bill),
+                    ReceiptCard(shop: widget.shop, bill: bill, isCopy: true),
                 ],
               ),
             ),
