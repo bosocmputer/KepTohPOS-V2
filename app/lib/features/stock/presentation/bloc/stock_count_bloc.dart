@@ -43,7 +43,7 @@ class StockCountBloc extends Bloc<StockCountEvent, StockCountState> {
 
   static StockCountState _initialState(PosRepository repo, DateTime now) {
     final s = repo.state;
-    final today = dkey(now);
+    final today = businessDayKey(now, s.shop.dayCutoffMinutes);
     final ledger = computeLedger(s, today: today);
     return StockCountState(
       posState: s,
@@ -57,7 +57,10 @@ class StockCountBloc extends Bloc<StockCountEvent, StockCountState> {
     StockCountRepositoryUpdated event,
     Emitter<StockCountState> emit,
   ) {
-    final today = dkey(_clock());
+    final today = businessDayKey(
+      _clock(),
+      event.posState.shop.dayCutoffMinutes,
+    );
     final ledger = computeLedger(event.posState, today: today);
     emit(
       state.copyWith(
@@ -155,7 +158,7 @@ class StockCountBloc extends Bloc<StockCountEvent, StockCountState> {
       saveDailyCount(st, date: date, draftValues: draftValues);
     });
     final s = _repository.state;
-    final today = dkey(_clock());
+    final today = businessDayKey(_clock(), s.shop.dayCutoffMinutes);
     final ledger = computeLedger(s, today: today);
     emit(
       state.copyWith(
@@ -180,7 +183,7 @@ class StockCountBloc extends Bloc<StockCountEvent, StockCountState> {
     });
     if (!reopened) return;
     final s = _repository.state;
-    final today = dkey(_clock());
+    final today = businessDayKey(_clock(), s.shop.dayCutoffMinutes);
     final ledger = computeLedger(s, today: today);
     emit(
       state.copyWith(

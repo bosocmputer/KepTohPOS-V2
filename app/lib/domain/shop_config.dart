@@ -21,6 +21,7 @@ class ShopConfig {
     this.childHeadWeight = 0.5,
     this.openDaysPerMonth = 30,
     this.weeklyCountDow = 1,
+    this.dayCutoffMinutes = 0,
     this.rounding = 'down',
     this.themeMode = 'light',
     this.themePalette = 'orange',
@@ -46,6 +47,7 @@ class ShopConfig {
     childHeadWeight: (json['childHeadWeight'] as num?)?.toDouble() ?? 0.5,
     openDaysPerMonth: (json['openDaysPerMonth'] as num?)?.toInt() ?? 30,
     weeklyCountDow: (json['weeklyCountDow'] as num?)?.toInt() ?? 1,
+    dayCutoffMinutes: (json['dayCutoffMinutes'] as num?)?.toInt() ?? 0,
     rounding: (json['rounding'] as String?) ?? 'down',
     themeMode: (json['themeMode'] as String?) ?? 'light',
     themePalette: (json['themePalette'] as String?) ?? 'orange',
@@ -75,6 +77,7 @@ class ShopConfig {
   final double childHeadWeight;
   final int openDaysPerMonth;
   final int weeklyCountDow;
+  final int dayCutoffMinutes;
   final String rounding;
   final String themeMode;
   final String themePalette;
@@ -102,6 +105,7 @@ class ShopConfig {
     double? childHeadWeight,
     int? openDaysPerMonth,
     int? weeklyCountDow,
+    int? dayCutoffMinutes,
     String? rounding,
     String? themeMode,
     String? themePalette,
@@ -125,6 +129,7 @@ class ShopConfig {
     childHeadWeight: childHeadWeight ?? this.childHeadWeight,
     openDaysPerMonth: openDaysPerMonth ?? this.openDaysPerMonth,
     weeklyCountDow: weeklyCountDow ?? this.weeklyCountDow,
+    dayCutoffMinutes: dayCutoffMinutes ?? this.dayCutoffMinutes,
     rounding: rounding ?? this.rounding,
     themeMode: themeMode ?? this.themeMode,
     themePalette: themePalette ?? this.themePalette,
@@ -151,6 +156,7 @@ class ShopConfig {
     'childHeadWeight': childHeadWeight,
     'openDaysPerMonth': openDaysPerMonth,
     'weeklyCountDow': weeklyCountDow,
+    'dayCutoffMinutes': dayCutoffMinutes,
     'rounding': rounding,
     'themeMode': themeMode,
     'themePalette': themePalette,

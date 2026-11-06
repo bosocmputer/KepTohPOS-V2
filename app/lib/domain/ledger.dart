@@ -10,7 +10,7 @@ export 'package:app/domain/ledger_models.dart';
 /// weekly count estimation/reconciliation, and gross/net profit
 /// (`computeLedger` in `prototype/index.html`).
 LedgerResult computeLedger(PosState s, {String? today}) {
-  final tk = today ?? dkey(DateTime.now());
+  final tk = today ?? businessDayKey(DateTime.now(), s.shop.dayCutoffMinutes);
   final sh = s.shop;
   final w = sh.childHeadWeight;
   final activeFixedSum = s.fixedCosts

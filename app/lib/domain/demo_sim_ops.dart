@@ -5,7 +5,10 @@ import 'package:app/domain/setup_ops.dart';
 
 /// Clears all daily transactions to zero while keeping master catalogs intact.
 SetupCrudResult clearDailyTransactionsInState(PosState s, {DateTime? now}) {
-  s.startDate = dkey(now ?? DateTime.now());
+  s.startDate = businessDayKey(
+    (now ?? DateTime.now()).toLocal(),
+    s.shop.dayCutoffMinutes,
+  );
   s.seq.clear();
   s.openTables.clear();
   s.shifts.clear();

@@ -51,6 +51,15 @@ const Map<String, String> kPayTimings = <String, String>{
   'after': 'กินก่อนจ่าย',
 };
 
+/// Business-day cutoff options in minutes after midnight.
+const Map<String, String> kDayCutoffs = <String, String>{
+  '0': '00:00 น. (เที่ยงคืน)',
+  '180': '03:00 น.',
+  '240': '04:00 น.',
+  '300': '05:00 น.',
+  '360': '06:00 น.',
+};
+
 /// Thai day-of-week names (`DOW` in `prototype/index.html`, 0 = Sunday).
 const List<String> kDowNames = <String>[
   'อาทิตย์',
@@ -138,6 +147,13 @@ String padInt(int n, [int l = 2]) => n.toString().padLeft(l, '0');
 
 /// Formats a [DateTime] as `YYYY-MM-DD` (`dkey` in `prototype/index.html`).
 String dkey(DateTime d) => '${d.year}-${padInt(d.month)}-${padInt(d.day)}';
+
+/// Business-day key: times before [cutoffMinutes] belong to the previous day.
+String businessDayKey(DateTime local, [int cutoffMinutes = 0]) {
+  if (cutoffMinutes <= 0) return dkey(local);
+  final mins = local.hour * 60 + local.minute;
+  return dkey(mins < cutoffMinutes ? addDays(local, -1) : local);
+}
 
 /// Parses a `YYYY-MM-DD` key into a local [DateTime] at midnight.
 DateTime parseKey(String k) {

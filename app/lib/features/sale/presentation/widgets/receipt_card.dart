@@ -5,12 +5,9 @@ import 'package:app/domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-/// Formatted thermal-style receipt card (`const Receipt` in
-/// `prototype/index.html`) featuring `BrandLogo` (`assets/logo.jpg`) and
-/// embedded EMVCo PromptPay QR for QR/Pre-settlement slips.
+/// Formatted thermal-style receipt card (`const Receipt` in `index.html`).
 class ReceiptCard extends StatelessWidget {
   const new({required this.shop, required this.bill, super.key});
-
   final ShopConfig shop;
   final BillRecord bill;
 
@@ -84,7 +81,8 @@ class ReceiptCard extends StatelessWidget {
           const SizedBox(height: AppDimensions.space1_5),
           _ReceiptRow('เลขที่ ${bill.no}', 'โต๊ะ ${bill.tableName}'),
           _ReceiptRow(
-            '${thDate(bill.date)} · ${thTime(bill.at)} น.',
+            '${thDate(dkey(DateTime.parse(bill.at).toLocal()))} · '
+                '${thTime(bill.at)} น.',
             'แคชเชียร์: ${bill.staffName}',
           ),
           Text(

@@ -81,14 +81,14 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
     );
   }
 
-  Widget _row(Widget left, Widget right) => Padding(
+  Widget _row(Widget l, Widget r) => Padding(
     padding: const EdgeInsets.only(bottom: AppDimensions.space3),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(child: left),
+        Expanded(child: l),
         const SizedBox(width: AppDimensions.space3_5),
-        Expanded(child: right),
+        Expanded(child: r),
       ],
     ),
   );
@@ -156,19 +156,13 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
                     ),
                   ),
                   _row(
-                    Field(
-                      label: 'อัตราภาษีมูลค่าเพิ่ม (%)',
+                    _txt(
+                      'อัตราภาษีมูลค่าเพิ่ม (%)',
+                      fmtQ(_v.vatRate),
+                      (s) => _v.copyWith(vatRate: double.tryParse(s) ?? 0),
                       hint: 'ค่าเริ่มต้น 7%',
-                      child: AppTextInput(
-                        key: const ValueKey('setup-vat-rate-input'),
-                        value: fmtQ(_v.vatRate),
-                        keyboardType: TextInputType.number,
-                        onChanged: (s) => setState(
-                          () => _v = _v.copyWith(
-                            vatRate: double.tryParse(s) ?? 0,
-                          ),
-                        ),
-                      ),
+                      numKey: true,
+                      inputKey: const ValueKey('setup-vat-rate-input'),
                     ),
                     _txt(
                       'อัตราค่าบริการ (%)',
@@ -204,14 +198,20 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
                       (s) => _v.copyWith(address: s),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: AppDimensions.space3,
-                    ),
-                    child: _txt(
+                  _row(
+                    _txt(
                       'ข้อความท้ายใบเสร็จ',
                       _v.receiptFooter,
                       (s) => _v.copyWith(receiptFooter: s),
+                    ),
+                    _dd(
+                      'เวลาตัดรอบวันขาย',
+                      _v.dayCutoffMinutes.toString(),
+                      kDayCutoffs,
+                      (s) =>
+                          _v.copyWith(dayCutoffMinutes: int.tryParse(s) ?? 0),
+                      hint: 'บิลก่อนเวลานี้นับเป็นยอดขายของวันก่อนหน้า',
+                      ddKey: const ValueKey('setup-day-cutoff-dropdown'),
                     ),
                   ),
                   AppSwitch(
@@ -237,23 +237,20 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
                 ],
               ),
             );
-            return c.maxWidth < AppDimensions.mobileBp
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      formCard,
-                      const SizedBox(height: 16),
-                      receiptCard,
-                    ],
-                  )
-                : Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: formCard),
-                      const SizedBox(width: AppDimensions.space4),
-                      SizedBox(width: 310, child: receiptCard),
-                    ],
-                  );
+            if (c.maxWidth < AppDimensions.mobileBp) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [formCard, const SizedBox(height: 16), receiptCard],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: formCard),
+                const SizedBox(width: AppDimensions.space4),
+                SizedBox(width: 310, child: receiptCard),
+              ],
+            );
           },
         ),
       ],
@@ -265,14 +262,14 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
     String val,
     ShopConfig Function(String) next, {
     String? hint,
-    int lines = 1,
     bool numKey = false,
+    Key? inputKey,
   }) => Field(
     label: label,
     hint: hint,
     child: AppTextInput(
+      key: inputKey,
       value: val,
-      maxLines: lines,
       keyboardType: numKey ? TextInputType.number : null,
       onChanged: (s) => setState(() => _v = next(s)),
     ),
@@ -282,10 +279,14 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
     String label,
     String val,
     Map<String, String> map,
-    ShopConfig Function(String) next,
-  ) => Field(
+    ShopConfig Function(String) next, {
+    String? hint,
+    Key? ddKey,
+  }) => Field(
     label: label,
+    hint: hint,
     child: Dropdown<String>(
+      key: ddKey,
       label: label,
       value: val,
       options: [

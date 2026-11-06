@@ -46,7 +46,7 @@ BillRecord? buildTablePosSlip(
   return BillRecord(
     id: 'slip-${tb.id}',
     no: 'SLIP-${tb.name}',
-    date: dkey(current.toLocal()),
+    date: businessDayKey(current.toLocal(), s.shop.dayCutoffMinutes),
     at: o.openedAt,
     tableId: tb.id,
     tableName: tb.name,

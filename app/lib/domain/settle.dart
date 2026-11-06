@@ -110,7 +110,10 @@ BillRecord makeBill(
   String? shiftId,
   BankAccountItem? bankAccount,
 }) {
-  final date = dkey(DateTime.parse(at).toLocal());
+  final date = businessDayKey(
+    DateTime.parse(at).toLocal(),
+    s.shop.dayCutoffMinutes,
+  );
   final nextSeq = (s.seq[date] ?? 0) + 1;
   s.seq[date] = nextSeq;
   final table = s.tables.where((t) => t.id == tableId).firstOrNull;
