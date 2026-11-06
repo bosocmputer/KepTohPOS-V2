@@ -1,7 +1,7 @@
 # TASK_STATE.md — Detailed Audit & Handoff State for Claude Code Review
 
 ## 1. Branch & Commit Timeline (Ready for Post-Reset Audit)
-- **Active Branch:** `main` (pushed to `origin/main` and deployed live on Vercel `keptohpos-v2-prototype.vercel.app`)
+- **Active Branch:** `flutter/accounting-round2` (branched from `main` at `68fe01f`)
 - **Feature Branches Available for Inspection (`git log` / `git diff`):**
   1. `flutter/f7-dashboard-reports` (`657800a`, merged into `main` at `f605091`):
      - **Step F7 (`/dashboard` & `/reports`):** `computeDashboardSummary`, `computeMonthlyReport`, `DashboardCubit`, `ReportsCubit`, `DashboardPage`, `ProfitChart` (`CustomPainter`), `ReportsPage`, `DailyReportTable`.
@@ -10,29 +10,36 @@
        - Implemented `/setup` across 4 logical groups in `app/lib/domain/setup_ops.dart`, `SetupCubit`, `SetupPage`, CRUD modals, `CrudSectionShell`, and `AppSwitch`.
        - Added pure domain simulation helpers in `app/lib/domain/demo_sim_ops.dart` (`clearDailyTransactionsInState`, `advanceSimulationDayInState`) + 3-Day Simulation tests (`three_day_simulation_test.dart`, `three_day_ui_flow_test.dart`).
      - **`9955619` — UI Theme Audit + Formal Thai Copy + 5 User Feedback Features + Accountant Controls (`A1`–`A6`):**
-       - **Theme & UI Alignment Audit:**
-         - Added 5 selectable brand palettes (`AppBrandPalette`: `orange`, `emerald`, `indigo`, `rose`, `slate`) in `app/lib/core/theme/tokens.dart` & `raw_tokens.dart`, persisted in `ShopConfig.themePalette` and selectable in `/setup` (`ธีมและการแสดงผล`) and `/dev/components`.
-         - Fixed active navigation tab contrast in `SetupNavSidebar` (`t.onPrimary` instead of `t.primaryInk` on `t.primary` fill).
-         - Fixed `Seg` active pill color to support `SegTone.brand` (`t.primary` / `t.onPrimary`) and `SegTone.neutral` (`t.ink` / `t.surface`).
-         - Unified single-line `Field` (`SizedBox(height: AppDimensions.controlHeight)` = `44px`, `TextAlignVertical.center`, `isDense: true`) and `Dropdown` (`44px`) heights and vertical text centering in `app/lib/core/widgets/field.dart` and `dropdown.dart`.
-         - Fixed `RenderFlex overflow` in `CrudSectionShell` (`actionColWidth: 108`) and `DataTableSimple` (`overflow: TextOverflow.ellipsis`).
-         - Standardized formal Thai copy across `/login`, `/tables`, `/sale`, `/bills`, `/stock`, `/shift`, `/dashboard`, `/reports`, and `/setup`.
-       - **5 User Feedback Features + 6 Accountant Controls (`A1`–`A6`):**
-         1. **โอนเงินหลายบัญชีธนาคาร (`Feature 1` + `A4` + `A6`):** Added `BankAccountItem` & `kDefaultBankAccounts` (`store_entities.dart`, `shop_config.dart`), CRUD table & modal in `/setup` (`ช่องทางชำระเงิน` — `setup_finance_catalog_panels.dart`, `setup_secondary_modals.dart`), relational delete guard in `checkSetupDeleteGuard` (`setup_ops.dart` — `A6`), full-width `BankAccountPicker` in `SalePaymentPanel` (`sale_summary_widgets.dart`, `sale_payment_panel.dart`) with `กำลังรอ/สำเร็จ/ล้มเหลว` removed per user request, and per-bank-account transfer breakdown in `/bills` (`bills_cubit.dart`, `bills_page.dart` — `A4`).
-         2. **พิมพ์ QR พร้อมเพย์ระบุยอดบนใบเสร็จ + ยกเลิกเมื่อลูกค้าเปลี่ยนใจหลังพิมพ์สลิป (`Feature 2` + `A2`):** Embedded EMVCo PromptPay QR (`promptPayPayload(shop.promptpay, bill.total)`) on `ReceiptCard` (`receipt-qr-box` in `receipt_card.dart`), distinct header `'ใบแจ้งยอดค่าอาหาร (ยังไม่ได้ชำระเงิน)'` vs `'ใบเสร็จรับเงิน/ใบกำกับภาษีอย่างย่อ'` (`A2`), and cashier-accessible cancellation in `ReceiptModal` (`sale_receipt_modal.dart`): `cancelOpenTable` for unpaid `after` tables and `voidBill(..., allowCashier: true)` (auto-releasing `openTables[tableId]`) for settled `before` bills (`settle.dart`, `domain.dart`).
-         3. **กำหนดอัตราภาษีมูลค่าเพิ่มได้ ค่าเริ่มต้น 7% (`Feature 3` + `A1` + `A3` + `A5`):** Added `ShopConfig.vatRate` (default `7.0`), updated `calcOrder` (`order_calc.dart`), snapshotted `vatMode` & `vatRate` onto `BillRecord` at settlement (`makeBill` in `settle.dart` — `A1`), displayed `มูลค่าก่อนภาษี` + `VAT X%` on `OrderSummary`, `ReceiptCard`, `SetupShopPanel` preview (`A5`), and `BillsPage` summary (`BillsState.totalVat` & `totalPreVat` — `A3`).
-         4. **กำหนดประเภทภาษี แยกนอก / รวมใน / ไม่คิดภาษี (`Feature 4`):** Updated `kVatModes` (`roles.dart`) and `SetupShopPanel` (`setup_shop_costing_panels.dart`) with `setup-vat-rate-input`.
-         5. **กดดูสลิป POS ได้ทันทีในโต๊ะที่มีลูกค้า (`Feature 5`):** Added `buildTablePosSlip` (`domain.dart`) and `"สลิป POS"` / `"ดูสลิป POS"` buttons on occupied tables in `TablesPage` (`table-slip-btn-${table.id}` in `table_card.dart`) and `SalePage` (`topbar-pos-slip-btn`, `banner-pos-slip-btn`, `order-panel-pos-slip-btn`).
+       - Added 5 selectable brand palettes (`AppBrandPalette`), CRUD bank accounts (`BankAccountItem`), PromptPay QR on `ReceiptCard`, configurable VAT rate & mode (`vatMode`, `vatRate` snapshotted onto `BillRecord`), and POS slip button on occupied tables.
      - **`9b456ab` — Production Test Store Data (`จ่าโบ้หมูกะทะ`), Clean Daily State & Vercel Web Build:**
-       - Updated `app/assets/mock/shop.json` & `store_entities.dart` to store `จ่าโบ้หมูกะทะ` (`95/7 Faham , Muang Chiang Mai, Chiang Mai, Thailand, Chiang Mai`, phone `082 929 5566`).
-       - Updated `app/assets/mock/staff.json` to `อัย` (`owner`, PIN `1234`), `ไอติม` (`manager`, PIN `2222`), `เนส` (`cashier`, PIN `1111`).
-       - Updated `MockPosRepository.loadFromAssets` (`seedTransactions: false` by default) so the app starts with 0 daily bills/transactions while preserving all master catalogs (`packages`, `addons`, `suppliers`, `ingredients`, `tables`, `staff`, `payments`, `expenseTypes`, `fixedCosts`).
-       - Added `app/vercel.json`, `vercel.json`, `app/scripts/vercel-build.sh`, `scripts/vercel-build.sh`, and `app/web/vercel.json` for Vercel Flutter Web deployment (`Root Directory: app`).
+       - Store `จ่าโบ้หมูกะทะ`, staff `อัย`/`ไอติม`/`เนส`, clean initial daily state (`seedTransactions: false`), and Vercel build scripts (`app/vercel.json`, `app/scripts/vercel-build.sh`).
+  3. `flutter/accounting-round2` (`9236896` -> `88243f2` -> `85429b5` -> `558f745` -> `2bb2502`):
+     - **`9236896` — `feat(ledger): business-day cutoff for after-midnight sales` (B1):**
+       - Added `kDayCutoffs` and `businessDayKey(DateTime local, [int cutoffMinutes = 0])` in `app/lib/domain/roles.dart`.
+       - Added `ShopConfig.dayCutoffMinutes` (`default = 0` for JS parity; `"dayCutoffMinutes": 300` = `05:00` in `app/assets/mock/shop.json`).
+       - Updated `makeBill` (`settle.dart`), `buildTablePosSlip` (`domain.dart`), `clearDailyTransactionsInState` (`demo_sim_ops.dart`), `computeLedger` (`ledger.dart`), and all date-keyed cubits/blocs (`AuthCubit`, `DashboardCubit`, `ReportsCubit`, `BillsCubit`, `TablesCubit`, `StockCubit`, `StockCountBloc`) to group after-midnight sales into the active business day while displaying the true calendar timestamp (`DateTime.parse(bill.at).toLocal()`) on `ReceiptCard`.
+       - Added `setup-day-cutoff-dropdown` in `app/lib/features/setup/presentation/widgets/setup_shop_costing_panels.dart`.
+     - **`88243f2` — `feat(ledger): calendar or custom fixed-cost divisor with monthly deducted vs full` (Item 3 + B3):**
+       - Added `ShopConfig.fixedCostDivisor` (`'calendar' | 'custom'`, set to `'calendar'` in `MockPosRepository.loadFromAssets` when `!seedTransactions`).
+       - Updated `computeLedger` (`ledger.dart`) with `fixedPerDayFor(DateTime d)` dividing `activeFixedSum` by `DateTime(d.year, d.month + 1, 0).day` (`28`/`29`/`30`/`31`) when `'calendar'` or `openDaysPerMonth` when `'custom'`.
+       - Added `fixedDeducted`, `fixedFullMonth`, and `salesDays` to `MonthlyReportSummary` (`reports_ops.dart`) and `DashboardSummary` (`dashboard_reports_ops.dart`).
+       - Added `setup-fixed-divisor-seg` in `setup_costing_demo_panels.dart`, and rendered `reports-partial-fixed-pill` (`"หักค่าคงที่ยังไม่ครบเดือน"`) + `"ค่าคงที่หักแล้ว ฿... จาก ฿... · ขาย ... วัน"` in `reports_page.dart` and `dashboard_page.dart`.
+     - **`85429b5` — `feat(receipt): eat-until time and overtime display` (Item 2 + B5):**
+       - Added `eatUntil` (`String?`) and `timeLimitMin` (`int`) to `BillRecord` (`record_models.dart`).
+       - Added `eatUntilOf`, `billTimerSnapshot`, and `formatTimeLimitLabel` in `order_calc.dart` using `s.openTables[tableId]?.openedAt` so customers joining later share the table's original deadline.
+       - Rendered `receipt-eat-until` (`"ทานได้ถึงเวลา HH:MM น. (จำกัด ...)"` / `"ไม่จำกัดเวลา"`) on `receipt_card.dart`, `table-overtime-${table.id}` (`"เกินเวลา X น."`) on `table_card.dart`, and preset buttons (`pkg-timelimit-preset-0/90/120/180`) in `setup_crud_modals.dart`.
+     - **`558f745` — `feat(sale): table summary slip across sub-bills` (Item 1 + B2):**
+       - Added `TableSummarySlip` and `buildTableSummarySlip` in `app/lib/domain/table_summary.dart` collecting all bills (including voided sub-bills) created since `openTables[tableId].openedAt`.
+       - Added `TableSummaryCard` (`table_summary_card.dart`) and `TableSummaryModal` (`table_summary_modal.dart`) with tabs for `สรุปทั้งโต๊ะ` and each `บิล #1..#N`, strikethrough + `"ยกเลิก"` pill on voided sub-bills (`summary-bill-voided-${b.id}`), and sub-bill voiding without closing the table while other active sub-bills remain.
+       - Wired `ReceiptModal` (`sale_receipt_modal.dart`), `TablesPage`, and `SalePage` to open `TableSummaryModal` when an open table has `>= 2` bills in its session.
+     - **`2bb2502` — `feat(receipt): copy watermark for reprinted receipts` (B4):**
+       - Added `isCopy` to `ReceiptCard` (`receipt_card.dart`) and `ReceiptModal` (`sale_receipt_modal.dart`), rendering `receipt-copy-badge` (`"สำเนา"`) on any receipt re-opened from `/bills`, POS slip buttons, or `TableSummaryModal` sub-bill tabs while keeping immediate post-settlement receipts (`fresh: true`) and `isSlipPreview` QR slips unmarked.
+       - Added unit tests in `app/test/unit/business_day_test.dart` and widget tests in `app/test/widget/accounting_round2_widget_test.dart`.
 
 ## 2. Verification & Code Quality Status
 - **Static Analysis:** `cd app && flutter analyze --no-pub lib test` -> `No issues found!`
-- **Unit & Widget Tests:** `cd app && flutter test --no-pub test/unit test/widget` -> All 61 unit & widget test suites pass (`Exit Code: 0`).
+- **Unit & Widget Tests:** `cd app && flutter test --no-pub test/unit test/widget` -> All 70 unit & widget test suites pass (`Exit Code: 0`).
 - **300-Line Ceiling:** Every `.dart` file in `app/lib/**/*.dart` is strictly `<= 300` lines (`max = 300` lines).
-- **Web Build:** `cd app && flutter build web --release --no-pub` -> `✓ Built build/web` (deployed on Vercel).
+- **Web Build:** `cd app && flutter build web --release --no-pub` -> `✓ Built build/web`.
 - **In Progress / Broken:** None.
-- **Next Immediate Step for Claude Review:** Run `git diff f605091..bfbfd7b` to review all F8, UI/Theme polish, 5 user feedback features, accountant controls (`A1`–`A6`), and store configuration changes; optionally run `cd app && flutter test --update-goldens test/golden` if golden PNG snapshots need to be regenerated for the new store name and UI updates.
+- **Next Immediate Step:** Review branch `flutter/accounting-round2` (`git diff main..flutter/accounting-round2`) or merge `flutter/accounting-round2` into `main` to deploy to Vercel production.
