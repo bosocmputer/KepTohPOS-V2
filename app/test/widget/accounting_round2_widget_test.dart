@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:app/app.dart';
 import 'package:app/core/data/mock_pos_repository.dart';
+import 'package:app/core/widgets/btn.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/tables/presentation/pages/tables_page.dart';
 import 'package:flutter/material.dart';
@@ -191,7 +192,8 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       final fixedNow = DateTime(2026, 11, 4, 12);
-      final repo = _buildFullRepo(fixedNow: fixedNow);
+      final repo = _buildFullRepo(fixedNow: fixedNow)
+        ..update((s) => s.shop = s.shop.copyWith(fixedCostDivisor: 'calendar'));
       await tester.pumpWidget(
         KepTohApp(repository: repo, now: fixedNow, initialLocation: '/reports'),
       );
@@ -206,6 +208,61 @@ void main() {
         find.textContaining('ค่าคงที่หักแล้ว ฿4,610 จาก ฿46,100'),
         findsOneWidget,
       );
+      expect(
+        find.textContaining('ตามปฏิทิน พฤศจิกายน 2569 (30 วัน)'),
+        findsNWidgets(2),
+      );
+    },
+  );
+
+  testWidgets(
+    'TableLiveTimer renders countdown badge and Btn(loading: true) blocks taps',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1366, 1024));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final openTime = DateTime(2026, 11, 6, 16);
+      final checkTime = DateTime(2026, 11, 6, 17, 25); // 35 min left
+      final repo = MockPosRepository.createFallback(now: checkTime)
+        ..update((s) {
+          final pkg = s.packages.first.copyWith(timeLimit: 120);
+          s.packages[0] = pkg;
+          settle(
+            s,
+            s.tables.first,
+            TableTotals(a: 2),
+            s.staff.first,
+            timing: 'before',
+            pkgId: pkg.id,
+            method: s.payments.first,
+            received: 398,
+            billId: 'b1',
+            now: openTime,
+          );
+        });
+
+      await tester.pumpWidget(KepTohApp(repository: repo, now: checkTime));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('table-countdown-t1')), findsOneWidget);
+      expect(find.textContaining('เหลือ 35:00 · ถึง 18:00'), findsOneWidget);
+
+      var taps = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Btn(
+              key: const ValueKey('loading-btn'),
+              label: 'กำลังบันทึก',
+              loading: true,
+              onPressed: () => taps++,
+            ),
+          ),
+        ),
+      );
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('loading-btn')));
+      expect(taps, 0);
     },
   );
 }

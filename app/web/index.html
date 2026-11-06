@@ -89,7 +89,7 @@
   <div id="keptoh-boot-loader" role="status" aria-live="polite">
     <div class="boot-logo-wrap">
       <div class="boot-spinner"></div>
-      <img class="boot-logo" src="logo.jpg" alt="KepToh POS Logo" />
+      <img class="boot-logo" src="logo.jpg" onerror="this.onerror=null;this.src='assets/assets/logo.jpg';" alt="KepToh POS Logo" />
     </div>
     <p class="boot-title">KepToh POS · จ่าโบ้หมูกะทะ</p>
     <p class="boot-sub">กำลังเตรียมระบบหน้าร้าน...</p>
@@ -111,7 +111,7 @@
       var observer = new MutationObserver(function () {
         if (document.querySelector('flutter-view, flt-glass-pane')) {
           observer.disconnect();
-          setTimeout(dismissBootLoader, 120);
+          setTimeout(dismissBootLoader, 1800);
         }
       });
       observer.observe(document.body, { childList: true, subtree: true });

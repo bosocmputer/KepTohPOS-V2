@@ -15,12 +15,14 @@ class TableLiveTimer extends StatefulWidget {
     required this.openTable,
     super.key,
     this.fixedNow,
+    this.onOvertimeReached,
   });
 
   final PosState posState;
   final String tableId;
   final OpenTableState openTable;
   final DateTime? fixedNow;
+  final VoidCallback? onOvertimeReached;
 
   @override
   State<TableLiveTimer> createState() => _TableLiveTimerState();
@@ -28,6 +30,7 @@ class TableLiveTimer extends StatefulWidget {
 
 class _TableLiveTimerState extends State<TableLiveTimer> {
   Timer? _timer;
+  bool _notifiedOvertime = false;
 
   int get _limitMin {
     final pkgId = widget.openTable.packageId;
@@ -49,6 +52,7 @@ class _TableLiveTimerState extends State<TableLiveTimer> {
     if (oldWidget.fixedNow != widget.fixedNow ||
         oldWidget.openTable.packageId != widget.openTable.packageId ||
         oldWidget.openTable.openedAt != widget.openTable.openedAt) {
+      _notifiedOvertime = false;
       _syncTimer();
     }
   }
@@ -63,7 +67,17 @@ class _TableLiveTimerState extends State<TableLiveTimer> {
         ? const Duration(seconds: 1)
         : const Duration(seconds: 30);
     _timer = Timer.periodic(interval, (_) {
-      if (mounted) setState(() {});
+      if (!mounted) return;
+      final lim = _limitMin;
+      if (widget.posState.shop.useTimer && lim > 0 && !_notifiedOvertime) {
+        final opened = DateTime.parse(widget.openTable.openedAt);
+        final elapsedSec = DateTime.now().difference(opened).inSeconds;
+        if (lim * 60 - elapsedSec <= 0) {
+          _notifiedOvertime = true;
+          widget.onOvertimeReached?.call();
+        }
+      }
+      setState(() {});
     });
   }
 
@@ -132,7 +146,7 @@ class _TableLiveTimerState extends State<TableLiveTimer> {
           ),
           child: Text(
             key: ValueKey('table-overtime-${widget.tableId}'),
-            'เกินเวลา $overMin น. (+$overClock · ครบ $deadline)',
+            'เกินเวลา $overMin น. (+$overClock · $deadline)',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: tt.labelSmall?.copyWith(

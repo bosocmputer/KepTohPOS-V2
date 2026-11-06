@@ -6,6 +6,7 @@ import 'package:app/domain/domain.dart';
 import 'package:app/features/sale/presentation/bloc/sale_bloc.dart';
 import 'package:app/features/sale/presentation/widgets/sale_catalog.dart';
 import 'package:app/features/tables/presentation/widgets/table_card.dart';
+import 'package:app/features/tables/presentation/widgets/table_live_timer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -213,7 +214,6 @@ class _OccupiedTableBanner extends StatelessWidget {
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
     final o = openTable;
-    final tm = state.timer;
     final due = state.due;
     final totalHeads = o.heads.a + o.heads.c + o.heads.f;
     final isPaidBefore =
@@ -239,14 +239,12 @@ class _OccupiedTableBanner extends StatelessWidget {
                 'ผู้ใหญ่ ${o.heads.a} · เด็ก ${o.heads.c} · ฟรี ${o.heads.f}',
                 style: tt.bodySmall?.copyWith(color: t.muted),
               ),
-              if (tm != null)
-                Text(
-                  tm.text,
-                  style: tt.bodySmall?.copyWith(
-                    color: tm.late ? t.danger : t.muted,
-                    fontWeight: tm.late ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                ),
+              TableLiveTimer(
+                posState: state.posState,
+                tableId: state.tableId,
+                openTable: o,
+                fixedNow: state.now,
+              ),
               Pill(
                 label: state.effectiveTiming == 'after'
                     ? (due > 0 ? 'รอชำระ ${baht(due)}' : 'ชำระแล้ว')
