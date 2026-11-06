@@ -434,6 +434,13 @@ void main() {
         'cancelOpenTable, and voidBill auto-releasing openTable', () {
       final fixedNow = DateTime(2026, 11, 4, 15);
       final s = _loadFreshMockState(fixedNow);
+      expect(s.shop.name, 'จ่าโบ้หมูกะทะ');
+      expect(
+        s.shop.address,
+        '95/7 Faham , Muang Chiang Mai, Chiang Mai, Thailand, Chiang Mai',
+      );
+      expect(s.shop.phone, '082 929 5566');
+      expect(s.staff.map((x) => x.name).toList(), ['อัย', 'ไอติม', 'เนส']);
       final cashier = s.staff.firstWhere((st) => st.role == 'cashier');
       final t1 = s.tables.firstWhere((t) => t.id == 't1');
       final t2 = s.tables.firstWhere((t) => t.id == 't2');

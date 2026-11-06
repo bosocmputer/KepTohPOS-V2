@@ -238,12 +238,12 @@ const List<BankAccountItem> kDefaultBankAccounts = <BankAccountItem>[
     id: 'ba1',
     bankName: 'ธนาคารกสิกรไทย',
     accountNo: '123-4-56789-0',
-    accountName: 'ร้านหมูกระทะลุงหมี',
+    accountName: 'จ่าโบ้หมูกะทะ',
   ),
   BankAccountItem(
     id: 'ba2',
     bankName: 'ธนาคารไทยพาณิชย์',
     accountNo: '987-6-54321-0',
-    accountName: 'ร้านหมูกระทะลุงหมี',
+    accountName: 'จ่าโบ้หมูกะทะ',
   ),
 ];

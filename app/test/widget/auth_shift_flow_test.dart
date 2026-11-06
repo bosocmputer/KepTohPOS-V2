@@ -51,10 +51,10 @@ void main() {
       expect(find.text('เข้าสู่ระบบ'), findsOneWidget);
       expect(find.byKey(const ValueKey('login-submit-btn')), findsNothing);
 
-      // Select cashier น้องมุก (st3, PIN 1111) from Dropdown
-      await tester.tap(find.text('คุณแอน'));
+      // Select cashier เนส (st3, PIN 1111) from Dropdown
+      await tester.tap(find.text('อัย'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('น้องมุก').last);
+      await tester.tap(find.text('เนส').last);
       await tester.pumpAndSettle();
 
       // Enter wrong PIN 9999 -> auto-validates on 4th digit and shows error

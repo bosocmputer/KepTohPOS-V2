@@ -65,7 +65,13 @@ class MockPosRepository implements PosRepository {
     final currentNow = now ?? DateTime(2026, 11, 4, 12);
     final state = PosState(
       startDate: '2026-10-05',
-      shop: const ShopConfig(name: 'หมูกระทะลุงหมี', promptpay: '0812345678'),
+      shop: const ShopConfig(
+        name: 'จ่าโบ้หมูกะทะ',
+        address:
+            '95/7 Faham , Muang Chiang Mai, Chiang Mai, Thailand, Chiang Mai',
+        phone: '082 929 5566',
+        promptpay: '0829295566',
+      ),
       packages: const <PackageItem>[
         PackageItem(
           id: 'pk1',
@@ -97,10 +103,9 @@ class MockPosRepository implements PosRepository {
         DiningTable(id: 't1', name: 'A1', seats: 4, zone: 'ในร้าน'),
       ],
       staff: const <StaffMember>[
-        StaffMember(id: 'st1', name: 'คุณแอน', role: 'owner', pin: '1234'),
-        StaffMember(id: 'st2', name: 'คุณบี', role: 'manager', pin: '2222'),
-        StaffMember(id: 'st3', name: 'น้องมุก', role: 'cashier', pin: '1111'),
-        StaffMember(id: 'st4', name: 'น้องเต้', role: 'cashier', pin: '3333'),
+        StaffMember(id: 'st1', name: 'อัย', role: 'owner', pin: '1234'),
+        StaffMember(id: 'st2', name: 'ไอติม', role: 'manager', pin: '2222'),
+        StaffMember(id: 'st3', name: 'เนส', role: 'cashier', pin: '1111'),
       ],
       payments: const <PaymentMethod>[
         PaymentMethod(id: 'pm1', name: 'เงินสด', type: 'cash'),
@@ -127,11 +132,14 @@ class MockPosRepository implements PosRepository {
     );
   }
 
-  /// Loads `assets/mock/*.json` via [AssetBundle] and seeds [PosState].
+  /// Loads `assets/mock/*.json` via [AssetBundle] and initializes [PosState]
+  /// with clean daily transactions (`seedTransactions: false` by default) while
+  /// keeping master catalogs intact.
   static Future<MockPosRepository> loadFromAssets({
     AssetBundle? bundle,
     DateTime? now,
     String? sessionStaffId,
+    bool seedTransactions = false,
   }) async {
     final b = bundle ?? rootBundle;
     const keys = <String>[
@@ -150,11 +158,15 @@ class MockPosRepository implements PosRepository {
     for (final k in keys) {
       jsonByName[k] = await b.loadString('assets/mock/$k.json');
     }
-    return MockPosRepository.fromJsonStrings(
+    final repo = MockPosRepository.fromJsonStrings(
       jsonByName,
       now: now,
       sessionStaffId: sessionStaffId,
     );
+    if (!seedTransactions) {
+      repo.update((s) => clearDailyTransactionsInState(s, now: now));
+    }
+    return repo;
   }
 
   PosState _state;
