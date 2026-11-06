@@ -182,8 +182,16 @@ class _ReportsPageState extends State<ReportsPage> {
     return BlocBuilder<ReportsCubit, ReportsState>(
       builder: (context, state) {
         final rep = state.report;
+        final shop = state.posState.shop;
+        final d = parseKey('${rep.selectedMonth}-01');
+        final mDays = DateTime(d.year, d.month + 1, 0).day;
+        final divTxt = shop.fixedCostDivisor == 'calendar'
+            ? 'ตามปฏิทิน ${thMonth(rep.selectedMonth)} ($mDays วัน)'
+            : 'ต่อวันที่เปิดร้าน (${shop.openDaysPerMonth} วัน)';
         final partialFixed =
             rep.showNetProfit && rep.fixedDeducted + 0.01 < rep.fixedFullMonth;
+        final closedLbl =
+            'ปิดยอดแล้ว ${rep.closedDays.length}/${rep.days.length} วัน';
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -202,12 +210,7 @@ class _ReportsPageState extends State<ReportsPage> {
                           tone: PillTone.orange,
                           label: 'หักค่าคงที่ยังไม่ครบเดือน',
                         ),
-                      Pill(
-                        tone: PillTone.green,
-                        label:
-                            'ปิดยอดแล้ว ${rep.closedDays.length}/'
-                            '${rep.days.length} วัน',
-                      ),
+                      Pill(tone: PillTone.green, label: closedLbl),
                       PendingBadge(onTap: widget.onGoSetupCosting),
                     ],
                     children: [
@@ -246,9 +249,7 @@ class _ReportsPageState extends State<ReportsPage> {
                         tone: rep.closedProfit >= 0
                             ? StatTone.green
                             : StatTone.red,
-                        sub:
-                            'ปิดยอดแล้ว ${rep.closedDays.length}/'
-                            '${rep.days.length} วัน',
+                        sub: closedLbl,
                       ),
                       if (rep.showNetProfit)
                         Stat(
@@ -261,7 +262,7 @@ class _ReportsPageState extends State<ReportsPage> {
                               'ค่าใช้จ่าย ${baht(rep.closedSpend)} · '
                               'ค่าคงที่หักแล้ว ${baht(rep.fixedDeducted)} '
                               'จาก ${baht(rep.fixedFullMonth)} · '
-                              'ขาย ${rep.salesDays} วัน',
+                              'ขาย ${rep.salesDays} วัน ($divTxt)',
                         ),
                       Stat(
                         label: 'ซื้อของเข้า',
@@ -281,7 +282,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     'ซื้อเข้า ≠ ต้นทุน: ซื้อเข้าคือเงินที่จ่ายออกวันนั้น '
                     'ส่วนต้นทุนคือมูลค่าวัตถุดิบที่ใช้ไปจริง '
                     '(ยกมา + ซื้อเข้า − เหลือ) · ค่าใช้จ่าย = รายวัน + '
-                    'ค่าคงที่รายเดือนเฉลี่ยต่อวันที่เปิดร้าน',
+                    'ค่าคงที่รายเดือนเฉลี่ย$divTxt',
                     style: tt.bodySmall?.copyWith(color: t.muted),
                   ),
                 ],

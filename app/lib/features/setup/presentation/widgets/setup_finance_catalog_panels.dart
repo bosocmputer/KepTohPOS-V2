@@ -73,6 +73,8 @@ class SetupFinanceCatalogPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = state.posState;
+    final curMonth = thMonth(dkey(DateTime.now()).substring(0, 7));
+    final isCal = s.shop.fixedCostDivisor == 'calendar';
     return switch (state.activeTab) {
       'staff' => CrudSectionShell<StaffMember>(
         title: 'พนักงานและสิทธิ์',
@@ -230,11 +232,14 @@ class SetupFinanceCatalogPanel extends StatelessWidget {
               sub: '${s.fixedCosts.where((f) => f.active).length} รายการ',
             ),
             Stat(
-              label: 'เฉลี่ยต่อวันที่เปิดร้าน',
+              label: isCal
+                  ? 'ค่าคงที่เฉลี่ยต่อวัน ($curMonth)'
+                  : 'เฉลี่ยต่อวันที่เปิดร้าน',
               value: baht(state.dailyFixedCost),
-              sub: s.shop.fixedCostDivisor == 'calendar'
-                  ? 'ตามปฏิทิน (${state.effectiveFixedCostDivisor} วัน)'
-                  : 'หาร ${s.shop.openDaysPerMonth} วัน/เดือน',
+              sub: isCal
+                  ? '$curMonth = ${state.effectiveFixedCostDivisor} วัน '
+                        '(ปรับตามปฏิทิน 28–31 วันอัตโนมัติ)'
+                  : 'หาร ${s.shop.openDaysPerMonth} วัน/เดือน (กำหนดเอง)',
             ),
           ],
         ),

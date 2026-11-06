@@ -74,6 +74,7 @@ class _SetupCostingPanelState extends State<SetupCostingPanel> {
     final tt = Theme.of(context).textTheme;
     final now = DateTime.now();
     final calDays = DateTime(now.year, now.month + 1, 0).day;
+    final curMonth = thMonth(dkey(now).substring(0, 7));
     final isCal = _v.fixedCostDivisor == 'calendar';
     final openDays = isCal
         ? calDays
@@ -112,12 +113,15 @@ class _SetupCostingPanelState extends State<SetupCostingPanel> {
           children: [
             _st('วิธีตีมูลค่าวัตถุดิบ', methodLabel, 'คำนวณต้นทุนรายวัน'),
             _st(
-              'ค่าคงที่เฉลี่ยต่อวัน',
+              isCal
+                  ? 'ค่าคงที่เฉลี่ยต่อวัน ($curMonth)'
+                  : 'ค่าคงที่เฉลี่ยต่อวัน',
               baht(dailyFixed),
               isCal
-                  ? '${baht(widget.totalMonthlyFixedCost)} ÷ $calDays วัน'
-                        ' (ตามปฏิทิน)'
-                  : '${baht(widget.totalMonthlyFixedCost)} ÷ $openDays วัน',
+                  ? '${baht(widget.totalMonthlyFixedCost)} ÷ $calDays วัน '
+                        '($curMonth · ปรับตามเดือน 28–31 วัน)'
+                  : '${baht(widget.totalMonthlyFixedCost)} ÷ $openDays วัน '
+                        '(กำหนดเอง)',
             ),
             _st(
               'สัดส่วนหัวเด็ก',
