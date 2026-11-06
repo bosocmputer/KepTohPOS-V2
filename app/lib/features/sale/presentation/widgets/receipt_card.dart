@@ -37,11 +37,17 @@ class ReceiptCard extends StatelessWidget {
       child: Divider(color: t.line, height: 1),
     );
     final limTxt = formatTimeLimitLabel(bill.timeLimitMin);
-    final d = dkey(DateTime.parse(bill.at).toLocal());
+    final dtTxt =
+        '${thDate(dkey(DateTime.parse(bill.at).toLocal()))} · '
+        '${thTime(bill.at)} น.';
     final h = bill.heads;
     final hTxt =
         'ลูกค้า: ผู้ใหญ่ ${h.a}${h.c > 0 ? " · เด็ก ${h.c}" : ""}'
         '${h.f > 0 ? " · ฟรี ${h.f}" : ""}';
+    final hasLim = bill.eatUntil != null && bill.timeLimitMin > 0;
+    final eatTxt = hasLim
+        ? 'ทานได้ถึงเวลา ${thTime(bill.eatUntil!)} น. (จำกัด $limTxt)'
+        : 'ไม่จำกัดเวลา';
     String fmtAmt(double v) => baht(v, v % 1 != 0 ? 2 : 0);
 
     return Container(
@@ -103,24 +109,15 @@ class ReceiptCard extends StatelessWidget {
           ),
           const SizedBox(height: AppDimensions.space1_5),
           _row(t, tt, 'เลขที่ ${bill.no}', 'โต๊ะ ${bill.tableName}'),
-          _row(
-            t,
-            tt,
-            '${thDate(d)} · ${thTime(bill.at)} น.',
-            'แคชเชียร์: ${bill.staffName}',
-          ),
+          _row(t, tt, dtTxt, 'แคชเชียร์: ${bill.staffName}'),
           Text(hTxt, style: tt.labelSmall?.copyWith(color: t.muted)),
           if (shop.useTimer)
             Text(
               key: const ValueKey('receipt-eat-until'),
-              bill.eatUntil != null && bill.timeLimitMin > 0
-                  ? 'ทานได้ถึงเวลา ${thTime(bill.eatUntil!)} น. (จำกัด $limTxt)'
-                  : 'ไม่จำกัดเวลา',
+              eatTxt,
               style: tt.labelSmall?.copyWith(
-                color: bill.timeLimitMin > 0 ? t.primaryInk : t.muted,
-                fontWeight: bill.timeLimitMin > 0
-                    ? FontWeight.w700
-                    : FontWeight.w500,
+                color: hasLim ? t.primaryInk : t.muted,
+                fontWeight: hasLim ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           div,
@@ -282,17 +279,19 @@ class ReceiptCard extends StatelessWidget {
           style: tt.labelSmall?.copyWith(color: t.muted),
         ),
         const SizedBox(height: AppDimensions.space2),
-        Container(
-          padding: const EdgeInsets.all(AppDimensions.space1_5),
-          decoration: BoxDecoration(
-            color: AppRawTokens.paper,
-            borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-            border: Border.all(color: t.primary),
-          ),
-          child: QrImageView(
-            data: promptPayPayload(shop.promptpay, bill.total),
-            size: 120,
-            backgroundColor: AppRawTokens.paper,
+        RepaintBoundary(
+          child: Container(
+            padding: const EdgeInsets.all(AppDimensions.space1_5),
+            decoration: BoxDecoration(
+              color: AppRawTokens.paper,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+              border: Border.all(color: t.primary),
+            ),
+            child: QrImageView(
+              data: promptPayPayload(shop.promptpay, bill.total),
+              size: 120,
+              backgroundColor: AppRawTokens.paper,
+            ),
           ),
         ),
       ],

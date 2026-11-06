@@ -85,18 +85,20 @@ class ProfitChart extends StatelessWidget {
                   child: Stack(
                     children: [
                       Positioned.fill(
-                        child: CustomPaint(
-                          painter: _ProfitChartPainter(
-                            days: days,
-                            showNetProfit: showNetProfit,
-                            selectedDate: selectedDate,
-                            tokens: tokens,
-                            labelStyle:
-                                textTheme.labelSmall?.copyWith(
-                                  color: tokens.muted,
-                                  fontSize: 11,
-                                ) ??
-                                TextStyle(color: tokens.muted, fontSize: 11),
+                        child: RepaintBoundary(
+                          child: CustomPaint(
+                            painter: _ProfitChartPainter(
+                              days: days,
+                              showNetProfit: showNetProfit,
+                              selectedDate: selectedDate,
+                              tokens: tokens,
+                              labelStyle:
+                                  textTheme.labelSmall?.copyWith(
+                                    color: tokens.muted,
+                                    fontSize: 11,
+                                  ) ??
+                                  TextStyle(color: tokens.muted, fontSize: 11),
+                            ),
                           ),
                         ),
                       ),

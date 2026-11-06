@@ -95,17 +95,19 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
 
   Widget _buildShell(BuildContext context) {
     final tokens = context.tokens;
-    final authCubit = _maybe<AuthCubit>(context);
-    final shiftBloc = _maybe<ShiftBloc>(context);
-    final tablesCubit = _maybe<TablesCubit>(context);
-    final billsCubit = _maybe<BillsCubit>(context);
-    final stockCubit = _maybe<StockCubit>(context);
-    final stockCountBloc = _maybe<StockCountBloc>(context);
-    final dashCubit = _maybe<DashboardCubit>(context);
-    final repCubit = _maybe<ReportsCubit>(context);
-    final setupCubit = _maybe<SetupCubit>(context);
-    final existingSaleBloc = _maybe<SaleBloc>(context, watch: false);
-    final repo = _maybe<PosRepository>(context, watch: false);
+    final viewId = widget.viewSpec.id;
+    T? m<T>({bool w = true}) => _maybe<T>(context, watch: w);
+    final authCubit = m<AuthCubit>();
+    final shiftBloc = m<ShiftBloc>();
+    final tablesCubit = m<TablesCubit>(w: viewId == 'tables');
+    final billsCubit = m<BillsCubit>(w: viewId == 'bills');
+    final stockCubit = m<StockCubit>(w: viewId == 'stock');
+    final stockCountBloc = m<StockCountBloc>(w: viewId == 'stock');
+    final dashCubit = m<DashboardCubit>(w: viewId == 'dashboard');
+    final repCubit = m<ReportsCubit>(w: viewId == 'reports');
+    final setupCubit = m<SetupCubit>(w: viewId == 'setup');
+    final existingSaleBloc = m<SaleBloc>(w: false);
+    final repo = m<PosRepository>(w: false);
     final activeShift = shiftBloc?.state.activeShift;
     final me =
         authCubit?.state.currentStaff ??
@@ -127,7 +129,6 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
         ((authCubit?.state.shouldPromptOpenShift ?? false) ||
             _manualOpenShiftModal);
 
-    final viewId = widget.viewSpec.id;
     final isSaleView =
         viewId == 'tables' &&
         widget.saleTableId != null &&

@@ -103,6 +103,7 @@ class _SetupCostingPanelState extends State<SetupCostingPanel> {
               kind: BtnKind.primary,
               icon: 'check',
               label: widget.isSaving ? 'กำลังบันทึก...' : 'บันทึกสูตร',
+              loading: widget.isSaving,
               disabled: widget.isSaving,
               onPressed: () => widget.onSave(_v),
             ),

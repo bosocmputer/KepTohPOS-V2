@@ -2,6 +2,7 @@ import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
+import 'package:app/features/tables/presentation/widgets/table_live_timer.dart';
 import 'package:flutter/material.dart';
 
 /// Dining table status card (`function TableCard` in `prototype/index.html`).
@@ -153,19 +154,11 @@ class TableCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Flexible(
-                      child: Text(
-                        key: isLate
-                            ? ValueKey('table-overtime-${table.id}')
-                            : null,
-                        tm!.text,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: tt.labelSmall?.copyWith(
-                          color: isLate ? t.danger : t.muted,
-                          fontWeight: isLate
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                        ),
+                      child: TableLiveTimer(
+                        posState: posState,
+                        tableId: table.id,
+                        openTable: o,
+                        fixedNow: now,
                       ),
                     ),
                     if (due > 0)

@@ -1,23 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="description" content="ระบบจัดการหน้าร้านและคำนวณกำไรบุฟเฟต์ KepToh POS (จ่าโบ้หมูกะทะ)">
 
   <!-- iOS meta tags & icons -->
@@ -31,16 +19,104 @@
 
   <title>KepToh POS — จ่าโบ้หมูกะทะ</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #FAF8F5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    #keptoh-boot-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 50% 35%, #FFF4EC 0%, #FAF8F5 70%);
+      transition: opacity 0.28s ease-out;
+    }
+    #keptoh-boot-loader.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .boot-logo-wrap {
+      position: relative;
+      width: 96px;
+      height: 96px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .boot-logo {
+      width: 76px;
+      height: 76px;
+      border-radius: 18px;
+      object-fit: cover;
+      box-shadow: 0 8px 24px rgba(249, 115, 22, 0.22);
+    }
+    .boot-spinner {
+      position: absolute;
+      inset: 0;
+      border-radius: 24px;
+      border: 3px solid rgba(249, 115, 22, 0.16);
+      border-top-color: #F97316;
+      animation: keptoh-spin 0.9s linear infinite;
+    }
+    .boot-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1C1917;
+      margin: 0 0 6px 0;
+      letter-spacing: -0.01em;
+    }
+    .boot-sub {
+      font-size: 14px;
+      font-weight: 500;
+      color: #78716C;
+      margin: 0;
+    }
+    @keyframes keptoh-spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
+  <div id="keptoh-boot-loader" role="status" aria-live="polite">
+    <div class="boot-logo-wrap">
+      <div class="boot-spinner"></div>
+      <img class="boot-logo" src="logo.jpg" alt="KepToh POS Logo" />
+    </div>
+    <p class="boot-title">KepToh POS · จ่าโบ้หมูกะทะ</p>
+    <p class="boot-sub">กำลังเตรียมระบบหน้าร้าน...</p>
+  </div>
 
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
+  <script>
+    (function () {
+      function dismissBootLoader() {
+        var loader = document.getElementById('keptoh-boot-loader');
+        if (!loader) return;
+        loader.classList.add('fade-out');
+        setTimeout(function () {
+          if (loader && loader.parentNode) {
+            loader.parentNode.removeChild(loader);
+          }
+        }, 300);
+      }
+      window.addEventListener('flutter-first-frame', dismissBootLoader, { once: true });
+      var observer = new MutationObserver(function () {
+        if (document.querySelector('flutter-view, flt-glass-pane')) {
+          observer.disconnect();
+          setTimeout(dismissBootLoader, 120);
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

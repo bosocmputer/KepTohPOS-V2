@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:app/core/data/web_storage.dart';
 import 'package:app/domain/domain.dart';
 import 'package:flutter/services.dart';
+
+const String _kStateStorageKey = 'keptoh_pos_v2_state_v2';
+const String _kStaffStorageKey = 'keptoh_pos_v2_staff_v2';
 
 /// In-memory implementation of [PosRepository] backed by `assets/mock/*.json`
 /// and `seed()`. Copies [PosState] only on [update], while [state] returns the
@@ -169,13 +173,43 @@ class MockPosRepository implements PosRepository {
         s.shop = s.shop.copyWith(fixedCostDivisor: 'calendar');
       });
     }
+    final useWebPersistence =
+        bundle == null && now == null && !seedTransactions;
+    if (useWebPersistence) {
+      final savedRaw = readWebLocalStorage(_kStateStorageKey);
+      final savedStaff = readWebLocalStorage(_kStaffStorageKey);
+      if (savedRaw != null && savedRaw.isNotEmpty) {
+        try {
+          repo.importStateJson(savedRaw);
+        } on Object {
+          // Ignore corrupted storage and keep fresh asset state.
+        }
+      }
+      if (savedStaff != null && savedStaff.isNotEmpty) {
+        repo.setSessionStaffId(savedStaff);
+      }
+      repo
+        .._persistWeb = true
+        .._syncWebStorage();
+    }
     return repo;
   }
 
   PosState _state;
   String? _sessionStaffId;
+  bool _persistWeb = false;
   final StreamController<PosState> _controller =
       StreamController<PosState>.broadcast(sync: true);
+
+  void _syncWebStorage() {
+    if (!_persistWeb) return;
+    writeWebLocalStorage(_kStateStorageKey, jsonEncode(_state.toJson()));
+    if (_sessionStaffId != null && _sessionStaffId!.isNotEmpty) {
+      writeWebLocalStorage(_kStaffStorageKey, _sessionStaffId!);
+    } else {
+      removeWebLocalStorage(_kStaffStorageKey);
+    }
+  }
 
   @override
   PosState get state => _state;
@@ -198,6 +232,7 @@ class MockPosRepository implements PosRepository {
     final next = _state.copy();
     mutator(next);
     _state = next.freeze();
+    _syncWebStorage();
     if (!_controller.isClosed) {
       _controller.add(_state);
     }
@@ -209,8 +244,11 @@ class MockPosRepository implements PosRepository {
     _sessionStaffId = staffId;
     if (staffId != null) {
       update((s) => s.currentStaffId = staffId);
-    } else if (!_controller.isClosed) {
-      _controller.add(_state);
+    } else {
+      _syncWebStorage();
+      if (!_controller.isClosed) {
+        _controller.add(_state);
+      }
     }
   }
 
@@ -227,6 +265,7 @@ class MockPosRepository implements PosRepository {
         !_state.staff.any((x) => x.id == _sessionStaffId && x.active)) {
       _sessionStaffId = _state.staff.where((x) => x.active).firstOrNull?.id;
     }
+    _syncWebStorage();
     if (!_controller.isClosed) {
       _controller.add(_state);
     }

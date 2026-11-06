@@ -19,6 +19,7 @@ class Btn extends StatelessWidget {
     this.size = BtnSize.md,
     this.block = false,
     this.disabled = false,
+    this.loading = false,
     this.onPressed,
     this.semanticLabel,
   });
@@ -30,6 +31,7 @@ class Btn extends StatelessWidget {
   final BtnSize size;
   final bool block;
   final bool disabled;
+  final bool loading;
   final VoidCallback? onPressed;
   final String? semanticLabel;
 
@@ -38,7 +40,7 @@ class Btn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final enabled = !disabled && onPressed != null;
+    final enabled = !disabled && !loading && onPressed != null;
 
     final (bgColor, fgColor, borderColor, fontWeight) = switch (kind) {
       BtnKind.primary => (
@@ -104,9 +106,18 @@ class Btn extends StatelessWidget {
       mainAxisSize: block ? MainAxisSize.max : MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        if (icon != null)
+        if (loading)
+          SizedBox(
+            width: AppDimensions.iconSm,
+            height: AppDimensions.iconSm,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(fgColor),
+            ),
+          )
+        else if (icon != null)
           AppIcon(icon!, size: AppDimensions.iconSm, color: fgColor),
-        if (icon != null && (label != null || child != null))
+        if ((loading || icon != null) && (label != null || child != null))
           const SizedBox(width: AppDimensions.space1_5),
         if (child != null)
           DefaultTextStyle.merge(
