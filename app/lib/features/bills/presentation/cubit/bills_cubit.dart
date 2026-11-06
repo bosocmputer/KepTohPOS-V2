@@ -51,6 +51,12 @@ class BillsState extends Equatable {
   /// Total revenue for [selectedDate] excluding voided bills.
   double get totalSales => okBills.fold<double>(0, (a, b) => a + b.total);
 
+  /// Total Output VAT (`ภาษีขายรวม`) for [selectedDate] excluding voided bills.
+  double get totalVat => okBills.fold<double>(0, (a, b) => a + b.vat);
+
+  /// Total Pre-VAT base (`มูลค่าก่อนภาษี`) for [selectedDate].
+  double get totalPreVat => totalSales - totalVat;
+
   /// Paid heads (`adult + child`) for [selectedDate] excluding voided bills.
   int get totalPaidHeads =>
       okBills.fold<int>(0, (a, b) => a + b.heads.a + b.heads.c);
@@ -58,11 +64,13 @@ class BillsState extends Equatable {
   /// Free toddler heads (`f`) for [selectedDate] excluding voided bills.
   int get totalFreeHeads => okBills.fold<int>(0, (a, b) => a + b.heads.f);
 
-  /// Sales breakdown by payment method name (`byMethod` in `BillsView`).
+  /// Sales breakdown by payment method (and bank account when present).
   Map<String, double> get salesByMethod {
     final map = <String, double>{};
     for (final b in okBills) {
-      map[b.methodName] = (map[b.methodName] ?? 0) + b.total;
+      final acct = (b.bankAccountInfo ?? '').trim();
+      final key = acct.isNotEmpty ? '${b.methodName} ($acct)' : b.methodName;
+      map[key] = (map[key] ?? 0) + b.total;
     }
     return map;
   }
@@ -86,6 +94,7 @@ class BillsState extends Equatable {
       return b.no.toLowerCase().contains(q) ||
           b.tableName.toLowerCase().contains(q) ||
           b.methodName.toLowerCase().contains(q) ||
+          (b.bankAccountInfo ?? '').toLowerCase().contains(q) ||
           b.staffName.toLowerCase().contains(q);
     }).toList();
   }
@@ -101,14 +110,8 @@ class BillsState extends Equatable {
       filteredBills.skip((currentPage - 1) * perPage).take(perPage).toList();
 
   /// Currently opened bill in `ReceiptModal`, if any.
-  BillRecord? get selectedBill {
-    final id = selectedBillId;
-    if (id == null) return null;
-    for (final b in posState.sales) {
-      if (b.id == id) return b;
-    }
-    return null;
-  }
+  BillRecord? get selectedBill =>
+      posState.sales.where((b) => b.id == selectedBillId).firstOrNull;
 
   /// Selectable dates from `posState.startDate` through [todayDate].
   List<String> get availableDates {
@@ -125,8 +128,7 @@ class BillsState extends Equatable {
     for (final b in posState.sales) {
       set.add(b.date);
     }
-    final list = set.toList()..sort((a, b) => b.compareTo(a));
-    return list;
+    return set.toList()..sort((a, b) => b.compareTo(a));
   }
 
   BillsState copyWith({
@@ -174,8 +176,7 @@ class BillsState extends Equatable {
   ];
 }
 
-/// Cubit managing daily sales bills, filters, pagination, and voiding
-/// (`BillsView` in `prototype/index.html`).
+/// Cubit managing daily sales bills, filters, pagination, and voiding.
 class BillsCubit extends Cubit<BillsState> {
   new(PosRepository repository, {DateTime? now, String? initialDate})
     : _repository = repository,
@@ -184,9 +185,7 @@ class BillsCubit extends Cubit<BillsState> {
         _initialState(repository.state, now: now, initialDate: initialDate),
       ) {
     _sub = _repository.stream.listen((s) {
-      if (!isClosed) {
-        emit(state.copyWith(posState: s));
-      }
+      if (!isClosed) emit(state.copyWith(posState: s));
     });
   }
 
@@ -216,9 +215,7 @@ class BillsCubit extends Cubit<BillsState> {
 
   void toggleMethodFilter(String methodId) {
     final next = Set<String>.from(state.selectedMethodIds);
-    if (!next.remove(methodId)) {
-      next.add(methodId);
-    }
+    if (!next.remove(methodId)) next.add(methodId);
     emit(state.copyWith(selectedMethodIds: next, page: 1));
   }
 
@@ -245,8 +242,6 @@ class BillsCubit extends Cubit<BillsState> {
   void clearToast() => emit(state.copyWith(toastMessage: ''));
 
   /// Voids [billId] (or `state.selectedBillId`) and restores addon stock.
-  /// Returns `false` if `staff.role == 'cashier'`, not found, or already
-  /// voided.
   bool voidBillById({
     required StaffMember staff,
     String? billId,
@@ -254,13 +249,9 @@ class BillsCubit extends Cubit<BillsState> {
   }) {
     final targetId = billId ?? state.selectedBillId;
     if (targetId == null || staff.role == 'cashier') return false;
-    BillRecord? bill;
-    for (final b in _repository.state.sales) {
-      if (b.id == targetId) {
-        bill = b;
-        break;
-      }
-    }
+    final bill = _repository.state.sales
+        .where((b) => b.id == targetId)
+        .firstOrNull;
     if (bill == null || bill.voided) return false;
     final billNo = bill.no;
     var ok = false;

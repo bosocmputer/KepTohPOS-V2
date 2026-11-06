@@ -71,11 +71,17 @@ class AppTextInput extends StatefulWidget {
 
 class _AppTextInputState extends State<AppTextInput> {
   late final TextEditingController _controller;
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.value);
+    _focusNode = FocusNode()..addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -91,6 +97,9 @@ class _AppTextInputState extends State<AppTextInput> {
 
   @override
   void dispose() {
+    _focusNode
+      ..removeListener(_onFocusChange)
+      ..dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -98,67 +107,83 @@ class _AppTextInputState extends State<AppTextInput> {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
+    final tt = Theme.of(context).textTheme;
     final isSingleLine = widget.maxLines == 1;
-    final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-      borderSide: BorderSide(
-        color: tokens.line,
-        width: AppDimensions.borderThick,
-      ),
-    );
-    final focusedBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-      borderSide: BorderSide(
-        color: tokens.primary,
-        width: AppDimensions.borderThick,
-      ),
-    );
+    final hasSuffix =
+        widget.suffixText != null && widget.suffixText!.isNotEmpty;
 
-    return SizedBox(
-      height: isSingleLine ? AppDimensions.tap : null,
-      child: TextField(
-        controller: _controller,
-        onChanged: widget.onChanged,
-        maxLines: widget.maxLines,
-        keyboardType: widget.keyboardType,
-        readOnly: widget.readOnly,
-        textAlignVertical: isSingleLine ? TextAlignVertical.center : null,
-        style: Theme.of(context).textTheme.bodyMedium
-            ?.copyWith(color: tokens.ink, fontWeight: FontWeight.w500),
-        decoration: InputDecoration(
-          isDense: true,
-          visualDensity: VisualDensity.standard,
-          filled: true,
-          fillColor: tokens.surface,
-          constraints: isSingleLine
-              ? const BoxConstraints.tightFor(height: AppDimensions.tap)
-              : null,
-          hintText: widget.placeholder,
-          hintStyle: Theme.of(context).textTheme.bodyMedium
-              ?.copyWith(color: tokens.muted),
-          suffixIcon: widget.suffixText != null && widget.suffixText!.isNotEmpty
-              ? Padding(
-                  padding: const EdgeInsets.only(
-                    left: AppDimensions.space1_5,
-                    right: AppDimensions.space3,
-                  ),
-                  child: Text(
-                    widget.suffixText!,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: tokens.muted,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                )
-              : null,
-          suffixIconConstraints: const BoxConstraints(),
-          contentPadding: EdgeInsets.symmetric(
+    return Material(
+      color: tokens.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        side: BorderSide(
+          color: _focusNode.hasFocus ? tokens.primary : tokens.line,
+          width: AppDimensions.borderThick,
+        ),
+      ),
+      child: ConstrainedBox(
+        constraints: isSingleLine
+            ? const BoxConstraints.tightFor(height: AppDimensions.tap)
+            : const BoxConstraints(minHeight: AppDimensions.tap),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
             horizontal: AppDimensions.space3,
-            vertical: isSingleLine ? 10 : AppDimensions.space2_5,
+            vertical: isSingleLine ? 0 : AppDimensions.space2_5,
           ),
-          enabledBorder: border,
-          focusedBorder: focusedBorder,
-          border: border,
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  onChanged: widget.onChanged,
+                  maxLines: widget.maxLines,
+                  keyboardType: widget.keyboardType,
+                  readOnly: widget.readOnly,
+                  textAlignVertical: isSingleLine
+                      ? TextAlignVertical.center
+                      : null,
+                  style: tt.bodyMedium?.copyWith(
+                    color: tokens.ink,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    isCollapsed: true,
+                    border: const OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: const OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: const OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                    ),
+                    constraints: isSingleLine
+                        ? const BoxConstraints.tightFor(
+                            height: AppDimensions.tap,
+                          )
+                        : null,
+                    contentPadding: EdgeInsets.symmetric(
+                      vertical: isSingleLine ? 12 : 0,
+                    ),
+                    hintText: widget.placeholder,
+                    hintStyle: tt.bodyMedium?.copyWith(color: tokens.muted),
+                  ),
+                ),
+              ),
+              if (hasSuffix) ...[
+                const SizedBox(width: AppDimensions.space1_5),
+                Text(
+                  widget.suffixText!,
+                  style: tt.labelSmall?.copyWith(
+                    color: tokens.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

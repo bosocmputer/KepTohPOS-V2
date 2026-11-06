@@ -18,12 +18,14 @@ final GetIt sl = GetIt.instance;
 
 /// Initializes app-level dependencies.
 Future<void> configureDependencies() async {
-  if (!sl.isRegistered<ThemeCubit>()) {
-    sl.registerFactory<ThemeCubit>(ThemeCubit.new);
-  }
   if (!sl.isRegistered<PosRepository>()) {
     final repo = await MockPosRepository.loadFromAssets();
     sl.registerSingleton<PosRepository>(repo);
+  }
+  if (!sl.isRegistered<ThemeCubit>()) {
+    sl.registerFactory<ThemeCubit>(
+      () => ThemeCubit(repository: sl<PosRepository>()),
+    );
   }
   if (!sl.isRegistered<AuthCubit>()) {
     sl.registerFactory<AuthCubit>(() => AuthCubit(sl<PosRepository>()));

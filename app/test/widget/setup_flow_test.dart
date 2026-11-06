@@ -63,6 +63,13 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('setup-theme-section')), findsOneWidget);
 
+      // Select Emerald brand palette and verify persistence to ShopConfig
+      final emeraldBtn = find.byKey(const ValueKey('palette-emerald'));
+      await tester.ensureVisible(emeraldBtn);
+      await tester.tap(emeraldBtn);
+      await tester.pumpAndSettle();
+      expect(repo.state.shop.themePalette, 'emerald');
+
       // Switch to 'packages' tab and open Add modal
       final pkgNav = find.byKey(const ValueKey('setup-tab-packages'));
       await tester.ensureVisible(pkgNav);
@@ -114,6 +121,47 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(repo.state.sales, isEmpty);
+    },
+  );
+
+  test(
+    'Production validation rejects duplicate table names and negative prices',
+    () {
+      final repo = _buildFullRepo(fixedNow: fixedNow);
+      final s = repo.state;
+
+      // Duplicate table name check (case-insensitive)
+      final dupTable = upsertTableInState(
+        s,
+        const DiningTable(id: 't_new', name: 'a1', zone: 'ในร้าน', seats: 4),
+      );
+      expect(dupTable.ok, isFalse);
+      expect(dupTable.message, contains('ชื่อโต๊ะนี้มีอยู่ในระบบแล้ว'));
+
+      // Negative price check on PackageItem & AddonItem
+      final negPkg = upsertPackageInState(
+        s,
+        const PackageItem(
+          id: 'p_neg',
+          name: 'แพ็กเกจผิด',
+          adultPrice: -10,
+          childPrice: 99,
+        ),
+      );
+      expect(negPkg.ok, isFalse);
+
+      final negAddon = upsertAddonInState(
+        s,
+        AddonItem(
+          id: 'a_neg',
+          name: 'น้ำอัดลม',
+          category: 'เครื่องดื่ม',
+          price: 20,
+          cost: -5,
+          stock: 10,
+        ),
+      );
+      expect(negAddon.ok, isFalse);
     },
   );
 }

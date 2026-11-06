@@ -97,9 +97,33 @@ void main() {
         final inputH = tester.getSize(find.byType(AppTextInput)).height;
         final dropH = tester.getSize(find.byType(Dropdown<String>)).height;
         final decoratorH = tester.getSize(find.byType(InputDecorator)).height;
+        final inputMatH = tester
+            .getSize(
+              find.descendant(
+                of: find.byType(AppTextInput),
+                matching: find.byType(Material),
+              ),
+            )
+            .height;
+        final dropMatH = tester
+            .getSize(
+              find.descendant(
+                of: find.byType(Dropdown<String>),
+                matching: find.byType(Material),
+              ),
+            )
+            .height;
         expect(inputH, 44.0);
         expect(dropH, 44.0);
         expect(decoratorH, 44.0);
+        expect(inputMatH, 44.0);
+        expect(dropMatH, 44.0);
+
+        final boxCenterY = tester.getCenter(find.byType(AppTextInput)).dy;
+        final textCenterY = tester.getCenter(find.byType(EditableText)).dy;
+        final dropTextCenterY = tester.getCenter(find.text('ขวด')).dy;
+        expect((textCenterY - boxCenterY).abs(), lessThanOrEqualTo(1.0));
+        expect((textCenterY - dropTextCenterY).abs(), lessThanOrEqualTo(1.0));
       },
     );
 

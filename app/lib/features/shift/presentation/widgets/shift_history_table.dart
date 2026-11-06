@@ -15,85 +15,68 @@ class ShiftStatsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final items = <({String label, String value, String sub, bool highlight})>[
-      (
-        label: 'เงินทอนตั้งต้น',
-        value: baht(shift.floatAmount),
-        sub: 'เงินสดเปิดกะ',
-        highlight: false,
-      ),
-      (
-        label: 'ขายเงินสด',
-        value: baht(stats.cash),
-        sub: 'รับเข้าลิ้นชัก',
-        highlight: false,
-      ),
-      (
-        label: 'QR พร้อมเพย์',
-        value: baht(stats.qr),
-        sub: 'เข้าบัญชีร้าน',
-        highlight: false,
-      ),
-      (
-        label: 'โอน/บัตร',
-        value: baht(stats.transfer),
-        sub: 'เข้าบัญชีร้าน',
-        highlight: false,
-      ),
-      (
-        label: 'เงินสดที่ควรมีในลิ้นชัก',
-        value: baht(stats.expected),
-        sub: '${stats.bills} บิล · เงินทอน + เงินสด',
-        highlight: true,
+    ({String label, String value, String sub, bool highlight}) it(
+      String l,
+      double v,
+      String s, {
+      bool h = false,
+    }) => (label: l, value: baht(v), sub: s, highlight: h);
+    final items = [
+      it('เงินทอนตั้งต้น', shift.floatAmount, 'เงินสดเปิดกะ'),
+      it('ขายเงินสด', stats.cash, 'รับเข้าลิ้นชัก'),
+      it('QR พร้อมเพย์', stats.qr, 'เข้าบัญชีร้าน'),
+      it('โอน/บัตร', stats.transfer, 'เข้าบัญชีร้าน'),
+      it(
+        'เงินสดที่ควรมีในลิ้นชัก',
+        stats.expected,
+        '${stats.bills} บิล · เงินทอน + เงินสด',
+        h: true,
       ),
     ];
 
     return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < 720) {
-          return StatsGroup(
-            children: [
-              for (final item in items)
-                Stat(label: item.label, value: item.value, sub: item.sub),
-            ],
-          );
-        }
-        return Container(
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: tokens.surface,
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-            border: Border.all(color: tokens.line),
-          ),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+      builder: (context, constraints) => constraints.maxWidth < 720
+          ? StatsGroup(
               children: [
-                for (var i = 0; i < items.length; i++) ...[
-                  if (i > 0)
-                    Container(
-                      width: AppDimensions.borderThin,
-                      color: tokens.line,
-                    ),
-                  Expanded(
-                    flex: items[i].highlight ? 3 : 2,
-                    child: ColoredBox(
-                      color: items[i].highlight
-                          ? tokens.primarySoft
-                          : tokens.surface,
-                      child: Stat(
-                        label: items[i].label,
-                        value: items[i].value,
-                        sub: items[i].sub,
-                      ),
-                    ),
-                  ),
-                ],
+                for (final item in items)
+                  Stat(label: item.label, value: item.value, sub: item.sub),
               ],
+            )
+          : Container(
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: tokens.surface,
+                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                border: Border.all(color: tokens.line),
+              ),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var i = 0; i < items.length; i++) ...[
+                      if (i > 0)
+                        Container(
+                          width: AppDimensions.borderThin,
+                          color: tokens.line,
+                        ),
+                      Expanded(
+                        flex: items[i].highlight ? 3 : 2,
+                        child: ColoredBox(
+                          color: items[i].highlight
+                              ? tokens.primarySoft
+                              : tokens.surface,
+                          child: Stat(
+                            label: items[i].label,
+                            value: items[i].value,
+                            sub: items[i].sub,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
-          ),
-        );
-      },
     );
   }
 }
@@ -218,10 +201,22 @@ class ShiftHistoryTable extends StatelessWidget {
 
   final ShiftState state;
 
+  DataTableCol<ShiftRecord> _numCol(
+    String k,
+    String l,
+    Widget Function(ShiftRecord) fn,
+  ) => DataTableCol(
+    key: k,
+    label: l,
+    align: ColAlign.right,
+    cellBuilder: (_, h) => fn(h),
+  );
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final textTheme = Theme.of(context).textTheme;
+    const bold = TextStyle(fontWeight: FontWeight.w600);
     return PosDataTable<ShiftRecord>(
       label: 'ประวัติกะ',
       rows: state.history,
@@ -235,7 +230,7 @@ class ShiftHistoryTable extends StatelessWidget {
             final openT = thTime(h.openedAt);
             final closeT = h.closedAt != null ? thTime(h.closedAt!) : '-';
             return Wrap(
-              spacing: AppDimensions.space2,
+              spacing: 8,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Text(
@@ -261,68 +256,35 @@ class ShiftHistoryTable extends StatelessWidget {
           label: 'ผู้เปิดกะ',
           cellBuilder: (_, h) => Text(state.staffNameOf(h.staffId)),
         ),
-        DataTableCol(
-          key: 'bills',
-          label: 'บิล',
-          align: ColAlign.right,
-          cellBuilder: (_, h) => Text('${state.statsOf(h).bills}'),
-        ),
-        DataTableCol(
-          key: 'float',
-          label: 'เงินทอน',
-          align: ColAlign.right,
-          cellBuilder: (_, h) =>
+        _numCol('bills', 'บิล', (h) => Text('${state.statsOf(h).bills}')),
+        _numCol(
+          'float',
+          'เงินทอน',
+          (h) =>
               Text(fmt(h.floatAmount), style: TextStyle(color: tokens.muted)),
         ),
-        DataTableCol(
-          key: 'cash',
-          label: 'ขายเงินสด',
-          align: ColAlign.right,
-          cellBuilder: (_, h) => Text(fmt(state.statsOf(h).cash)),
+        _numCol('cash', 'ขายเงินสด', (h) => Text(fmt(state.statsOf(h).cash))),
+        _numCol('qr', 'QR/โอน', (h) {
+          final st = state.statsOf(h);
+          return Text(fmt(st.qr + st.transfer));
+        }),
+        _numCol(
+          'exp',
+          'ควรมี',
+          (h) => Text(fmt(state.statsOf(h).expected), style: bold),
         ),
-        DataTableCol(
-          key: 'qr',
-          label: 'QR/โอน',
-          align: ColAlign.right,
-          cellBuilder: (_, h) {
-            final st = state.statsOf(h);
-            return Text(fmt(st.qr + st.transfer));
-          },
-        ),
-        DataTableCol(
-          key: 'exp',
-          label: 'ควรมี',
-          align: ColAlign.right,
-          cellBuilder: (_, h) => Text(
-            fmt(state.statsOf(h).expected),
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-        ),
-        DataTableCol(
-          key: 'cnt',
-          label: 'นับได้',
-          align: ColAlign.right,
-          cellBuilder: (_, h) => Text(
-            fmt(h.counted),
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-        ),
-        DataTableCol(
-          key: 'diff',
-          label: 'ส่วนต่าง',
-          align: ColAlign.right,
-          cellBuilder: (_, h) {
-            final d = (h.counted ?? 0) - state.statsOf(h).expected;
-            final text = d == 0 ? 'ตรง' : '${d > 0 ? "+" : ""}${fmt(d)}';
-            return Align(
-              alignment: Alignment.centerRight,
-              child: Pill(
-                tone: d == 0 ? PillTone.green : PillTone.red,
-                label: text,
-              ),
-            );
-          },
-        ),
+        _numCol('cnt', 'นับได้', (h) => Text(fmt(h.counted), style: bold)),
+        _numCol('diff', 'ส่วนต่าง', (h) {
+          final d = (h.counted ?? 0) - state.statsOf(h).expected;
+          final text = d == 0 ? 'ตรง' : '${d > 0 ? "+" : ""}${fmt(d)}';
+          return Align(
+            alignment: Alignment.centerRight,
+            child: Pill(
+              tone: d == 0 ? PillTone.green : PillTone.red,
+              label: text,
+            ),
+          );
+        }),
       ],
     );
   }

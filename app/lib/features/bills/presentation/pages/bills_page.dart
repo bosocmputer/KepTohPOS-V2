@@ -57,7 +57,14 @@ class BillsPage extends StatelessWidget {
     final screenW = MediaQuery.sizeOf(context).width;
     final isMobile = screenW <= AppDimensions.mobileBp;
     final pagePad = AppDimensions.pagePadding(screenW);
-    Color rowFg(BillRecord b) => b.voided ? t.muted : t.ink;
+    final boldInk = tt.bodyMedium?.copyWith(
+      color: t.ink,
+      fontWeight: FontWeight.w700,
+    );
+    TextStyle? rowBold(BillRecord b) => tt.bodyMedium?.copyWith(
+      color: b.voided ? t.muted : t.ink,
+      fontWeight: FontWeight.w700,
+    );
 
     return BlocListener<BillsCubit, BillsState>(
       listenWhen: (prev, curr) =>
@@ -91,6 +98,12 @@ class BillsPage extends StatelessWidget {
                       sub: '${state.okBills.length} บิลที่ชำระสำเร็จ',
                       tone: StatTone.green,
                     ),
+                    if (state.totalVat > 0)
+                      Stat(
+                        label: 'ภาษีขายรวม (VAT)',
+                        value: baht(state.totalVat, 2),
+                        sub: 'มูลค่าก่อนภาษี ${baht(state.totalPreVat, 2)}',
+                      ),
                     Stat(
                       label: 'จำนวนบิล',
                       value: '${state.okBills.length}',
@@ -140,10 +153,7 @@ class BillsPage extends StatelessWidget {
                               b.no,
                               key: ValueKey('bill-row-no-${b.id}'),
                               overflow: TextOverflow.ellipsis,
-                              style: tt.bodyMedium?.copyWith(
-                                color: rowFg(b),
-                                fontWeight: FontWeight.w700,
-                              ),
+                              style: rowBold(b),
                             ),
                           ),
                           if (b.voided) ...[
@@ -161,13 +171,8 @@ class BillsPage extends StatelessWidget {
                     DataTableCol<BillRecord>(
                       key: 'table',
                       label: 'โต๊ะ',
-                      cellBuilder: (_, b) => Text(
-                        b.tableName,
-                        style: tt.bodyMedium?.copyWith(
-                          color: rowFg(b),
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                      cellBuilder: (_, b) =>
+                          Text(b.tableName, style: rowBold(b)),
                     ),
                     DataTableCol<BillRecord>(
                       key: 'heads',
@@ -190,7 +195,9 @@ class BillsPage extends StatelessWidget {
                           const SizedBox(width: AppDimensions.space1_5),
                           Flexible(
                             child: Text(
-                              b.methodName,
+                              (b.bankAccountInfo ?? '').isNotEmpty
+                                  ? '${b.methodName} · ${b.bankAccountInfo}'
+                                  : b.methodName,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -215,9 +222,7 @@ class BillsPage extends StatelessWidget {
                           Text(
                             baht(b.total, 2),
                             textAlign: TextAlign.right,
-                            style: tt.bodyMedium?.copyWith(
-                              color: rowFg(b),
-                              fontWeight: FontWeight.w700,
+                            style: rowBold(b)?.copyWith(
                               decoration: b.voided
                                   ? TextDecoration.lineThrough
                                   : null,
@@ -234,19 +239,13 @@ class BillsPage extends StatelessWidget {
                       : [
                           Text(
                             'รวม (${state.okBills.length} บิล)',
-                            style: tt.bodyMedium?.copyWith(
-                              color: t.ink,
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: boldInk,
                           ),
                           const SizedBox.shrink(),
                           const SizedBox.shrink(),
                           Text(
                             '${state.totalPaidHeads + state.totalFreeHeads} คน',
-                            style: tt.bodyMedium?.copyWith(
-                              color: t.ink,
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: boldInk,
                           ),
                           const SizedBox.shrink(),
                           const SizedBox.shrink(),

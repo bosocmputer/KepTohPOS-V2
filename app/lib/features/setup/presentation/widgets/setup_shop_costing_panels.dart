@@ -33,14 +33,27 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
   }
 
   BillRecord _buildPreviewBill() {
-    const sub = 896.0;
-    final svc = r2(sub * (_v.servicePct / 100));
-    final vat = _v.vatMode == 'excluded'
-        ? r2((sub + svc) * 0.07)
-        : _v.vatMode == 'included'
-        ? r2((sub + svc) * 7 / 107)
-        : 0.0;
-    final tot = _v.vatMode == 'excluded' ? sub + svc + vat : sub + svc;
+    const pkg = PackageItem(
+      id: 'pk1',
+      name: 'บุฟเฟต์หมูกระทะ',
+      adultPrice: 199,
+      childPrice: 99,
+    );
+    AddonLineInput ad(String id, String n, double p, int q) => AddonLineInput(
+      addon: AddonItem(
+        id: id,
+        name: n,
+        category: 'เครื่องดื่ม',
+        price: p,
+        cost: 0,
+        stock: 10,
+      ),
+      qty: q,
+    );
+    final order = calcOrder(_v, pkg, 3, 1, 0, [
+      ad('ad1', 'เบียร์สิงห์ ขวดใหญ่', 90, 2),
+      ad('ad2', 'น้ำแข็งถัง', 20, 1),
+    ]);
     return BillRecord(
       id: 'pv',
       no: 'B261105-001',
@@ -51,33 +64,20 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
       staffId: 'st1',
       staffName: 'น้องมุก',
       packageId: 'pk1',
-      lines: const [
-        OrderLineItem(
-          type: 'buffet',
-          name: 'บุฟเฟต์ผู้ใหญ่',
-          qty: 3,
-          price: 199,
-        ),
-        OrderLineItem(type: 'buffet', name: 'บุฟเฟต์เด็ก', qty: 1, price: 99),
-        OrderLineItem(
-          type: 'addon',
-          name: 'เบียร์สิงห์ ขวดใหญ่',
-          qty: 2,
-          price: 90,
-        ),
-        OrderLineItem(type: 'addon', name: 'น้ำแข็งถัง', qty: 1, price: 20),
-      ],
-      subtotal: sub,
-      service: svc,
-      vat: vat,
-      rounding: 0,
-      total: tot,
-      heads: HeadsCount(a: 3, c: 1),
+      lines: order.lines,
+      subtotal: order.subtotal,
+      service: order.service,
+      vat: order.vat,
+      rounding: order.rounding,
+      total: order.total,
+      heads: order.heads,
       methodId: 'pm1',
       methodName: 'เงินสด',
       methodType: 'cash',
       received: 1000,
-      change: 1000 - tot,
+      change: r2(1000 - order.total),
+      vatMode: _v.vatMode,
+      vatRate: _v.vatRate,
     );
   }
 
@@ -115,120 +115,146 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
           ],
         ),
         const SizedBox(height: AppDimensions.space3),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: SetupCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _row(
-                      _txt('ชื่อร้าน *', _v.name, (s) => _v.copyWith(name: s)),
-                      _txt(
-                        'สาขา / คำโปรย',
-                        _v.branch,
-                        (s) => _v.copyWith(branch: s),
+        LayoutBuilder(
+          builder: (context, c) {
+            final formCard = SetupCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _row(
+                    _txt('ชื่อร้าน *', _v.name, (s) => _v.copyWith(name: s)),
+                    _txt(
+                      'ชื่อสาขา / คำอธิบายร้าน',
+                      _v.branch,
+                      (s) => _v.copyWith(branch: s),
+                    ),
+                  ),
+                  _row(
+                    _txt(
+                      'เบอร์โทรศัพท์',
+                      _v.phone,
+                      (s) => _v.copyWith(phone: s),
+                    ),
+                    _txt(
+                      'เลขประจำตัวผู้เสียภาษี (13 หลัก)',
+                      _v.taxId,
+                      (s) => _v.copyWith(taxId: s),
+                    ),
+                  ),
+                  _row(
+                    _txt(
+                      'หมายเลขพร้อมเพย์ (เบอร์โทรศัพท์ / เลขประจำตัว)',
+                      _v.promptpay,
+                      (s) => _v.copyWith(promptpay: s),
+                      hint: 'ใช้สร้าง QR รับชำระเงินอัตโนมัติบนใบเสร็จ',
+                    ),
+                    _dd(
+                      'ประเภทภาษีมูลค่าเพิ่ม (VAT)',
+                      _v.vatMode,
+                      kVatModes,
+                      (s) => _v.copyWith(vatMode: s),
+                    ),
+                  ),
+                  _row(
+                    Field(
+                      label: 'อัตราภาษีมูลค่าเพิ่ม (%)',
+                      hint: 'ค่าเริ่มต้น 7%',
+                      child: AppTextInput(
+                        key: const ValueKey('setup-vat-rate-input'),
+                        value: fmtQ(_v.vatRate),
+                        keyboardType: TextInputType.number,
+                        onChanged: (s) => setState(
+                          () => _v = _v.copyWith(
+                            vatRate: double.tryParse(s) ?? 0,
+                          ),
+                        ),
                       ),
                     ),
-                    _row(
-                      _txt(
-                        'เบอร์โทรศัพท์',
-                        _v.phone,
-                        (s) => _v.copyWith(phone: s),
-                      ),
-                      _txt(
-                        'เลขผู้เสียภาษี 13 หลัก',
-                        _v.taxId,
-                        (s) => _v.copyWith(taxId: s),
-                      ),
+                    _txt(
+                      'อัตราค่าบริการ (%)',
+                      fmtQ(_v.servicePct),
+                      (s) => _v.copyWith(servicePct: double.tryParse(s) ?? 0),
+                      numKey: true,
                     ),
-                    _row(
-                      _txt(
-                        'พร้อมเพย์ (เบอร์ / เลขบัตร)',
-                        _v.promptpay,
-                        (s) => _v.copyWith(promptpay: s),
-                        hint: 'ใช้สร้าง QR รับชำระเงินอัตโนมัติ',
-                      ),
-                      _dd(
-                        'ภาษีมูลค่าเพิ่ม (VAT)',
-                        _v.vatMode,
-                        kVatModes,
-                        (s) => _v.copyWith(vatMode: s),
-                      ),
+                  ),
+                  _row(
+                    _dd(
+                      'รูปแบบชำระเงินเริ่มต้น',
+                      _v.payTiming,
+                      kPayTimings,
+                      (s) => _v.copyWith(payTiming: s),
                     ),
-                    _row(
-                      _dd(
-                        'รูปแบบชำระเงินเริ่มต้น',
-                        _v.payTiming,
-                        kPayTimings,
-                        (s) => _v.copyWith(payTiming: s),
-                      ),
-                      _txt(
-                        'ค่าบริการ (Service %)',
-                        fmtQ(_v.servicePct),
-                        (s) => _v.copyWith(servicePct: double.tryParse(s) ?? 0),
-                        numKey: true,
-                      ),
+                    _dd(
+                      'การปัดเศษยอดสุทธิ',
+                      _v.rounding,
+                      kRoundingModes,
+                      (s) => _v.copyWith(rounding: s),
                     ),
-                    _row(
-                      _dd(
-                        'การปัดเศษยอดสุทธิ',
-                        _v.rounding,
-                        kRoundingModes,
-                        (s) => _v.copyWith(rounding: s),
-                      ),
-                      _txt(
-                        'เงินทอนตั้งต้นกะ (บาท)',
-                        fmtQ(_v.defaultFloat),
-                        (s) =>
-                            _v.copyWith(defaultFloat: double.tryParse(s) ?? 0),
-                        numKey: true,
-                      ),
+                  ),
+                  _row(
+                    _txt(
+                      'เงินทอนตั้งต้นกะ (บาท)',
+                      fmtQ(_v.defaultFloat),
+                      (s) => _v.copyWith(defaultFloat: double.tryParse(s) ?? 0),
+                      numKey: true,
                     ),
-                    _row(
-                      _txt(
-                        'ที่อยู่ร้าน (บนใบเสร็จ)',
-                        _v.address,
-                        (s) => _v.copyWith(address: s),
-                        lines: 2,
-                      ),
-                      _txt(
-                        'ข้อความท้ายใบเสร็จ',
-                        _v.receiptFooter,
-                        (s) => _v.copyWith(receiptFooter: s),
-                        lines: 2,
-                      ),
+                    _txt(
+                      'ที่อยู่ร้าน (บนใบเสร็จ)',
+                      _v.address,
+                      (s) => _v.copyWith(address: s),
                     ),
-                    AppSwitch(
-                      value: _v.useTimer,
-                      label: 'แสดงตัวจับเวลาโต๊ะ (นาทีที่นั่งทาน / เตือน)',
-                      onChanged: (on) =>
-                          setState(() => _v = _v.copyWith(useTimer: on)),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: AppDimensions.space3,
                     ),
-                  ],
-                ),
+                    child: _txt(
+                      'ข้อความท้ายใบเสร็จ',
+                      _v.receiptFooter,
+                      (s) => _v.copyWith(receiptFooter: s),
+                    ),
+                  ),
+                  AppSwitch(
+                    value: _v.useTimer,
+                    label: 'แสดงตัวจับเวลาโต๊ะ (นาทีที่นั่งทาน / เตือน)',
+                    onChanged: (on) =>
+                        setState(() => _v = _v.copyWith(useTimer: on)),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(width: AppDimensions.space4),
-            SizedBox(
-              width: 310,
-              child: SetupCard(
-                padding: const EdgeInsets.all(AppDimensions.space3_5),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'ตัวอย่างใบเสร็จ (อัปเดตสด)',
-                      style: tt.labelSmall?.copyWith(color: t.muted),
-                    ),
-                    const SizedBox(height: AppDimensions.space2_5),
-                    ReceiptCard(shop: _v, bill: _buildPreviewBill()),
-                  ],
-                ),
+            );
+            final receiptCard = SetupCard(
+              padding: const EdgeInsets.all(AppDimensions.space3_5),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'ตัวอย่างใบเสร็จรับเงิน',
+                    style: tt.labelSmall?.copyWith(color: t.muted),
+                  ),
+                  const SizedBox(height: AppDimensions.space2_5),
+                  ReceiptCard(shop: _v, bill: _buildPreviewBill()),
+                ],
               ),
-            ),
-          ],
+            );
+            return c.maxWidth < AppDimensions.mobileBp
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      formCard,
+                      const SizedBox(height: 16),
+                      receiptCard,
+                    ],
+                  )
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: formCard),
+                      const SizedBox(width: AppDimensions.space4),
+                      SizedBox(width: 310, child: receiptCard),
+                    ],
+                  );
+          },
         ),
       ],
     );

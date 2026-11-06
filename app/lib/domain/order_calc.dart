@@ -71,11 +71,12 @@ CalculatedOrder calcOrder(
   final subtotal = r2(rawSubtotal);
   final service = r2(subtotal * shop.servicePct / 100);
   final base = r2(subtotal + service);
+  final vatRate = shop.vatRate > 0 ? shop.vatRate : 0.0;
   var vat = 0.0;
   var total = base;
   var rounding = 0.0;
-  if (shop.vatMode == 'excluded') {
-    vat = r2(base * 0.07);
+  if (shop.vatMode == 'excluded' && vatRate > 0) {
+    vat = r2(base * (vatRate / 100));
     total = r2(base + vat);
   }
   if (shop.rounding == 'down' && total % 1 != 0) {
@@ -83,8 +84,8 @@ CalculatedOrder calcOrder(
     rounding = r2(t - total);
     total = t;
   }
-  if (shop.vatMode == 'included') {
-    vat = r2(total * 7 / 107);
+  if (shop.vatMode == 'included' && vatRate > 0) {
+    vat = r2(total * vatRate / (100 + vatRate));
   }
   return CalculatedOrder(
     lines: lines,

@@ -1,6 +1,7 @@
-import 'package:app/domain/state_models.dart';
+import 'package:app/domain/models.dart';
+export 'package:app/domain/models.dart' show ShiftRecord, StockLot;
 
-/// Settled sale bill (`s.sales`).
+/// Settled sale bill (`s.sales`) or pre-settlement POS slip (`isSlipPreview`).
 class BillRecord {
   new({
     required this.id,
@@ -25,6 +26,11 @@ class BillRecord {
     required this.received,
     required this.change,
     this.shiftId,
+    this.vatMode,
+    this.vatRate,
+    this.bankAccountId,
+    this.bankAccountInfo,
+    this.isSlipPreview = false,
     this.voided = false,
     this.voidReason,
     this.voidBy,
@@ -59,6 +65,10 @@ class BillRecord {
     methodType: (json['methodType'] as String?) ?? 'cash',
     received: (json['received'] as num).toDouble(),
     change: (json['change'] as num?)?.toDouble() ?? 0,
+    vatMode: json['vatMode'] as String?,
+    vatRate: (json['vatRate'] as num?)?.toDouble(),
+    bankAccountId: json['bankAccountId'] as String?,
+    bankAccountInfo: json['bankAccountInfo'] as String?,
     voided: (json['voided'] as bool?) ?? false,
     voidReason: json['voidReason'] as String?,
     voidBy: json['voidBy'] as String?,
@@ -87,6 +97,11 @@ class BillRecord {
   final String methodType;
   final double received;
   final double change;
+  final String? vatMode;
+  final double? vatRate;
+  final String? bankAccountId;
+  final String? bankAccountInfo;
+  final bool isSlipPreview;
   bool voided;
   String? voidReason;
   String? voidBy;
@@ -115,6 +130,11 @@ class BillRecord {
     methodType: methodType,
     received: received,
     change: change,
+    vatMode: vatMode,
+    vatRate: vatRate,
+    bankAccountId: bankAccountId,
+    bankAccountInfo: bankAccountInfo,
+    isSlipPreview: isSlipPreview,
     voided: voided,
     voidReason: voidReason,
     voidBy: voidBy,
@@ -144,6 +164,10 @@ class BillRecord {
     'methodType': methodType,
     'received': received,
     'change': change,
+    if (vatMode != null) 'vatMode': vatMode,
+    if (vatRate != null) 'vatRate': vatRate,
+    if (bankAccountId != null) 'bankAccountId': bankAccountId,
+    if (bankAccountInfo != null) 'bankAccountInfo': bankAccountInfo,
     'voided': voided,
     if (voidReason != null) 'voidReason': voidReason,
     if (voidBy != null) 'voidBy': voidBy,
@@ -238,63 +262,4 @@ class ExpenseRecord {
     'amount': amount,
     'note': note,
   };
-}
-
-/// Cashier shift (`s.shifts`).
-class ShiftRecord {
-  new({
-    required this.id,
-    required this.staffId,
-    required this.openedAt,
-    required this.floatAmount,
-    this.closedAt,
-    this.counted,
-    this.closedBy,
-  });
-  factory fromJson(Map<String, dynamic> json) => ShiftRecord(
-    id: json['id'] as String,
-    staffId: json['staffId'] as String,
-    openedAt: json['openedAt'] as String,
-    floatAmount: ((json['floatAmount'] ?? json['float']) as num).toDouble(),
-    closedAt: json['closedAt'] as String?,
-    counted: (json['counted'] as num?)?.toDouble(),
-    closedBy: json['closedBy'] as String?,
-  );
-  final String id;
-  final String staffId;
-  final String openedAt;
-  final double floatAmount;
-  String? closedAt;
-  double? counted;
-  String? closedBy;
-  ShiftRecord copy() => ShiftRecord(
-    id: id,
-    staffId: staffId,
-    openedAt: openedAt,
-    floatAmount: floatAmount,
-    closedAt: closedAt,
-    counted: counted,
-    closedBy: closedBy,
-  );
-  Map<String, dynamic> toJson() => <String, dynamic>{
-    'id': id,
-    'staffId': staffId,
-    'openedAt': openedAt,
-    'floatAmount': floatAmount,
-    'closedAt': closedAt,
-    'counted': counted,
-    if (closedBy != null) 'closedBy': closedBy,
-  };
-}
-
-/// Initial stock lot (`s.initialStock[ingId]`).
-class StockLot {
-  const new({required this.qty, required this.cost});
-  factory fromJson(Map<String, dynamic> j) => StockLot(
-    qty: (j['qty'] as num).toDouble(),
-    cost: (j['cost'] as num).toDouble(),
-  );
-  final double qty;
-  final double cost;
-  Map<String, dynamic> toJson() => <String, dynamic>{'qty': qty, 'cost': cost};
 }

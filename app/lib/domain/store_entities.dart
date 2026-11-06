@@ -179,3 +179,71 @@ class FixedCostItem {
     'active': active,
   };
 }
+
+/// Store bank account for receiving bank transfers (`shop.bankAccounts`).
+class BankAccountItem {
+  const new({
+    required this.id,
+    required this.bankName,
+    required this.accountNo,
+    required this.accountName,
+    this.active = true,
+  });
+
+  factory fromJson(Map<String, dynamic> json) => BankAccountItem(
+    id: (json['id'] as String?) ?? '',
+    bankName: (json['bankName'] as String?) ?? '',
+    accountNo: (json['accountNo'] as String?) ?? '',
+    accountName: (json['accountName'] as String?) ?? '',
+    active: (json['active'] as bool?) ?? true,
+  );
+
+  final String id;
+  final String bankName;
+  final String accountNo;
+  final String accountName;
+  final bool active;
+
+  String get shortLabel => '$bankName · $accountNo';
+
+  String get fullLabel =>
+      accountName.trim().isEmpty ? shortLabel : '$shortLabel ($accountName)';
+
+  BankAccountItem copyWith({
+    String? id,
+    String? bankName,
+    String? accountNo,
+    String? accountName,
+    bool? active,
+  }) => BankAccountItem(
+    id: id ?? this.id,
+    bankName: bankName ?? this.bankName,
+    accountNo: accountNo ?? this.accountNo,
+    accountName: accountName ?? this.accountName,
+    active: active ?? this.active,
+  );
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'bankName': bankName,
+    'accountNo': accountNo,
+    'accountName': accountName,
+    'active': active,
+  };
+}
+
+/// Default bank accounts seeded when `shop.bankAccounts` is not yet configured.
+const List<BankAccountItem> kDefaultBankAccounts = <BankAccountItem>[
+  BankAccountItem(
+    id: 'ba1',
+    bankName: 'ธนาคารกสิกรไทย',
+    accountNo: '123-4-56789-0',
+    accountName: 'ร้านหมูกระทะลุงหมี',
+  ),
+  BankAccountItem(
+    id: 'ba2',
+    bankName: 'ธนาคารไทยพาณิชย์',
+    accountNo: '987-6-54321-0',
+    accountName: 'ร้านหมูกระทะลุงหมี',
+  ),
+];

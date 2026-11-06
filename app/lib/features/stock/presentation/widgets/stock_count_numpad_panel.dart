@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Fixed right-hand (iPad landscape) or collapsible bottom (mobile) numpad
-/// panel for `StockCountTab` (`count-pad` in `prototype/index.html:1399-1416`).
+/// panel for `StockCountTab`.
 class StockCountNumPadPanel extends StatelessWidget {
   const new({
     required this.state,
@@ -15,7 +15,6 @@ class StockCountNumPadPanel extends StatelessWidget {
     required this.isMobile,
     super.key,
   });
-
   final StockCountState state;
   final StaffMember staff;
   final bool isMobile;
@@ -60,229 +59,240 @@ class StockCountNumPadPanel extends StatelessWidget {
       ),
       child: curIng == null
           ? const Empty(title: 'ไม่มีรายการให้นับวันนี้')
-          : Column(
-              mainAxisSize: isMobile ? MainAxisSize.min : MainAxisSize.max,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
+          : LayoutBuilder(
+              builder: (context, c) {
+                final shortDesktop =
+                    !isMobile && c.hasBoundedHeight && c.maxHeight < 580;
+                final col = Column(
+                  mainAxisSize: (isMobile || shortDesktop)
+                      ? MainAxisSize.min
+                      : MainAxisSize.max,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      kLocations[curIng.location] ?? '',
-                      style: tt.labelSmall?.copyWith(
-                        color: t.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(width: AppDimensions.space2),
-                    Expanded(
-                      child: Text(
-                        curIng.name,
-                        key: const ValueKey('stock-count-active-name'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: tt.titleLarge?.copyWith(
-                          color: t.ink,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    if (isMobile)
-                      Btn(
-                        key: const ValueKey('stock-count-pad-toggle'),
-                        size: BtnSize.sm,
-                        label: state.padOpen ? 'ย่อ' : 'ป้อน',
-                        onPressed: () => bloc.add(const StockCountPadToggled()),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: AppDimensions.spaceHalf),
-                Text(
-                  'มีทั้งหมด $availText ${curIng.unit}$prevText',
-                  style: tt.bodySmall?.copyWith(color: t.muted),
-                ),
-                const SizedBox(height: AppDimensions.spaceHalf),
-                Text(
-                  key: const ValueKey('stock-count-progress'),
-                  progressText,
-                  style: tt.labelSmall?.copyWith(
-                    color: isCurOver ? t.danger : t.ink,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: AppDimensions.space2),
-                Container(
-                  key: const ValueKey('stock-count-display-val'),
-                  height: 46,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppDimensions.space3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isCurOver ? t.dangerSoft : t.surface2,
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                    border: Border.all(color: isCurOver ? t.danger : t.line),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        isCurOver ? 'เกินจำนวนที่มี!' : 'เหลือจริง',
-                        style: tt.labelMedium?.copyWith(
-                          color: isCurOver ? t.danger : t.muted,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(width: AppDimensions.space2),
-                      Expanded(
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              curVal.isEmpty ? '0' : fmtCurVal,
-                              style: tt.displayMedium?.copyWith(
-                                color: isCurOver
-                                    ? t.danger
-                                    : (curVal.isEmpty ? t.muted : t.ink),
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
+                    Row(
+                      children: [
+                        Text(
+                          kLocations[curIng.location] ?? '',
+                          style: tt.labelSmall?.copyWith(
+                            color: t.primary,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: AppDimensions.space1_5),
-                      Text(
-                        curIng.unit,
-                        style: tt.bodySmall?.copyWith(
-                          color: isCurOver ? t.danger : t.muted,
-                        ),
-                      ),
-                      if (curVal.isNotEmpty) ...[
                         const SizedBox(width: AppDimensions.space2),
-                        GestureDetector(
-                          key: const ValueKey('stock-count-clear-val-btn'),
-                          onTap: () =>
-                              bloc.add(const StockCountValueChanged('')),
-                          child: AppIcon(
-                            'x',
-                            size: AppDimensions.iconSm,
-                            color: isCurOver ? t.danger : t.muted,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                if (showPad) ...[
-                  const SizedBox(height: AppDimensions.space2),
-                  Center(
-                    child: NumPad(
-                      key: ValueKey('stock-count-numpad-${curIng.id}'),
-                      value: curVal,
-                      decimal: !isDiscreteUnit(curIng.unit),
-                      maxDecimalPlaces: 1,
-                      maxLen: 7,
-                      filledKeys: true,
-                      showClear: true,
-                      maxWidth: double.infinity,
-                      keyboard: true,
-                      keyHeight: 46,
-                      rowGap: AppDimensions.space1_5,
-                      onChanged: (v) => bloc.add(StockCountValueChanged(v)),
-                      onEnter: (_) => bloc.add(const StockCountNextPressed()),
-                    ),
-                  ),
-                ],
-                if (!isMobile) const Spacer(),
-                const SizedBox(height: AppDimensions.space2),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppDimensions.space3,
-                    vertical: AppDimensions.space2_5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: t.surface2,
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('นับแล้ว', style: tt.bodySmall),
-                          Text(
-                            overCount > 0
-                                ? '$dueCountText · เกินที่มี $overCount รายการ'
-                                : dueCountText,
-                            style: tt.bodyMedium?.copyWith(
-                              color: overCount > 0 ? t.danger : t.ink,
+                        Expanded(
+                          child: Text(
+                            curIng.name,
+                            key: const ValueKey('stock-count-active-name'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: tt.titleLarge?.copyWith(
+                              color: t.ink,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                        ],
+                        ),
+                        if (isMobile)
+                          Btn(
+                            key: const ValueKey('stock-count-pad-toggle'),
+                            size: BtnSize.sm,
+                            label: state.padOpen ? 'ย่อ' : 'ป้อน',
+                            onPressed: () =>
+                                bloc.add(const StockCountPadToggled()),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: AppDimensions.spaceHalf),
+                    Text(
+                      'มีทั้งหมด $availText ${curIng.unit}$prevText',
+                      style: tt.bodySmall?.copyWith(color: t.muted),
+                    ),
+                    const SizedBox(height: AppDimensions.spaceHalf),
+                    Text(
+                      key: const ValueKey('stock-count-progress'),
+                      progressText,
+                      style: tt.labelSmall?.copyWith(
+                        color: isCurOver ? t.danger : t.ink,
+                        fontWeight: FontWeight.w700,
                       ),
-                      const SizedBox(height: AppDimensions.space1),
-                      Row(
+                    ),
+                    const SizedBox(height: AppDimensions.space2),
+                    Container(
+                      key: const ValueKey('stock-count-display-val'),
+                      height: 46,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: isCurOver ? t.dangerSoft : t.surface2,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isCurOver ? t.danger : t.line,
+                        ),
+                      ),
+                      child: Row(
                         children: [
-                          Text('ต้นทุนจากที่นับ', style: tt.bodySmall),
-                          if (state.hasDraft || (state.isClosed && canReopen))
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                left: AppDimensions.space2,
-                              ),
-                              child: GestureDetector(
-                                key: ValueKey(
-                                  state.hasDraft
-                                      ? 'stock-count-cancel-draft-btn'
-                                      : 'stock-count-reopen-btn',
-                                ),
-                                onTap: () => bloc.add(
-                                  state.hasDraft
-                                      ? const StockCountDraftCancelled()
-                                      : StockCountDayReopened(staff: staff),
-                                ),
+                          Text(
+                            isCurOver ? 'เกินจำนวนที่มี!' : 'เหลือจริง',
+                            style: tt.labelMedium?.copyWith(
+                              color: isCurOver ? t.danger : t.muted,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(width: AppDimensions.space2),
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
                                 child: Text(
-                                  state.hasDraft
-                                      ? 'ยกเลิกที่แก้'
-                                      : 'ยกเลิกการปิดวัน',
-                                  style: tt.labelSmall?.copyWith(
-                                    color: t.primary,
+                                  curVal.isEmpty ? '0' : fmtCurVal,
+                                  style: tt.displayMedium?.copyWith(
+                                    color: isCurOver
+                                        ? t.danger
+                                        : (curVal.isEmpty ? t.muted : t.ink),
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
                               ),
                             ),
-                          const Spacer(),
+                          ),
+                          const SizedBox(width: AppDimensions.space1_5),
                           Text(
-                            baht(state.totalCountedCost),
-                            style: tt.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
+                            curIng.unit,
+                            style: tt.bodySmall?.copyWith(
+                              color: isCurOver ? t.danger : t.muted,
                             ),
+                          ),
+                          if (curVal.isNotEmpty) ...[
+                            const SizedBox(width: AppDimensions.space2),
+                            GestureDetector(
+                              key: const ValueKey('stock-count-clear-val-btn'),
+                              onTap: () =>
+                                  bloc.add(const StockCountValueChanged('')),
+                              child: AppIcon(
+                                'x',
+                                size: AppDimensions.iconSm,
+                                color: isCurOver ? t.danger : t.muted,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (showPad) ...[
+                      const SizedBox(height: AppDimensions.space2),
+                      Center(
+                        child: NumPad(
+                          key: ValueKey('stock-count-numpad-${curIng.id}'),
+                          value: curVal,
+                          decimal: !isDiscreteUnit(curIng.unit),
+                          maxDecimalPlaces: 1,
+                          maxLen: 7,
+                          filledKeys: true,
+                          showClear: true,
+                          maxWidth: double.infinity,
+                          keyboard: true,
+                          keyHeight: 46,
+                          rowGap: AppDimensions.space1_5,
+                          onChanged: (v) => bloc.add(StockCountValueChanged(v)),
+                          onEnter: (_) =>
+                              bloc.add(const StockCountNextPressed()),
+                        ),
+                      ),
+                    ],
+                    if (!isMobile && !shortDesktop) const Spacer(),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: t.surface2,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        spacing: 4,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('นับแล้ว', style: tt.bodySmall),
+                              Text(
+                                overCount > 0
+                                    ? '$dueCountText · เกินที่มี '
+                                          '$overCount รายการ'
+                                    : dueCountText,
+                                style: tt.bodyMedium?.copyWith(
+                                  color: overCount > 0 ? t.danger : t.ink,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Text('ต้นทุนจากที่นับ', style: tt.bodySmall),
+                              if (state.hasDraft ||
+                                  (state.isClosed && canReopen))
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8),
+                                  child: GestureDetector(
+                                    key: ValueKey(
+                                      state.hasDraft
+                                          ? 'stock-count-cancel-draft-btn'
+                                          : 'stock-count-reopen-btn',
+                                    ),
+                                    onTap: () => bloc.add(
+                                      state.hasDraft
+                                          ? const StockCountDraftCancelled()
+                                          : StockCountDayReopened(staff: staff),
+                                    ),
+                                    child: Text(
+                                      state.hasDraft
+                                          ? 'ยกเลิกที่แก้'
+                                          : 'ยกเลิกการปิดวัน',
+                                      style: tt.labelSmall?.copyWith(
+                                        color: t.primary,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              const Spacer(),
+                              Text(
+                                baht(state.totalCountedCost),
+                                style: tt.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppDimensions.space2),
-                Btn(
-                  key: const ValueKey('stock-count-next-btn'),
-                  kind: BtnKind.dark,
-                  block: true,
-                  label: 'รายการถัดไป',
-                  onPressed: () => bloc.add(const StockCountNextPressed()),
-                ),
-                const SizedBox(height: AppDimensions.space2),
-                Btn(
-                  key: const ValueKey('stock-count-save-btn'),
-                  kind: BtnKind.primary,
-                  size: BtnSize.lg,
-                  block: true,
-                  icon: 'check',
-                  label: 'บันทึกและปิดวัน',
-                  disabled: !state.canSave,
-                  onPressed: () => bloc.add(const StockCountSaved()),
-                ),
-              ],
+                    ),
+                    const SizedBox(height: AppDimensions.space2),
+                    Btn(
+                      key: const ValueKey('stock-count-next-btn'),
+                      kind: BtnKind.dark,
+                      block: true,
+                      label: 'รายการถัดไป',
+                      onPressed: () => bloc.add(const StockCountNextPressed()),
+                    ),
+                    const SizedBox(height: AppDimensions.space2),
+                    Btn(
+                      key: const ValueKey('stock-count-save-btn'),
+                      kind: BtnKind.primary,
+                      size: BtnSize.lg,
+                      block: true,
+                      icon: 'check',
+                      label: 'บันทึกและปิดวัน',
+                      disabled: !state.canSave,
+                      onPressed: () => bloc.add(const StockCountSaved()),
+                    ),
+                  ],
+                );
+                return shortDesktop ? SingleChildScrollView(child: col) : col;
+              },
             ),
     );
   }

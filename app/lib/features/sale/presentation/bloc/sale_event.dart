@@ -137,6 +137,31 @@ final class SaleTransferStatusChanged extends SaleEvent {
   List<Object?> get props => [status];
 }
 
+/// Selects the target store bank account for a bank transfer (`transfer`).
+final class SaleBankAccountSelected extends SaleEvent {
+  const new(this.bankAccountId);
+  final String bankAccountId;
+  @override
+  List<Object?> get props => [bankAccountId];
+}
+
+/// Voids a settled bill (e.g. when the customer changes their mind after
+/// printing the slip) and restores addon stock.
+final class SaleSettledBillVoided extends SaleEvent {
+  const new({required this.staff, this.billId, this.reason = ''});
+  final StaffMember staff;
+  final String? billId;
+  final String reason;
+  @override
+  List<Object?> get props => [staff.id, billId, reason];
+}
+
+/// Cancels an unpaid open table (`cancelOpenTable`) when a customer changes
+/// their mind before payment is finalized.
+final class SaleOpenTableCancelled extends SaleEvent {
+  const new();
+}
+
 /// Confirms payment and settles the bill via domain `settle(...)`.
 final class SalePaymentSubmitted extends SaleEvent {
   const new({required this.staff, this.billId, this.now});

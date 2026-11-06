@@ -63,7 +63,7 @@ class CrudSectionShell<T> extends StatelessWidget {
         DataTableCol<T>(
           key: '_actions',
           label: 'จัดการ',
-          flex: 2,
+          width: 92,
           align: ColAlign.right,
           cellBuilder: (context, item) {
             final name = itemNameOf(item);

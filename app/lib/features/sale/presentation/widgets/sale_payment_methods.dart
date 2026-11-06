@@ -23,8 +23,6 @@ class CashPaymentSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.tokens;
-    final tt = Theme.of(context).textTheme;
     final bloc = context.read<SaleBloc>();
     final total = state.payOrder.total;
     final recv = state.cashReceivedAmount;
@@ -55,81 +53,9 @@ class CashPaymentSection extends StatelessWidget {
         SizedBox(height: gap),
         Row(
           children: [
-            Expanded(
-              child: Container(
-                key: const ValueKey('cash-received-box'),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.space3,
-                  vertical: AppDimensions.space2,
-                ),
-                decoration: BoxDecoration(
-                  color: t.surface2,
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-                  border: Border.all(color: t.line),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'รับเงินมา',
-                      style: tt.labelSmall?.copyWith(color: t.muted),
-                    ),
-                    const SizedBox(height: AppDimensions.spaceHalf),
-                    Text(
-                      state.cashReceived.isEmpty ? '฿0' : baht(recv),
-                      style: tt.titleLarge?.copyWith(
-                        color: t.ink,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            _cashBox(context, isChange: false),
             const SizedBox(width: AppDimensions.space2),
-            Expanded(
-              child: Builder(
-                builder: (_) {
-                  final short = recv > 0 && recv < total;
-                  final fg = short ? t.danger : t.success;
-                  final amt = short ? state.cashShortage : state.cashChange;
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.space3,
-                      vertical: AppDimensions.space2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: short ? t.dangerSoft : t.successSoft,
-                      borderRadius: BorderRadius.circular(
-                        AppDimensions.radiusMd,
-                      ),
-                      border: Border.all(color: fg),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          short ? 'ยังขาดอีก' : 'เงินทอน',
-                          style: tt.labelSmall?.copyWith(
-                            color: fg,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: AppDimensions.spaceHalf),
-                        Text(
-                          key: const ValueKey('cash-change-amount'),
-                          baht(amt, amt % 1 != 0 ? 2 : 0),
-                          style: tt.titleLarge?.copyWith(
-                            color: fg,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
+            _cashBox(context, isChange: true),
           ],
         ),
         SizedBox(height: gap),
@@ -149,6 +75,52 @@ class CashPaymentSection extends StatelessWidget {
               : null,
         ),
       ],
+    );
+  }
+
+  Widget _cashBox(BuildContext context, {required bool isChange}) {
+    final t = context.tokens;
+    final tt = Theme.of(context).textTheme;
+    final recv = state.cashReceivedAmount;
+    final short = recv > 0 && recv < state.payOrder.total;
+    final fg = short ? t.danger : t.success;
+    final amt = short ? state.cashShortage : state.cashChange;
+    return Expanded(
+      child: Container(
+        key: isChange ? null : const ValueKey('cash-received-box'),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.space3,
+          vertical: AppDimensions.space2,
+        ),
+        decoration: BoxDecoration(
+          color: isChange ? (short ? t.dangerSoft : t.successSoft) : t.surface2,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+          border: Border.all(color: isChange ? fg : t.line),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isChange ? (short ? 'ยังขาดอีก' : 'เงินทอน') : 'รับเงินมา',
+              style: tt.labelSmall?.copyWith(
+                color: isChange ? fg : t.muted,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: AppDimensions.spaceHalf),
+            Text(
+              key: isChange ? const ValueKey('cash-change-amount') : null,
+              isChange
+                  ? baht(amt, amt % 1 != 0 ? 2 : 0)
+                  : (state.cashReceived.isEmpty ? '฿0' : baht(recv)),
+              style: tt.titleLarge?.copyWith(
+                color: isChange ? fg : t.ink,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -216,83 +188,61 @@ class PromptPayQR extends StatelessWidget {
   }
 }
 
-/// Transfer / card status card (`payment_card_waiting/success/failed.png`).
+/// Transfer / card summary card for non-cash/non-QR payment methods.
 class TransferStatusSection extends StatelessWidget {
-  const new({
-    required this.methodName,
-    required this.status,
-    required this.onStatusChanged,
-    super.key,
-  });
+  const new({required this.methodName, this.bankAccount, super.key});
 
   final String methodName;
-  final String status;
-  final ValueChanged<String> onStatusChanged;
+  final BankAccountItem? bankAccount;
 
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
-    final fail = status == 'failed';
-    final ok = status == 'success';
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Seg<String>(
-          key: const ValueKey('transfer-status-seg'),
-          value: status,
-          items: const [
-            SegItem(value: 'waiting', label: 'กำลังรอ'),
-            SegItem(value: 'success', label: 'สำเร็จ'),
-            SegItem(value: 'failed', label: 'ล้มเหลว'),
-          ],
-          onChanged: onStatusChanged,
-        ),
-        const SizedBox(height: AppDimensions.space3),
-        Container(
-          padding: const EdgeInsets.all(AppDimensions.space4),
-          decoration: BoxDecoration(
-            color: t.surface2,
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-            border: Border.all(color: t.line),
+    final acctLabel = bankAccount?.fullLabel ?? '';
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.space4),
+      decoration: BoxDecoration(
+        color: t.surface2,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        border: Border.all(color: t.line),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: AppDimensions.space12,
+            height: AppDimensions.space12,
+            decoration: BoxDecoration(
+              color: t.primarySoft,
+              shape: BoxShape.circle,
+            ),
+            child: Center(child: AppIcon('bank', color: t.primaryInk)),
           ),
-          child: Column(
-            children: [
-              Container(
-                width: AppDimensions.space12,
-                height: AppDimensions.space12,
-                decoration: BoxDecoration(
-                  color: fail ? t.dangerSoft : (ok ? t.primary : t.primarySoft),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: AppIcon(
-                    fail ? 'x' : (ok ? 'check' : 'clock'),
-                    color: fail ? t.danger : (ok ? t.onPrimary : t.primaryInk),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppDimensions.space2_5),
-              Text(
-                fail
-                    ? 'ชำระเงินไม่สำเร็จ'
-                    : (ok
-                          ? 'ชำระเงินสำเร็จ'
-                          : 'กำลังรอการชำระเงิน ($methodName)'),
-                style: tt.titleMedium?.copyWith(color: fail ? t.danger : t.ink),
-              ),
-              const SizedBox(height: AppDimensions.space1),
-              Text(
-                fail
-                    ? 'รายการไม่สำเร็จ กรุณาตรวจสอบกับลูกค้าอีกครั้ง'
-                    : 'ตรวจสอบสลิปหรือยอดเงินเข้าบัญชีก่อนกดยืนยัน',
+          const SizedBox(height: AppDimensions.space2),
+          Text(
+            'รับชำระผ่าน $methodName',
+            style: tt.titleMedium?.copyWith(color: t.ink),
+          ),
+          if (acctLabel.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: AppDimensions.space1),
+              child: Text(
+                'บัญชีรับโอน: $acctLabel',
                 textAlign: TextAlign.center,
-                style: tt.labelSmall?.copyWith(color: t.muted),
+                style: tt.bodySmall?.copyWith(
+                  color: t.primaryInk,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ],
+            ),
+          const SizedBox(height: AppDimensions.space1),
+          Text(
+            'ตรวจสอบสลิปหรือยอดเงินเข้าบัญชีก่อนกดยืนยัน',
+            textAlign: TextAlign.center,
+            style: tt.labelSmall?.copyWith(color: t.muted),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -68,6 +68,10 @@ class SetupState extends Equatable {
       .where((p) => _matches([p.name, kPayTypes[p.type] ?? p.type]))
       .toList();
 
+  List<BankAccountItem> get filteredBankAccounts => posState.shop.bankAccounts
+      .where((b) => _matches([b.bankName, b.accountNo, b.accountName]))
+      .toList();
+
   List<FixedCostItem> get filteredFixedCosts =>
       posState.fixedCosts.where((f) => _matches([f.name])).toList();
 

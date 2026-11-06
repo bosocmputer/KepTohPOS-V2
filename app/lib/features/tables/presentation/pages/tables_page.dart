@@ -1,6 +1,7 @@
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
+import 'package:app/features/sale/presentation/widgets/sale_receipt_modal.dart';
 import 'package:app/features/tables/presentation/cubit/tables_cubit.dart';
 import 'package:app/features/tables/presentation/widgets/table_card.dart';
 import 'package:flutter/material.dart';
@@ -36,7 +37,7 @@ Widget buildTablesZoneDropdown(TablesCubit cubit, TablesState state) =>
 
 /// Floor and table overview screen (`function TablesView` in
 /// `prototype/index.html` & `design/figma/table.png`).
-class TablesPage extends StatelessWidget {
+class TablesPage extends StatefulWidget {
   const new({
     required this.onSelectTable,
     super.key,
@@ -49,6 +50,13 @@ class TablesPage extends StatelessWidget {
   final VoidCallback? onGoSetupTables;
 
   @override
+  State<TablesPage> createState() => _TablesPageState();
+}
+
+class _TablesPageState extends State<TablesPage> {
+  String? _slipTableId;
+
+  @override
   Widget build(BuildContext context) {
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
@@ -59,107 +67,145 @@ class TablesPage extends StatelessWidget {
         final screenW = MediaQuery.sizeOf(context).width;
         final isMobile = screenW <= AppDimensions.mobileBp;
         final pagePad = AppDimensions.pagePadding(screenW);
+        final slip = _slipTableId != null
+            ? cubit.tablePosSlip(_slipTableId!)
+            : null;
+        final defaultStaff = state.posState.staff.firstOrNull;
 
-        return SingleChildScrollView(
-          padding: EdgeInsets.all(pagePad),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (isMobile) ...[
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: buildTablesZoneDropdown(cubit, state),
-                ),
-                const SizedBox(height: AppDimensions.space3),
-              ],
-              StatsGroup(
+        return Stack(
+          children: [
+            SingleChildScrollView(
+              padding: EdgeInsets.all(pagePad),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Stat(
-                    label: 'โต๊ะว่าง',
-                    value: '${state.freeCount} / ${state.totalTables}',
-                  ),
-                  Stat(
-                    label: 'ลูกค้าในร้านตอนนี้',
-                    value: '${state.inStoreHeads} คน',
-                  ),
-                  Stat(
-                    label: 'ยอดขายวันนี้',
-                    value: baht(state.todaySalesTotal),
-                    sub:
-                        '${state.todayBillsCount} บิล · '
-                        '${state.todayPaidHeads} หัว',
-                  ),
-                  if (state.owingTablesCount > 0)
-                    Stat(
-                      label: 'ค้างชำระ (กินก่อนจ่าย)',
-                      value: baht(state.owingTotal),
-                      tone: StatTone.red,
-                      sub: '${state.owingTablesCount} โต๊ะ',
+                  if (isMobile) ...[
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: buildTablesZoneDropdown(cubit, state),
                     ),
-                ],
-              ),
-              if (!state.hasOpenShift) ...[
-                const SizedBox(height: AppDimensions.space4),
-                Container(
-                  padding: const EdgeInsets.all(AppDimensions.space4),
-                  decoration: BoxDecoration(
-                    color: t.primarySoft,
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-                  ),
-                  child: Row(
+                    const SizedBox(height: AppDimensions.space3),
+                  ],
+                  StatsGroup(
                     children: [
-                      Expanded(
-                        child: Text(
-                          'ยังไม่เปิดกะ ต้องเปิดกะก่อนจึงรับเงินได้',
-                          style: tt.bodyMedium?.copyWith(
-                            color: t.primaryInk,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                      Stat(
+                        label: 'โต๊ะว่าง',
+                        value: '${state.freeCount} / ${state.totalTables}',
                       ),
-                      if (onRequestOpenShift != null)
-                        Btn(
-                          key: const ValueKey('tables-open-shift-btn'),
-                          label: 'เปิดกะ',
-                          kind: BtnKind.primary,
-                          size: BtnSize.sm,
-                          onPressed: onRequestOpenShift,
+                      Stat(
+                        label: 'ลูกค้าในร้านตอนนี้',
+                        value: '${state.inStoreHeads} คน',
+                      ),
+                      Stat(
+                        label: 'ยอดขายวันนี้',
+                        value: baht(state.todaySalesTotal),
+                        sub:
+                            '${state.todayBillsCount} บิล · '
+                            '${state.todayPaidHeads} หัว',
+                      ),
+                      if (state.owingTablesCount > 0)
+                        Stat(
+                          label: 'ค้างชำระ (กินก่อนจ่าย)',
+                          value: baht(state.owingTotal),
+                          tone: StatTone.red,
+                          sub: '${state.owingTablesCount} โต๊ะ',
                         ),
                     ],
                   ),
-                ),
-              ],
-              const SizedBox(height: AppDimensions.space5),
-              if (state.posState.tables.isEmpty)
-                Container(
-                  decoration: BoxDecoration(
-                    color: t.surface,
-                    borderRadius: BorderRadius.circular(AppDimensions.r),
-                    border: Border.all(color: t.line),
-                  ),
-                  child: Empty(
-                    title: 'ยังไม่มีโต๊ะ',
-                    text: 'เพิ่มโต๊ะที่ ตั้งค่า › โต๊ะ',
-                    action: onGoSetupTables != null
-                        ? Btn(
-                            label: 'ไปตั้งค่าโต๊ะ',
-                            kind: BtnKind.primary,
-                            onPressed: onGoSetupTables,
-                          )
-                        : null,
-                  ),
-                )
-              else
-                for (final z in state.visibleZones) ...[
-                  _ZoneTablesSection(
-                    zone: z,
-                    state: state,
-                    onSelectTable: onSelectTable,
-                  ),
+                  if (!state.hasOpenShift) ...[
+                    const SizedBox(height: AppDimensions.space4),
+                    Container(
+                      padding: const EdgeInsets.all(AppDimensions.space4),
+                      decoration: BoxDecoration(
+                        color: t.primarySoft,
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.radiusMd,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'ยังไม่เปิดกะ ต้องเปิดกะก่อนจึงรับเงินได้',
+                              style: tt.bodyMedium?.copyWith(
+                                color: t.primaryInk,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          if (widget.onRequestOpenShift != null)
+                            Btn(
+                              key: const ValueKey('tables-open-shift-btn'),
+                              label: 'เปิดกะ',
+                              kind: BtnKind.primary,
+                              size: BtnSize.sm,
+                              onPressed: widget.onRequestOpenShift,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: AppDimensions.space5),
+                  if (state.posState.tables.isEmpty)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: t.surface,
+                        borderRadius: BorderRadius.circular(AppDimensions.r),
+                        border: Border.all(color: t.line),
+                      ),
+                      child: Empty(
+                        title: 'ยังไม่มีโต๊ะ',
+                        text: 'เพิ่มโต๊ะที่ ตั้งค่า › โต๊ะ',
+                        action: widget.onGoSetupTables != null
+                            ? Btn(
+                                label: 'ไปตั้งค่าโต๊ะ',
+                                kind: BtnKind.primary,
+                                onPressed: widget.onGoSetupTables,
+                              )
+                            : null,
+                      ),
+                    )
+                  else
+                    for (final z in state.visibleZones) ...[
+                      _ZoneTablesSection(
+                        zone: z,
+                        state: state,
+                        onSelectTable: widget.onSelectTable,
+                        onViewSlip: (tableId) =>
+                            setState(() => _slipTableId = tableId),
+                      ),
+                      const SizedBox(height: AppDimensions.space5),
+                    ],
                 ],
-            ],
-          ),
+              ),
+            ),
+            if (slip != null && _slipTableId != null)
+              ReceiptModal(
+                shop: state.posState.shop,
+                bill: slip,
+                fresh: false,
+                staff: defaultStaff,
+                allowCashierVoid: true,
+                onPrint: () =>
+                    showAppToast(context, 'ส่งพิมพ์สลิป POS แล้ว (จำลอง)'),
+                onVoid: defaultStaff == null
+                    ? null
+                    : (reason) {
+                        cubit.voidTableBill(slip.id, reason, defaultStaff);
+                        setState(() => _slipTableId = null);
+                        showAppToast(
+                          context,
+                          'ยกเลิกบิลและคืนสถานะโต๊ะเรียบร้อย',
+                        );
+                      },
+                onCancelTable: () {
+                  cubit.cancelTable(_slipTableId!);
+                  setState(() => _slipTableId = null);
+                  showAppToast(context, 'ยกเลิกรายการโต๊ะเรียบร้อย');
+                },
+                onDone: () => setState(() => _slipTableId = null),
+              ),
+          ],
         );
       },
     );
@@ -171,11 +217,13 @@ class _ZoneTablesSection extends StatelessWidget {
     required this.zone,
     required this.state,
     required this.onSelectTable,
+    required this.onViewSlip,
   });
 
   final String zone;
   final TablesState state;
   final ValueChanged<String> onSelectTable;
+  final ValueChanged<String> onViewSlip;
 
   @override
   Widget build(BuildContext context) {
@@ -220,6 +268,9 @@ class _ZoneTablesSection extends StatelessWidget {
                       openTable: state.posState.openTables[tb.id],
                       now: state.now,
                       onTap: () => onSelectTable(tb.id),
+                      onViewSlip: state.posState.openTables[tb.id] != null
+                          ? () => onViewSlip(tb.id)
+                          : null,
                     ),
                   ),
               ],

@@ -5,18 +5,8 @@ import 'package:app/domain/domain.dart';
 import 'package:app/features/setup/presentation/cubit/setup_cubit.dart';
 import 'package:flutter/material.dart';
 
-export 'package:app/features/setup/presentation/widgets/setup_finance_catalog_panels.dart'
-    show SetupJsonSnapshotModal;
-
 const List<String> _kUnits = [
-  'กก.',
-  'กรัม',
-  'ลิตร',
-  'แพ็ค',
-  'ฟอง',
-  'ถุง',
-  'ชิ้น',
-  'ขวด',
+  'กก.', 'กรัม', 'ลิตร', 'แพ็ค', 'ฟอง', 'ถุง', 'ชิ้น', 'ขวด', //
 ];
 
 /// Modal for creating or editing `ingredients` and `suppliers` in `/setup`.
@@ -28,12 +18,10 @@ class SetupIngredientSupplierModal extends StatefulWidget {
     this.initialItem,
     super.key,
   });
-
   final String section;
   final Object? initialItem;
   final SetupCubit cubit;
   final VoidCallback onClose;
-
   @override
   State<SetupIngredientSupplierModal> createState() =>
       _SetupIngredientSupplierModalState();
@@ -44,7 +32,6 @@ class _SetupIngredientSupplierModalState
   String _err = '';
   late IngredientItem _ing;
   late SupplierItem _sup;
-
   bool get _isEdit => widget.initialItem != null;
 
   @override
@@ -138,7 +125,7 @@ class _SetupIngredientSupplierModalState
           '${_isEdit ? "แก้ไข" : "เพิ่ม"}'
           '${isIng ? "วัตถุดิบ" : "แหล่งซื้อของ"}',
       sub: isIng
-          ? 'กำหนดหน่วยนับ ที่เก็บ ความถี่นับสต็อก และจุดเตือนสั่งซื้อ (Par)'
+          ? 'กำหนดหน่วยนับ สถานที่จัดเก็บ รอบการตรวจนับ และเกณฑ์คงเหลือขั้นต่ำ'
           : 'บันทึกชื่อตลาดสด ร้านส่ง หรือคู่ค้าสำหรับอ้างอิงในใบรับของ',
       onClose: widget.onClose,
       footer: [
@@ -171,7 +158,7 @@ class _SetupIngredientSupplierModalState
   Widget _buildIngredientFields() {
     final sups = widget.cubit.state.posState.suppliers;
     final unitMap = {for (final u in _kUnits) u: u};
-    final catMap = {
+    const catMap = {
       'วัตถุดิบ': 'วัตถุดิบ',
       'วัสดุสิ้นเปลือง': 'วัสดุสิ้นเปลือง',
     };
@@ -180,12 +167,9 @@ class _SetupIngredientSupplierModalState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _row(
-          _txt(
-            'ชื่อวัตถุดิบ *',
-            _ing.name,
-            (v) => _ing = _ing.copyWith(name: v),
-            placeholder: 'เช่น หมูสามชั้นสไลซ์',
-          ),
+          _txt('ชื่อวัตถุดิบ *', _ing.name, (v) {
+            _ing = _ing.copyWith(name: v);
+          }, placeholder: 'เช่น หมูสามชั้นสไลซ์'),
           _dd(
             'หน่วยนับ',
             _kUnits.contains(_ing.unit) ? _ing.unit : _kUnits.first,
@@ -214,24 +198,18 @@ class _SetupIngredientSupplierModalState
             kCountFreqs,
             (v) => _ing = _ing.copyWith(countFreq: v),
           ),
-          _txt(
-            'ราคาซื้อล่าสุด (บาท/หน่วย)',
-            fmtQ(_ing.lastCost),
-            (v) => _ing = _ing.copyWith(lastCost: double.tryParse(v) ?? 0),
-            numKey: true,
-          ),
+          _txt('ราคาซื้อล่าสุด (บาท/หน่วย)', fmtQ(_ing.lastCost), (v) {
+            _ing = _ing.copyWith(lastCost: double.tryParse(v) ?? 0);
+          }, numKey: true),
         ),
         _row(
-          _txt(
-            'จุดเตือนสั่งซื้อ (Par)',
-            fmtQ(_ing.par),
-            (v) => _ing = _ing.copyWith(par: double.tryParse(v) ?? 0),
-            numKey: true,
-          ),
+          _txt('เกณฑ์คงเหลือขั้นต่ำ', fmtQ(_ing.par), (v) {
+            _ing = _ing.copyWith(par: double.tryParse(v) ?? 0);
+          }, numKey: true),
           sups.isNotEmpty
               ? _dd(
                   'แหล่งซื้อหลัก',
-                  sups.any((x) => x.id == _ing.supplierId)
+                  supMap.containsKey(_ing.supplierId)
                       ? _ing.supplierId
                       : sups.first.id,
                   supMap,
@@ -247,18 +225,12 @@ class _SetupIngredientSupplierModalState
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       _row(
-        _txt(
-          'ชื่อแหล่งซื้อ *',
-          _sup.name,
-          (v) => _sup = _sup.copyWith(name: v),
-          placeholder: 'เช่น ตลาดสดเทศบาล / แม็คโคร',
-        ),
-        _txt(
-          'เบอร์โทรศัพท์',
-          _sup.phone,
-          (v) => _sup = _sup.copyWith(phone: v),
-          placeholder: 'เช่น 081-234-5678',
-        ),
+        _txt('ชื่อแหล่งซื้อ *', _sup.name, (v) {
+          _sup = _sup.copyWith(name: v);
+        }, placeholder: 'เช่น ตลาดสดเทศบาล / แม็คโคร'),
+        _txt('เบอร์โทรศัพท์', _sup.phone, (v) {
+          _sup = _sup.copyWith(phone: v);
+        }, placeholder: 'เช่น 081-234-5678'),
       ),
       _txt(
         'หมายเหตุ / รายการที่ซื้อประจำ',
@@ -268,5 +240,58 @@ class _SetupIngredientSupplierModalState
         placeholder: 'เช่น ส่งทุกเช้า 08:00 น. เนื้อหมูและผักสด',
       ),
     ],
+  );
+}
+
+/// Modal for exporting or importing a full [PosState] JSON snapshot.
+class SetupJsonSnapshotModal extends StatefulWidget {
+  const new({
+    required this.isImport,
+    required this.initialJson,
+    required this.onImport,
+    required this.onClose,
+    super.key,
+  });
+  final bool isImport;
+  final String initialJson;
+  final ValueChanged<String> onImport;
+  final VoidCallback onClose;
+  @override
+  State<SetupJsonSnapshotModal> createState() => _SetupJsonSnapshotModalState();
+}
+
+class _SetupJsonSnapshotModalState extends State<SetupJsonSnapshotModal> {
+  late String _raw = widget.initialJson;
+  @override
+  Widget build(BuildContext context) => Modal(
+    title: widget.isImport
+        ? 'นำเข้าข้อมูล JSON'
+        : 'ส่งออกข้อมูล JSON (Snapshot)',
+    sub: widget.isImport
+        ? 'วางข้อความ JSON ที่ส่งออกไว้เพื่อกู้คืนสถานะร้านทั้งหมด'
+        : 'ข้อมูลทั้งหมดของร้านในรูปแบบ JSON พร้อมนำไปบันทึกหรือกู้คืน',
+    onClose: widget.onClose,
+    footer: [
+      Btn(label: 'ปิด', onPressed: widget.onClose),
+      if (widget.isImport)
+        Btn(
+          key: const ValueKey('setup-confirm-import-json-btn'),
+          kind: BtnKind.primary,
+          icon: 'check',
+          label: 'นำเข้าข้อมูล',
+          disabled: _raw.trim().isEmpty,
+          onPressed: () => widget.onImport(_raw),
+        ),
+    ],
+    child: Field(
+      label: 'JSON Snapshot (PosState)',
+      child: AppTextInput(
+        value: _raw,
+        maxLines: 8,
+        readOnly: !widget.isImport,
+        placeholder: '{"version": 2, "shop": {...}}',
+        onChanged: (v) => setState(() => _raw = v),
+      ),
+    ),
   );
 }

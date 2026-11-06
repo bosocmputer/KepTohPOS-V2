@@ -58,6 +58,98 @@ abstract final class AppRawTokens {
   static const Color scrim = Color.fromRGBO(14, 16, 21, 0.55);
 }
 
+/// Theme modes supported by KepToh POS (`light | dark | system`).
+enum AppThemeMode {
+  light('light', 'สว่าง', ThemeMode.light),
+  dark('dark', 'มืด', ThemeMode.dark),
+  system('system', 'ตามเครื่อง', ThemeMode.system);
+
+  new(this.id, this.label, this.themeMode);
+  final String id;
+  final String label;
+  final ThemeMode themeMode;
+
+  static AppThemeMode fromId(String? id) =>
+      values.where((x) => x.id == id).firstOrNull ?? light;
+}
+
+/// Selectable primary brand color palettes (`สีส้มมาตรฐาน`, `สีส้มอิฐ`, etc.).
+enum AppBrandPalette {
+  orange(
+    'orange',
+    'สีส้มมาตรฐาน',
+    AppRawTokens.teamOrange,
+    AppRawTokens.teamOrange600,
+    AppRawTokens.teamOrangeSoft,
+    AppRawTokens.teamOrangeSoft2,
+    AppRawTokens.teamOrangeInk,
+    AppRawTokens.teamCharcoal,
+  ),
+  ember(
+    'ember',
+    'สีส้มอิฐ',
+    Color(0xFFFE4E10),
+    Color(0xFFE0410A),
+    Color(0xFFFFF0EB),
+    Color(0xFFFFDDD1),
+    Color(0xFFB83205),
+    AppRawTokens.white,
+  ),
+  emerald(
+    'emerald',
+    'สีเขียวมรกต',
+    Color(0xFF059669),
+    Color(0xFF047857),
+    Color(0xFFECFDF5),
+    Color(0xFFD1FAE5),
+    Color(0xFF065F46),
+    AppRawTokens.white,
+  ),
+  ocean(
+    'ocean',
+    'สีน้ำเงินคราม',
+    Color(0xFF2563EB),
+    Color(0xFF1D4ED8),
+    Color(0xFFEFF6FF),
+    Color(0xFFDBEAFE),
+    Color(0xFF1E40AF),
+    AppRawTokens.white,
+  ),
+  berry(
+    'berry',
+    'สีแดงทับทิม',
+    Color(0xFFE11D48),
+    Color(0xFFBE123C),
+    Color(0xFFFFF1F2),
+    Color(0xFFFFE4E6),
+    Color(0xFF9F1239),
+    AppRawTokens.white,
+  );
+
+  new(
+    this.id,
+    this.label,
+    this.primary,
+    this.primaryHover,
+    this.primarySoft,
+    this.primarySoft2,
+    this.primaryInk,
+    this.onPrimary,
+  );
+
+  final String id;
+  final String label;
+  final Color primary;
+  final Color primaryHover;
+  final Color primarySoft;
+  final Color primarySoft2;
+  final Color primaryInk;
+  final Color onPrimary;
+
+  static AppBrandPalette fromId(String? id) =>
+      values.where((x) => x.id == id).firstOrNull ?? orange;
+}
+
 /// Layer 2 non-color layout, typography, spacing, and radius tokens.
 abstract final class AppDimensions {
   static const String fontDisplay = 'Anuphan';

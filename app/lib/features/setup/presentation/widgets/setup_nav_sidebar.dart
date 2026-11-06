@@ -1,9 +1,10 @@
-import 'package:app/core/theme/app_theme.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/features/setup/presentation/cubit/setup_cubit.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+
+export 'package:app/features/setup/presentation/widgets/setup_theme_demo_panels.dart'
+    show SetupDemoPanel, SetupThemeSection;
 
 /// Surface card container for `/setup` panels.
 class SetupCard extends StatelessWidget {
@@ -53,8 +54,7 @@ const List<SetupTabSpec> kSetupTabs = [
   SetupTabSpec('demo', 'ข้อมูลตัวอย่าง (JSON)', 'clock', 'การเงินและระบบ'),
 ];
 
-/// Full-width grouped top navigation bar for `/setup`, giving the active
-/// section 100% of the page width (matching `/stock`, `/bills`, `/tables`).
+/// Full-width grouped top navigation bar for `/setup`.
 class SetupNavSidebar extends StatelessWidget {
   const new({required this.state, required this.onSelectTab, super.key});
   final SetupState state;
@@ -67,10 +67,7 @@ class SetupNavSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.tokens;
     return SetupCard(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.space3,
-        vertical: AppDimensions.space2_5,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -87,7 +84,7 @@ class SetupNavSidebar extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppDimensions.space2),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: Divider(height: 1, thickness: 1, color: t.line),
           ),
           SingleChildScrollView(
@@ -100,8 +97,9 @@ class SetupNavSidebar extends StatelessWidget {
   }
 
   Widget _vDivider(AppTokens t) => Container(
-    width: 1, height: 44,
-    margin: const EdgeInsets.symmetric(horizontal: AppDimensions.space2_5),
+    width: 1,
+    height: 44,
+    margin: const EdgeInsets.symmetric(horizontal: 8),
     color: t.line,
   );
 
@@ -140,13 +138,20 @@ class SetupNavSidebar extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final active = state.activeTab == item.id;
     final count = state.itemCountOf(item.id);
+    final rad = BorderRadius.circular(AppDimensions.radiusSm);
 
     return Material(
-      color: active ? t.primary : t.surface2,
-      borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+      color: active ? t.primarySoft : t.surface2,
+      shape: RoundedRectangleBorder(
+        borderRadius: rad,
+        side: BorderSide(
+          color: active ? t.primary : t.line.withValues(alpha: 0),
+          width: AppDimensions.borderThick,
+        ),
+      ),
       child: InkWell(
         key: ValueKey('setup-tab-${item.id}'),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+        borderRadius: rad,
         onTap: () => onSelectTab(item.id),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 34),
@@ -177,19 +182,15 @@ class SetupNavSidebar extends StatelessWidget {
                       vertical: 1,
                     ),
                     decoration: BoxDecoration(
-                      color: active
-                          ? t.primaryInk.withValues(alpha: 0.2)
-                          : t.surface,
-                      borderRadius: BorderRadius.circular(
-                        AppDimensions.radiusPill,
-                      ),
+                      color: active ? t.primary : t.surface,
+                      borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
                       '$count',
                       style: tt.labelSmall?.copyWith(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,
-                        color: active ? t.primaryInk : t.muted,
+                        color: active ? t.onPrimary : t.muted,
                       ),
                     ),
                   ),
@@ -199,102 +200,6 @@ class SetupNavSidebar extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Theme mode (`light`/`dark`/`system`) selector section.
-class SetupThemeSection extends StatelessWidget {
-  const new({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.tokens;
-    final tt = Theme.of(context).textTheme;
-    final cubit = context.watch<ThemeCubit?>();
-    final state = cubit?.state ?? const ThemeState();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const PageHeader(
-          title: 'ธีมและการแสดงผล',
-          desc: 'เปลี่ยนโหมดสีหน้าจอ มีผลทันทีทุกหน้าจอในเครื่องนี้',
-        ),
-        const SizedBox(height: AppDimensions.space3),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: SetupCard(
-                key: const ValueKey('setup-theme-section'),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('โหมดสีหน้าจอ', style: tt.titleMedium),
-                    const SizedBox(height: 4),
-                    Text(
-                      'โหมดสว่างเหมาะกับหน้าร้านที่มีแสงจ้า '
-                      'โหมดมืดช่วยถนอมสายตาช่วงค่ำ',
-                      style: tt.bodySmall?.copyWith(color: t.muted),
-                    ),
-                    const SizedBox(height: AppDimensions.space3_5),
-                    Seg<AppThemeMode>(
-                      label: 'โหมดสี',
-                      value: state.mode,
-                      items: const [
-                        SegItem(value: AppThemeMode.light, label: 'สว่าง'),
-                        SegItem(value: AppThemeMode.dark, label: 'มืด'),
-                        SegItem(
-                          value: AppThemeMode.system,
-                          label: 'ตามเครื่อง',
-                        ),
-                      ],
-                      onChanged: (m) => cubit?.setMode(m),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: AppDimensions.space4),
-            Expanded(
-              child: SetupCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('ตัวอย่างโหมดปัจจุบัน', style: tt.titleMedium),
-                    const SizedBox(height: AppDimensions.space3),
-                    Container(
-                      padding: const EdgeInsets.all(AppDimensions.space3_5),
-                      decoration: BoxDecoration(
-                        color: t.surface2,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: t.line),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('โต๊ะ A1 · กำลังทาน', style: tt.labelSmall),
-                              Text('บุฟเฟต์ ฿199', style: tt.titleMedium),
-                            ],
-                          ),
-                          const Pill(
-                            tone: PillTone.green,
-                            child: Text('อ่านง่าย ชัดเจน'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }

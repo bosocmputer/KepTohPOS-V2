@@ -17,9 +17,7 @@ class SaleOrderPanel extends StatefulWidget {
     required this.onOpenRemoveModal,
     super.key,
     this.fullHeight = false,
-    this.selectedMethodId,
-    this.onSelectMethod,
-    this.onPayPressed,
+    this.onOpenPosSlipModal,
   });
 
   final SaleState state;
@@ -28,9 +26,7 @@ class SaleOrderPanel extends StatefulWidget {
   final VoidCallback onOpenNoteModal;
   final ValueChanged<String> onOpenRemoveModal;
   final bool fullHeight;
-  final String? selectedMethodId;
-  final ValueChanged<String>? onSelectMethod;
-  final VoidCallback? onPayPressed;
+  final VoidCallback? onOpenPosSlipModal;
   @override
   State<SaleOrderPanel> createState() => _SaleOrderPanelState();
 }
@@ -55,27 +51,14 @@ class _SaleOrderPanelState extends State<SaleOrderPanel> {
     final bloc = context.read<SaleBloc>();
     final s = state.posState;
     final o = state.openTable;
-    final pkg = state.activePackage;
     final timing = state.effectiveTiming;
     final note = state.effectiveNotes;
     final payOrder = state.payOrder;
     final totalTxt = baht(payOrder.total, payOrder.total % 1 != 0 ? 2 : 0);
-    final sentRows = state.sentRows;
-    final canVoid = staff.role != 'cashier';
-    final tableOpts = [
-      for (final x in s.tables)
-        DropdownOption(
-          value: x.id,
-          label: 'โต๊ะ ${x.name}',
-          sub: s.openTables[x.id] != null
-              ? 'มีลูกค้า'
-                    '${tableDue(s, s.openTables[x.id]!) > 0 ? " · รอชำระ" : ""}'
-              : 'ว่าง · ${x.seats} ที่นั่ง',
-        ),
-    ];
     final cartAddons = state.activeAddons
         .where((x) => (state.ad[x.id] ?? 0) > 0)
         .toList();
+    final sentRows = state.sentRows;
     final bodyContent = Padding(
       padding: const EdgeInsets.all(AppDimensions.space4),
       child: Column(
@@ -83,7 +66,7 @@ class _SaleOrderPanelState extends State<SaleOrderPanel> {
         children: [
           SalePeopleSection(
             openTable: o,
-            pkg: pkg,
+            pkg: state.activePackage,
             a: state.a,
             c: state.c,
             f: state.f,
@@ -133,7 +116,7 @@ class _SaleOrderPanelState extends State<SaleOrderPanel> {
                       .firstOrNull,
                 ),
                 removeLabel: 'ลบ ${l.name}',
-                removeOff: !canVoid,
+                removeOff: staff.role == 'cashier',
                 onRemove: () => widget.onOpenRemoveModal('${l.kind}:${l.key}'),
               ),
           ],
@@ -153,7 +136,16 @@ class _SaleOrderPanelState extends State<SaleOrderPanel> {
                 key: const ValueKey('sale-table-dropdown'),
                 label: 'เลือกโต๊ะ',
                 value: state.tableId,
-                options: tableOpts,
+                options: [
+                  for (final x in s.tables)
+                    DropdownOption(
+                      value: x.id,
+                      label: 'โต๊ะ ${x.name}',
+                      sub: s.openTables[x.id] != null
+                          ? 'มีลูกค้า · โต๊ะเปิดอยู่'
+                          : 'ว่าง · ${x.seats} ที่นั่ง',
+                    ),
+                ],
                 onChanged: widget.onSelectTable,
               ),
               const SizedBox(height: AppDimensions.space3),
@@ -187,7 +179,14 @@ class _SaleOrderPanelState extends State<SaleOrderPanel> {
                         onChanged: (v) => bloc.add(SaleTimingChanged(v)),
                       ),
                     ),
-                  const SizedBox(width: AppDimensions.space2),
+                  if (o != null && widget.onOpenPosSlipModal != null)
+                    Btn(
+                      key: const ValueKey('order-panel-pos-slip-btn'),
+                      size: BtnSize.sm,
+                      icon: 'receipt',
+                      label: 'สลิป POS',
+                      onPressed: widget.onOpenPosSlipModal,
+                    ),
                   Btn(
                     key: const ValueKey('sale-note-btn'),
                     size: BtnSize.sm,
@@ -273,9 +272,7 @@ class _SaleOrderPanelState extends State<SaleOrderPanel> {
                 block: true,
                 icon: 'receipt',
                 disabled: !state.canPay,
-                onPressed:
-                    widget.onPayPressed ??
-                    () => bloc.add(const SalePaymentStepChanged('pay')),
+                onPressed: () => bloc.add(const SalePaymentStepChanged('pay')),
               ),
             ],
           ),

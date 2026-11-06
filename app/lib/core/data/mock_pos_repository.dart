@@ -65,7 +65,7 @@ class MockPosRepository implements PosRepository {
     final currentNow = now ?? DateTime(2026, 11, 4, 12);
     final state = PosState(
       startDate: '2026-10-05',
-      shop: const ShopConfig(name: 'หมูกระทะลุงหมี'),
+      shop: const ShopConfig(name: 'หมูกระทะลุงหมี', promptpay: '0812345678'),
       packages: const <PackageItem>[
         PackageItem(
           id: 'pk1',

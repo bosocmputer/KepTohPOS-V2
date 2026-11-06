@@ -5,6 +5,9 @@ import 'package:app/domain/domain.dart';
 import 'package:app/features/setup/presentation/widgets/setup_nav_sidebar.dart';
 import 'package:flutter/material.dart';
 
+export 'package:app/features/setup/presentation/widgets/setup_theme_demo_panels.dart'
+    show SetupDemoPanel, SetupThemeSection;
+
 /// Editable profit & costing formulas (`CostingForm` in `prototype`).
 class SetupCostingPanel extends StatefulWidget {
   const new({
@@ -152,8 +155,8 @@ class _SetupCostingPanelState extends State<SetupCostingPanel> {
                   ),
                 ),
                 _dd(
-                  'วันนับของรายสัปดาห์',
-                  'แจ้งเตือนนับวัตถุดิบรายสัปดาห์ในหน้าสต็อก',
+                  'วันตรวจนับวัตถุดิบประจำสัปดาห์',
+                  'แจ้งเตือนตรวจนับวัตถุดิบรายสัปดาห์ในหน้าสต็อก',
                   _v.weeklyCountDow.toString(),
                   dowMap,
                   (s) => _v = _v.copyWith(weeklyCountDow: int.tryParse(s) ?? 1),
@@ -181,110 +184,6 @@ class _SetupCostingPanelState extends State<SetupCostingPanel> {
               ),
             ],
           ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Demo data management panel (`ส่งออก JSON`, `นำเข้า JSON`, `รีเซ็ตข้อมูล`).
-class SetupDemoPanel extends StatelessWidget {
-  const new({
-    required this.posState,
-    required this.onExportJson,
-    required this.onImportJson,
-    required this.onRequestReset,
-    this.onClearDaily,
-    this.onAdvanceDay,
-    super.key,
-  });
-
-  final PosState posState;
-  final VoidCallback onExportJson;
-  final VoidCallback onImportJson;
-  final VoidCallback onRequestReset;
-  final VoidCallback? onClearDaily;
-  final VoidCallback? onAdvanceDay;
-
-  Widget _card(BuildContext ctx, String t, String d, List<Widget> a) {
-    final tt = Theme.of(ctx).textTheme;
-    return Expanded(
-      child: SetupCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(t, style: tt.titleMedium),
-            const SizedBox(height: 4),
-            Text(d, style: tt.bodySmall?.copyWith(color: ctx.tokens.muted)),
-            const SizedBox(height: AppDimensions.space3_5),
-            Wrap(spacing: 8, runSpacing: 8, children: a),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Stat _st(String l, String v, String s) => Stat(label: l, value: v, sub: s);
-  Btn _b(String k, String ic, String lb, VoidCallback? fn, [BtnKind? kd]) =>
-      Btn(
-        key: ValueKey(k),
-        kind: kd ?? BtnKind.normal,
-        icon: ic,
-        label: lb,
-        onPressed: fn,
-      );
-
-  @override
-  Widget build(BuildContext context) {
-    final s = posState;
-    const expK = 'setup-export-json-btn';
-    const impK = 'setup-import-json-btn';
-    const clrK = 'setup-clear-daily-btn';
-    const advK = 'setup-advance-day-btn';
-    const rstK = 'setup-reset-demo-btn';
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const PageHeader(
-          title: 'ข้อมูลตัวอย่างและสำรองข้อมูล (JSON)',
-          desc: 'ส่งออกหรือนำเข้าสถานะร้านทั้งหมดเป็น JSON หรือจำลองวันขาย',
-        ),
-        const SizedBox(height: 12),
-        StatsGroup(
-          children: [
-            _st('บิลขายสะสม', '${s.sales.length} บิล', 'ธุรกรรมการขายทั้งหมด'),
-            _st('บิลรับของเข้า', '${s.purchases.length} ใบ', 'ประวัติรับสต็อก'),
-            _st('ค่าใช้จ่าย', '${s.expenses.length} รายการ', 'จ่ายหน้าร้าน'),
-            _st('กะที่ปิดแล้ว', '${s.shifts.length} กะ', 'กระทบยอดเงินสด'),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _card(
-              context,
-              'สำรอง / กู้คืนข้อมูลด้วย JSON',
-              'ใช้ PosState.toJson() และ PosState.fromJson() ครบทั้งระบบ',
-              [
-                _b(expK, 'receipt', 'ส่งออก JSON', onExportJson),
-                _b(impK, 'plus', 'นำเข้า JSON', onImportJson, BtnKind.primary),
-              ],
-            ),
-            const SizedBox(width: 16),
-            _card(
-              context,
-              'จำลองการขายรายวัน / รีเซ็ตข้อมูล',
-              'เริ่มข้อมูลรายวันใหม่ (0 บิล) ข้ามวันจำลอง หรือรีเซ็ต 30 วัน',
-              [
-                if (onClearDaily != null)
-                  _b(clrK, 'trash', 'เริ่มรายวันใหม่ (0 บิล)', onClearDaily),
-                if (onAdvanceDay != null)
-                  _b(advK, 'clock', 'ข้ามไปวันถัดไป (+1 วัน)', onAdvanceDay),
-                _b(rstK, 'trash', 'รีเซ็ตตัวอย่าง 30 วัน', onRequestReset),
-              ],
-            ),
-          ],
         ),
       ],
     );

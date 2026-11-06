@@ -40,22 +40,10 @@ class Seg<T> extends StatelessWidget {
     SegItem<T> item,
   ) {
     final selected = item.value == value;
-    final bgColor = switch ((selected, item.tone)) {
-      (true, SegTone.green) => tokens.success,
-      (true, SegTone.orange) => tokens.primary,
-      (true, SegTone.surface) => tokens.dark,
-      (false, SegTone.green) => tokens.successSoft.withValues(alpha: 0.55),
-      (false, SegTone.orange) => tokens.primarySoft.withValues(alpha: 0.55),
-      (false, SegTone.surface) => tokens.surface.withValues(alpha: 0),
-    };
-    final fgColor = switch ((selected, item.tone)) {
-      (true, SegTone.green) => AppRawTokens.white,
-      (true, SegTone.orange) => tokens.onPrimary,
-      (true, SegTone.surface) => tokens.onDark,
-      (false, SegTone.green) => tokens.successInk,
-      (false, SegTone.orange) => tokens.primaryInk,
-      (false, SegTone.surface) => tokens.muted,
-    };
+    final bgColor = selected
+        ? tokens.primary
+        : tokens.surface.withValues(alpha: 0);
+    final fgColor = selected ? tokens.onPrimary : tokens.muted;
     return Container(
       decoration: BoxDecoration(
         color: bgColor,

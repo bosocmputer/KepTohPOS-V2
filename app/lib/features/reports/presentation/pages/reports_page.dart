@@ -67,69 +67,56 @@ List<ReportColSpec> buildReportColumns(
   AppTokens t,
 ) {
   final mode = _activeReportColMode;
-  final showSalesDetail = mode == 'all' || mode == 'sales';
-  final showProfitDetail = mode == 'all' || mode == 'profit';
+  final showSales = mode == 'all' || mode == 'sales';
+  final showProfit = mode == 'all' || mode == 'profit';
+  ReportColSpec col(
+    String l,
+    double w,
+    Widget Function(LedgerDaySummary) c,
+    String f,
+  ) => ReportColSpec(l, w, c, f);
+  ReportColSpec numCol(
+    String l,
+    double w,
+    double? Function(LedgerDaySummary) v,
+    double tot,
+  ) => col(l, w, (d) => Text(fmt(v(d))), fmt(tot));
 
   return <ReportColSpec>[
-    ReportColSpec('บิล', 56, (d) => Text('${d.bills}'), '${report.totalBills}'),
-    ReportColSpec('หัว', 62, (d) => Text('${d.heads}'), '${report.totalHeads}'),
-    if (showSalesDetail) ...[
-      ReportColSpec(
-        'บุฟเฟต์',
-        96,
-        (d) => Text(fmt(d.buffetNet)),
-        fmt(report.totalBuffetNet),
-      ),
-      ReportColSpec(
-        'ขายเสริม',
-        96,
-        (d) => Text(fmt(d.addonNet)),
-        fmt(report.totalAddonNet),
-      ),
+    col('บิล', 56, (d) => Text('${d.bills}'), '${report.totalBills}'),
+    col('หัว', 62, (d) => Text('${d.heads}'), '${report.totalHeads}'),
+    if (showSales) ...[
+      numCol('บุฟเฟต์', 96, (d) => d.buffetNet, report.totalBuffetNet),
+      numCol('ขายเสริม', 96, (d) => d.addonNet, report.totalAddonNet),
     ],
-    ReportColSpec('รวมขาย', 90, (d) => Text(fmt(d.net)), fmt(report.totalNet)),
-    if (showSalesDetail)
-      ReportColSpec(
-        'ซื้อเข้า',
-        80,
-        (d) => Text(fmt(d.purchases)),
-        fmt(report.totalPurchases),
-      ),
-    ReportColSpec(
-      'ต้นทุนวัตถุดิบ',
-      96,
-      (d) => Text(fmt(d.ingCost)),
-      fmt(report.closedIngCost),
-    ),
-    if (showProfitDetail)
-      ReportColSpec(
+    numCol('รวมขาย', 90, (d) => d.net, report.totalNet),
+    if (showSales)
+      numCol('ซื้อเข้า', 80, (d) => d.purchases, report.totalPurchases),
+    numCol('ต้นทุนวัตถุดิบ', 96, (d) => d.ingCost, report.closedIngCost),
+    if (showProfit)
+      numCol(
         'ต้นทุนเครื่องดื่ม',
         106,
-        (d) => Text(fmt(d.addonCost)),
-        fmt(report.closedAddonCost),
+        (d) => d.addonCost,
+        report.closedAddonCost,
       ),
-    ReportColSpec(
+    col(
       'กำไรขั้นต้น',
       92,
       (d) => _profitText(t, d.profit),
       fmt(report.closedProfit),
     ),
-    if (showProfitDetail && report.showNetProfit) ...[
-      ReportColSpec(
-        'ค่าใช้จ่าย',
-        76,
-        (d) => Text(fmt(d.expenses + d.fixed)),
-        fmt(report.closedSpend),
-      ),
-      ReportColSpec(
+    if (showProfit && report.showNetProfit) ...[
+      numCol('ค่าใช้จ่าย', 76, (d) => d.expenses + d.fixed, report.closedSpend),
+      col(
         'กำไรสุทธิ',
         82,
         (d) => _profitText(t, d.netProfit),
         fmt(report.closedNetProfit),
       ),
     ],
-    if (showProfitDetail) ...[
-      ReportColSpec(
+    if (showProfit) ...[
+      col(
         'ต้นทุน/หัว',
         76,
         (d) => Text(fmt(d.costPerHead, 2)),
@@ -137,7 +124,7 @@ List<ReportColSpec> buildReportColumns(
             ? fmt(report.closedCostPerHead, 2)
             : '–',
       ),
-      ReportColSpec(
+      col(
         'Food cost',
         76,
         (d) => Text(d.foodPct == null ? '–' : '${fmt(d.foodPct, 1)}%'),

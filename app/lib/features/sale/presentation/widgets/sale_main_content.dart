@@ -53,6 +53,7 @@ class SaleMainContent extends StatelessWidget {
     required this.onRequestCloseTable,
     super.key,
     this.onRequestOpenShift,
+    this.onRequestViewSlip,
   });
 
   final SaleState state;
@@ -61,6 +62,7 @@ class SaleMainContent extends StatelessWidget {
   final ValueChanged<String> onSelectTable;
   final VoidCallback onRequestCloseTable;
   final VoidCallback? onRequestOpenShift;
+  final VoidCallback? onRequestViewSlip;
 
   @override
   Widget build(BuildContext context) {
@@ -98,27 +100,7 @@ class SaleMainContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (!hasDesktopTopbar) ...[
-          Row(
-            children: [
-              Btn(
-                key: const ValueKey('sale-back-tables-btn'),
-                kind: BtnKind.ghost,
-                icon: 'back',
-                label: 'โต๊ะ',
-                onPressed: onBackToTables,
-              ),
-              const SizedBox(width: AppDimensions.space2),
-              Text(
-                'โต๊ะ ${table.name}',
-                style: tt.displayMedium?.copyWith(color: t.ink),
-              ),
-              const SizedBox(width: AppDimensions.space2),
-              Pill(
-                label: o != null ? 'มีลูกค้า' : 'เปิดโต๊ะใหม่',
-                tone: o != null ? PillTone.orange : PillTone.neutral,
-              ),
-            ],
-          ),
+          buildSaleTopbarTitle(context, state, table, onBackToTables),
           const SizedBox(height: AppDimensions.space3),
         ],
         Wrap(
@@ -146,7 +128,12 @@ class SaleMainContent extends StatelessWidget {
         ),
         if (o != null) ...[
           const SizedBox(height: 12),
-          _OccupiedTableBanner(state, o, onRequestCloseTable),
+          _OccupiedTableBanner(
+            state,
+            o,
+            onRequestCloseTable,
+            onRequestViewSlip: onRequestViewSlip,
+          ),
         ],
         if (!hasShift) ...[
           const SizedBox(height: AppDimensions.space3),
@@ -210,10 +197,16 @@ class SaleMainContent extends StatelessWidget {
 }
 
 class _OccupiedTableBanner extends StatelessWidget {
-  const new(this.state, this.openTable, this.onRequestCloseTable);
+  const new(
+    this.state,
+    this.openTable,
+    this.onRequestCloseTable, {
+    this.onRequestViewSlip,
+  });
   final SaleState state;
   final OpenTableState openTable;
   final VoidCallback onRequestCloseTable;
+  final VoidCallback? onRequestViewSlip;
 
   @override
   Widget build(BuildContext context) {
@@ -238,7 +231,7 @@ class _OccupiedTableBanner extends StatelessWidget {
         children: [
           Wrap(
             spacing: 12,
-            runSpacing: 4,
+            runSpacing: 6,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text('$totalHeads คน', style: tt.titleMedium),
@@ -262,6 +255,14 @@ class _OccupiedTableBanner extends StatelessWidget {
                     ? PillTone.orange
                     : PillTone.green,
               ),
+              if (onRequestViewSlip != null)
+                Btn(
+                  key: const ValueKey('banner-pos-slip-btn'),
+                  size: BtnSize.sm,
+                  icon: 'receipt',
+                  label: 'ดูสลิป POS',
+                  onPressed: onRequestViewSlip,
+                ),
             ],
           ),
           if (isPaidBefore) ...[

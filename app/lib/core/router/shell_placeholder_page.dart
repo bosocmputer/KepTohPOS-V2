@@ -139,8 +139,7 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
     final isStockView = viewId == 'stock' && stockCubit != null;
     final isSetupCatalog =
         viewId == 'setup' &&
-        setupCubit != null &&
-        setupCubit.state.itemCountOf(setupCubit.state.activeTab) != null;
+        setupCubit?.state.itemCountOf(setupCubit.state.activeTab) != null;
 
     return Stack(
       children: [
@@ -171,7 +170,7 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
               : isStockView
               ? stockCubit.state.searchQuery
               : isSetupCatalog
-              ? setupCubit.state.searchQuery
+              ? (setupCubit?.state.searchQuery ?? '')
               : '',
           searchPlaceholder: isTablesView
               ? 'ค้นหาชื่อโต๊ะ'
@@ -189,7 +188,7 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
               : isStockView
               ? stockCubit.setSearchQuery
               : isSetupCatalog
-              ? setupCubit.setSearchQuery
+              ? setupCubit?.setSearchQuery
               : null,
           onNavigate: (id) => id == 'dev/components'
               ? unawaited(context.push('/dev/components'))
@@ -275,16 +274,12 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
     }
     if (viewId == 'bills' && (billsCubit != null || repo != null)) {
       final page = BillsPage(staff: me);
-      return billsCubit != null
-          ? page
-          : BlocProvider(
-              create: (_) => BillsCubit(
-                repo!,
-                now: widget.now,
-                initialDate: widget.billsDate,
-              ),
-              child: page,
-            );
+      if (billsCubit != null) return page;
+      final d = widget.billsDate;
+      return BlocProvider(
+        create: (_) => BillsCubit(repo!, now: widget.now, initialDate: d),
+        child: page,
+      );
     }
     return buildAnalyticsOrPlaceholderBody(
       context,

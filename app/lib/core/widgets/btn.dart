@@ -148,8 +148,8 @@ class Btn extends StatelessWidget {
           borderRadius: BorderRadius.circular(radius),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight: _isIconOnly ? AppDimensions.tap : minHeight,
-              minWidth: _isIconOnly ? AppDimensions.tap : AppDimensions.space0,
+              minHeight: minHeight,
+              minWidth: _isIconOnly ? minHeight : AppDimensions.space0,
             ),
             child: Padding(
               padding: EdgeInsets.symmetric(

@@ -6,6 +6,11 @@ import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:flutter/material.dart';
 
+export 'package:app/features/sale/presentation/widgets/sale_order_panel.dart';
+export 'package:app/features/sale/presentation/widgets/sale_payment_panel.dart';
+export 'package:app/features/sale/presentation/widgets/sale_receipt_modal.dart';
+export 'package:app/features/sale/presentation/widgets/sale_widgets.dart';
+
 /// Modal for editing table notes (`function NoteModal` in
 /// `prototype/index.html` & `design/figma/modal_edit_menu_notes.png`).
 class NoteModal extends StatefulWidget {

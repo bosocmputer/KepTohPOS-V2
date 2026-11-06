@@ -46,19 +46,23 @@ class _SetupPageState extends State<SetupPage> {
     }
   }
 
-  Widget _overlay(Widget child) => Positioned.fill(
+  Widget _overlay(BuildContext context, Widget child) => Positioned.fill(
     child: ColoredBox(
-      color: Colors.black54,
+      color: context.tokens.scrim,
       child: Center(child: child),
     ),
   );
 
   Widget _buildDemoConfirm(SetupCubit cubit) {
     final kind = _demoConfirmKind!;
+    final openCnt = cubit.state.posState.openTables.length;
+    final openWarn = openCnt > 0
+        ? ' (รวมถึงโต๊ะที่กำลังเปิดอยู่ $openCnt โต๊ะ)'
+        : '';
     final (title, text, yesLabel, danger) = switch (kind) {
       'clear' => (
         'เริ่มข้อมูลรายวันใหม่ (0 บิล)?',
-        'บิลขาย กะ และสต็อกรายวันทั้งหมดจะถูกล้างเป็นศูนย์ '
+        'บิลขาย กะ และสต็อกรายวันทั้งหมด$openWarnจะถูกล้างเป็นศูนย์ '
             '(เมนูและตั้งค่าร้านยังอยู่ครบ)',
         'เริ่มรายวันใหม่',
         true,
@@ -180,6 +184,7 @@ class _SetupPageState extends State<SetupPage> {
           ),
           if (_editing != null)
             _overlay(
+              context,
               SingleChildScrollView(
                 child: SetupCrudEditorModal(
                   section: _editing!.$1,
@@ -192,6 +197,7 @@ class _SetupPageState extends State<SetupPage> {
             ),
           if (_deleting != null)
             _overlay(
+              context,
               Confirm(
                 title: 'ลบ "${_deleting!.$3}"?',
                 text: 'ลบแล้วกู้คืนไม่ได้ ข้อมูลในบิลเก่ายังอยู่ครบ',
@@ -211,6 +217,7 @@ class _SetupPageState extends State<SetupPage> {
             ),
           if (state.guardModalMessage.isNotEmpty)
             _overlay(
+              context,
               Modal(
                 title: 'ไม่สามารถดำเนินการได้',
                 onClose: cubit.clearGuardModal,
@@ -226,6 +233,7 @@ class _SetupPageState extends State<SetupPage> {
             ),
           if (_jsonModalIsImport != null)
             _overlay(
+              context,
               SingleChildScrollView(
                 child: SetupJsonSnapshotModal(
                   isImport: _jsonModalIsImport!,
@@ -238,7 +246,8 @@ class _SetupPageState extends State<SetupPage> {
                 ),
               ),
             ),
-          if (_demoConfirmKind != null) _overlay(_buildDemoConfirm(cubit)),
+          if (_demoConfirmKind != null)
+            _overlay(context, _buildDemoConfirm(cubit)),
         ],
       );
     },

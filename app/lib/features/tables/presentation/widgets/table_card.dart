@@ -6,9 +6,6 @@ import 'package:flutter/material.dart';
 
 /// Dining table status card (`function TableCard` in `prototype/index.html` &
 /// `design/figma/table.png`).
-/// Displays table name, seat/customer count, package, timer (`tableTimer`),
-/// owing balance (`tableDue`), and status bar (`ว่าง` / `มีลูกค้า` / `เกินเวลา`
-/// / `รอชำระ`).
 class TableCard extends StatelessWidget {
   const new({
     required this.posState,
@@ -17,6 +14,7 @@ class TableCard extends StatelessWidget {
     super.key,
     this.openTable,
     this.now,
+    this.onViewSlip,
   });
 
   final PosState posState;
@@ -24,6 +22,7 @@ class TableCard extends StatelessWidget {
   final OpenTableState? openTable;
   final VoidCallback onTap;
   final DateTime? now;
+  final VoidCallback? onViewSlip;
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +40,17 @@ class TableCard extends StatelessWidget {
     final borderColor = isLate
         ? t.danger
         : (due > 0 ? t.primary : (isAfterPaid ? t.success : t.line));
+    final statusBg = isLate
+        ? t.dangerSoft
+        : (due > 0 ? t.primary : (isAfterPaid ? t.successSoft : t.surface2));
+    final statusFg = isLate
+        ? t.dangerInk
+        : (due > 0 ? t.onPrimary : (isAfterPaid ? t.successInk : t.ink));
+    final statusTxt = isLate
+        ? 'มีลูกค้า · เกินเวลา'
+        : (due > 0
+              ? 'เช็กบิล ${baht(due)}'
+              : (isAfterPaid ? 'ชำระแล้ว · เก็บโต๊ะ' : 'มีลูกค้า'));
 
     return Material(
       color: t.surface,
@@ -168,43 +178,42 @@ class TableCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: AppDimensions.space3),
-                Container(
-                  height: AppDimensions.btnSmH,
-                  decoration: BoxDecoration(
-                    color: isLate
-                        ? t.dangerSoft
-                        : (due > 0
-                              ? t.primary
-                              : (isAfterPaid ? t.successSoft : t.surface2)),
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                  ),
-                  alignment: Alignment.center,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        isLate
-                            ? 'มีลูกค้า · เกินเวลา'
-                            : (due > 0
-                                  ? 'เช็กบิล ${baht(due)}'
-                                  : (isAfterPaid
-                                        ? 'ชำระแล้ว · เก็บโต๊ะ'
-                                        : 'มีลูกค้า')),
-                        style: tt.bodySmall?.copyWith(
-                          color: isLate
-                              ? t.dangerInk
-                              : (due > 0
-                                    ? t.onPrimary
-                                    : (isAfterPaid ? t.successInk : t.ink)),
-                          fontWeight: FontWeight.w700,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: AppDimensions.btnSmH,
+                        decoration: BoxDecoration(
+                          color: statusBg,
+                          borderRadius: BorderRadius.circular(
+                            AppDimensions.radiusSm,
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          statusTxt,
+                          style: tt.bodySmall?.copyWith(
+                            color: statusFg,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
-                      if (due > 0 || isAfterPaid)
-                        SizedBox.shrink(
-                          child: Text('มีลูกค้า', style: tt.labelSmall),
-                        ),
+                    ),
+                    if (due > 0 || isAfterPaid)
+                      SizedBox.shrink(
+                        child: Text('มีลูกค้า', style: tt.labelSmall),
+                      ),
+                    if (onViewSlip != null) ...[
+                      const SizedBox(width: AppDimensions.space1_5),
+                      Btn(
+                        key: ValueKey('table-slip-btn-${table.id}'),
+                        size: BtnSize.sm,
+                        icon: 'receipt',
+                        label: 'สลิป POS',
+                        onPressed: onViewSlip,
+                      ),
                     ],
-                  ),
+                  ],
                 ),
               ],
             ],
@@ -215,8 +224,7 @@ class TableCard extends StatelessWidget {
   }
 }
 
-/// Compact table switcher chip at the top of `SalePage` (`const TableChip` in
-/// `prototype/index.html`).
+/// Compact table switcher chip at the top of `SalePage` (`const TableChip`).
 class TableChip extends StatelessWidget {
   const new({
     required this.posState,
@@ -243,7 +251,6 @@ class TableChip extends StatelessWidget {
     final due = o != null ? tableDue(posState, o) : 0.0;
     final tm = o != null ? tableTimer(posState, o, now: now) : null;
     final sub = o != null ? '${o.heads.a + o.heads.c + o.heads.f} คน' : 'ใหม่';
-
     final borderColor = active
         ? t.primary
         : ((tm?.late ?? false) ? t.danger : (due > 0 ? t.primary : t.line));

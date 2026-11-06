@@ -161,14 +161,18 @@ class SetupCatalogPanel extends StatelessWidget {
         columns: [
           _col('name', 'วัตถุดิบ', (i) => i.name, flex: 3),
           _col('unit', 'หน่วยนับ', (i) => i.unit, flex: 1),
-          _col('loc', 'ที่เก็บ', (i) => kLocations[i.location] ?? i.location),
+          _col(
+            'loc',
+            'สถานที่จัดเก็บ',
+            (i) => kLocations[i.location] ?? i.location,
+          ),
           _col(
             'freq',
-            'ความถี่นับ',
+            'รอบการตรวจนับ',
             (i) => kCountFreqs[i.countFreq] ?? i.countFreq,
           ),
-          _col('cost', 'ทุนล่าสุด', (i) => '฿${fmtQ(i.lastCost)}'),
-          _col('par', 'จุดเตือน (Par)', (i) => '${fmtQ(i.par)} ${i.unit}'),
+          _col('cost', 'ต้นทุนล่าสุด', (i) => '฿${fmtQ(i.lastCost)}'),
+          _col('par', 'เกณฑ์คงเหลือขั้นต่ำ', (i) => '${fmtQ(i.par)} ${i.unit}'),
         ],
       ),
       'suppliers' => CrudSectionShell<SupplierItem>(

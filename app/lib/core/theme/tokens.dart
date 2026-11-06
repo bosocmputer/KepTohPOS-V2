@@ -3,19 +3,7 @@ import 'package:flutter/material.dart';
 
 export 'package:app/core/theme/raw_tokens.dart';
 
-/// Theme modes supported by KepToh POS (`light | dark | system`).
-enum AppThemeMode {
-  light('สว่าง', ThemeMode.light),
-  dark('มืด', ThemeMode.dark),
-  system('ตามเครื่อง', ThemeMode.system);
-
-  new(this.label, this.themeMode);
-  final String label;
-  final ThemeMode themeMode;
-}
-
-/// Layer 2 semantic color tokens (`--primary`, `--surface`, `--ink`, etc.)
-/// mapped from `:root[data-brand="team"]` in `prototype/theme.css`.
+/// Layer 2 semantic color tokens (`--primary`, `--surface`, `--ink`, etc.).
 @immutable
 class AppTokens extends ThemeExtension<AppTokens> {
   const new({
@@ -48,38 +36,39 @@ class AppTokens extends ThemeExtension<AppTokens> {
     required this.shadows,
   });
 
-  factory light() => const AppTokens(
-    brightness: Brightness.light,
-    primary: AppRawTokens.teamOrange,
-    primaryHover: AppRawTokens.teamOrange600,
-    primarySoft: AppRawTokens.teamOrangeSoft,
-    primarySoft2: AppRawTokens.teamOrangeSoft2,
-    primaryInk: AppRawTokens.teamOrangeInk,
-    onPrimary: AppRawTokens.teamCharcoal,
-    bg: AppRawTokens.teamGray,
-    surface: AppRawTokens.white,
-    surface2: AppRawTokens.teamSurface2,
-    ink: AppRawTokens.teamNavy,
-    muted: AppRawTokens.teamMuted,
-    line: AppRawTokens.teamLine,
-    success: AppRawTokens.teamGreen,
-    successSoft: AppRawTokens.teamGreenSoft,
-    successInk: AppRawTokens.teamGreenInk,
-    danger: AppRawTokens.teamRed,
-    dangerSoft: AppRawTokens.teamRedSoft,
-    dangerInk: AppRawTokens.teamRedInk,
-    dark: AppRawTokens.teamCharcoal,
-    onDark: AppRawTokens.white,
-    side: AppRawTokens.white,
-    sideInk: AppRawTokens.teamMuted,
-    sideInkStrong: AppRawTokens.teamNavy,
-    sideHover: AppRawTokens.teamGray,
-    sideLine: AppRawTokens.teamLine,
-    shadows: _lightShadows,
-  );
+  factory light([AppBrandPalette palette = AppBrandPalette.orange]) =>
+      AppTokens(
+        brightness: Brightness.light,
+        primary: palette.primary,
+        primaryHover: palette.primaryHover,
+        primarySoft: palette.primarySoft,
+        primarySoft2: palette.primarySoft2,
+        primaryInk: palette.primaryInk,
+        onPrimary: palette.onPrimary,
+        bg: AppRawTokens.teamGray,
+        surface: AppRawTokens.white,
+        surface2: AppRawTokens.teamSurface2,
+        ink: AppRawTokens.teamNavy,
+        muted: AppRawTokens.teamMuted,
+        line: AppRawTokens.teamLine,
+        success: AppRawTokens.teamGreen,
+        successSoft: AppRawTokens.teamGreenSoft,
+        successInk: AppRawTokens.teamGreenInk,
+        danger: AppRawTokens.teamRed,
+        dangerSoft: AppRawTokens.teamRedSoft,
+        dangerInk: AppRawTokens.teamRedInk,
+        dark: AppRawTokens.teamCharcoal,
+        onDark: AppRawTokens.white,
+        side: AppRawTokens.white,
+        sideInk: AppRawTokens.teamMuted,
+        sideInkStrong: AppRawTokens.teamNavy,
+        sideHover: AppRawTokens.teamGray,
+        sideLine: AppRawTokens.teamLine,
+        shadows: _lightShadows,
+      );
 
-  factory dark() {
-    final base = AppTokens.light();
+  factory dark([AppBrandPalette palette = AppBrandPalette.orange]) {
+    final base = AppTokens.light(palette);
     const surface = AppRawTokens.darkSurface;
     return AppTokens(
       brightness: Brightness.dark,
@@ -88,7 +77,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
       primarySoft: Color.lerp(surface, base.primary, 0.20)!,
       primarySoft2: Color.lerp(surface, base.primary, 0.32)!,
       primaryInk: Color.lerp(AppRawTokens.white, base.primary, 0.60)!,
-      onPrimary: AppRawTokens.teamCharcoal,
+      onPrimary: palette.onPrimary,
       bg: AppRawTokens.darkBg,
       surface: surface,
       surface2: AppRawTokens.darkSurface2,
@@ -112,8 +101,12 @@ class AppTokens extends ThemeExtension<AppTokens> {
     );
   }
 
-  factory resolve({required Brightness brightness}) =>
-      brightness == Brightness.dark ? AppTokens.dark() : AppTokens.light();
+  factory resolve({
+    required Brightness brightness,
+    AppBrandPalette palette = AppBrandPalette.orange,
+  }) => brightness == Brightness.dark
+      ? AppTokens.dark(palette)
+      : AppTokens.light(palette);
 
   static const List<BoxShadow> _lightShadows = [
     BoxShadow(

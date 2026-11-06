@@ -49,7 +49,7 @@ class ShiftPage extends StatelessWidget {
                     _ActiveShiftCard(shift: shift, stats: st, state: state)
                   else
                     Container(
-                      padding: const EdgeInsets.all(AppDimensions.space5),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: tokens.surface,
                         borderRadius: BorderRadius.circular(AppDimensions.r),
@@ -63,25 +63,24 @@ class ShiftPage extends StatelessWidget {
                             children: [
                               Text(
                                 'ยังไม่เปิดกะ',
-                                style: Theme.of(context).textTheme.displaySmall
-                                    ?.copyWith(color: tokens.ink),
+                                style: Theme.of(context).textTheme.displaySmall,
                               ),
                               const Pill(label: 'ปิดอยู่'),
                             ],
                           ),
-                          const SizedBox(height: AppDimensions.space2),
+                          const SizedBox(height: 8),
                           OpenShiftForm(staffId: staffId, staffName: staffName),
                         ],
                       ),
                     ),
                   if (shift != null && state.owingTables.isNotEmpty) ...[
-                    const SizedBox(height: AppDimensions.space4),
+                    const SizedBox(height: 16),
                     OwingTablesBanner(
                       state: state,
                       onGoTables: onGoTables ?? () {},
                     ),
                   ],
-                  const SizedBox(height: AppDimensions.space5),
+                  const SizedBox(height: 20),
                   PageHeader(
                     title: 'ประวัติกะ (14 กะล่าสุด)',
                     actions: [
@@ -98,7 +97,7 @@ class ShiftPage extends StatelessWidget {
                         ),
                     ],
                   ),
-                  const SizedBox(height: AppDimensions.space3),
+                  const SizedBox(height: 12),
                   ShiftHistoryTable(state: state),
                 ],
               ),
@@ -108,7 +107,7 @@ class ShiftPage extends StatelessWidget {
                 color: tokens.scrim,
                 child: Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(AppDimensions.space4),
+                    padding: const EdgeInsets.all(16),
                     child: Confirm(
                       title: 'ปิดกะ?',
                       text: _confirmCloseText(state),
@@ -128,14 +127,13 @@ class ShiftPage extends StatelessWidget {
   }
 
   String _confirmCloseText(ShiftState state) {
-    final cnt = state.countedValue ?? 0;
     final diff = state.diff ?? 0;
     final diffPart = diff == 0 ? ' · ยอดตรง' : ' · ส่วนต่าง ${baht(diff, 2)}';
     final owingPart = state.owingTables.isNotEmpty
         ? ' · มีโต๊ะค้างชำระ ${state.owingTables.length} โต๊ะ '
               '(${baht(state.owedTotal)})'
         : '';
-    return 'นับได้ ${baht(cnt, 2)}$diffPart$owingPart';
+    return 'นับได้ ${baht(state.countedValue ?? 0, 2)}$diffPart$owingPart';
   }
 }
 
@@ -157,10 +155,9 @@ class _ActiveShiftCard extends StatelessWidget {
     final openedDate = dkey(DateTime.parse(shift.openedAt).toLocal());
     final diff = state.diff;
     final totalSales = stats.cash + stats.qr + stats.transfer;
-
     return Container(
       key: const ValueKey('active-shift-card'),
-      padding: const EdgeInsets.all(AppDimensions.space5),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: tokens.surface,
         borderRadius: BorderRadius.circular(AppDimensions.r),
@@ -168,6 +165,7 @@ class _ActiveShiftCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 16,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,11 +176,9 @@ class _ActiveShiftCard extends StatelessWidget {
                   children: [
                     Text(
                       'กะปัจจุบัน · ${state.staffNameOf(shift.staffId)}',
-                      style: textTheme.displaySmall?.copyWith(
-                        color: tokens.ink,
-                      ),
+                      style: textTheme.displaySmall,
                     ),
-                    const SizedBox(height: AppDimensions.space1),
+                    const SizedBox(height: 4),
                     Text(
                       'เปิดเมื่อ ${thDate(openedDate)} '
                       '${thTime(shift.openedAt)}',
@@ -192,8 +188,8 @@ class _ActiveShiftCard extends StatelessWidget {
                 ),
               ),
               Wrap(
-                spacing: AppDimensions.space2,
-                runSpacing: AppDimensions.space2,
+                spacing: 8,
+                runSpacing: 8,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Pill(
@@ -205,11 +201,9 @@ class _ActiveShiftCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppDimensions.space4),
           ShiftStatsGrid(shift: shift, stats: stats),
-          const SizedBox(height: AppDimensions.space4),
           Container(
-            padding: const EdgeInsets.all(AppDimensions.space4),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: tokens.surface2,
               borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
@@ -217,6 +211,7 @@ class _ActiveShiftCard extends StatelessWidget {
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 8,
               children: [
                 Text(
                   'นับเงินสดจริงในลิ้นชัก (บาท)',
@@ -225,7 +220,6 @@ class _ActiveShiftCard extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: AppDimensions.space2),
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final isWide = constraints.maxWidth >= 680;
@@ -266,9 +260,10 @@ class _ActiveShiftCard extends StatelessWidget {
                       Btn(
                         key: const ValueKey('shift-fill-expected-btn'),
                         label: 'ตรงตามระบบ (${baht(stats.expected)})',
-                        onPressed: () => bloc.add(
-                          ShiftCountedInputChanged(_cleanNum(stats.expected)),
-                        ),
+                        onPressed: () {
+                          final v = _cleanNum(stats.expected);
+                          bloc.add(ShiftCountedInputChanged(v));
+                        },
                       ),
                       if (state.countedInput.isNotEmpty)
                         Btn(
@@ -281,25 +276,17 @@ class _ActiveShiftCard extends StatelessWidget {
                         ),
                       diffPill,
                     ];
-                    if (!isWide) {
-                      return Wrap(
-                        spacing: AppDimensions.space3,
-                        runSpacing: AppDimensions.space3,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [...controls, closeBtn],
-                      );
-                    }
-                    return Row(
-                      children: [
-                        for (var i = 0; i < controls.length; i++) ...[
-                          if (i > 0)
-                            const SizedBox(width: AppDimensions.space3),
-                          controls[i],
-                        ],
-                        const Spacer(),
-                        closeBtn,
-                      ],
-                    );
+                    return !isWide
+                        ? Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [...controls, closeBtn],
+                          )
+                        : Row(
+                            spacing: 12,
+                            children: [...controls, const Spacer(), closeBtn],
+                          );
                   },
                 ),
               ],

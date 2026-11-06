@@ -210,4 +210,78 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    '5 feedback features: bank account picker, QR on receipt, POS slip on '
+    'occupied table, and cancel when customer changes mind after printing slip',
+    (tester) async {
+      tester.view.physicalSize = const Size(1366, 1024);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final repo = MockPosRepository.createFallback();
+      await tester.pumpWidget(KepTohApp(repository: repo));
+      await tester.pumpAndSettle();
+
+      // 1. Open free table A1 (t1) -> go to payment step
+      await tester.tap(find.byKey(const ValueKey('table-card-t1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('sale-pay-btn')));
+      await tester.pumpAndSettle();
+
+      // 2. Select transfer payment (pm3) -> verify BankAccountPicker appears
+      await tester.tap(find.byKey(const ValueKey('pay-method-pm3')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('bank-account-picker')), findsOneWidget);
+      expect(find.byKey(const ValueKey('bank-account-ba1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('bank-account-ba2')), findsOneWidget);
+      expect(find.byKey(const ValueKey('transfer-status-seg')), findsNothing);
+      expect(find.text('กำลังรอ'), findsNothing);
+
+      // Select 2nd bank account (ba2 - SCB)
+      await tester.tap(find.byKey(const ValueKey('bank-account-ba2')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('987-6-54321-0'), findsWidgets);
+
+      // 3. Switch to QR PromptPay (pm2) and confirm payment
+      await tester.tap(find.byKey(const ValueKey('pay-method-pm2')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('pay-confirm-btn')));
+      await tester.pumpAndSettle();
+
+      // 4. Verify ReceiptModal renders embedded PromptPay QR on receipt card
+      expect(find.byKey(const ValueKey('receipt-modal')), findsOneWidget);
+      expect(find.byKey(const ValueKey('receipt-qr-box')), findsOneWidget);
+      expect(find.text('สแกน QR พร้อมเพย์เพื่อชำระเงิน'), findsOneWidget);
+
+      // Close receipt -> returns to /tables where table A1 is now occupied
+      await tester.tap(find.byKey(const ValueKey('receipt-done-btn')));
+      await tester.pumpAndSettle();
+
+      // 5. On /tables, occupied table A1 shows "สลิป POS" button
+      final slipBtnOnTableCard = find.byKey(
+        const ValueKey('table-slip-btn-t1'),
+      );
+      expect(slipBtnOnTableCard, findsOneWidget);
+      await tester.tap(slipBtnOnTableCard);
+      await tester.pumpAndSettle();
+
+      // Verify POS slip modal opens with QR code and void button
+      expect(find.byKey(const ValueKey('receipt-modal')), findsOneWidget);
+      expect(find.byKey(const ValueKey('receipt-qr-box')), findsOneWidget);
+
+      // 6. Customer changes mind -> tap "ยกเลิกบิล" -> confirm void
+      await tester.tap(find.byKey(const ValueKey('receipt-void-btn')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('confirm-void-btn')));
+      await tester.pumpAndSettle();
+
+      // Table A1 is automatically released back to "ว่าง"
+      final tableA1Card = find.byKey(const ValueKey('table-card-t1'));
+      expect(
+        find.descendant(of: tableA1Card, matching: find.text('ว่าง')),
+        findsOneWidget,
+      );
+    },
+  );
 }

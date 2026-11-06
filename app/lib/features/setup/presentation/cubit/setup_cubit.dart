@@ -90,13 +90,46 @@ class SetupCubit extends Cubit<SetupState> {
     if (next.name.trim().isEmpty) {
       return const SetupCrudResult.failure('กรุณากรอกชื่อร้าน');
     }
-    s.shop = next;
+    if (next.vatRate < 0 || next.vatRate > 100) {
+      return const SetupCrudResult.failure(
+        'อัตราภาษีมูลค่าเพิ่มต้องอยู่ระหว่าง 0 ถึง 100%',
+        guard: true,
+      );
+    }
+    if (next.servicePct < 0 || next.servicePct > 100) {
+      return const SetupCrudResult.failure(
+        'อัตราค่าบริการต้องอยู่ระหว่าง 0 ถึง 100%',
+        guard: true,
+      );
+    }
+    if (next.defaultFloat < 0) {
+      return const SetupCrudResult.failure(
+        'เงินทอนตั้งต้นกะต้องไม่ติดลบ',
+        guard: true,
+      );
+    }
+    final cleanTax = next.taxId.replaceAll(RegExp(r'[\s-]'), '');
+    if (cleanTax.isNotEmpty && !RegExp(r'^\d{13}$').hasMatch(cleanTax)) {
+      return const SetupCrudResult.failure(
+        'เลขประจำตัวผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก',
+        guard: true,
+      );
+    }
+    s.shop = next.copyWith(
+      themeMode: s.shop.themeMode,
+      themePalette: s.shop.themePalette,
+      bankAccounts: s.shop.bankAccounts,
+    );
     return const SetupCrudResult.success('บันทึกข้อมูลร้านแล้ว');
   });
 
   /// Saves profit & costing calculation formulas (`CostingForm`).
   SetupCrudResult saveCosting(ShopConfig next) => _runMutation((s) {
-    s.shop = next;
+    s.shop = next.copyWith(
+      themeMode: s.shop.themeMode,
+      themePalette: s.shop.themePalette,
+      bankAccounts: s.shop.bankAccounts,
+    );
     return const SetupCrudResult.success('บันทึกสูตรคำนวณแล้ว');
   });
 
@@ -148,6 +181,16 @@ class SetupCubit extends Cubit<SetupState> {
     PaymentMethod x, {
     required bool active,
   }) => upsertPayment(x.copyWith(active: active));
+
+  /// Validates and saves a [BankAccountItem].
+  SetupCrudResult upsertBankAccount(BankAccountItem item) =>
+      _runMutation((s) => upsertBankAccountInState(s, item));
+
+  /// Toggles active status on a [BankAccountItem].
+  SetupCrudResult toggleBankAccountActive(
+    BankAccountItem x, {
+    required bool active,
+  }) => upsertBankAccount(x.copyWith(active: active));
 
   /// Validates and saves a [FixedCostItem].
   SetupCrudResult upsertFixedCost(FixedCostItem item) =>

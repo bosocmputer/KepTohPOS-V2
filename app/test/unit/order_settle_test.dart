@@ -428,5 +428,122 @@ void main() {
         expect(stockOf('ad5'), 60);
       },
     );
+
+    test('5 User Feedback Features + Accountant Controls (A1-A6): '
+        'custom vatRate, bankAccount snapshot/delete guard, buildTablePosSlip, '
+        'cancelOpenTable, and voidBill auto-releasing openTable', () {
+      final fixedNow = DateTime(2026, 11, 4, 15);
+      final s = _loadFreshMockState(fixedNow);
+      final cashier = s.staff.firstWhere((st) => st.role == 'cashier');
+      final t1 = s.tables.firstWhere((t) => t.id == 't1');
+      final t2 = s.tables.firstWhere((t) => t.id == 't2');
+      final pmTransfer = s.payments.firstWhere((p) => p.type == 'transfer');
+      final pkg1 = s.packages.firstWhere((p) => p.id == 'pk1');
+
+      // 1. Custom VAT rate (10%) in excluded & included modes
+      final shopEx10 = s.shop.copyWith(
+        vatMode: 'excluded',
+        vatRate: 10,
+        rounding: 'none',
+      );
+      final ex10 = calcOrder(shopEx10, pkg1, 2, 0, 0, const []);
+      expect(ex10.subtotal, 398);
+      expect(ex10.vat, closeTo(39.8, 1e-6));
+      expect(ex10.total, closeTo(437.8, 1e-6));
+
+      final shopIn10 = s.shop.copyWith(vatMode: 'included', vatRate: 10);
+      final in10 = calcOrder(shopIn10, pkg1, 2, 0, 0, const []);
+      expect(in10.total, 398);
+      expect(in10.vat, closeTo(36.18, 1e-6));
+
+      // 2. Settle transfer payment with selected bank account (ba2) & 10% VAT
+      s.shop = shopEx10;
+      final bank2 = s.shop.activeBankAccounts[1];
+      settle(
+        s,
+        t1,
+        TableTotals(a: 2, ad: {'ad1': 1}),
+        cashier,
+        timing: 'before',
+        pkgId: 'pk1',
+        method: pmTransfer,
+        received: 500,
+        billId: 'b_trans_1',
+        bankAccount: bank2,
+        now: fixedNow,
+      );
+      final settled = s.sales.last;
+      expect(settled.vatMode, 'excluded');
+      expect(settled.vatRate, 10.0);
+      expect(settled.bankAccountId, bank2.id);
+      expect(settled.bankAccountInfo, bank2.shortLabel);
+      expect(s.openTables.containsKey('t1'), isTrue);
+
+      // A6: Delete guard blocks deleting bank2 (used in b_trans_1)
+      expect(
+        checkSetupDeleteGuard(
+          s,
+          section: 'bankAccounts',
+          id: bank2.id,
+          currentStaffId: cashier.id,
+        ),
+        isNotNull,
+      );
+      // Unused bank1 can be deleted
+      expect(
+        checkSetupDeleteGuard(
+          s,
+          section: 'bankAccounts',
+          id: s.shop.activeBankAccounts.first.id,
+          currentStaffId: cashier.id,
+        ),
+        isNull,
+      );
+
+      // 3. buildTablePosSlip on paid-before table returns settled bill
+      final slipPaid = buildTablePosSlip(s, 't1', now: fixedNow);
+      expect(slipPaid, isNotNull);
+      expect(slipPaid!.id, 'b_trans_1');
+      expect(slipPaid.isSlipPreview, isFalse);
+
+      // 4. Customer changes mind after slip printed (allowCashier: true)
+      // -> voids bill, restores addon stock, and auto-releases openTables['t1']
+      expect(
+        voidBill(
+          s,
+          billId: 'b_trans_1',
+          me: cashier,
+          allowCashier: true,
+          reason: 'ลูกค้าเปลี่ยนใจไม่รับประทาน',
+          now: fixedNow,
+        ),
+        isTrue,
+      );
+      expect(settled.voided, isTrue);
+      expect(s.openTables.containsKey('t1'), isFalse);
+
+      // 5. Eat-before-pay (after) table: buildTablePosSlip returns preview slip
+      // and cancelOpenTable restores stock + clears openTables['t2']
+      final stockBefore = s.addons.firstWhere((a) => a.id == 'ad1').stock;
+      sendRound(
+        s,
+        t2,
+        TableTotals(a: 2, ad: {'ad1': 2}),
+        cashier,
+        'after',
+        'pk1',
+        'โต๊ะทดสอบ',
+        now: fixedNow,
+      );
+      expect(s.addons.firstWhere((a) => a.id == 'ad1').stock, stockBefore - 2);
+      final slipUnpaid = buildTablePosSlip(s, 't2', now: fixedNow);
+      expect(slipUnpaid, isNotNull);
+      expect(slipUnpaid!.isSlipPreview, isTrue);
+      expect(slipUnpaid.methodType, 'qr');
+
+      expect(cancelOpenTable(s, 't2'), isTrue);
+      expect(s.openTables.containsKey('t2'), isFalse);
+      expect(s.addons.firstWhere((a) => a.id == 'ad1').stock, stockBefore);
+    });
   });
 }

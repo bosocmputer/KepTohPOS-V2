@@ -26,14 +26,11 @@ class LoginPage extends StatelessWidget {
     return BlocConsumer<AuthCubit, AuthState>(
       listenWhen: (prev, curr) => !prev.isAuthenticated && curr.isAuthenticated,
       listener: (context, state) => onLoggedIn?.call(),
-      builder: (context, state) {
-        return Scaffold(
-          backgroundColor: tokens.surface,
-          body: LayoutBuilder(
-            builder: (context, constraints) {
-              final isWide = constraints.maxWidth >= 860;
-              if (isWide) {
-                return Row(
+      builder: (context, state) => Scaffold(
+        backgroundColor: tokens.surface,
+        body: LayoutBuilder(
+          builder: (context, constraints) => constraints.maxWidth >= 860
+              ? Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Expanded(flex: 5, child: LoginHeroPanel(state: state)),
@@ -45,15 +42,10 @@ class LoginPage extends StatelessWidget {
                       ),
                     ),
                   ],
-                );
-              }
-              return SafeArea(
-                child: _LoginViewport(state: state, isWide: false),
-              );
-            },
-          ),
-        );
-      },
+                )
+              : SafeArea(child: _LoginViewport(state: state, isWide: false)),
+        ),
+      ),
     );
   }
 }
@@ -239,12 +231,8 @@ class _LoginFooter extends StatelessWidget {
   final AuthState state;
   final bool showCompactLedger;
 
-  String _pinHintForRole(String role) {
-    for (final s in state.staff) {
-      if (s.role == role) return s.pin;
-    }
-    return '-';
-  }
+  String _pinHintForRole(String role) =>
+      state.staff.where((s) => s.role == role).firstOrNull?.pin ?? '-';
 
   @override
   Widget build(BuildContext context) {
