@@ -8,9 +8,7 @@ import 'package:go_router/go_router.dart';
 /// component in Light and Dark themes.
 class DevComponentsPage extends StatefulWidget {
   const new({super.key, this.forcedBrightness});
-
   final Brightness? forcedBrightness;
-
   @override
   State<DevComponentsPage> createState() => _DevComponentsPageState();
 }
@@ -24,7 +22,11 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
   String _tab = 'all';
   String _pin = '12';
   int _page = 1;
-
+  AppBrandPalette _palette = AppBrandPalette.orange;
+  static const _segItems = <SegItem<String>>[
+    SegItem(value: 'before', label: 'จ่ายก่อนกิน', tone: SegTone.green),
+    SegItem(value: 'after', label: 'กินก่อนจ่าย', tone: SegTone.orange),
+  ];
   static final _sampleCols = <DataTableCol<(String, String, String)>>[
     DataTableCol(key: 'no', label: 'เลขบิล', cellBuilder: (_, r) => Text(r.$1)),
     DataTableCol(key: 'tb', label: 'โต๊ะ', cellBuilder: (_, r) => Text(r.$2)),
@@ -58,13 +60,22 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
           ),
           const SizedBox(width: AppDimensions.space3),
           Text('Components (dev)', style: TextStyle(color: t.ink)),
+          const Spacer(),
+          Seg<AppBrandPalette>(
+            value: _palette,
+            items: [
+              for (final p in AppBrandPalette.values)
+                SegItem(value: p, label: p.label),
+            ],
+            onChanged: (p) => setState(() => _palette = p),
+          ),
         ],
       ),
     );
   }
 
   Widget _themedPane(Brightness brightness, String title) => Theme(
-    data: AppTheme.build(brightness: brightness),
+    data: AppTheme.build(brightness: brightness, palette: _palette),
     child: Builder(builder: (ctx) => _buildThemeColumn(ctx, title)),
   );
 
@@ -104,9 +115,11 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
     );
   }
 
+  Widget _b(String l, [BtnKind k = BtnKind.normal, String? ic]) =>
+      Btn(label: l, kind: k, icon: ic, onPressed: () {});
+
   Widget _buildThemeColumn(BuildContext context, String modeTitle) {
     final tokens = context.tokens;
-    const gap = SizedBox(height: AppDimensions.space4);
     final sections = <Widget>[
       PageHeader(
         title: 'คลัง Component กลาง · $modeTitle',
@@ -114,7 +127,10 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
         actions: const [Pill(label: 'Figma Brand', tone: PillTone.orange)],
       ),
       Toolbar(
-        end: const [Avatar(name: 'คุณต้อม')],
+        end: const [
+          StaffShiftChip(staffName: 'คุณแอน', isShiftOpen: true),
+          StaffShiftChip(staffName: 'น้องมุก', isShiftOpen: false),
+        ],
         children: [
           SearchBox(
             value: _search,
@@ -123,31 +139,21 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
         ],
       ),
       Wrap(
-        spacing: AppDimensions.space2,
-        runSpacing: AppDimensions.space2,
+        spacing: 8,
+        runSpacing: 8,
         children: [
-          Btn(
-            label: 'Primary',
-            kind: BtnKind.primary,
-            icon: 'plus',
-            onPressed: () {},
-          ),
-          Btn(label: 'Normal', onPressed: () {}),
-          Btn(label: 'Dark', kind: BtnKind.dark, onPressed: () {}),
-          Btn(label: 'Danger', kind: BtnKind.danger, onPressed: () {}),
-          Btn(
-            label: 'Danger Solid',
-            kind: BtnKind.dangerSolid,
-            icon: 'trash',
-            onPressed: () {},
-          ),
-          Btn(label: 'Ghost', kind: BtnKind.ghost, onPressed: () {}),
+          _b('Primary', BtnKind.primary, 'plus'),
+          _b('Normal'),
+          _b('Dark', BtnKind.dark),
+          _b('Danger', BtnKind.danger),
+          _b('Danger Solid', BtnKind.dangerSolid, 'trash'),
+          _b('Ghost', BtnKind.ghost),
           const Btn(label: 'Disabled', disabled: true),
         ],
       ),
       const Wrap(
-        spacing: AppDimensions.space2,
-        runSpacing: AppDimensions.space2,
+        spacing: 8,
+        runSpacing: 8,
         children: [
           Pill(label: 'ว่าง'),
           Pill(label: 'มีลูกค้า', tone: PillTone.orange),
@@ -173,23 +179,25 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
         ],
         onChanged: (v) => setState(() => _ddValue = v),
       ),
-      Row(
+      Wrap(
+        spacing: 16,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           PosStepper(
             value: _step,
             label: 'จำนวนผู้ใหญ่',
             onChanged: (v) => setState(() => _step = v),
           ),
-          const SizedBox(width: AppDimensions.space4),
-          Flexible(
-            child: Seg<String>(
-              value: _seg,
-              items: const [
-                SegItem(value: 'before', label: 'จ่ายก่อนกิน'),
-                SegItem(value: 'after', label: 'กินก่อนจ่าย'),
-              ],
-              onChanged: (v) => setState(() => _seg = v),
-            ),
+          Seg<String>(
+            value: _seg,
+            items: _segItems,
+            onChanged: (v) => setState(() => _seg = v),
+          ),
+          AppSwitch(
+            value: _seg == 'all',
+            label: 'เปิดขาย',
+            onChanged: (on) => setState(() => _seg = on ? 'all' : 'low'),
           ),
         ],
       ),
@@ -222,7 +230,7 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
               onTap: () {},
             ),
           ),
-          const SizedBox(width: AppDimensions.space3),
+          const SizedBox(width: 12),
           const Expanded(
             child: ProductCard(
               name: 'เบียร์ช้าง ขวดใหญ่',
@@ -255,6 +263,8 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
       NumPad(
         value: _pin,
         maxLen: 4,
+        filledKeys: true,
+        showClear: true,
         onChanged: (v) => setState(() => _pin = v),
       ),
       const Empty(title: 'ยังไม่มีรายการ', text: 'กดเพิ่มรายการเพื่อเริ่ม'),
@@ -262,10 +272,7 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
         title: 'ตัวอย่าง Modal',
         sub: 'คำอธิบายย่อย',
         onClose: () {},
-        footer: [
-          Btn(label: 'ยกเลิก', onPressed: () {}),
-          Btn(label: 'บันทึก', kind: BtnKind.primary, onPressed: () {}),
-        ],
+        footer: [_b('ยกเลิก'), _b('บันทึก', BtnKind.primary)],
         child: const Text('เนื้อหาภายใน Modal'),
       ),
       Confirm(
@@ -277,19 +284,14 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
       ),
       const Center(child: AppToast(message: 'บันทึกข้อมูลเรียบร้อย')),
     ];
-
     return ColoredBox(
       color: tokens.bg,
       child: Padding(
-        padding: const EdgeInsets.all(AppDimensions.space5),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (var i = 0; i < sections.length; i++) ...[
-              if (i > 0) gap,
-              sections[i],
-            ],
-          ],
+          spacing: 16,
+          children: sections,
         ),
       ),
     );

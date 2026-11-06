@@ -49,29 +49,27 @@ void main() {
 
       // Unauthenticated user is redirected to /login
       expect(find.text('เข้าสู่ระบบ'), findsOneWidget);
-      expect(find.text('เข้าสู่ระบบและเปิดกะ'), findsOneWidget);
+      expect(find.byKey(const ValueKey('login-submit-btn')), findsNothing);
 
-      // Select cashier น้องมุก (st3, PIN 1111) from Dropdown
-      await tester.tap(find.text('คุณแอน'));
+      // Select cashier เนส (st3, PIN 1111) from Dropdown
+      await tester.tap(find.text('อัย'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('น้องมุก').last);
+      await tester.tap(find.text('เนส').last);
       await tester.pumpAndSettle();
 
-      // Enter wrong PIN 9999 -> shows error
+      // Enter wrong PIN 9999 -> auto-validates on 4th digit and shows error
       for (var i = 0; i < 4; i++) {
         await tester.tap(find.text('9'));
+        await tester.pump();
       }
-      await tester.pump();
-      await tester.tap(find.byKey(const ValueKey('login-submit-btn')));
       await tester.pumpAndSettle();
       expect(find.text('PIN ไม่ถูกต้อง ลองใหม่อีกครั้ง'), findsOneWidget);
 
-      // Enter valid PIN 1111 -> logs in and prompts OpenShiftModal
+      // Enter valid PIN 1111 -> auto-logs in on 4th digit & prompts OpenShift
       for (var i = 0; i < 4; i++) {
         await tester.tap(find.text('1'));
+        await tester.pump();
       }
-      await tester.pump();
-      await tester.tap(find.byKey(const ValueKey('login-submit-btn')));
       await tester.pumpAndSettle();
 
       // OpenShiftModal is shown because no shift was open
@@ -119,9 +117,8 @@ void main() {
       // Default selected staff is st1 (คุณแอน, owner, PIN 1234)
       for (final d in ['1', '2', '3', '4']) {
         await tester.tap(find.text(d));
+        await tester.pump();
       }
-      await tester.pump();
-      await tester.tap(find.byKey(const ValueKey('login-submit-btn')));
       await tester.pumpAndSettle();
 
       // Open Sidebar -> owner sees all 7 views
@@ -142,6 +139,19 @@ void main() {
       expect(find.byKey(const ValueKey('active-shift-card')), findsOneWidget);
       expect(find.text('฿5,446'), findsOneWidget);
 
+      final closeBtnFinder = find.byKey(const ValueKey('close-shift-btn'));
+      final closeXBefore = tester.getTopLeft(closeBtnFinder).dx;
+
+      // Tap quick-fill expected cash button -> fills 5,446 without layout shift
+      await tester.tap(find.byKey(const ValueKey('shift-fill-expected-btn')));
+      await tester.pumpAndSettle();
+      expect(find.text('5,446'), findsOneWidget);
+      expect(tester.getTopLeft(closeBtnFinder).dx, equals(closeXBefore));
+
+      // Clear and enter counted cash manually
+      await tester.tap(find.byKey(const ValueKey('shift-clear-counted-btn')));
+      await tester.pumpAndSettle();
+
       // Enter counted cash and close shift
       await tester.enterText(
         find.byKey(const ValueKey('shift-counted-input')),
@@ -153,12 +163,42 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('close-shift-btn')));
       await tester.pumpAndSettle();
       expect(find.text('ปิดกะ?'), findsOneWidget);
+      expect(find.text('เงินสดที่นับได้จริง'), findsOneWidget);
 
       await tester.tap(find.text('ปิดกะ').last);
       await tester.pumpAndSettle();
 
       expect(openShiftOf(repo.state), isNull);
       expect(find.text('ยังไม่เปิดกะ'), findsWidgets);
+
+      // Quick preset float selection formats with comma (2,000)
+      await tester.tap(find.byKey(const ValueKey('shift-float-preset-2000')));
+      await tester.pumpAndSettle();
+      expect(find.text('2,000'), findsOneWidget);
     });
+
+    testWidgets(
+      'portrait tablet (768x1024) and mobile (390x844) render compact ledger '
+      'banner without full hero panel',
+      (tester) async {
+        addTearDown(tester.view.reset);
+        for (final size in [const Size(768, 1024), const Size(390, 844)]) {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1.0;
+
+          final repo = _buildTestRepo();
+          await tester.pumpWidget(
+            KepTohApp(repository: repo, now: DateTime(2026, 11, 4, 12)),
+          );
+          await tester.pumpAndSettle();
+
+          expect(find.byKey(const ValueKey('login-hero-panel')), findsNothing);
+          expect(
+            find.byKey(const ValueKey('login-compact-ledger-banner')),
+            findsOneWidget,
+          );
+        }
+      },
+    );
   });
 }

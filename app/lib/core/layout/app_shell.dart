@@ -92,20 +92,23 @@ class _AppShellState extends State<AppShell> {
         final delegateHeader =
             !isMobile && widget.delegateDesktopHeader && hasAccess;
 
-        ShellHeaderBar buildHeader({List<Widget> extraActions = const []}) =>
-            ShellHeaderBar(
-              height: headerHeight,
-              isMobile: isMobile,
-              horizontalPadding: pagePad,
-              pageTitle: widget.pageTitle,
-              staffName: widget.staffName,
-              isShiftOpen: widget.shiftOpenTimeText != null,
-              actions: <Widget>[...extraActions, ...widget.headerActions],
-              searchQuery: widget.searchQuery,
-              searchPlaceholder: widget.searchPlaceholder,
-              onSearchChanged: widget.onSearchChanged,
-              onOpenDrawer: () => setState(() => _drawerOpen = true),
-            );
+        ShellHeaderBar buildHeader({
+          Widget? titleWidget,
+          List<Widget> extraActions = const [],
+        }) => ShellHeaderBar(
+          height: headerHeight,
+          isMobile: isMobile,
+          horizontalPadding: pagePad,
+          pageTitle: widget.pageTitle,
+          titleWidget: titleWidget,
+          staffName: widget.staffName,
+          isShiftOpen: widget.shiftOpenTimeText != null,
+          actions: <Widget>[...extraActions, ...widget.headerActions],
+          searchQuery: widget.searchQuery,
+          searchPlaceholder: widget.searchPlaceholder,
+          onSearchChanged: widget.onSearchChanged,
+          onOpenDrawer: () => setState(() => _drawerOpen = true),
+        );
 
         return Scaffold(
           backgroundColor: tokens.bg,

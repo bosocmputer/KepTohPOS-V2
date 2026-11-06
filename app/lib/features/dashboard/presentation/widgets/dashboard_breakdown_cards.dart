@@ -2,8 +2,7 @@ import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
-import 'package:app/features/reports/presentation/pages/reports_page.dart'
-    show PendingBadge;
+import 'package:app/features/reports/presentation/pages/reports_page.dart';
 import 'package:flutter/material.dart';
 
 export 'package:app/features/reports/presentation/pages/reports_page.dart'
@@ -28,32 +27,32 @@ class DashboardHeroSection extends StatelessWidget {
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
     final last = summary.lastClosedDay;
-    final showNet = summary.showNetProfit;
     final lastVal = last != null ? (summary.dayMetric(last) ?? 0.0) : 0.0;
-    final spendPart = showNet && last != null
+    final spendPart = summary.showNetProfit && last != null
         ? ' − ค่าใช้จ่าย ${baht(last.expenses + last.fixed)}'
         : '';
     final estPart = last != null && last.estItems > 0
         ? ' · มีของประมาณการ ${last.estItems} รายการ'
         : '';
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (last != null) ...[
           Container(
             key: const ValueKey('dashboard-hero-card'),
-            padding: const EdgeInsets.all(AppDimensions.space4),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: t.surface,
               borderRadius: BorderRadius.circular(AppDimensions.r),
               border: Border.all(color: t.line),
             ),
             child: Row(
+              spacing: 12,
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 4,
                     children: [
                       Text(
                         'ปิดยอดล่าสุด · ${thDate(last.date)}'
@@ -63,7 +62,6 @@ class DashboardHeroSection extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: AppDimensions.space1),
                       Text(
                         '${lastVal >= 0 ? "กำไร" : "ขาดทุน"} '
                         '${baht(lastVal.abs())}',
@@ -73,7 +71,6 @@ class DashboardHeroSection extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: AppDimensions.space1),
                       Text(
                         '${summary.fieldName} · ขาย ${baht(last.net)} − '
                         'วัตถุดิบ ${baht(last.ingCost)} − '
@@ -84,12 +81,11 @@ class DashboardHeroSection extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: AppDimensions.space3),
                 PendingBadge(onTap: onGoSetupCosting),
               ],
             ),
           ),
-          const SizedBox(height: AppDimensions.space4),
+          const SizedBox(height: 16),
         ],
         if (summary.todayOpen) ...[
           Container(
@@ -101,20 +97,17 @@ class DashboardHeroSection extends StatelessWidget {
             ),
             clipBehavior: Clip.antiAlias,
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.space4,
-                vertical: AppDimensions.space3,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 border: Border(left: BorderSide(color: t.primary, width: 3)),
               ),
               child: Row(
+                spacing: 12,
                 children: [
                   const Pill(
                     label: 'วันนี้ยังไม่ปิดยอด',
                     tone: PillTone.orange,
                   ),
-                  const SizedBox(width: AppDimensions.space3),
                   Expanded(
                     child: Text(
                       'วันนี้ยังไม่ได้นับของเหลือ '
@@ -122,7 +115,6 @@ class DashboardHeroSection extends StatelessWidget {
                       style: tt.bodyMedium?.copyWith(color: t.ink),
                     ),
                   ),
-                  const SizedBox(width: AppDimensions.space3),
                   Btn(
                     key: const ValueKey('dashboard-go-stock-btn'),
                     kind: BtnKind.primary,
@@ -133,7 +125,7 @@ class DashboardHeroSection extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: AppDimensions.space4),
+          const SizedBox(height: 16),
         ],
       ],
     );
@@ -147,86 +139,113 @@ class DashboardBreakdownGrid extends StatelessWidget {
 
   final DashboardSummary summary;
 
-  Widget _card(BuildContext context, String title, Widget table) {
-    final t = context.tokens;
-    return Container(
-      padding: const EdgeInsets.all(AppDimensions.space4),
-      decoration: BoxDecoration(
-        color: t.surface,
-        borderRadius: BorderRadius.circular(AppDimensions.r),
-        border: Border.all(color: t.line),
+  Widget _card(
+    BuildContext ctx,
+    String title,
+    Widget table, [
+    Widget? trailing,
+  ]) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: ctx.tokens.surface,
+      borderRadius: BorderRadius.circular(AppDimensions.r),
+      border: Border.all(color: ctx.tokens.line),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 10,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(title, style: Theme.of(ctx).textTheme.titleLarge),
+            ),
+            ?trailing,
+          ],
+        ),
+        table,
+      ],
+    ),
+  );
+
+  DataTableCol<T> _col<T>(
+    String k,
+    String l,
+    Widget Function(T) b, [
+    int flex = 1,
+    ColAlign align = ColAlign.left,
+  ]) => DataTableCol(
+    key: k,
+    label: l,
+    flex: flex,
+    align: align,
+    cellBuilder: (_, x) => b(x),
+  );
+
+  Widget _progressBar(AppTokens t, double ratio) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 8),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: SizedBox(
+        height: 8,
+        child: LinearProgressIndicator(
+          value: ratio.clamp(0.0, 1.0),
+          backgroundColor: t.surface2,
+          valueColor: AlwaysStoppedAnimation<Color>(t.primary),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: AppDimensions.space2_5),
-          table,
-        ],
-      ),
-    );
-  }
+    ),
+  );
 
   Widget _buildIngShareCard(BuildContext context) {
     final t = context.tokens;
+    const bold = TextStyle(fontWeight: FontWeight.w600);
     return _card(
       context,
       'ต้นทุนวัตถุดิบแยกรายการ',
       PosDataTable<IngredientCostShareRow>(
         label: 'ต้นทุนวัตถุดิบแยกรายการ',
-        showHeader: false,
         rows: summary.ingredientShares,
         empty: const Empty(title: 'ยังไม่มีวันที่ปิดยอดในช่วงนี้'),
         columns: [
-          DataTableCol<IngredientCostShareRow>(
-            key: 'n',
-            label: 'วัตถุดิบ',
-            flex: 4,
-            cellBuilder: (_, x) =>
-                Text(x.ing.name, overflow: TextOverflow.ellipsis),
+          _col(
+            'n',
+            'วัตถุดิบ',
+            (x) => Text(x.ing.name, overflow: TextOverflow.ellipsis),
+            4,
           ),
-          DataTableCol<IngredientCostShareRow>(
-            key: 'bar',
-            label: 'สัดส่วน',
-            flex: 3,
-            cellBuilder: (_, x) => Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.space2,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-                child: SizedBox(
-                  height: 8,
-                  child: LinearProgressIndicator(
-                    value: x.barRatio.clamp(0.0, 1.0),
-                    backgroundColor: t.surface2,
-                    valueColor: AlwaysStoppedAnimation<Color>(t.primary),
-                  ),
-                ),
-              ),
-            ),
+          _col('bar', 'สัดส่วน', (x) => _progressBar(t, x.barRatio), 3),
+          _col(
+            'v',
+            'บาท',
+            (x) => Text(fmt(x.cost), style: bold),
+            2,
+            ColAlign.right,
           ),
-          DataTableCol<IngredientCostShareRow>(
-            key: 'v',
-            label: 'บาท',
-            align: ColAlign.right,
-            flex: 2,
-            cellBuilder: (_, x) => Text(fmt(x.cost)),
-          ),
-          DataTableCol<IngredientCostShareRow>(
-            key: 'p',
-            label: '%',
-            align: ColAlign.right,
-            cellBuilder: (_, x) =>
+          _col(
+            'p',
+            '%',
+            (x) =>
                 Text('${fmt(x.sharePct)}%', style: TextStyle(color: t.muted)),
+            1,
+            ColAlign.right,
           ),
         ],
       ),
+      summary.ingredientShares.isNotEmpty
+          ? Pill(tone: PillTone.orange, label: 'รวม ${baht(summary.ingCost)}')
+          : null,
     );
   }
 
   Widget _buildAddonSalesCard(BuildContext context) {
     final t = context.tokens;
+    final totalGp = summary.addonSales.fold<double>(
+      0,
+      (sum, x) => sum + x.grossProfit,
+    );
+    final gpText = TextStyle(color: t.successInk, fontWeight: FontWeight.w600);
     return _card(
       context,
       'ขายเสริม · เครื่องดื่ม',
@@ -235,64 +254,46 @@ class DashboardBreakdownGrid extends StatelessWidget {
         rows: summary.addonSales,
         empty: const Empty(title: 'ยังไม่มีการขายเสริม'),
         columns: [
-          DataTableCol<AddonSalesSummaryRow>(
-            key: 'name',
-            label: 'สินค้า',
-            flex: 4,
-            cellBuilder: (_, x) =>
-                Text(x.name, overflow: TextOverflow.ellipsis),
+          _col(
+            'name',
+            'สินค้า',
+            (x) => Text(x.name, overflow: TextOverflow.ellipsis),
+            4,
           ),
-          DataTableCol<AddonSalesSummaryRow>(
-            key: 'q',
-            label: 'จำนวน',
-            align: ColAlign.right,
-            flex: 2,
-            cellBuilder: (_, x) => Text(fmt(x.qty)),
-          ),
-          DataTableCol<AddonSalesSummaryRow>(
-            key: 'rev',
-            label: 'ยอดขาย',
-            align: ColAlign.right,
-            flex: 2,
-            cellBuilder: (_, x) => Text(fmt(x.rev)),
-          ),
-          DataTableCol<AddonSalesSummaryRow>(
-            key: 'gp',
-            label: 'กำไร',
-            align: ColAlign.right,
-            flex: 2,
-            cellBuilder: (_, x) => Text(
-              fmt(x.grossProfit),
-              style: TextStyle(
-                color: t.successInk,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+          _col('q', 'จำนวน', (x) => Text(fmt(x.qty)), 2, ColAlign.right),
+          _col('rev', 'ยอดขาย', (x) => Text(fmt(x.rev)), 2, ColAlign.right),
+          _col(
+            'gp',
+            'กำไร',
+            (x) => Text(fmt(x.grossProfit), style: gpText),
+            2,
+            ColAlign.right,
           ),
         ],
       ),
+      summary.addonSales.isNotEmpty
+          ? Pill(tone: PillTone.green, label: 'กำไรรวม ${baht(totalGp)}')
+          : null,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final ing = _buildIngShareCard(context);
+    final add = _buildAddonSalesCard(context);
     return LayoutBuilder(
-      builder: (context, constraints) => constraints.maxWidth >= 720
+      builder: (_, c) => c.maxWidth >= 720
           ? Row(
               crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 16,
               children: [
-                Expanded(child: _buildIngShareCard(context)),
-                const SizedBox(width: AppDimensions.space4),
-                Expanded(child: _buildAddonSalesCard(context)),
+                for (final w in [ing, add]) Expanded(child: w),
               ],
             )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildIngShareCard(context),
-                const SizedBox(height: AppDimensions.space4),
-                _buildAddonSalesCard(context),
-              ],
+              spacing: 16,
+              children: [ing, add],
             ),
     );
   }

@@ -85,6 +85,108 @@ class PaymentPicker extends StatelessWidget {
   }
 }
 
+/// Selectable bank account cards for transfer payments (`BankAccountItem`).
+class BankAccountPicker extends StatelessWidget {
+  const new({
+    required this.accounts,
+    required this.value,
+    required this.onChanged,
+    super.key,
+  });
+
+  final List<BankAccountItem> accounts;
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final tt = Theme.of(context).textTheme;
+    if (accounts.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      key: const ValueKey('bank-account-picker'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'เลือกบัญชีธนาคารที่รับโอน',
+          style: tt.labelSmall?.copyWith(
+            color: t.muted,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: AppDimensions.space1_5),
+        for (var i = 0; i < accounts.length; i++) ...[
+          if (i > 0) const SizedBox(height: AppDimensions.space2),
+          Material(
+            color: accounts[i].id == value ? t.primarySoft : t.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+              side: BorderSide(
+                color: accounts[i].id == value ? t.primary : t.line,
+                width: accounts[i].id == value
+                    ? AppDimensions.borderBold
+                    : AppDimensions.borderThin,
+              ),
+            ),
+            child: InkWell(
+              key: ValueKey('bank-account-${accounts[i].id}'),
+              onTap: () => onChanged(accounts[i].id),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.space3,
+                  vertical: AppDimensions.space2_5,
+                ),
+                child: Row(
+                  children: [
+                    AppIcon(
+                      'bank',
+                      size: AppDimensions.iconLg,
+                      color: accounts[i].id == value ? t.primary : t.muted,
+                    ),
+                    const SizedBox(width: AppDimensions.space2_5),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            accounts[i].bankName,
+                            style: tt.bodySmall?.copyWith(
+                              color: accounts[i].id == value
+                                  ? t.primaryInk
+                                  : t.ink,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            accounts[i].accountName.isNotEmpty
+                                ? '${accounts[i].accountNo} · '
+                                      '${accounts[i].accountName}'
+                                : accounts[i].accountNo,
+                            style: tt.labelSmall?.copyWith(color: t.muted),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (accounts[i].id == value)
+                      AppIcon('check', color: t.primary),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: AppDimensions.space2),
+        Text(
+          'ตรวจสอบสลิปหรือยอดเงินเข้าบัญชีที่เลือกก่อนกดยืนยันรับเงินโอน',
+          style: tt.labelSmall?.copyWith(color: t.muted),
+        ),
+      ],
+    );
+  }
+}
+
 /// Calculated order breakdown (`const OrderSummary` in `prototype/index.html`).
 class OrderSummary extends StatelessWidget {
   const new({
@@ -129,8 +231,15 @@ class OrderSummary extends StatelessWidget {
               'ค่าบริการ ${fmtQ(shop.servicePct)}%',
               baht(order.service, 2),
             ),
-          if (shop.vatMode == 'excluded' && order.vat > 0)
-            _row(context, 'VAT 7%', baht(order.vat, 2)),
+          if (shop.vatMode != 'none' && order.vat > 0) ...[
+            _row(context, 'มูลค่าก่อนภาษี', baht(order.total - order.vat, 2)),
+            _row(
+              context,
+              'VAT ${fmtQ(shop.vatRate)}% '
+              '(${shop.vatMode == "included" ? "รวมในราคา" : "แยกนอก"})',
+              baht(order.vat, 2),
+            ),
+          ],
           if (order.rounding != 0)
             _row(context, 'ปัดเศษ', baht(order.rounding, 2)),
           if (!noTotal) ...[

@@ -1,4 +1,5 @@
 export 'package:app/domain/shop_config.dart';
+export 'package:app/domain/store_entities.dart';
 
 /// Buffet package (`packages` in `mock-data.js`).
 class PackageItem {
@@ -32,6 +33,37 @@ class PackageItem {
   final String freeRule;
   final int timeLimit;
   final bool active;
+
+  PackageItem copyWith({
+    String? id,
+    String? name,
+    double? adultPrice,
+    double? childPrice,
+    String? childRule,
+    String? freeRule,
+    int? timeLimit,
+    bool? active,
+  }) => PackageItem(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    adultPrice: adultPrice ?? this.adultPrice,
+    childPrice: childPrice ?? this.childPrice,
+    childRule: childRule ?? this.childRule,
+    freeRule: freeRule ?? this.freeRule,
+    timeLimit: timeLimit ?? this.timeLimit,
+    active: active ?? this.active,
+  );
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'name': name,
+    'adultPrice': adultPrice,
+    'childPrice': childPrice,
+    'childRule': childRule,
+    'freeRule': freeRule,
+    'timeLimit': timeLimit,
+    'active': active,
+  };
 }
 
 /// Addon / beverage item (`addons` in `mock-data.js`).
@@ -64,15 +96,35 @@ class AddonItem {
   int stock;
   final bool active;
 
-  AddonItem copy() => AddonItem(
-    id: id,
-    name: name,
-    category: category,
-    price: price,
-    cost: cost,
-    stock: stock,
-    active: active,
+  AddonItem copy() => copyWith();
+
+  AddonItem copyWith({
+    String? id,
+    String? name,
+    String? category,
+    double? price,
+    double? cost,
+    int? stock,
+    bool? active,
+  }) => AddonItem(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    category: category ?? this.category,
+    price: price ?? this.price,
+    cost: cost ?? this.cost,
+    stock: stock ?? this.stock,
+    active: active ?? this.active,
   );
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'name': name,
+    'category': category,
+    'price': price,
+    'cost': cost,
+    'stock': stock,
+    'active': active,
+  };
 }
 
 /// Supplier (`suppliers` in `mock-data.js`).
@@ -95,6 +147,25 @@ class SupplierItem {
   final String name;
   final String phone;
   final String note;
+
+  SupplierItem copyWith({
+    String? id,
+    String? name,
+    String? phone,
+    String? note,
+  }) => SupplierItem(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    phone: phone ?? this.phone,
+    note: note ?? this.note,
+  );
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'name': name,
+    'phone': phone,
+    'note': note,
+  };
 }
 
 /// Raw ingredient (`ingredients` in `mock-data.js`).
@@ -135,106 +206,41 @@ class IngredientItem {
   final double use;
   final String location;
   final String countFreq;
-}
 
-/// Dining table (`tables` in `mock-data.js`).
-class DiningTable {
-  const new({
-    required this.id,
-    required this.name,
-    required this.seats,
-    required this.zone,
-  });
-
-  factory fromJson(Map<String, dynamic> json) => DiningTable(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    seats: (json['seats'] as num).toInt(),
-    zone: (json['zone'] as String?) ?? '',
+  IngredientItem copyWith({
+    String? id,
+    String? name,
+    String? unit,
+    double? lastCost,
+    double? par,
+    String? supplierId,
+    String? category,
+    double? use,
+    String? location,
+    String? countFreq,
+  }) => IngredientItem(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    unit: unit ?? this.unit,
+    lastCost: lastCost ?? this.lastCost,
+    par: par ?? this.par,
+    supplierId: supplierId ?? this.supplierId,
+    category: category ?? this.category,
+    use: use ?? this.use,
+    location: location ?? this.location,
+    countFreq: countFreq ?? this.countFreq,
   );
 
-  final String id;
-  final String name;
-  final int seats;
-  final String zone;
-}
-
-/// Staff member (`staff` in `mock-data.js`).
-class StaffMember {
-  const new({
-    required this.id,
-    required this.name,
-    required this.role,
-    required this.pin,
-    this.active = true,
-  });
-
-  factory fromJson(Map<String, dynamic> json) => StaffMember(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    role: json['role'] as String,
-    pin: json['pin'] as String,
-    active: (json['active'] as bool?) ?? true,
-  );
-
-  final String id;
-  final String name;
-  final String role;
-  final String pin;
-  final bool active;
-}
-
-/// Payment method (`payments` in `mock-data.js`).
-class PaymentMethod {
-  const new({
-    required this.id,
-    required this.name,
-    required this.type,
-    this.active = true,
-  });
-
-  factory fromJson(Map<String, dynamic> json) => PaymentMethod(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    type: json['type'] as String,
-    active: (json['active'] as bool?) ?? true,
-  );
-
-  final String id;
-  final String name;
-  final String type;
-  final bool active;
-}
-
-/// Daily expense category (`expenseTypes` in `mock-data.js`).
-class ExpenseType {
-  const new({required this.id, required this.name});
-
-  factory fromJson(Map<String, dynamic> json) =>
-      ExpenseType(id: json['id'] as String, name: json['name'] as String);
-
-  final String id;
-  final String name;
-}
-
-/// Monthly fixed cost (`fixedCosts` in `mock-data.js`).
-class FixedCostItem {
-  const new({
-    required this.id,
-    required this.name,
-    required this.amount,
-    this.active = true,
-  });
-
-  factory fromJson(Map<String, dynamic> json) => FixedCostItem(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    amount: (json['amount'] as num).toDouble(),
-    active: (json['active'] as bool?) ?? true,
-  );
-
-  final String id;
-  final String name;
-  final double amount;
-  final bool active;
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'name': name,
+    'unit': unit,
+    'lastCost': lastCost,
+    'par': par,
+    'supplierId': supplierId,
+    'category': category,
+    'use': use,
+    'location': location,
+    'countFreq': countFreq,
+  };
 }

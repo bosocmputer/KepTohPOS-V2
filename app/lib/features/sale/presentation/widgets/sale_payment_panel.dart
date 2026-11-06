@@ -1,4 +1,5 @@
 import 'package:app/core/theme/tokens.dart';
+import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/sale/presentation/bloc/sale_bloc.dart';
@@ -8,6 +9,43 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 export 'package:app/features/sale/presentation/widgets/sale_payment_methods.dart';
+
+/// Mobile bottom sticky order bar for `SalePage`.
+Widget buildSaleMobileBottomBar(
+  BuildContext context,
+  SaleState state,
+  DiningTable tb,
+  ScrollController scrollCtrl,
+) {
+  final t = context.tokens;
+  final payTotal = state.payOrder.total;
+  final s = Theme.of(context).textTheme.bodyMedium
+      ?.copyWith(color: t.onPrimary, fontWeight: FontWeight.w700);
+  return InkWell(
+    key: const ValueKey('mobile-view-order-bar'),
+    onTap: () => scrollCtrl.animateTo(
+      scrollCtrl.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    ),
+    child: ColoredBox(
+      color: t.primary,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.space4,
+          vertical: AppDimensions.space3,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('ดูออเดอร์โต๊ะ ${tb.name}', style: s),
+            Text('${baht(payTotal, payTotal % 1 != 0 ? 2 : 0)} ›', style: s),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 
 /// Payment step panel (`const PayStep` & `const PromptPayQR` in
 /// `prototype/index.html` & `design/figma/payment_*.png`).
@@ -98,11 +136,19 @@ class SalePaymentPanel extends StatelessWidget {
             CashPaymentSection(state: state, staff: staff, compact: compactH)
           else if (method.type == 'qr')
             PromptPayQR(promptpayId: s.shop.promptpay, amount: payOrder.total)
+          else if (method.type == 'transfer' &&
+              state.activeBankAccounts.isNotEmpty)
+            BankAccountPicker(
+              accounts: state.activeBankAccounts,
+              value: state.activeBankAccount?.id ?? '',
+              onChanged: (id) => bloc.add(SaleBankAccountSelected(id)),
+            )
           else
             TransferStatusSection(
               methodName: method.name,
-              status: state.transferStatus,
-              onStatusChanged: (st) => bloc.add(SaleTransferStatusChanged(st)),
+              bankAccount: method.type == 'transfer'
+                  ? state.activeBankAccount
+                  : null,
             ),
         ],
       ),
@@ -120,18 +166,20 @@ class SalePaymentPanel extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
                 children: [
                   Text(
                     'ชำระเงิน · โต๊ะ ${tb.name}',
                     style: tt.titleLarge?.copyWith(color: t.ink),
                   ),
-                  Text(
-                    state.effectiveTiming == 'after'
+                  const SizedBox(width: AppDimensions.space2),
+                  Pill(
+                    label: state.effectiveTiming == 'after'
                         ? 'กินก่อนจ่าย'
                         : 'จ่ายก่อนกิน',
-                    style: tt.labelSmall?.copyWith(color: t.muted),
+                    tone: state.effectiveTiming == 'after'
+                        ? PillTone.orange
+                        : PillTone.green,
                   ),
                 ],
               ),

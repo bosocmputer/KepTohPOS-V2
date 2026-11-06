@@ -15,9 +15,9 @@ const Map<String, String> kPayTypes = <String, String>{
 
 /// VAT modes (`VAT_MODE` in `prototype/index.html`).
 const Map<String, String> kVatModes = <String, String>{
-  'none': 'ไม่จด VAT',
-  'included': 'ราคารวม VAT 7% แล้ว',
-  'excluded': 'บวก VAT 7% เพิ่ม',
+  'none': 'ไม่คิดภาษีมูลค่าเพิ่ม',
+  'included': 'รวมในราคาสินค้า (Included)',
+  'excluded': 'แยกนอกราคาสินค้า (Excluded)',
 };
 
 /// Ingredient storage locations (`LOCATION` in `prototype/index.html`).

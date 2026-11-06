@@ -99,8 +99,10 @@ class ShiftState extends Equatable {
 
   bool get isShiftOpen => activeShift != null;
 
-  double? get countedValue =>
-      countedInput.trim().isEmpty ? null : double.tryParse(countedInput.trim());
+  double? get countedValue {
+    final cleaned = countedInput.replaceAll(',', '').trim();
+    return cleaned.isEmpty ? null : double.tryParse(cleaned);
+  }
 
   /// Difference between counted cash and expected cash (`+counted - expected`).
   double? get diff => (activeStats != null && countedValue != null)
@@ -238,8 +240,8 @@ class ShiftBloc extends Bloc<ShiftEvent, ShiftState> {
   }
 
   void _onOpened(ShiftOpened event, Emitter<ShiftState> emit) {
-    final amount =
-        event.floatAmount ?? (double.tryParse(state.floatInput.trim()) ?? 0);
+    final cleaned = state.floatInput.replaceAll(',', '').trim();
+    final amount = event.floatAmount ?? (double.tryParse(cleaned) ?? 0);
     final nextPos = _repository.update((s) {
       if (openShiftOf(s) == null) {
         openShift(

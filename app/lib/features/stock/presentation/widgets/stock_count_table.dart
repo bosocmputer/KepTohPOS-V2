@@ -117,7 +117,9 @@ class LocationCountTable extends StatelessWidget {
 
     return Material(
       key: keyOf(ing.id),
-      color: isActive ? t.primarySoft : t.surface,
+      color: calc.over
+          ? t.dangerSoft.withValues(alpha: isActive ? 0.85 : 0.45)
+          : (isActive ? t.primarySoft : t.surface),
       child: InkWell(
         key: ValueKey('count-row-${ing.id}'),
         onTap: () => onSelectRow(ing.id),
@@ -129,7 +131,9 @@ class LocationCountTable extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border(
               left: BorderSide(
-                color: isActive ? t.primary : t.surface.withValues(alpha: 0),
+                color: calc.over
+                    ? t.danger
+                    : (isActive ? t.primary : t.surface.withValues(alpha: 0)),
                 width: AppDimensions.borderAccent,
               ),
               bottom: isLast ? BorderSide.none : BorderSide(color: t.line),
@@ -143,10 +147,10 @@ class LocationCountTable extends StatelessWidget {
                   children: [
                     if (isCounted) ...[
                       AppIcon(
-                        'check',
+                        calc.over ? 'alert' : 'check',
                         key: ValueKey('count-checked-${ing.id}'),
                         size: AppDimensions.iconSm,
-                        color: t.success,
+                        color: calc.over ? t.danger : t.success,
                       ),
                       const SizedBox(width: AppDimensions.space1_5),
                     ],
@@ -182,32 +186,33 @@ class LocationCountTable extends StatelessWidget {
               Expanded(
                 flex: 2,
                 child: Text(
-                  isCounted ? val : '–',
+                  isCounted ? fmtInputNum(val) : '–',
                   key: ValueKey('count-val-${ing.id}'),
                   textAlign: TextAlign.right,
                   style: tt.bodyMedium?.copyWith(
-                    color: isCounted ? t.ink : t.muted,
+                    color: calc.over ? t.danger : (isCounted ? t.ink : t.muted),
                     fontWeight: isCounted ? FontWeight.w700 : FontWeight.w400,
                   ),
                 ),
               ),
               Expanded(
                 flex: 2,
-                child: Text(
-                  calc.over
-                      ? 'เกินที่มี'
-                      : (usedVal != null
+                child: calc.over
+                    ? const Align(
+                        alignment: Alignment.centerRight,
+                        child: Pill(tone: PillTone.red, label: 'เกินที่มี'),
+                      )
+                    : Text(
+                        usedVal != null
                             ? fmtQ(usedVal)
                             : ((dayRow?.est ?? false)
                                   ? '≈ ${fmtQ(dayRow?.used ?? 0)}'
-                                  : '–')),
-                  textAlign: TextAlign.right,
-                  style: tt.bodyMedium?.copyWith(
-                    color: calc.over
-                        ? t.danger
-                        : (usedVal != null ? t.ink : t.muted),
-                  ),
-                ),
+                                  : '–'),
+                        textAlign: TextAlign.right,
+                        style: tt.bodyMedium?.copyWith(
+                          color: usedVal != null ? t.ink : t.muted,
+                        ),
+                      ),
               ),
               Expanded(
                 flex: 2,

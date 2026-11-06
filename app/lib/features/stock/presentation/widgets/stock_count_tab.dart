@@ -29,10 +29,15 @@ class _StockCountTabState extends State<StockCountTab> {
       if (!mounted) return;
       final ctx = _rowKeys[ingId]?.currentContext;
       if (ctx != null) {
+        final due = context.read<StockCountBloc>().state.dueIngredients;
+        final idx = due.indexWhere((i) => i.id == ingId);
         Scrollable.ensureVisible(
           ctx,
           duration: const Duration(milliseconds: 120),
-          alignment: 0.35,
+          alignment: idx >= 0 && idx <= 2 ? 0.1 : 0.35,
+          alignmentPolicy: idx >= 0 && idx <= 2
+              ? ScrollPositionAlignmentPolicy.keepVisibleAtStart
+              : ScrollPositionAlignmentPolicy.explicit,
         );
       }
     });
@@ -58,37 +63,39 @@ class _StockCountTabState extends State<StockCountTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.space4,
-              vertical: AppDimensions.space2_5,
-            ),
-            decoration: BoxDecoration(
-              color: state.isClosed ? t.primarySoft : t.surface,
-              borderRadius: BorderRadius.circular(AppDimensions.r),
-              border: Border.all(color: state.isClosed ? t.primary : t.line),
-            ),
-            child: Text(
-              state.isClosed
-                  ? 'ปิดยอดแล้ว · แก้ตัวเลขแล้วกดบันทึกได้'
-                  : 'แตะรายการแล้วป้อนจำนวนที่เหลือ · Enter = รายการถัดไป',
-              style: tt.bodyMedium?.copyWith(
-                color: state.isClosed ? t.primaryInk : t.ink,
-                fontWeight: FontWeight.w600,
+          if (isMobile) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.space4,
+                vertical: AppDimensions.space2_5,
+              ),
+              decoration: BoxDecoration(
+                color: state.isClosed ? t.primarySoft : t.surface,
+                borderRadius: BorderRadius.circular(AppDimensions.r),
+                border: Border.all(color: state.isClosed ? t.primary : t.line),
+              ),
+              child: Text(
+                state.isClosed
+                    ? 'ปิดยอดแล้ว · แก้ตัวเลขแล้วกดบันทึกได้'
+                    : 'แตะรายการแล้วป้อนจำนวนที่เหลือ · Enter = รายการถัดไป',
+                style: tt.bodyMedium?.copyWith(
+                  color: state.isClosed ? t.primaryInk : t.ink,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ),
-          if (state.skippedWeeklyCount > 0) ...[
-            const SizedBox(height: AppDimensions.space2),
-            Text(
-              'ของนับรายสัปดาห์ '
-              '(นับวัน${kDowNames[state.posState.shop.weeklyCountDow % 7]}) '
-              '${state.skippedWeeklyCount} รายการ '
-              'ระบบใช้ค่าประมาณจากอัตราใช้ต่อหัว',
-              style: tt.bodySmall?.copyWith(color: t.muted),
-            ),
+            if (state.skippedWeeklyCount > 0) ...[
+              const SizedBox(height: AppDimensions.space2),
+              Text(
+                'ของนับรายสัปดาห์ '
+                '(นับวัน${kDowNames[state.posState.shop.weeklyCountDow % 7]}) '
+                '${state.skippedWeeklyCount} รายการ '
+                'ระบบใช้ค่าประมาณจากอัตราใช้ต่อหัว',
+                style: tt.bodySmall?.copyWith(color: t.muted),
+              ),
+            ],
+            const SizedBox(height: AppDimensions.space4),
           ],
-          const SizedBox(height: AppDimensions.space4),
           for (final group in state.locationGroups) ...[
             Row(
               children: [

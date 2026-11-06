@@ -1,178 +1,95 @@
 import 'package:app/domain/entities.dart';
+import 'package:app/domain/record_models.dart';
 import 'package:app/domain/state_models.dart';
 
-/// Settled sale bill (`s.sales`).
-class BillRecord {
+/// Active state of an occupied table (`openTables[tableId]`).
+class OpenTableState {
   new({
-    required this.id,
-    required this.no,
-    required this.date,
-    required this.at,
-    required this.tableId,
-    required this.tableName,
-    required this.staffId,
-    required this.staffName,
-    required this.packageId,
-    required this.lines,
-    required this.subtotal,
-    required this.service,
-    required this.vat,
-    required this.rounding,
-    required this.total,
-    required this.heads,
-    required this.methodId,
-    required this.methodName,
-    required this.methodType,
-    required this.received,
-    required this.change,
-    this.shiftId,
-    this.voided = false,
-    this.voidReason,
-    this.voidBy,
-    this.voidAt,
-  });
-
-  final String id;
-  final String no;
-  final String date;
-  final String at;
-  String tableId;
-  String tableName;
-  final String staffId;
-  final String staffName;
-  final String? shiftId;
-  final String packageId;
-  final List<OrderLineItem> lines;
-  final double subtotal;
-  final double service;
-  final double vat;
-  final double rounding;
-  final double total;
-  final HeadsCount heads;
-  final String methodId;
-  final String methodName;
-  final String methodType;
-  final double received;
-  final double change;
-  bool voided;
-  String? voidReason;
-  String? voidBy;
-  String? voidAt;
-
-  BillRecord copy() => BillRecord(
-    id: id,
-    no: no,
-    date: date,
-    at: at,
-    tableId: tableId,
-    tableName: tableName,
-    staffId: staffId,
-    staffName: staffName,
-    shiftId: shiftId,
-    packageId: packageId,
-    lines: List<OrderLineItem>.from(lines),
-    subtotal: subtotal,
-    service: service,
-    vat: vat,
-    rounding: rounding,
-    total: total,
-    heads: heads.copy(),
-    methodId: methodId,
-    methodName: methodName,
-    methodType: methodType,
-    received: received,
-    change: change,
-    voided: voided,
-    voidReason: voidReason,
-    voidBy: voidBy,
-    voidAt: voidAt,
-  );
-}
-
-/// Line item inside a purchase bill.
-class PurchaseLine {
-  const new({required this.ingId, required this.qty, required this.total});
-
-  final String ingId;
-  final double qty;
-  final double total;
-}
-
-/// Morning ingredient purchase bill (`s.purchases`).
-class PurchaseRecord {
-  const new({
-    required this.id,
-    required this.date,
-    required this.at,
-    required this.supplierId,
-    required this.lines,
-    this.note = '',
-  });
-
-  final String id;
-  final String date;
-  final String at;
-  final String supplierId;
-  final List<PurchaseLine> lines;
-  final String note;
-}
-
-/// Daily operating expense (`s.expenses`).
-class ExpenseRecord {
-  const new({
-    required this.id,
-    required this.date,
-    required this.at,
-    required this.typeId,
-    required this.amount,
-    this.note = '',
-  });
-
-  final String id;
-  final String date;
-  final String at;
-  final String typeId;
-  final double amount;
-  final String note;
-}
-
-/// Cashier shift (`s.shifts`).
-class ShiftRecord {
-  new({
-    required this.id,
-    required this.staffId,
     required this.openedAt,
-    required this.floatAmount,
-    this.closedAt,
-    this.counted,
-    this.closedBy,
-  });
+    required this.packageId,
+    this.timing = 'before',
+    this.notes = '',
+    List<String>? billIds,
+    HeadsCount? heads,
+    List<TableRound>? rounds,
+    List<TableAdjustment>? adjusts,
+    List<TableAdjustment>? log,
+  }) : billIds = billIds ?? <String>[],
+       heads = heads ?? HeadsCount(),
+       rounds = rounds ?? <TableRound>[],
+       adjusts = adjusts ?? <TableAdjustment>[],
+       log = log ?? <TableAdjustment>[];
 
-  final String id;
-  final String staffId;
-  final String openedAt;
-  final double floatAmount;
-  String? closedAt;
-  double? counted;
-  String? closedBy;
-
-  ShiftRecord copy() => ShiftRecord(
-    id: id,
-    staffId: staffId,
-    openedAt: openedAt,
-    floatAmount: floatAmount,
-    closedAt: closedAt,
-    counted: counted,
-    closedBy: closedBy,
+  factory fromJson(Map<String, dynamic> json) => OpenTableState(
+    openedAt: json['openedAt'] as String,
+    packageId: json['packageId'] as String,
+    timing: (json['timing'] as String?) ?? 'before',
+    notes: (json['notes'] as String?) ?? '',
+    billIds: ((json['billIds'] as List<dynamic>?) ?? const <dynamic>[])
+        .cast<String>()
+        .toList(),
+    heads: HeadsCount.fromJson(
+      (json['heads'] as Map<String, dynamic>?) ?? const <String, dynamic>{},
+    ),
+    rounds: ((json['rounds'] as List<dynamic>?) ?? const <dynamic>[])
+        .cast<Map<String, dynamic>>()
+        .map(TableRound.fromJson)
+        .toList(),
+    adjusts: ((json['adjusts'] as List<dynamic>?) ?? const <dynamic>[])
+        .cast<Map<String, dynamic>>()
+        .map(TableAdjustment.fromJson)
+        .toList(),
+    log: ((json['log'] as List<dynamic>?) ?? const <dynamic>[])
+        .cast<Map<String, dynamic>>()
+        .map(TableAdjustment.fromJson)
+        .toList(),
   );
-}
 
-/// Initial stock lot (`s.initialStock[ingId]`).
-class StockLot {
-  const new({required this.qty, required this.cost});
+  final String openedAt;
+  final String packageId;
+  String timing;
+  String notes;
+  final List<String> billIds;
+  final HeadsCount heads;
+  List<TableRound> rounds;
+  List<TableAdjustment> adjusts;
+  final List<TableAdjustment> log;
 
-  final double qty;
-  final double cost;
+  OpenTableState copy() => OpenTableState(
+    openedAt: openedAt,
+    packageId: packageId,
+    timing: timing,
+    notes: notes,
+    billIds: List<String>.from(billIds),
+    heads: heads.copy(),
+    rounds: rounds.map((r) => r.copy()).toList(),
+    adjusts: List<TableAdjustment>.from(adjusts),
+    log: List<TableAdjustment>.from(log),
+  );
+
+  OpenTableState freeze() => OpenTableState(
+    openedAt: openedAt,
+    packageId: packageId,
+    timing: timing,
+    notes: notes,
+    billIds: List<String>.unmodifiable(billIds),
+    heads: heads.freeze(),
+    rounds: List<TableRound>.unmodifiable(rounds.map((r) => r.freeze())),
+    adjusts: List<TableAdjustment>.unmodifiable(adjusts),
+    log: List<TableAdjustment>.unmodifiable(log),
+  );
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'openedAt': openedAt,
+    'packageId': packageId,
+    'timing': timing,
+    'notes': notes,
+    'billIds': billIds,
+    'heads': heads.toJson(),
+    'rounds': rounds.map((r) => r.toJson()).toList(),
+    'adjusts': adjusts.map((a) => a.toJson()).toList(),
+    'log': log.map((l) => l.toJson()).toList(),
+  };
 }
 
 /// Complete in-memory POS state (`s` in `prototype/index.html`).
@@ -207,6 +124,64 @@ class PosState {
        openTables = openTables ?? <String, OpenTableState>{},
        initialStock = initialStock ?? <String, StockLot>{},
        expenses = expenses ?? <ExpenseRecord>[];
+
+  factory fromJson(Map<String, dynamic> json) {
+    List<T> parseList<T>(String key, T Function(Map<String, dynamic>) decode) =>
+        ((json[key] as List<dynamic>?) ?? const <dynamic>[])
+            .cast<Map<String, dynamic>>()
+            .map(decode)
+            .toList();
+
+    final rawCounts =
+        (json['counts'] as Map<String, dynamic>?) ?? const <String, dynamic>{};
+    final counts = rawCounts.map(
+      (date, map) => MapEntry(
+        date,
+        (map as Map<String, dynamic>).map(
+          (ingId, val) => MapEntry(ingId, (val as num).toDouble()),
+        ),
+      ),
+    );
+    final rawOpen =
+        (json['openTables'] as Map<String, dynamic>?) ??
+        const <String, dynamic>{};
+    final rawInit =
+        (json['initialStock'] as Map<String, dynamic>?) ??
+        const <String, dynamic>{};
+    final rawSeq =
+        (json['seq'] as Map<String, dynamic>?) ?? const <String, dynamic>{};
+
+    return PosState(
+      version: (json['version'] as num?)?.toInt() ?? 2,
+      startDate: (json['startDate'] as String?) ?? '2026-10-05',
+      currentStaffId: (json['currentStaffId'] as String?) ?? 'st1',
+      shop: ShopConfig.fromJson(
+        (json['shop'] as Map<String, dynamic>?) ?? const <String, dynamic>{},
+      ),
+      packages: parseList('packages', PackageItem.fromJson),
+      addons: parseList('addons', AddonItem.fromJson),
+      suppliers: parseList('suppliers', SupplierItem.fromJson),
+      ingredients: parseList('ingredients', IngredientItem.fromJson),
+      tables: parseList('tables', DiningTable.fromJson),
+      staff: parseList('staff', StaffMember.fromJson),
+      payments: parseList('payments', PaymentMethod.fromJson),
+      expenseTypes: parseList('expenseTypes', ExpenseType.fromJson),
+      fixedCosts: parseList('fixedCosts', FixedCostItem.fromJson),
+      seq: rawSeq.map((k, v) => MapEntry(k, (v as num).toInt())),
+      counts: counts,
+      sales: parseList('sales', BillRecord.fromJson),
+      purchases: parseList('purchases', PurchaseRecord.fromJson),
+      shifts: parseList('shifts', ShiftRecord.fromJson),
+      openTables: rawOpen.map(
+        (k, v) =>
+            MapEntry(k, OpenTableState.fromJson(v as Map<String, dynamic>)),
+      ),
+      initialStock: rawInit.map(
+        (k, v) => MapEntry(k, StockLot.fromJson(v as Map<String, dynamic>)),
+      ),
+      expenses: parseList('expenses', ExpenseRecord.fromJson),
+    );
+  }
 
   int version;
   String startDate;
@@ -287,4 +262,28 @@ class PosState {
     initialStock: Map<String, StockLot>.unmodifiable(initialStock),
     expenses: List<ExpenseRecord>.unmodifiable(expenses),
   );
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'version': version,
+    'startDate': startDate,
+    'currentStaffId': currentStaffId,
+    'shop': shop.toJson(),
+    'packages': packages.map((x) => x.toJson()).toList(),
+    'addons': addons.map((x) => x.toJson()).toList(),
+    'suppliers': suppliers.map((x) => x.toJson()).toList(),
+    'ingredients': ingredients.map((x) => x.toJson()).toList(),
+    'tables': tables.map((x) => x.toJson()).toList(),
+    'staff': staff.map((x) => x.toJson()).toList(),
+    'payments': payments.map((x) => x.toJson()).toList(),
+    'expenseTypes': expenseTypes.map((x) => x.toJson()).toList(),
+    'fixedCosts': fixedCosts.map((x) => x.toJson()).toList(),
+    'seq': seq,
+    'counts': counts,
+    'sales': sales.map((x) => x.toJson()).toList(),
+    'purchases': purchases.map((x) => x.toJson()).toList(),
+    'shifts': shifts.map((x) => x.toJson()).toList(),
+    'openTables': openTables.map((k, v) => MapEntry(k, v.toJson())),
+    'initialStock': initialStock.map((k, v) => MapEntry(k, v.toJson())),
+    'expenses': expenses.map((x) => x.toJson()).toList(),
+  };
 }

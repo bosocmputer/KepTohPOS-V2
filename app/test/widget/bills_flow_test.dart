@@ -238,4 +238,23 @@ void main() {
     await tester.pump();
     expect(pageCtx.read<BillsCubit>().state.activeFilterCount, 0);
   });
+
+  testWidgets('portrait tablet (820x1180) renders 2-row Topbar on /bills '
+      'with visible title and zero overflow', (tester) async {
+    tester.view.physicalSize = const Size(820, 1180);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final repo = _buildRepoWithBills(DateTime(2026, 11, 4, 18));
+    await tester.pumpWidget(
+      KepTohApp(repository: repo, now: fixedNow, initialLocation: '/bills'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('บิลขาย'), findsOneWidget);
+    expect(tester.getSize(find.text('บิลขาย')).width, greaterThan(40));
+    expect(find.byKey(const ValueKey('bills-date-dropdown')), findsOneWidget);
+    expect(find.byKey(const ValueKey('bills-filter-btn')), findsOneWidget);
+    expect(find.byKey(const ValueKey('shell-user-btn')), findsOneWidget);
+  });
 }

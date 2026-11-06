@@ -4,14 +4,26 @@ import 'package:flutter/material.dart';
 /// `prototype/theme.css`).
 abstract final class AppRawTokens {
   // Team brand palette (--team-* in prototype/theme.css lines 27–31)
+  // Core 7 colors:
+  // - Charcoal #20242C
+  // - Orange   #FF7A00
+  // - WarmGray #F4F4F5
+  // - White    #FFFFFF
+  // - NavyText #172033
+  // - Green    #16A36A
+  // - Red      #E5484D
   static const Color teamOrange = Color(0xFFFF7A00);
   static const Color teamOrange600 = Color(0xFFE56D00);
   static const Color teamOrangeSoft = Color(0xFFFFF1E4);
   static const Color teamOrangeSoft2 = Color(0xFFFFE2C7);
   static const Color teamOrangeInk = Color(0xFFB35300);
   static const Color teamCharcoal = Color(0xFF20242C);
+  static const Color teamCharcoalSurface = Color(0xFF282D37);
+  static const Color teamCharcoalLine = Color(0xFF343A46);
+  static const Color teamCharcoalSoft = Color(0xFFEAECEF);
+  static const Color teamCharcoalMuted = Color(0xFFC7CAD2);
   static const Color teamGray = Color(0xFFF4F4F5);
-  static const Color teamSurface2 = Color(0xFFFAFAFB);
+  static const Color teamSurface2 = Color(0xFFF4F4F5);
   static const Color teamNavy = Color(0xFF172033);
   static const Color teamGreen = Color(0xFF16A36A);
   static const Color teamGreenSoft = Color(0xFFE6F6EE);
@@ -20,7 +32,7 @@ abstract final class AppRawTokens {
   static const Color teamRedSoft = Color(0xFFFDECEC);
   static const Color teamRedInk = Color(0xFFB42328);
   static const Color teamMuted = Color(0xFF5B6475);
-  static const Color teamLine = Color(0xFFE2E3E8);
+  static const Color teamLine = Color(0xFFE2E4E9);
   static const Color teamDarkSide = Color(0xFF0C0E12);
   static const Color teamDarkSideInk = Color(0xFFAEB3BE);
 
@@ -44,6 +56,98 @@ abstract final class AppRawTokens {
   static const Color qrInk = Color(0xFF172033);
   static const Color promptPayBlue = Color(0xFF113566);
   static const Color scrim = Color.fromRGBO(14, 16, 21, 0.55);
+}
+
+/// Theme modes supported by KepToh POS (`light | dark | system`).
+enum AppThemeMode {
+  light('light', 'สว่าง', ThemeMode.light),
+  dark('dark', 'มืด', ThemeMode.dark),
+  system('system', 'ตามเครื่อง', ThemeMode.system);
+
+  new(this.id, this.label, this.themeMode);
+  final String id;
+  final String label;
+  final ThemeMode themeMode;
+
+  static AppThemeMode fromId(String? id) =>
+      values.where((x) => x.id == id).firstOrNull ?? light;
+}
+
+/// Selectable primary brand color palettes (`สีส้มมาตรฐาน`, `สีส้มอิฐ`, etc.).
+enum AppBrandPalette {
+  orange(
+    'orange',
+    'สีส้มมาตรฐาน',
+    AppRawTokens.teamOrange,
+    AppRawTokens.teamOrange600,
+    AppRawTokens.teamOrangeSoft,
+    AppRawTokens.teamOrangeSoft2,
+    AppRawTokens.teamOrangeInk,
+    AppRawTokens.teamCharcoal,
+  ),
+  ember(
+    'ember',
+    'สีส้มอิฐ',
+    Color(0xFFFE4E10),
+    Color(0xFFE0410A),
+    Color(0xFFFFF0EB),
+    Color(0xFFFFDDD1),
+    Color(0xFFB83205),
+    AppRawTokens.white,
+  ),
+  emerald(
+    'emerald',
+    'สีเขียวมรกต',
+    Color(0xFF059669),
+    Color(0xFF047857),
+    Color(0xFFECFDF5),
+    Color(0xFFD1FAE5),
+    Color(0xFF065F46),
+    AppRawTokens.white,
+  ),
+  ocean(
+    'ocean',
+    'สีน้ำเงินคราม',
+    Color(0xFF2563EB),
+    Color(0xFF1D4ED8),
+    Color(0xFFEFF6FF),
+    Color(0xFFDBEAFE),
+    Color(0xFF1E40AF),
+    AppRawTokens.white,
+  ),
+  berry(
+    'berry',
+    'สีแดงทับทิม',
+    Color(0xFFE11D48),
+    Color(0xFFBE123C),
+    Color(0xFFFFF1F2),
+    Color(0xFFFFE4E6),
+    Color(0xFF9F1239),
+    AppRawTokens.white,
+  );
+
+  new(
+    this.id,
+    this.label,
+    this.primary,
+    this.primaryHover,
+    this.primarySoft,
+    this.primarySoft2,
+    this.primaryInk,
+    this.onPrimary,
+  );
+
+  final String id;
+  final String label;
+  final Color primary;
+  final Color primaryHover;
+  final Color primarySoft;
+  final Color primarySoft2;
+  final Color primaryInk;
+  final Color onPrimary;
+
+  static AppBrandPalette fromId(String? id) =>
+      values.where((x) => x.id == id).firstOrNull ?? orange;
 }
 
 /// Layer 2 non-color layout, typography, spacing, and radius tokens.

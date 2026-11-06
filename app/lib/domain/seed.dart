@@ -145,7 +145,10 @@ PosState seed({
     }
 
     // Shift (today's openedAt must never exceed currentNow)
-    final cashier = pick(<String>['st3', 'st4']);
+    final pickedCashier = pick(<String>['st3', 'st4']);
+    final cashier = s.staff.any((x) => x.id == pickedCashier)
+        ? pickedCashier
+        : 'st3';
     final shiftOpen = isToday
         ? DateTime.fromMillisecondsSinceEpoch(
             (currentNow.millisecondsSinceEpoch - (4.5 * 3600000).round()).clamp(

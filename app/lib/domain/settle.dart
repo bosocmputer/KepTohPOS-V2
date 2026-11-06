@@ -108,27 +108,18 @@ BillRecord makeBill(
   required PaymentMethod method,
   required double received,
   String? shiftId,
+  BankAccountItem? bankAccount,
 }) {
   final date = dkey(DateTime.parse(at).toLocal());
   final nextSeq = (s.seq[date] ?? 0) + 1;
   s.seq[date] = nextSeq;
-
-  DiningTable? table;
-  for (final t in s.tables) {
-    if (t.id == tableId) {
-      table = t;
-      break;
-    }
-  }
-  StaffMember? staff;
-  for (final x in s.staff) {
-    if (x.id == staffId) {
-      staff = x;
-      break;
-    }
-  }
-
+  final table = s.tables.where((t) => t.id == tableId).firstOrNull;
+  final staff = s.staff.where((x) => x.id == staffId).firstOrNull;
   final isCash = method.type == 'cash';
+  final isTransfer = method.type == 'transfer';
+  final acct = isTransfer
+      ? (bankAccount ?? s.shop.activeBankAccounts.firstOrNull)
+      : null;
   final shortDate = date.substring(2).replaceAll('-', '');
   final bill = BillRecord(
     id: id,
@@ -153,6 +144,10 @@ BillRecord makeBill(
     methodType: method.type,
     received: isCash ? received : order.total,
     change: isCash ? r2(received - order.total) : 0,
+    vatMode: s.shop.vatMode,
+    vatRate: s.shop.vatRate,
+    bankAccountId: acct?.id,
+    bankAccountInfo: acct?.shortLabel,
   );
   s.sales.add(bill);
   return bill;
@@ -170,18 +165,13 @@ CalculatedOrder settle(
   required PaymentMethod method,
   required double received,
   required String billId,
+  BankAccountItem? bankAccount,
   String? notes,
   DateTime? now,
 }) {
   final current = now ?? DateTime.now();
   final o = openOrAdd(st, table, cart, timing, pkgId, notes, now: current);
-  PackageItem? pkg;
-  for (final p in st.packages) {
-    if (p.id == o.packageId) {
-      pkg = p;
-      break;
-    }
-  }
+  final pkg = st.packages.where((p) => p.id == o.packageId).firstOrNull;
 
   final CalculatedOrder order;
   if (o.timing == 'after') {
@@ -207,6 +197,7 @@ CalculatedOrder settle(
     order: order,
     method: method,
     received: method.type == 'cash' ? received : order.total,
+    bankAccount: bankAccount,
   );
   o.billIds.add(billId);
   if (o.timing == 'after') {
@@ -263,16 +254,11 @@ bool voidBill(
   required String billId,
   required StaffMember me,
   String reason = '',
+  bool allowCashier = false,
   DateTime? now,
 }) {
-  if (me.role == 'cashier') return false;
-  BillRecord? bill;
-  for (final b in st.sales) {
-    if (b.id == billId) {
-      bill = b;
-      break;
-    }
-  }
+  if (!allowCashier && me.role == 'cashier') return false;
+  final bill = st.sales.where((b) => b.id == billId).firstOrNull;
   if (bill == null || bill.voided) return false;
 
   final current = now ?? DateTime.now();
@@ -291,6 +277,19 @@ bool voidBill(
   }
   if (returnMap.isNotEmpty) {
     takeStock(st, returnMap);
+  }
+  final openTable = st.openTables[bill.tableId];
+  if (openTable != null && openTable.billIds.contains(billId)) {
+    openTable.billIds.remove(billId);
+    openTable.heads.a = math.max(0, openTable.heads.a - bill.heads.a);
+    openTable.heads.c = math.max(0, openTable.heads.c - bill.heads.c);
+    openTable.heads.f = math.max(0, openTable.heads.f - bill.heads.f);
+    final hasOtherActive = openTable.billIds.any(
+      (id) => st.sales.any((b) => b.id == id && !b.voided),
+    );
+    if (!hasOtherActive && openTable.rounds.isEmpty) {
+      st.openTables.remove(bill.tableId);
+    }
   }
   return true;
 }

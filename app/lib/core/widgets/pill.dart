@@ -1,4 +1,5 @@
 import 'package:app/core/theme/tokens.dart';
+import 'package:app/core/widgets/page_header.dart';
 import 'package:flutter/material.dart';
 
 /// Color tone for [Pill] (`tone` in `prototype/index.html`).
@@ -63,6 +64,119 @@ class Pill extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// Unified staff profile and shift status capsule chip (`StaffShiftChip`)
+/// combining `Avatar`, staff display name, and shift status badge.
+class StaffShiftChip extends StatelessWidget {
+  const new({
+    required this.staffName,
+    required this.isShiftOpen,
+    super.key,
+    this.compact = false,
+    this.onTap,
+  });
+
+  final String staffName;
+  final bool isShiftOpen;
+  final bool compact;
+  final VoidCallback? onTap;
+
+  String get _shortName => staffName.split(' ').first.trim();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final textTheme = Theme.of(context).textTheme;
+    final statusLabel = isShiftOpen ? 'กะเปิด' : 'ยังไม่เปิดกะ';
+
+    final avatarWithDot = Stack(
+      children: [
+        Avatar(
+          name: staffName,
+          size: compact ? AppDimensions.tap : AppDimensions.avatarSm,
+        ),
+        Positioned(
+          right: AppDimensions.space0,
+          bottom: AppDimensions.space0,
+          child: Container(
+            width: AppDimensions.statusDotMd,
+            height: AppDimensions.statusDotMd,
+            decoration: BoxDecoration(
+              color: isShiftOpen ? tokens.success : tokens.primary,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: tokens.surface,
+                width: AppDimensions.borderBold,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+
+    if (compact) {
+      return Semantics(
+        button: true,
+        label: 'บัญชีและกะ · $staffName · $statusLabel',
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: avatarWithDot,
+        ),
+      );
+    }
+
+    return Semantics(
+      button: true,
+      label: 'บัญชีและกะ · $staffName · $statusLabel',
+      child: Material(
+        color: tokens.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+          side: BorderSide(
+            color: tokens.line,
+            width: AppDimensions.borderThick,
+          ),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+          child: SizedBox(
+            height: AppDimensions.tap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.space2,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  avatarWithDot,
+                  const SizedBox(width: AppDimensions.space2),
+                  Flexible(
+                    child: Text(
+                      _shortName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.bodySmall?.copyWith(
+                        color: tokens.ink,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppDimensions.space2),
+                  Pill(
+                    label: statusLabel,
+                    tone: isShiftOpen ? PillTone.green : PillTone.neutral,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

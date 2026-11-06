@@ -1,8 +1,115 @@
 import 'package:app/core/theme/tokens.dart';
+import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
+import 'package:app/domain/domain.dart';
 import 'package:flutter/material.dart';
 
 export 'package:app/features/sale/presentation/widgets/sale_summary_widgets.dart';
+
+/// Collapsible/expandable customer head count section inside `SaleOrderPanel`.
+class SalePeopleSection extends StatelessWidget {
+  const new({
+    required this.openTable,
+    required this.pkg,
+    required this.a,
+    required this.c,
+    required this.f,
+    required this.expanded,
+    required this.onToggleExpand,
+    required this.onHeadsChanged,
+    super.key,
+  });
+
+  final OpenTableState? openTable;
+  final PackageItem? pkg;
+  final int a;
+  final int c;
+  final int f;
+  final bool expanded;
+  final ValueChanged<bool> onToggleExpand;
+  final void Function({int? a, int? c, int? f}) onHeadsChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final tt = Theme.of(context).textTheme;
+    final o = openTable;
+    final showSteppers = o == null || expanded || (a + c + f > 0);
+    if (o != null && !showSteppers) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Flexible(
+            child: Text(
+              'นั่งอยู่: ผู้ใหญ่ ${o.heads.a}'
+              '${o.heads.c > 0 ? " · เด็ก ${o.heads.c}" : ""}'
+              '${o.heads.f > 0 ? " · ฟรี ${o.heads.f}" : ""}',
+              style: tt.bodySmall?.copyWith(
+                color: t.muted,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Btn(
+            key: const ValueKey('toggle-add-people-btn'),
+            size: BtnSize.sm,
+            icon: 'plus',
+            label: 'เพิ่มคนมาทีหลัง',
+            onPressed: () => onToggleExpand(true),
+          ),
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Flexible(
+              child: Text(
+                '${o != null ? "เพิ่มคนมาทีหลัง" : "จำนวนลูกค้า"}'
+                '${pkg != null ? " · ${pkg!.name}" : ""}',
+                style: tt.titleMedium?.copyWith(color: t.ink),
+              ),
+            ),
+            if (o != null && a + c + f == 0)
+              Btn(
+                size: BtnSize.sm,
+                kind: BtnKind.ghost,
+                label: 'ซ่อน',
+                onPressed: () => onToggleExpand(false),
+              ),
+          ],
+        ),
+        const SizedBox(height: AppDimensions.space2),
+        PeopleRow(
+          stepperKey: const ValueKey('people-stepper-a'),
+          label: 'ผู้ใหญ่',
+          sub: pkg != null ? baht(pkg!.adultPrice) : '-',
+          value: a,
+          onChanged: (v) => onHeadsChanged(a: v),
+        ),
+        PeopleRow(
+          stepperKey: const ValueKey('people-stepper-c'),
+          label: 'เด็ก',
+          sub: pkg != null
+              ? '${baht(pkg!.childPrice)} · ${pkg!.childRule}'
+              : '-',
+          value: c,
+          onChanged: (v) => onHeadsChanged(c: v),
+        ),
+        PeopleRow(
+          stepperKey: const ValueKey('people-stepper-f'),
+          label: 'เด็กเล็ก',
+          sub: pkg != null ? pkg!.freeRule : '-',
+          value: f,
+          onChanged: (v) => onHeadsChanged(f: v),
+        ),
+      ],
+    );
+  }
+}
 
 /// Customer head count row (`const PeopleRow` in `prototype/index.html`).
 class PeopleRow extends StatelessWidget {

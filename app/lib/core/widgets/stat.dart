@@ -82,26 +82,50 @@ class StatsGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: tokens.surface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
         border: Border.all(color: tokens.line),
       ),
-      child: Wrap(
-        children: [
-          for (var i = 0; i < children.length; i++) ...[
-            if (i > 0)
-              Container(
-                width: AppDimensions.borderThin,
-                height: AppDimensions.btnLgH,
-                margin: const EdgeInsets.symmetric(
-                  vertical: AppDimensions.space3,
-                ),
-                color: tokens.line,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.hasBoundedWidth &&
+              constraints.maxWidth >= 680 &&
+              children.isNotEmpty) {
+            return IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var i = 0; i < children.length; i++) ...[
+                    if (i > 0)
+                      Container(
+                        width: AppDimensions.borderThin,
+                        color: tokens.line,
+                      ),
+                    Expanded(child: children[i]),
+                  ],
+                ],
               ),
-            children[i],
-          ],
-        ],
+            );
+          }
+          return Wrap(
+            children: [
+              for (var i = 0; i < children.length; i++) ...[
+                if (i > 0)
+                  Container(
+                    width: AppDimensions.borderThin,
+                    height: AppDimensions.btnLgH,
+                    margin: const EdgeInsets.symmetric(
+                      vertical: AppDimensions.space3,
+                    ),
+                    color: tokens.line,
+                  ),
+                children[i],
+              ],
+            ],
+          );
+        },
       ),
     );
   }

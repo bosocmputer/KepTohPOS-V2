@@ -13,12 +13,14 @@ class SupplierShortcutCard extends StatelessWidget {
     required this.onCopyLast,
     required this.onNew,
     super.key,
+    this.width = 300,
   });
 
   final SupplierItem supplier;
   final PurchaseRecord? lastPurchase;
   final VoidCallback onCopyLast;
   final VoidCallback onNew;
+  final double width;
 
   @override
   Widget build(BuildContext context) {
@@ -28,8 +30,8 @@ class SupplierShortcutCard extends StatelessWidget {
         lastPurchase?.lines.fold<double>(0, (s, l) => s + l.total) ?? 0;
 
     return Container(
-      width: 300,
-      padding: const EdgeInsets.all(AppDimensions.space4),
+      width: width,
+      padding: const EdgeInsets.all(AppDimensions.space3_5),
       decoration: BoxDecoration(
         color: t.surface,
         borderRadius: BorderRadius.circular(AppDimensions.r),
@@ -59,7 +61,7 @@ class SupplierShortcutCard extends StatelessWidget {
             children: [
               Btn(
                 key: ValueKey('purchase-copy-sup-${supplier.id}'),
-                kind: BtnKind.primary,
+                kind: BtnKind.dark,
                 size: BtnSize.sm,
                 icon: 'copy',
                 label: 'เหมือนครั้งก่อน',
@@ -145,13 +147,18 @@ class PurchaseBillsTable extends StatelessWidget {
             spacing: AppDimensions.space1_5,
             runSpacing: AppDimensions.space1,
             children: [
-              for (final l in p.lines)
+              for (final l in p.lines.take(4))
                 Pill(
                   label:
                       '${state.ingredientOf(l.ingId)?.name ?? "?"} '
                       '${fmtQ(l.qty)} '
                       '${state.ingredientOf(l.ingId)?.unit ?? ""} · '
                       '${fmt(l.total)}฿',
+                ),
+              if (p.lines.length > 4)
+                Pill(
+                  tone: PillTone.orange,
+                  label: '+ อีก ${p.lines.length - 4} รายการ',
                 ),
             ],
           ),

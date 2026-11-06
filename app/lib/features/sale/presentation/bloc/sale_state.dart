@@ -20,12 +20,46 @@ class SaleState extends Equatable {
     required this.selectedCategory,
     this.step = 'order',
     this.payMethodId = 'pm1',
+    this.bankAccountId = '',
     this.cashReceived = '',
     this.transferStatus = 'waiting',
     this.settledBillId,
     this.toastMessage = '',
     this.now,
   });
+
+  factory blankCart(
+    PosState s,
+    String tableId, {
+    DateTime? now,
+    String? settledBillId,
+    String toastMessage = '',
+  }) {
+    final o = s.openTables[tableId];
+    final firstPkg = s.packages.where((p) => p.active).firstOrNull;
+    final firstAddonCat =
+        s.addons.where((x) => x.active).firstOrNull?.category ?? 'เครื่องดื่ม';
+    final firstPayId =
+        s.payments.where((p) => p.active).firstOrNull?.id ?? 'pm1';
+    final firstBankId = s.shop.activeBankAccounts.firstOrNull?.id ?? '';
+    return SaleState(
+      posState: s,
+      tableId: tableId,
+      pkgId: o?.packageId ?? (firstPkg?.id ?? ''),
+      timing: o?.timing ?? s.shop.payTiming,
+      a: o != null ? 0 : 2,
+      c: 0,
+      f: 0,
+      ad: const <String, int>{},
+      notes: '',
+      selectedCategory: o != null ? firstAddonCat : 'แพ็กเกจ',
+      payMethodId: firstPayId,
+      bankAccountId: firstBankId,
+      settledBillId: settledBillId,
+      toastMessage: toastMessage,
+      now: now,
+    );
+  }
 
   final PosState posState;
   final String tableId;
@@ -39,6 +73,7 @@ class SaleState extends Equatable {
   final String selectedCategory;
   final String step;
   final String payMethodId;
+  final String bankAccountId;
   final String cashReceived;
   final String transferStatus;
   final String? settledBillId;
@@ -62,6 +97,16 @@ class SaleState extends Equatable {
   PaymentMethod? get activePaymentMethod =>
       activePayments.where((p) => p.id == payMethodId).firstOrNull ??
       activePayments.firstOrNull;
+
+  List<BankAccountItem> get activeBankAccounts =>
+      posState.shop.activeBankAccounts;
+
+  BankAccountItem? get activeBankAccount =>
+      activeBankAccounts.where((b) => b.id == bankAccountId).firstOrNull ??
+      activeBankAccounts.firstOrNull;
+
+  BillRecord? get tablePosSlip =>
+      buildTablePosSlip(posState, tableId, now: now);
 
   PackageItem? get activePackage {
     final targetId = openTable?.packageId ?? pkgId;
@@ -132,9 +177,6 @@ class SaleState extends Equatable {
     final m = activePaymentMethod;
     if (m == null || !canPay || openShiftOf(posState) == null) return false;
     if (m.type == 'cash') return cashReceivedAmount >= payOrder.total;
-    if (m.type == 'transfer' || m.type == 'card') {
-      return transferStatus != 'failed';
-    }
     return true;
   }
 
@@ -155,6 +197,7 @@ class SaleState extends Equatable {
     String? selectedCategory,
     String? step,
     String? payMethodId,
+    String? bankAccountId,
     String? cashReceived,
     String? transferStatus,
     String? settledBillId,
@@ -174,6 +217,7 @@ class SaleState extends Equatable {
     selectedCategory: selectedCategory ?? this.selectedCategory,
     step: step ?? this.step,
     payMethodId: payMethodId ?? this.payMethodId,
+    bankAccountId: bankAccountId ?? this.bankAccountId,
     cashReceived: cashReceived ?? this.cashReceived,
     transferStatus: transferStatus ?? this.transferStatus,
     settledBillId: clearSettledBill
@@ -197,6 +241,7 @@ class SaleState extends Equatable {
     selectedCategory,
     step,
     payMethodId,
+    bankAccountId,
     cashReceived,
     transferStatus,
     settledBillId,

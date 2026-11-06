@@ -49,7 +49,9 @@ class _KepTohAppState extends State<KepTohApp> {
 
   late final ThemeCubit _themeCubit =
       widget.themeCubit ??
-      (sl.isRegistered<ThemeCubit>() ? sl<ThemeCubit>() : ThemeCubit());
+      (widget.repository == null && sl.isRegistered<ThemeCubit>()
+          ? sl<ThemeCubit>()
+          : ThemeCubit(repository: _repo));
 
   late final AuthCubit _authCubit =
       widget.authCubit ?? AuthCubit(_repo, now: widget.now);
@@ -106,8 +108,14 @@ class _KepTohAppState extends State<KepTohApp> {
             return MaterialApp.router(
               title: 'KepToh POS',
               debugShowCheckedModeBanner: false,
-              theme: AppTheme.build(brightness: Brightness.light),
-              darkTheme: AppTheme.build(brightness: Brightness.dark),
+              theme: AppTheme.build(
+                brightness: Brightness.light,
+                palette: state.palette,
+              ),
+              darkTheme: AppTheme.build(
+                brightness: Brightness.dark,
+                palette: state.palette,
+              ),
               themeMode: state.mode.themeMode,
               routerConfig: _router,
             );

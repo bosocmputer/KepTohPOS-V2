@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Right-hand `396px` Order Panel (`aside.sale-panel` in `prototype/index.html`).
-class SaleOrderPanel extends StatelessWidget {
+class SaleOrderPanel extends StatefulWidget {
   const new({
     required this.state,
     required this.staff,
@@ -17,9 +17,7 @@ class SaleOrderPanel extends StatelessWidget {
     required this.onOpenRemoveModal,
     super.key,
     this.fullHeight = false,
-    this.selectedMethodId,
-    this.onSelectMethod,
-    this.onPayPressed,
+    this.onOpenPosSlipModal,
   });
 
   final SaleState state;
@@ -28,72 +26,54 @@ class SaleOrderPanel extends StatelessWidget {
   final VoidCallback onOpenNoteModal;
   final ValueChanged<String> onOpenRemoveModal;
   final bool fullHeight;
-  final String? selectedMethodId;
-  final ValueChanged<String>? onSelectMethod;
-  final VoidCallback? onPayPressed;
+  final VoidCallback? onOpenPosSlipModal;
+  @override
+  State<SaleOrderPanel> createState() => _SaleOrderPanelState();
+}
+
+class _SaleOrderPanelState extends State<SaleOrderPanel> {
+  bool _expandAddPeople = false;
+  @override
+  void didUpdateWidget(covariant SaleOrderPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.state.tableId != oldWidget.state.tableId) {
+      _expandAddPeople = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final state = widget.state;
+    final staff = widget.staff;
+    final fullHeight = widget.fullHeight;
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
     final bloc = context.read<SaleBloc>();
     final s = state.posState;
     final o = state.openTable;
-    final pkg = state.activePackage;
     final timing = state.effectiveTiming;
     final note = state.effectiveNotes;
     final payOrder = state.payOrder;
     final totalTxt = baht(payOrder.total, payOrder.total % 1 != 0 ? 2 : 0);
-    final sentRows = state.sentRows;
-    final canVoid = staff.role != 'cashier';
-    final methodId = selectedMethodId ?? state.activePaymentMethod?.id ?? 'pm1';
-    final tableOpts = [
-      for (final x in s.tables)
-        DropdownOption(
-          value: x.id,
-          label: 'โต๊ะ ${x.name}',
-          sub: s.openTables[x.id] != null
-              ? 'มีลูกค้า'
-                    '${tableDue(s, s.openTables[x.id]!) > 0 ? " · รอชำระ" : ""}'
-              : 'ว่าง · ${x.seats} ที่นั่ง',
-        ),
-    ];
     final cartAddons = state.activeAddons
         .where((x) => (state.ad[x.id] ?? 0) > 0)
         .toList();
+    final sentRows = state.sentRows;
     final bodyContent = Padding(
       padding: const EdgeInsets.all(AppDimensions.space4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            '${o != null ? "เพิ่มคน (ถ้ามี)" : "จำนวนลูกค้า"}'
-            '${pkg != null ? " · ${pkg.name}" : ""}',
-            style: tt.titleMedium?.copyWith(color: t.ink),
-          ),
-          const SizedBox(height: AppDimensions.space2),
-          PeopleRow(
-            stepperKey: const ValueKey('people-stepper-a'),
-            label: 'ผู้ใหญ่',
-            sub: pkg != null ? baht(pkg.adultPrice) : '-',
-            value: state.a,
-            onChanged: (v) => bloc.add(SaleHeadsChanged(a: v)),
-          ),
-          PeopleRow(
-            stepperKey: const ValueKey('people-stepper-c'),
-            label: 'เด็ก',
-            sub: pkg != null
-                ? '${baht(pkg.childPrice)} · ${pkg.childRule}'
-                : '-',
-            value: state.c,
-            onChanged: (v) => bloc.add(SaleHeadsChanged(c: v)),
-          ),
-          PeopleRow(
-            stepperKey: const ValueKey('people-stepper-f'),
-            label: 'เด็กเล็ก',
-            sub: pkg != null ? pkg.freeRule : '-',
-            value: state.f,
-            onChanged: (v) => bloc.add(SaleHeadsChanged(f: v)),
+          SalePeopleSection(
+            openTable: o,
+            pkg: state.activePackage,
+            a: state.a,
+            c: state.c,
+            f: state.f,
+            expanded: _expandAddPeople,
+            onToggleExpand: (v) => setState(() => _expandAddPeople = v),
+            onHeadsChanged: ({a, c, f}) =>
+                bloc.add(SaleHeadsChanged(a: a, c: c, f: f)),
           ),
           if (cartAddons.isNotEmpty) ...[
             Divider(color: t.line, height: AppDimensions.space6),
@@ -110,7 +90,7 @@ class SaleOrderPanel extends StatelessWidget {
                 sub: baht(x.price),
                 qty: state.ad[x.id] ?? 0,
                 icon: AppIcons.forCategory(x.category),
-                onNoteTap: onOpenNoteModal,
+                onNoteTap: widget.onOpenNoteModal,
                 onChanged: (q) =>
                     bloc.add(SaleAddonQtyChanged(addonId: x.id, qty: q)),
               ),
@@ -136,8 +116,8 @@ class SaleOrderPanel extends StatelessWidget {
                       .firstOrNull,
                 ),
                 removeLabel: 'ลบ ${l.name}',
-                removeOff: !canVoid,
-                onRemove: () => onOpenRemoveModal('${l.kind}:${l.key}'),
+                removeOff: staff.role == 'cashier',
+                onRemove: () => widget.onOpenRemoveModal('${l.kind}:${l.key}'),
               ),
           ],
         ],
@@ -156,8 +136,17 @@ class SaleOrderPanel extends StatelessWidget {
                 key: const ValueKey('sale-table-dropdown'),
                 label: 'เลือกโต๊ะ',
                 value: state.tableId,
-                options: tableOpts,
-                onChanged: onSelectTable,
+                options: [
+                  for (final x in s.tables)
+                    DropdownOption(
+                      value: x.id,
+                      label: 'โต๊ะ ${x.name}',
+                      sub: s.openTables[x.id] != null
+                          ? 'มีลูกค้า · โต๊ะเปิดอยู่'
+                          : 'ว่าง · ${x.seats} ที่นั่ง',
+                    ),
+                ],
+                onChanged: widget.onSelectTable,
               ),
               const SizedBox(height: AppDimensions.space3),
               Row(
@@ -168,7 +157,7 @@ class SaleOrderPanel extends StatelessWidget {
                       label: timing == 'after' ? 'กินก่อนจ่าย' : 'จ่ายก่อนกิน',
                       tone: timing == 'after'
                           ? PillTone.orange
-                          : PillTone.neutral,
+                          : PillTone.green,
                     )
                   else
                     Flexible(
@@ -176,19 +165,34 @@ class SaleOrderPanel extends StatelessWidget {
                         key: const ValueKey('sale-timing-seg'),
                         value: state.timing,
                         items: const [
-                          SegItem(value: 'before', label: 'จ่ายก่อนกิน'),
-                          SegItem(value: 'after', label: 'กินก่อนจ่าย'),
+                          SegItem(
+                            value: 'before',
+                            label: 'จ่ายก่อนกิน',
+                            tone: SegTone.green,
+                          ),
+                          SegItem(
+                            value: 'after',
+                            label: 'กินก่อนจ่าย',
+                            tone: SegTone.orange,
+                          ),
                         ],
                         onChanged: (v) => bloc.add(SaleTimingChanged(v)),
                       ),
                     ),
-                  const SizedBox(width: AppDimensions.space2),
+                  if (o != null && widget.onOpenPosSlipModal != null)
+                    Btn(
+                      key: const ValueKey('order-panel-pos-slip-btn'),
+                      size: BtnSize.sm,
+                      icon: 'receipt',
+                      label: 'สลิป POS',
+                      onPressed: widget.onOpenPosSlipModal,
+                    ),
                   Btn(
                     key: const ValueKey('sale-note-btn'),
                     size: BtnSize.sm,
                     icon: 'edit',
                     label: note.isNotEmpty ? 'แก้โน้ต' : 'โน้ต',
-                    onPressed: onOpenNoteModal,
+                    onPressed: widget.onOpenNoteModal,
                   ),
                 ],
               ),
@@ -214,13 +218,15 @@ class SaleOrderPanel extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              OrderSummary(
-                shop: s.shop,
-                order: payOrder,
-                noTotal: true,
-                showLines: false,
-              ),
-              const SizedBox(height: AppDimensions.space2),
+              if (payOrder.lines.isNotEmpty) ...[
+                OrderSummary(
+                  shop: s.shop,
+                  order: payOrder,
+                  noTotal: true,
+                  showLines: false,
+                ),
+                const SizedBox(height: AppDimensions.space2),
+              ],
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -243,19 +249,12 @@ class SaleOrderPanel extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: AppDimensions.space2),
-              PaymentPicker(
-                methods: s.payments,
-                value: methodId,
-                onChanged:
-                    onSelectMethod ??
-                    (id) => bloc.add(SalePaymentMethodSelected(id)),
-              ),
               const SizedBox(height: AppDimensions.space3),
               if (timing == 'after') ...[
                 Btn(
                   key: const ValueKey('sale-send-round-btn'),
                   label: 'ส่งออเดอร์',
+                  kind: state.canSend ? BtnKind.dark : BtnKind.normal,
                   size: BtnSize.lg,
                   block: true,
                   icon: 'plus',
@@ -273,9 +272,7 @@ class SaleOrderPanel extends StatelessWidget {
                 block: true,
                 icon: 'receipt',
                 disabled: !state.canPay,
-                onPressed:
-                    onPayPressed ??
-                    () => bloc.add(const SalePaymentStepChanged('pay')),
+                onPressed: () => bloc.add(const SalePaymentStepChanged('pay')),
               ),
             ],
           ),

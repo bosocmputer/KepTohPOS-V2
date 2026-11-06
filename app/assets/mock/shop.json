@@ -1,11 +1,12 @@
 {
-  "name": "หมูกระทะลุงหมี",
-  "branch": "ร้านตัวอย่าง",
-  "address": "99/9 ถ.มิตรภาพ ต.ในเมือง อ.เมือง จ.ขอนแก่น 40000",
-  "phone": "043-000-000",
+  "name": "จ่าโบ้หมูกะทะ",
+  "branch": "",
+  "address": "95/7 Faham , Muang Chiang Mai, Chiang Mai, Thailand, Chiang Mai",
+  "phone": "082 929 5566",
   "taxId": "",
   "promptpay": "0812345678",
   "vatMode": "none",
+  "vatRate": 7,
   "servicePct": 0,
   "defaultFloat": 1000,
   "receiptFooter": "ขอบคุณที่อุดหนุน ทานให้อร่อย ไม่เหลือทิ้งนะคะ",
@@ -16,5 +17,21 @@
   "childHeadWeight": 0.5,
   "openDaysPerMonth": 30,
   "weeklyCountDow": 1,
-  "rounding": "down"
+  "rounding": "down",
+  "bankAccounts": [
+    {
+      "id": "ba1",
+      "bankName": "ธนาคารกสิกรไทย",
+      "accountNo": "123-4-56789-0",
+      "accountName": "จ่าโบ้หมูกะทะ",
+      "active": true
+    },
+    {
+      "id": "ba2",
+      "bankName": "ธนาคารไทยพาณิชย์",
+      "accountNo": "987-6-54321-0",
+      "accountName": "จ่าโบ้หมูกะทะ",
+      "active": true
+    }
+  ]
 }

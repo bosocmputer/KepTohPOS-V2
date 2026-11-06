@@ -14,12 +14,14 @@ class DataTableCol<T> {
     required this.cellBuilder,
     this.align = ColAlign.left,
     this.flex = 1,
+    this.width,
   });
 
   final String key;
   final String label;
   final ColAlign align;
   final int flex;
+  final double? width;
   final Widget Function(BuildContext context, T row) cellBuilder;
 }
 
@@ -59,6 +61,13 @@ class PosDataTable<T> extends StatelessWidget {
     ColAlign.left => TextAlign.left,
   };
 
+  Widget _wrapCell(DataTableCol<T> col, Widget child) {
+    final aligned = Align(alignment: _alignment(col.align), child: child);
+    return col.width != null
+        ? SizedBox(width: col.width, child: aligned)
+        : Expanded(flex: col.flex, child: aligned);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (rows.isEmpty && empty != null) return empty!;
@@ -77,8 +86,9 @@ class PosDataTable<T> extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: LayoutBuilder(
           builder: (context, constraints) {
+            final minW = columns.length > 5 ? 520.0 : 320.0;
             final tableWidth = constraints.hasBoundedWidth
-                ? math.max<double>(constraints.maxWidth, 520)
+                ? math.max<double>(constraints.maxWidth, minW)
                 : 520.0;
             return SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -98,18 +108,15 @@ class PosDataTable<T> extends StatelessWidget {
                         child: Row(
                           children: [
                             for (final col in columns)
-                              Expanded(
-                                flex: col.flex,
-                                child: Align(
-                                  alignment: _alignment(col.align),
-                                  child: Text(
-                                    col.label,
-                                    textAlign: _textAlign(col.align),
-                                    style: textTheme.labelSmall?.copyWith(
-                                      color: tokens.muted,
-                                      fontSize: AppDimensions.fsXs,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                              _wrapCell(
+                                col,
+                                Text(
+                                  col.label,
+                                  textAlign: _textAlign(col.align),
+                                  style: textTheme.labelSmall?.copyWith(
+                                    color: tokens.muted,
+                                    fontSize: AppDimensions.fsXs,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),
@@ -193,13 +200,7 @@ class PosDataTable<T> extends StatelessWidget {
         child: Row(
           children: [
             for (final col in columns)
-              Expanded(
-                flex: col.flex,
-                child: Align(
-                  alignment: _alignment(col.align),
-                  child: col.cellBuilder(context, row),
-                ),
-              ),
+              _wrapCell(col, col.cellBuilder(context, row)),
           ],
         ),
       ),

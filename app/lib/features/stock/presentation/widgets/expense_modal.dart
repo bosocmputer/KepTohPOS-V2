@@ -45,8 +45,25 @@ class ExpenseModal extends StatefulWidget {
 }
 
 class _ExpenseModalState extends State<ExpenseModal> {
+  final GlobalKey _bottomKey = GlobalKey();
   late List<_ExpenseModalRow> _lines;
   String _error = '';
+
+  void _addLine() {
+    setState(() {
+      _lines.add(const _ExpenseModalRow(typeId: ''));
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _bottomKey.currentContext;
+      if (ctx != null && mounted) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 160),
+          alignment: 1,
+        );
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -108,12 +125,27 @@ class _ExpenseModalState extends State<ExpenseModal> {
                   : 'บันทึกค่าใช้จ่าย · ${thDateShort(widget.date)}',
               sub: 'ค่าใช้จ่ายที่ไม่เข้าสต็อก ใช้หักกำไรสุทธิ',
               onClose: widget.onClose,
-              footerLeading: Text(
-                'รวม ${baht(modalTotal)}',
-                style: tt.titleLarge?.copyWith(
-                  color: t.ink,
-                  fontWeight: FontWeight.w700,
-                ),
+              footerLeading: Wrap(
+                spacing: AppDimensions.space3,
+                runSpacing: AppDimensions.space2,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(
+                    'รวม ${baht(modalTotal)}',
+                    style: tt.titleLarge?.copyWith(
+                      color: t.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (widget.editId == null)
+                    Btn(
+                      key: const ValueKey('expense-modal-add-line-btn'),
+                      size: BtnSize.sm,
+                      icon: 'plus',
+                      label: 'เพิ่มบรรทัด',
+                      onPressed: _addLine,
+                    ),
+                ],
               ),
               footer: [
                 Btn(
@@ -169,6 +201,8 @@ class _ExpenseModalState extends State<ExpenseModal> {
                               child: AppTextInput(
                                 key: ValueKey('expense-line-amount-$i'),
                                 value: _lines[i].amount,
+                                placeholder: '0',
+                                suffixText: '฿',
                                 keyboardType:
                                     const TextInputType.numberWithOptions(
                                       decimal: true,
@@ -187,15 +221,17 @@ class _ExpenseModalState extends State<ExpenseModal> {
                               child: AppTextInput(
                                 key: ValueKey('expense-line-note-$i'),
                                 value: _lines[i].note,
+                                placeholder: 'เช่น ซื้อเพิ่มช่วงเย็น',
                                 onChanged: (v) => setState(() {
                                   _lines[i] = _lines[i].copyWith(note: v);
                                 }),
                               ),
                             ),
                           ),
-                          if (widget.editId == null && _lines.length > 1)
-                            Padding(
-                              padding: EdgeInsets.only(top: i == 0 ? 25 : 0),
+                          if (widget.editId == null && _lines.length > 1) ...[
+                            const SizedBox(width: AppDimensions.space1_5),
+                            Field(
+                              label: i == 0 ? ' ' : '',
                               child: Btn(
                                 kind: BtnKind.ghost,
                                 icon: 'trash',
@@ -204,22 +240,11 @@ class _ExpenseModalState extends State<ExpenseModal> {
                                     setState(() => _lines.removeAt(i)),
                               ),
                             ),
+                          ],
                         ],
                       ),
                     ),
-                  if (widget.editId == null)
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Btn(
-                        key: const ValueKey('expense-modal-add-line-btn'),
-                        size: BtnSize.sm,
-                        icon: 'plus',
-                        label: 'เพิ่มบรรทัด',
-                        onPressed: () => setState(() {
-                          _lines.add(const _ExpenseModalRow(typeId: ''));
-                        }),
-                      ),
-                    ),
+                  SizedBox(key: _bottomKey, height: 1),
                   if (_error.isNotEmpty) ...[
                     const SizedBox(height: AppDimensions.space2),
                     Text(

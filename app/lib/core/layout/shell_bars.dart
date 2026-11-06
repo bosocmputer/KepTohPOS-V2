@@ -3,14 +3,9 @@ import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/roles.dart';
 import 'package:flutter/material.dart';
 
-/// Top header bar for `AppShell` (`64px` at height `<= 820`, `72px` at
+/// Unified top header bar for `AppShell` (`64px` at height `<= 820`, `72px` at
 /// `1366x1024`, `52px` on mobile).
-///
-/// Extends its surface background under the top status bar (`SafeArea`), while
-/// keeping all interactive controls (`44px` tall) below
-/// `MediaQuery.paddingOf(context).top` and aligned horizontally with the page
-/// content padding (`16` at `1024`, `24` at `>= 1180`).
-class ShellHeaderBar extends StatelessWidget {
+class ShellHeaderBar extends StatefulWidget {
   const new({
     required this.height,
     required this.isMobile,
@@ -21,140 +16,183 @@ class ShellHeaderBar extends StatelessWidget {
     super.key,
     this.horizontalPadding,
     this.pageTitle = 'โต๊ะและขาย',
+    this.titleWidget,
     this.searchQuery = '',
     this.searchPlaceholder = 'ค้นหา',
     this.onSearchChanged,
   });
 
   final double height;
-  final bool isMobile;
-  final String staffName;
-  final bool isShiftOpen;
-  final List<Widget> actions;
-  final VoidCallback onOpenDrawer;
   final double? horizontalPadding;
+  final bool isMobile;
+  final bool isShiftOpen;
+  final String staffName;
   final String pageTitle;
   final String searchQuery;
   final String searchPlaceholder;
+  final List<Widget> actions;
+  final VoidCallback onOpenDrawer;
+  final Widget? titleWidget;
   final ValueChanged<String>? onSearchChanged;
 
   @override
+  State<ShellHeaderBar> createState() => _ShellHeaderBarState();
+}
+
+class _ShellHeaderBarState extends State<ShellHeaderBar> {
+  bool _mobileSearchOpen = false;
+
+  @override
+  void didUpdateWidget(covariant ShellHeaderBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.onSearchChanged == null) _mobileSearchOpen = false;
+  }
+
+  Widget _buildSearchBox() => SearchBox(
+    value: widget.searchQuery,
+    placeholder: widget.searchPlaceholder,
+    onChanged: widget.onSearchChanged!,
+  );
+
+  @override
   Widget build(BuildContext context) {
-    final tokens = context.tokens;
-    final textTheme = Theme.of(context).textTheme;
+    final t = context.tokens;
+    final tt = Theme.of(context).textTheme;
     final topInset = MediaQuery.paddingOf(context).top;
     final screenW = MediaQuery.sizeOf(context).width;
     final hPad =
-        horizontalPadding ??
-        (isMobile ? AppDimensions.space3 : AppDimensions.pagePadding(screenW));
+        widget.horizontalPadding ??
+        (widget.isMobile ? 12 : AppDimensions.pagePadding(screenW));
+    final hasSearch = widget.onSearchChanged != null;
+    final titleNode =
+        widget.titleWidget ??
+        Text(
+          widget.pageTitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: (widget.isMobile ? tt.titleMedium : tt.headlineMedium)
+              ?.copyWith(color: t.ink, fontWeight: FontWeight.w700),
+        );
+    final menuBtn = Btn(
+      key: const ValueKey('shell-menu-btn'),
+      icon: 'sidebar',
+      semanticLabel: 'เปิดเมนู',
+      onPressed: widget.onOpenDrawer,
+    );
 
-    return Container(
-      key: const ValueKey('shell-header'),
-      height: height + topInset,
-      padding: EdgeInsets.only(top: topInset, left: hPad, right: hPad),
-      decoration: BoxDecoration(
-        color: tokens.surface,
-        border: Border(bottom: BorderSide(color: tokens.line)),
-      ),
-      child: Row(
-        children: [
-          Btn(
-            key: const ValueKey('shell-menu-btn'),
-            icon: 'sidebar',
-            semanticLabel: 'เปิดเมนู',
-            onPressed: onOpenDrawer,
+    return LayoutBuilder(
+      builder: (context, c) {
+        final maxW = c.maxWidth.isFinite ? c.maxWidth : screenW;
+        final twoRows =
+            !widget.isMobile &&
+            maxW < 980 &&
+            (hasSearch || widget.actions.length > 1);
+        final userChip = StaffShiftChip(
+          key: const ValueKey('shell-user-btn'),
+          staffName: widget.staffName,
+          isShiftOpen: widget.isShiftOpen,
+          compact: widget.isMobile || maxW < 640,
+          onTap: widget.onOpenDrawer,
+        );
+        return Container(
+          key: const ValueKey('shell-header'),
+          height: twoRows ? null : widget.height + topInset,
+          padding: EdgeInsets.fromLTRB(
+            hPad,
+            topInset + (twoRows ? 10 : 0),
+            hPad,
+            twoRows ? 10 : 0,
           ),
-          if (isMobile) ...[
-            const SizedBox(width: AppDimensions.space2),
-            Expanded(
-              child: Text(
-                pageTitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.titleMedium?.copyWith(
-                  color: tokens.ink,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            Btn(
-              key: const ValueKey('shell-mobile-search-btn'),
-              kind: BtnKind.ghost,
-              icon: 'search',
-              semanticLabel: 'ค้นหา',
-              onPressed: () {},
-            ),
-            const SizedBox(width: AppDimensions.space1),
-          ] else ...[
-            const SizedBox(width: AppDimensions.space3),
-            SizedBox(
-              width: AppDimensions.topbarSearchW,
-              child: SearchBox(
-                value: searchQuery,
-                placeholder: searchPlaceholder,
-                onChanged: onSearchChanged ?? (_) {},
-              ),
-            ),
-            const Spacer(),
-            if (actions.isNotEmpty) ...[
-              ...actions,
-              const SizedBox(width: AppDimensions.space3),
-            ],
-            Pill(
-              label: isShiftOpen ? 'กะเปิด' : 'ยังไม่เปิดกะ',
-              tone: isShiftOpen ? PillTone.green : PillTone.neutral,
-            ),
-            const SizedBox(width: AppDimensions.space2),
-          ],
-          Semantics(
-            button: true,
-            label:
-                'บัญชีและกะ · $staffName · '
-                '${isShiftOpen ? "กะเปิด" : "ยังไม่เปิดกะ"}',
-            child: InkWell(
-              key: const ValueKey('shell-user-btn'),
-              onTap: onOpenDrawer,
-              customBorder: const CircleBorder(),
-              child: Stack(
-                children: [
-                  Avatar(name: staffName, size: AppDimensions.tap),
-                  Positioned(
-                    right: AppDimensions.space0,
-                    bottom: AppDimensions.space0,
-                    child: Container(
-                      width: AppDimensions.statusDotMd,
-                      height: AppDimensions.statusDotMd,
-                      decoration: BoxDecoration(
-                        color: isShiftOpen ? tokens.success : tokens.primary,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: tokens.surface,
-                          width: AppDimensions.borderBold,
-                        ),
-                      ),
+          decoration: BoxDecoration(
+            color: t.surface,
+            border: Border(bottom: BorderSide(color: t.line)),
+          ),
+          child: twoRows
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        menuBtn,
+                        const SizedBox(width: 12),
+                        Expanded(child: titleNode),
+                        const SizedBox(width: 12),
+                        userChip,
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        if (hasSearch)
+                          Expanded(child: _buildSearchBox())
+                        else
+                          const Spacer(),
+                        for (final a in widget.actions) ...[
+                          const SizedBox(width: 8),
+                          a,
+                        ],
+                      ],
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    menuBtn,
+                    if (widget.isMobile) ...[
+                      const SizedBox(width: 8),
+                      if (_mobileSearchOpen && hasSearch)
+                        Expanded(child: _buildSearchBox())
+                      else
+                        Expanded(child: titleNode),
+                      if (hasSearch) ...[
+                        const SizedBox(width: 4),
+                        Btn(
+                          key: const ValueKey('shell-mobile-search-btn'),
+                          kind: BtnKind.ghost,
+                          icon: _mobileSearchOpen ? 'x' : 'search',
+                          semanticLabel: _mobileSearchOpen
+                              ? 'ปิดค้นหา'
+                              : 'ค้นหา',
+                          onPressed: () {
+                            if (_mobileSearchOpen) {
+                              widget.onSearchChanged?.call('');
+                            }
+                            setState(
+                              () => _mobileSearchOpen = !_mobileSearchOpen,
+                            );
+                          },
+                        ),
+                        if (!_mobileSearchOpen) const SizedBox(width: 4),
+                      ],
+                    ] else ...[
+                      const SizedBox(width: 12),
+                      Expanded(child: titleNode),
+                      const SizedBox(width: 12),
+                      if (hasSearch) ...[
+                        SizedBox(width: 240, child: _buildSearchBox()),
+                        const SizedBox(width: 10),
+                      ],
+                      for (final a in widget.actions) ...[
+                        a,
+                        const SizedBox(width: 10),
+                      ],
+                    ],
+                    userChip,
+                  ],
+                ),
+        );
+      },
     );
   }
 }
 
-/// Provides the desktop `ShellHeaderBar` builder to split-screen views like
-/// `SalePage` so the topbar spans only the left main area while the right
-/// Order Panel spans 100% of screen height (`design/figma/cashier.png`).
+/// Provides the desktop `ShellHeaderBar` builder to split-screen views.
 class ShellDesktopHeaderScope extends InheritedWidget {
   const new({required this.headerBuilder, required super.child, super.key});
-
-  final Widget Function({List<Widget> extraActions}) headerBuilder;
-
+  final Widget Function({Widget? titleWidget, List<Widget> extraActions})
+  headerBuilder;
   static ShellDesktopHeaderScope? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<ShellDesktopHeaderScope>();
-
   @override
   bool updateShouldNotify(ShellDesktopHeaderScope oldWidget) => true;
 }
@@ -168,108 +206,92 @@ class MobileBottomNavBar extends StatelessWidget {
     required this.onOpenMore,
     super.key,
   });
-
   final List<AppViewSpec> allowedViews;
   final String activeViewId;
   final ValueChanged<String> onSelectView;
   final VoidCallback onOpenMore;
 
+  Widget _item(
+    BuildContext context,
+    String key,
+    String icon,
+    String label,
+    bool sel,
+    VoidCallback onTap,
+  ) {
+    final t = context.tokens;
+    final rad = BorderRadius.circular(AppDimensions.radiusMd);
+    final fg = sel ? t.onPrimary : t.sideInk;
+    return Expanded(
+      child: Material(
+        key: ValueKey(key),
+        color: sel ? t.primary : t.side.withValues(alpha: 0),
+        borderRadius: rad,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: rad,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppIcon(icon, size: AppDimensions.iconLg, color: fg),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: sel ? t.onPrimary : t.sideInkStrong,
+                    fontSize: AppDimensions.fsXs,
+                    fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final tokens = context.tokens;
+    final t = context.tokens;
     final keep = allowedViews.length > 5 ? 4 : allowedViews.length;
-    final visibleViews = allowedViews.take(keep).toList();
-    final hasMore = allowedViews.length > keep;
-    final moreActive =
-        hasMore && allowedViews.skip(keep).any((v) => v.id == activeViewId);
-
+    final moreSel =
+        allowedViews.length > keep &&
+        allowedViews.skip(keep).any((v) => v.id == activeViewId);
     return Container(
       key: const ValueKey('shell-bottom-nav'),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.space1,
-        vertical: AppDimensions.space1,
-      ),
+      padding: const EdgeInsets.all(AppDimensions.space1),
       decoration: BoxDecoration(
-        color: tokens.side,
-        border: Border(top: BorderSide(color: tokens.sideLine)),
+        color: t.side,
+        border: Border(top: BorderSide(color: t.sideLine)),
       ),
       child: SafeArea(
         top: false,
         child: Row(
           children: [
-            for (final v in visibleViews)
-              Expanded(
-                child: _BottomNavButton(
-                  key: ValueKey('bottom-nav-${v.id}'),
-                  icon: v.icon,
-                  label: v.label,
-                  selected: v.id == activeViewId,
-                  onTap: () => onSelectView(v.id),
-                ),
+            for (final v in allowedViews.take(keep))
+              _item(
+                context,
+                'bottom-nav-${v.id}',
+                v.icon,
+                v.label,
+                v.id == activeViewId,
+                () => onSelectView(v.id),
               ),
-            if (hasMore)
-              Expanded(
-                child: _BottomNavButton(
-                  key: const ValueKey('bottom-nav-more'),
-                  icon: 'menu',
-                  label: 'เพิ่มเติม',
-                  selected: moreActive,
-                  onTap: onOpenMore,
-                ),
+            if (allowedViews.length > keep)
+              _item(
+                context,
+                'bottom-nav-more',
+                'menu',
+                'เพิ่มเติม',
+                moreSel,
+                onOpenMore,
               ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BottomNavButton extends StatelessWidget {
-  const new({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    super.key,
-  });
-
-  final String icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.tokens;
-    final fg = selected ? tokens.onPrimary : tokens.sideInk;
-    return Material(
-      color: selected ? tokens.primary : tokens.side.withValues(alpha: 0),
-      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: AppDimensions.space2,
-            horizontal: AppDimensions.space1,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppIcon(icon, size: AppDimensions.iconLg, color: fg),
-              const SizedBox(height: AppDimensions.space1),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: fg,
-                  fontSize: AppDimensions.fsXs,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

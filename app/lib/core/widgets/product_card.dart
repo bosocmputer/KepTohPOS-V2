@@ -17,6 +17,8 @@ class ProductCard extends StatelessWidget {
     this.subtitle,
     this.stock,
     this.icon,
+    this.imageHeight,
+    this.trailingFooter,
     this.selected = false,
     this.onTap,
   });
@@ -27,6 +29,8 @@ class ProductCard extends StatelessWidget {
   final String? subtitle;
   final int? stock;
   final String? icon;
+  final double? imageHeight;
+  final Widget? trailingFooter;
   final bool selected;
   final VoidCallback? onTap;
 
@@ -60,7 +64,7 @@ class ProductCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  height: AppDimensions.productCardImgH,
+                  height: imageHeight ?? AppDimensions.productCardImgH,
                   decoration: BoxDecoration(
                     color: tokens.surface2,
                     borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
@@ -86,7 +90,7 @@ class ProductCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: AppDimensions.space2_5),
+                const SizedBox(height: AppDimensions.space2),
                 Text(
                   name,
                   maxLines: 1,
@@ -108,24 +112,30 @@ class ProductCard extends StatelessWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: AppDimensions.space2),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    if (category != null && category!.isNotEmpty)
-                      Flexible(
-                        child: Pill(label: category, tone: PillTone.orange),
-                      )
-                    else
-                      const SizedBox.shrink(),
-                    Text(
-                      baht(price),
-                      style: textTheme.titleLarge?.copyWith(
-                        color: tokens.ink,
-                        fontWeight: FontWeight.w700,
+                const SizedBox(height: AppDimensions.space1_5),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: AppDimensions.btnSmH,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (trailingFooter == null &&
+                          category != null &&
+                          category!.isNotEmpty)
+                        Flexible(
+                          child: Pill(label: category, tone: PillTone.orange),
+                        ),
+                      Text(
+                        baht(price),
+                        style: textTheme.titleLarge?.copyWith(
+                          color: selected ? tokens.primary : tokens.ink,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                  ],
+                      ?trailingFooter,
+                    ],
+                  ),
                 ),
               ],
             ),

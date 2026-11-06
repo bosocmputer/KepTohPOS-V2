@@ -22,12 +22,49 @@ class StockBalanceTab extends StatelessWidget {
     final state = context.watch<StockCubit>().state;
     final cubit = context.read<StockCubit>();
     final rows = state.pagedBalanceRows;
+    final allFiltered = state.filteredBalanceRows;
+    final okCount = allFiltered.where((r) => r.status == StockStatus.ok).length;
+    final lowCount = allFiltered
+        .where((r) => r.status == StockStatus.low)
+        .length;
+    final outCount = allFiltered
+        .where((r) => r.status == StockStatus.out)
+        .length;
+    final needCount = lowCount + outCount;
+    final hasActiveFilters =
+        state.activeFilterCount > 0 || state.searchQuery.trim().isNotEmpty;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppDimensions.space6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          StatsGroup(
+            children: [
+              Stat(
+                label: 'มูลค่าคงเหลือรวม',
+                value: baht(state.totalBalanceValue),
+                sub: '${allFiltered.length} รายการวัตถุดิบ',
+              ),
+              Stat(
+                label: 'ต้องสั่งซื้อเพิ่ม',
+                value: '$needCount รายการ',
+                sub: outCount > 0
+                    ? 'หมดสต็อก $outCount · ใกล้หมด $lowCount'
+                    : (lowCount > 0
+                          ? 'ใกล้หมด $lowCount รายการ'
+                          : 'ไม่มีรายการต้องสั่งเพิ่ม'),
+                tone: needCount > 0 ? StatTone.red : StatTone.green,
+              ),
+              Stat(
+                label: 'สต็อกเพียงพอ',
+                value: '$okCount รายการ',
+                sub: 'พร้อมใช้งานตามเกณฑ์',
+                tone: StatTone.green,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppDimensions.space3),
           Container(
             padding: const EdgeInsets.symmetric(
               horizontal: AppDimensions.space4,
@@ -48,6 +85,50 @@ class StockBalanceTab extends StatelessWidget {
               ),
             ),
           ),
+          if (hasActiveFilters) ...[
+            const SizedBox(height: AppDimensions.space3),
+            Wrap(
+              key: const ValueKey('stock-active-filters-bar'),
+              spacing: AppDimensions.space2,
+              runSpacing: AppDimensions.space1_5,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  'ตัวกรอง:',
+                  style: tt.labelSmall?.copyWith(color: t.muted),
+                ),
+                for (final loc in state.locationFilters)
+                  Pill(tone: PillTone.orange, label: kLocations[loc] ?? loc),
+                if (state.statusFilter != 'all')
+                  Pill(
+                    tone: switch (state.statusFilter) {
+                      'ok' => PillTone.green,
+                      'out' => PillTone.red,
+                      _ => PillTone.orange,
+                    },
+                    label: switch (state.statusFilter) {
+                      'ok' => 'สถานะ: พอ',
+                      'low' => 'สถานะ: ใกล้หมด',
+                      _ => 'สถานะ: หมด',
+                    },
+                  ),
+                if (state.searchQuery.trim().isNotEmpty)
+                  Pill(label: 'ค้นหา "${state.searchQuery.trim()}"'),
+                Btn(
+                  key: const ValueKey('stock-inline-clear-filters-btn'),
+                  kind: BtnKind.ghost,
+                  size: BtnSize.sm,
+                  icon: 'x',
+                  label: 'ล้างตัวกรอง',
+                  onPressed: () {
+                    cubit
+                      ..clearFilters()
+                      ..setSearchQuery('');
+                  },
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: AppDimensions.space4),
           if (state.balanceViewMode == 'grid')
             BalanceGridView(

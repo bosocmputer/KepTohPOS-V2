@@ -12,6 +12,20 @@ export 'package:app/features/dashboard/presentation/cubit/dashboard_cubit.dart';
 export 'package:app/features/dashboard/presentation/widgets/dashboard_breakdown_cards.dart';
 export 'package:app/features/dashboard/presentation/widgets/profit_chart.dart';
 
+/// Builds the date-range segmented selector (`dashboard-range-seg`) for
+/// `/dashboard` shown in the Topbar on tablet/desktop and inline on mobile.
+Widget buildDashboardRangeSeg(DashboardCubit cubit) => Seg<String>(
+  key: const ValueKey('dashboard-range-seg'),
+  value: cubit.state.summary.range,
+  items: const [
+    SegItem(value: 'today', label: 'วันนี้'),
+    SegItem(value: '7', label: '7 วัน'),
+    SegItem(value: 'month', label: 'เดือนนี้'),
+    SegItem(value: '30', label: '30 วัน'),
+  ],
+  onChanged: cubit.setRange,
+);
+
 /// Profit overview screen (`function DashboardView` in `prototype/index.html`).
 class DashboardPage extends StatelessWidget {
   const new({super.key, this.onGoStockCount, this.onGoSetupCosting});
@@ -47,43 +61,17 @@ class DashboardPage extends StatelessWidget {
 
         return LayoutBuilder(
           builder: (context, constraints) {
+            final isMobile = constraints.maxWidth <= AppDimensions.mobileBp;
             final pad = AppDimensions.pagePadding(constraints.maxWidth);
             return SingleChildScrollView(
               padding: EdgeInsets.all(pad),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  PageHeader(
-                    title: 'ภาพรวมกำไร',
-                    desc:
-                        '${sh.name}'
-                        '${sh.branch.isNotEmpty ? " · ${sh.branch}" : ""}',
-                  ),
-                  const SizedBox(height: AppDimensions.space4),
-                  Toolbar(
-                    end: [
-                      if (sum.days.isNotEmpty)
-                        Text(
-                          '${thDate(sum.days.first.date)} – '
-                          '${thDate(sum.days.last.date)}',
-                          style: tt.bodySmall?.copyWith(color: t.muted),
-                        ),
-                    ],
-                    children: [
-                      Seg<String>(
-                        key: const ValueKey('dashboard-range-seg'),
-                        value: sum.range,
-                        items: const [
-                          SegItem(value: 'today', label: 'วันนี้'),
-                          SegItem(value: '7', label: '7 วัน'),
-                          SegItem(value: 'month', label: 'เดือนนี้'),
-                          SegItem(value: '30', label: '30 วัน'),
-                        ],
-                        onChanged: cubit.setRange,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppDimensions.space4),
+                  if (isMobile) ...[
+                    buildDashboardRangeSeg(cubit),
+                    const SizedBox(height: AppDimensions.space4),
+                  ],
                   DashboardHeroSection(
                     summary: sum,
                     onGoStockCount: onGoStockCount,

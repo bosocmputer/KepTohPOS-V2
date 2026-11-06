@@ -157,6 +157,53 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('stock-filter-apply-btn')));
       await tester.pumpAndSettle();
       expect(find.text('ตัวกรอง (1)'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('stock-active-filters-bar')),
+        findsOneWidget,
+      );
+
+      // Tap inline clear filter button
+      await tester.tap(
+        find.byKey(const ValueKey('stock-inline-clear-filters-btn')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('stock-active-filters-bar')),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
+    'Over-count shows danger warning and inline clear (x) button resets value',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1024, 768));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repo = _buildFullStockRepo(fixedNow: fixedNow);
+      await tester.pumpWidget(
+        KepTohApp(repository: repo, now: fixedNow, initialLocation: '/stock'),
+      );
+      await tester.pumpAndSettle();
+
+      final padScope = find.byType(NumPad);
+      await tester.tap(find.descendant(of: padScope, matching: find.text('1')));
+      await tester.pump();
+      await tester.tap(find.descendant(of: padScope, matching: find.text('0')));
+      await tester.pump();
+      await tester.tap(find.descendant(of: padScope, matching: find.text('0')));
+      await tester.pump();
+      await tester.tap(find.descendant(of: padScope, matching: find.text('0')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1,000'), findsNWidgets(2));
+      expect(find.text('เกินที่มี'), findsOneWidget);
+      expect(find.textContaining('เกินที่มีอยู่'), findsOneWidget);
+
+      // Tap inline clear (x) button inside display box
+      await tester.tap(find.byKey(const ValueKey('stock-count-clear-val-btn')));
+      await tester.pumpAndSettle();
+      expect(find.text('เกินที่มี'), findsNothing);
     },
   );
 }

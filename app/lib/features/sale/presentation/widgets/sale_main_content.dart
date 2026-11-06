@@ -1,3 +1,4 @@
+import 'package:app/core/layout/shell_bars.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
@@ -7,6 +8,39 @@ import 'package:app/features/sale/presentation/widgets/sale_catalog.dart';
 import 'package:app/features/tables/presentation/widgets/table_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+/// Builds the Topbar title row for `SalePage` (`[< โต๊ะ] โต๊ะ A1 [มีลูกค้า]`).
+Widget buildSaleTopbarTitle(
+  BuildContext context,
+  SaleState state,
+  DiningTable tb,
+  VoidCallback onBackToTables,
+) => Row(
+  children: [
+    Btn(
+      key: const ValueKey('sale-back-tables-btn'),
+      kind: BtnKind.ghost,
+      icon: 'back',
+      label: 'โต๊ะ',
+      onPressed: onBackToTables,
+    ),
+    const SizedBox(width: AppDimensions.space2),
+    Flexible(
+      child: Text(
+        'โต๊ะ ${tb.name}',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.headlineMedium
+            ?.copyWith(color: context.tokens.ink, fontWeight: FontWeight.w700),
+      ),
+    ),
+    const SizedBox(width: AppDimensions.space2),
+    Pill(
+      label: state.openTable != null ? 'มีลูกค้า' : 'เปิดโต๊ะใหม่',
+      tone: state.openTable != null ? PillTone.orange : PillTone.neutral,
+    ),
+  ],
+);
 
 /// Left-hand main product/package selection area of `SalePage` (`div.sale-main`
 /// in `prototype/index.html` & `design/figma/cashier.png`).
@@ -19,6 +53,7 @@ class SaleMainContent extends StatelessWidget {
     required this.onRequestCloseTable,
     super.key,
     this.onRequestOpenShift,
+    this.onRequestViewSlip,
   });
 
   final SaleState state;
@@ -27,6 +62,7 @@ class SaleMainContent extends StatelessWidget {
   final ValueChanged<String> onSelectTable;
   final VoidCallback onRequestCloseTable;
   final VoidCallback? onRequestOpenShift;
+  final VoidCallback? onRequestViewSlip;
 
   @override
   Widget build(BuildContext context) {
@@ -58,34 +94,18 @@ class SaleMainContent extends StatelessWidget {
       );
     }).toList();
 
+    final hasDesktopTopbar = ShellDesktopHeaderScope.maybeOf(context) != null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Btn(
-              key: const ValueKey('sale-back-tables-btn'),
-              kind: BtnKind.ghost,
-              icon: 'back',
-              label: 'โต๊ะ',
-              onPressed: onBackToTables,
-            ),
-            const SizedBox(width: AppDimensions.space2),
-            Text(
-              'โต๊ะ ${table.name}',
-              style: tt.displayMedium?.copyWith(color: t.ink),
-            ),
-            const SizedBox(width: AppDimensions.space2),
-            Pill(
-              label: o != null ? 'มีลูกค้า' : 'เปิดโต๊ะใหม่',
-              tone: o != null ? PillTone.orange : PillTone.neutral,
-            ),
-          ],
-        ),
-        const SizedBox(height: AppDimensions.space3),
+        if (!hasDesktopTopbar) ...[
+          buildSaleTopbarTitle(context, state, table, onBackToTables),
+          const SizedBox(height: AppDimensions.space3),
+        ],
         Wrap(
-          spacing: AppDimensions.space2,
-          runSpacing: AppDimensions.space2,
+          spacing: 8,
+          runSpacing: 8,
           children: [
             if (o == null)
               TableChip(
@@ -107,8 +127,13 @@ class SaleMainContent extends StatelessWidget {
           ],
         ),
         if (o != null) ...[
-          const SizedBox(height: AppDimensions.space3),
-          _OccupiedTableBanner(state: state, openTable: o),
+          const SizedBox(height: 12),
+          _OccupiedTableBanner(
+            state,
+            o,
+            onRequestCloseTable,
+            onRequestViewSlip: onRequestViewSlip,
+          ),
         ],
         if (!hasShift) ...[
           const SizedBox(height: AppDimensions.space3),
@@ -160,7 +185,7 @@ class SaleMainContent extends StatelessWidget {
             items: tabItems,
             onChanged: (c) => bloc.add(SaleCategorySelected(c)),
           ),
-          const SizedBox(height: AppDimensions.space4),
+          const SizedBox(height: 16),
           if (curCat == 'แพ็กเกจ')
             SalePackagesList(state: state)
           else
@@ -172,9 +197,16 @@ class SaleMainContent extends StatelessWidget {
 }
 
 class _OccupiedTableBanner extends StatelessWidget {
-  const new({required this.state, required this.openTable});
+  const new(
+    this.state,
+    this.openTable,
+    this.onRequestCloseTable, {
+    this.onRequestViewSlip,
+  });
   final SaleState state;
   final OpenTableState openTable;
+  final VoidCallback onRequestCloseTable;
+  final VoidCallback? onRequestViewSlip;
 
   @override
   Widget build(BuildContext context) {
@@ -184,45 +216,77 @@ class _OccupiedTableBanner extends StatelessWidget {
     final tm = state.timer;
     final due = state.due;
     final totalHeads = o.heads.a + o.heads.c + o.heads.f;
-
+    final isPaidBefore =
+        state.effectiveTiming == 'before' && o.billIds.isNotEmpty;
+    final pkgName = state.activePackage?.name ?? '';
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.space3),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: t.surface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
         border: Border.all(color: t.line),
       ),
-      child: Wrap(
-        spacing: AppDimensions.space3,
-        runSpacing: AppDimensions.space1,
-        crossAxisAlignment: WrapCrossAlignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            '$totalHeads คน',
-            style: tt.bodyMedium?.copyWith(
-              color: t.ink,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          Text(
-            'ผู้ใหญ่ ${o.heads.a} · เด็ก ${o.heads.c} · ฟรี ${o.heads.f}',
-            style: tt.bodySmall?.copyWith(color: t.muted),
-          ),
-          if (tm != null)
-            Text(
-              tm.text,
-              style: tt.bodySmall?.copyWith(
-                color: tm.late ? t.danger : t.muted,
-                fontWeight: tm.late ? FontWeight.w700 : FontWeight.w500,
+          Wrap(
+            spacing: 12,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text('$totalHeads คน', style: tt.titleMedium),
+              Text(
+                'ผู้ใหญ่ ${o.heads.a} · เด็ก ${o.heads.c} · ฟรี ${o.heads.f}',
+                style: tt.bodySmall?.copyWith(color: t.muted),
               ),
+              if (tm != null)
+                Text(
+                  tm.text,
+                  style: tt.bodySmall?.copyWith(
+                    color: tm.late ? t.danger : t.muted,
+                    fontWeight: tm.late ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+              Pill(
+                label: state.effectiveTiming == 'after'
+                    ? (due > 0 ? 'รอชำระ ${baht(due)}' : 'ชำระแล้ว')
+                    : 'จ่ายก่อนกิน',
+                tone: state.effectiveTiming == 'after' && due > 0
+                    ? PillTone.orange
+                    : PillTone.green,
+              ),
+              if (onRequestViewSlip != null)
+                Btn(
+                  key: const ValueKey('banner-pos-slip-btn'),
+                  size: BtnSize.sm,
+                  icon: 'receipt',
+                  label: 'ดูสลิป POS',
+                  onPressed: onRequestViewSlip,
+                ),
+            ],
+          ),
+          if (isPaidBefore) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'ชำระบุฟเฟต์แล้ว ($pkgName) · '
+                    'สั่งเครื่องดื่ม/เพิ่มคนได้ หรือกดเก็บโต๊ะเมื่อรับกลุ่มใหม่',
+                    style: tt.bodySmall?.copyWith(color: t.muted),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Btn(
+                  key: const ValueKey('banner-close-table-btn'),
+                  kind: BtnKind.danger,
+                  size: BtnSize.sm,
+                  label: 'เก็บโต๊ะ',
+                  onPressed: onRequestCloseTable,
+                ),
+              ],
             ),
-          if (state.effectiveTiming == 'after')
-            Pill(
-              label: due > 0 ? 'รอชำระ ${baht(due)}' : 'ชำระแล้ว',
-              tone: due > 0 ? PillTone.orange : PillTone.green,
-            )
-          else
-            const Pill(label: 'จ่ายก่อนกิน'),
+          ],
         ],
       ),
     );

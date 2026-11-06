@@ -73,6 +73,16 @@ String fmtQ(num? n) {
   return s.endsWith('0') ? s.substring(0, s.length - 1) : s;
 }
 
+/// Formats a live numeric input string with thousand separators while
+/// preserving a trailing decimal point (e.g. `'1000.'` -> `'1,000.'`).
+String fmtInputNum(String raw) {
+  final s = raw.trim();
+  if (s.isEmpty) return '';
+  final parts = s.split('.');
+  final intPart = parts[0].isEmpty ? '0' : _addCommas(parts[0]);
+  return parts.length > 1 ? '$intPart.${parts.sublist(1).join()}' : intPart;
+}
+
 /// Formats an amount in Thai Baht (`baht` in `prototype/index.html`).
 String baht(num? n, [int decimals = 0]) {
   if (n == null || n.isNaN) return '–';

@@ -4,7 +4,6 @@ import 'package:app/core/layout/app_shell.dart';
 import 'package:app/core/router/app_router.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/formatters.dart';
-import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:app/features/bills/presentation/cubit/bills_cubit.dart';
@@ -12,6 +11,7 @@ import 'package:app/features/bills/presentation/pages/bills_page.dart';
 import 'package:app/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:app/features/reports/presentation/pages/reports_page.dart';
 import 'package:app/features/sale/presentation/pages/sale_page.dart';
+import 'package:app/features/setup/presentation/cubit/setup_cubit.dart';
 import 'package:app/features/shift/presentation/bloc/shift_bloc.dart';
 import 'package:app/features/stock/presentation/bloc/stock_count_bloc.dart';
 import 'package:app/features/stock/presentation/cubit/stock_cubit.dart';
@@ -61,10 +61,10 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
   }
 
   @override
-  void didUpdateWidget(covariant ShellPlaceholderPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.billsDate != oldWidget.billsDate ||
-        widget.viewSpec.id != oldWidget.viewSpec.id) {
+  void didUpdateWidget(covariant ShellPlaceholderPage old) {
+    super.didUpdateWidget(old);
+    if (widget.billsDate != old.billsDate ||
+        widget.viewSpec.id != old.viewSpec.id) {
       _syncBillsDate();
     }
   }
@@ -79,28 +79,19 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final repo = _maybe<PosRepository>(context, watch: false);
-    final existingStockCubit = _maybe<StockCubit>(context, watch: false);
-    final existingStockBloc = _maybe<StockCountBloc>(context, watch: false);
-    if (widget.viewSpec.id == 'stock' &&
-        repo != null &&
-        (existingStockCubit == null || existingStockBloc == null)) {
-      return MultiBlocProvider(
-        key: const ValueKey('stock-scope'),
-        providers: [
-          if (existingStockCubit == null)
-            BlocProvider(create: (_) => StockCubit(repo, now: widget.now)),
-          if (existingStockBloc == null)
-            BlocProvider(
-              create: (_) => StockCountBloc(repository: repo, now: widget.now),
-            ),
-        ],
-        child: Builder(builder: _buildShell),
-      );
-    }
-    return _buildShell(context);
-  }
+  Widget build(BuildContext context) => wrapViewScope(
+    viewId: widget.viewSpec.id,
+    repo: _maybe<PosRepository>(context, watch: false),
+    now: widget.now,
+    billsDate: widget.billsDate,
+    existingBills: _maybe<BillsCubit>(context, watch: false),
+    existingStockCubit: _maybe<StockCubit>(context, watch: false),
+    existingStockBloc: _maybe<StockCountBloc>(context, watch: false),
+    existingDash: _maybe<DashboardCubit>(context, watch: false),
+    existingRep: _maybe<ReportsCubit>(context, watch: false),
+    existingSetup: _maybe<SetupCubit>(context, watch: false),
+    builder: _buildShell,
+  );
 
   Widget _buildShell(BuildContext context) {
     final tokens = context.tokens;
@@ -109,6 +100,10 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
     final tablesCubit = _maybe<TablesCubit>(context);
     final billsCubit = _maybe<BillsCubit>(context);
     final stockCubit = _maybe<StockCubit>(context);
+    final stockCountBloc = _maybe<StockCountBloc>(context);
+    final dashCubit = _maybe<DashboardCubit>(context);
+    final repCubit = _maybe<ReportsCubit>(context);
+    final setupCubit = _maybe<SetupCubit>(context);
     final existingSaleBloc = _maybe<SaleBloc>(context, watch: false);
     final repo = _maybe<PosRepository>(context, watch: false);
     final activeShift = shiftBloc?.state.activeShift;
@@ -116,7 +111,7 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
         authCubit?.state.currentStaff ??
         StaffMember(
           id: 'st1',
-          name: 'พี่ต้อม (เจ้าของร้าน)',
+          name: 'พี่ต้อม',
           role: widget.staffRole,
           pin: '1111',
         );
@@ -142,6 +137,9 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
     final isBillsView =
         viewId == 'bills' && (billsCubit != null || repo != null);
     final isStockView = viewId == 'stock' && stockCubit != null;
+    final isSetupCatalog =
+        viewId == 'setup' &&
+        setupCubit?.state.itemCountOf(setupCubit.state.activeTab) != null;
 
     return Stack(
       children: [
@@ -154,30 +152,25 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
           shiftStaffName: shiftStaffName,
           initialDrawerOpen: widget.initialDrawerOpen,
           delegateDesktopHeader: isSaleView,
-          headerActions: <Widget>[
-            if (isTablesView)
-              Btn(
-                key: const ValueKey('topbar-open-table-btn'),
-                kind: BtnKind.primary,
-                label: 'เปิดโต๊ะ',
-                onPressed: () {
-                  final s = tablesCubit.state.posState;
-                  final free = s.tables.where(
-                    (t) => !s.openTables.containsKey(t.id),
-                  );
-                  final id = free.isNotEmpty
-                      ? free.first.id
-                      : (s.tables.isNotEmpty ? s.tables.first.id : 't1');
-                  context.go('/tables/$id');
-                },
-              ),
-          ],
+          headerActions: buildViewHeaderActions(
+            context,
+            viewId: viewId,
+            isTablesView: isTablesView,
+            tablesCubit: tablesCubit,
+            billsCubit: billsCubit,
+            stockCubit: stockCubit,
+            stockCountBloc: stockCountBloc,
+            dashCubit: dashCubit,
+            repCubit: repCubit,
+          ),
           searchQuery: isTablesView
               ? tablesCubit.state.searchQuery
               : isBillsView && billsCubit != null
               ? billsCubit.state.searchQuery
               : isStockView
               ? stockCubit.state.searchQuery
+              : isSetupCatalog
+              ? (setupCubit?.state.searchQuery ?? '')
               : '',
           searchPlaceholder: isTablesView
               ? 'ค้นหาชื่อโต๊ะ'
@@ -185,6 +178,8 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
               ? 'ค้นหาเลขที่บิล โต๊ะ ช่องทาง แคชเชียร์'
               : isStockView
               ? 'ค้นหาวัตถุดิบ แหล่งซื้อ สถานที่เก็บ'
+              : isSetupCatalog
+              ? 'ค้นหารายการในหมวดนี้'
               : 'ค้นหา',
           onSearchChanged: isTablesView
               ? tablesCubit.setSearchQuery
@@ -192,6 +187,8 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
               ? billsCubit.setSearchQuery
               : isStockView
               ? stockCubit.setSearchQuery
+              : isSetupCatalog
+              ? setupCubit?.setSearchQuery
               : null,
           onNavigate: (id) => id == 'dev/components'
               ? unawaited(context.push('/dev/components'))
@@ -213,6 +210,9 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
             billsCubit: billsCubit,
             stockCubit: stockCubit,
             shiftBloc: shiftBloc,
+            dashCubit: dashCubit,
+            repCubit: repCubit,
+            setupCubit: setupCubit,
             tokens: tokens,
           ),
         ),
@@ -239,6 +239,9 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
     required BillsCubit? billsCubit,
     required StockCubit? stockCubit,
     required ShiftBloc? shiftBloc,
+    required DashboardCubit? dashCubit,
+    required ReportsCubit? repCubit,
+    required SetupCubit? setupCubit,
     required AppTokens tokens,
   }) {
     if (viewId == 'tables' &&
@@ -271,29 +274,24 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
     }
     if (viewId == 'bills' && (billsCubit != null || repo != null)) {
       final page = BillsPage(staff: me);
-      return billsCubit != null
-          ? page
-          : BlocProvider(
-              create: (_) => BillsCubit(
-                repo!,
-                now: widget.now,
-                initialDate: widget.billsDate,
-              ),
-              child: page,
-            );
+      if (billsCubit != null) return page;
+      final d = widget.billsDate;
+      return BlocProvider(
+        create: (_) => BillsCubit(repo!, now: widget.now, initialDate: d),
+        child: page,
+      );
     }
     return buildAnalyticsOrPlaceholderBody(
       context,
       viewSpec: widget.viewSpec,
       me: me,
       tokens: tokens,
-      repo: repo,
       stockCubit: stockCubit,
       shiftBloc: shiftBloc,
       billsCubit: billsCubit,
-      existingDash: _maybe<DashboardCubit>(context, watch: false),
-      existingRep: _maybe<ReportsCubit>(context, watch: false),
-      now: widget.now,
+      existingDash: dashCubit,
+      existingRep: repCubit,
+      existingSetup: setupCubit,
     );
   }
 }

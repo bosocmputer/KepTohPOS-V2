@@ -69,7 +69,10 @@ class _StockExpenseTabState extends State<StockExpenseTab> {
             children: [
               PageHeader(
                 title: 'ค่าใช้จ่ายวันที่ ${thDateShort(state.selectedDate)}',
-                desc: 'ไม่เข้าสต็อก · ใช้หักกำไรสุทธิ',
+                desc:
+                    'ไม่เข้าสต็อก · ใช้หักกำไรสุทธิ · '
+                    '${rows.length} รายการ · '
+                    'รวม ${baht(state.dayExpensesTotal)}',
                 actions: [
                   Btn(
                     key: const ValueKey('expense-copy-prev-btn'),
@@ -173,6 +176,10 @@ class _StockExpenseTabState extends State<StockExpenseTab> {
                       baht(state.dayExpensesTotal),
                       key: const ValueKey('expense-day-total'),
                       textAlign: TextAlign.right,
+                      style: tt.bodyMedium?.copyWith(
+                        color: t.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                   if (canManage) const SizedBox.shrink(),

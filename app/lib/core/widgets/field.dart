@@ -51,6 +51,7 @@ class AppTextInput extends StatefulWidget {
     this.value = '',
     this.onChanged,
     this.placeholder = '',
+    this.suffixText,
     this.maxLines = 1,
     this.keyboardType,
     this.readOnly = false,
@@ -59,6 +60,7 @@ class AppTextInput extends StatefulWidget {
   final String value;
   final ValueChanged<String>? onChanged;
   final String placeholder;
+  final String? suffixText;
   final int maxLines;
   final TextInputType? keyboardType;
   final bool readOnly;
@@ -69,11 +71,17 @@ class AppTextInput extends StatefulWidget {
 
 class _AppTextInputState extends State<AppTextInput> {
   late final TextEditingController _controller;
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.value);
+    _focusNode = FocusNode()..addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -89,6 +97,9 @@ class _AppTextInputState extends State<AppTextInput> {
 
   @override
   void dispose() {
+    _focusNode
+      ..removeListener(_onFocusChange)
+      ..dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -96,43 +107,84 @@ class _AppTextInputState extends State<AppTextInput> {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-      borderSide: BorderSide(
-        color: tokens.line,
-        width: AppDimensions.borderThick,
-      ),
-    );
-    final focusedBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-      borderSide: BorderSide(
-        color: tokens.primary,
-        width: AppDimensions.borderThick,
-      ),
-    );
+    final tt = Theme.of(context).textTheme;
+    final isSingleLine = widget.maxLines == 1;
+    final hasSuffix =
+        widget.suffixText != null && widget.suffixText!.isNotEmpty;
 
-    return TextField(
-      controller: _controller,
-      onChanged: widget.onChanged,
-      maxLines: widget.maxLines,
-      keyboardType: widget.keyboardType,
-      readOnly: widget.readOnly,
-      style: Theme.of(context).textTheme.bodyMedium
-          ?.copyWith(color: tokens.ink),
-      decoration: InputDecoration(
-        isDense: true,
-        filled: true,
-        fillColor: tokens.surface,
-        hintText: widget.placeholder,
-        hintStyle: Theme.of(context).textTheme.bodyMedium
-            ?.copyWith(color: tokens.muted),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.space3,
-          vertical: AppDimensions.space2_5,
+    return Material(
+      color: tokens.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        side: BorderSide(
+          color: _focusNode.hasFocus ? tokens.primary : tokens.line,
+          width: AppDimensions.borderThick,
         ),
-        enabledBorder: border,
-        focusedBorder: focusedBorder,
-        border: border,
+      ),
+      child: ConstrainedBox(
+        constraints: isSingleLine
+            ? const BoxConstraints.tightFor(height: AppDimensions.tap)
+            : const BoxConstraints(minHeight: AppDimensions.tap),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppDimensions.space3,
+            vertical: isSingleLine ? 0 : AppDimensions.space2_5,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  onChanged: widget.onChanged,
+                  maxLines: widget.maxLines,
+                  keyboardType: widget.keyboardType,
+                  readOnly: widget.readOnly,
+                  textAlignVertical: isSingleLine
+                      ? TextAlignVertical.center
+                      : null,
+                  style: tt.bodyMedium?.copyWith(
+                    color: tokens.ink,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    isCollapsed: true,
+                    border: const OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: const OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: const OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                    ),
+                    constraints: isSingleLine
+                        ? const BoxConstraints.tightFor(
+                            height: AppDimensions.tap,
+                          )
+                        : null,
+                    contentPadding: EdgeInsets.symmetric(
+                      vertical: isSingleLine ? 12 : 0,
+                    ),
+                    hintText: widget.placeholder,
+                    hintStyle: tt.bodyMedium?.copyWith(color: tokens.muted),
+                  ),
+                ),
+              ),
+              if (hasSuffix) ...[
+                const SizedBox(width: AppDimensions.space1_5),
+                Text(
+                  widget.suffixText!,
+                  style: tt.labelSmall?.copyWith(
+                    color: tokens.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

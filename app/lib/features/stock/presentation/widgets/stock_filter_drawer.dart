@@ -69,6 +69,11 @@ class StockFilterDrawer extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: AppDimensions.space2),
               child: _LocationCheckTile(
                 key: ValueKey('stock-filter-loc-${entry.key}'),
+                icon: switch (entry.key) {
+                  'fridge' => 'box',
+                  'freezer' => 'ice',
+                  _ => 'stock',
+                },
                 label: entry.value,
                 checked: state.locationFilters.contains(entry.key),
                 onTap: () => onToggleLocation(entry.key),
@@ -92,9 +97,9 @@ class StockFilterDrawer extends StatelessWidget {
             onChanged: onStatusChanged,
             items: const <SegItem<String>>[
               SegItem(value: 'all', label: 'ทั้งหมด'),
-              SegItem(value: 'ok', label: 'พอ'),
-              SegItem(value: 'low', label: 'ใกล้หมด'),
-              SegItem(value: 'out', label: 'หมด'),
+              SegItem(value: 'ok', label: 'พอ', tone: SegTone.green),
+              SegItem(value: 'low', label: 'ใกล้หมด', tone: SegTone.orange),
+              SegItem(value: 'out', label: 'หมด', tone: SegTone.orange),
             ],
           ),
         ],
@@ -105,12 +110,14 @@ class StockFilterDrawer extends StatelessWidget {
 
 class _LocationCheckTile extends StatelessWidget {
   const new({
+    required this.icon,
     required this.label,
     required this.checked,
     required this.onTap,
     super.key,
   });
 
+  final String icon;
   final String label;
   final bool checked;
   final VoidCallback onTap;
@@ -156,6 +163,12 @@ class _LocationCheckTile extends StatelessWidget {
                   : null,
             ),
             const SizedBox(width: AppDimensions.space2_5),
+            AppIcon(
+              icon,
+              size: AppDimensions.iconSm,
+              color: checked ? t.primaryInk : t.muted,
+            ),
+            const SizedBox(width: AppDimensions.space2),
             Expanded(
               child: Text(
                 label,

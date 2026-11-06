@@ -6,9 +6,6 @@ import 'package:flutter/material.dart';
 
 /// Dining table status card (`function TableCard` in `prototype/index.html` &
 /// `design/figma/table.png`).
-/// Displays table name, seat/customer count, package, timer (`tableTimer`),
-/// owing balance (`tableDue`), and status bar (`ว่าง` / `มีลูกค้า` / `เกินเวลา`
-/// / `รอชำระ`).
 class TableCard extends StatelessWidget {
   const new({
     required this.posState,
@@ -17,6 +14,7 @@ class TableCard extends StatelessWidget {
     super.key,
     this.openTable,
     this.now,
+    this.onViewSlip,
   });
 
   final PosState posState;
@@ -24,81 +22,35 @@ class TableCard extends StatelessWidget {
   final OpenTableState? openTable;
   final VoidCallback onTap;
   final DateTime? now;
+  final VoidCallback? onViewSlip;
 
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
     final o = openTable;
-
-    if (o == null) {
-      return Material(
-        color: t.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-          side: BorderSide(color: t.line),
-        ),
-        child: InkWell(
-          key: ValueKey('table-card-${table.id}'),
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-          child: Padding(
-            padding: const EdgeInsets.all(AppDimensions.space4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    AppIcon('table', size: AppDimensions.iconSm, color: t.ink),
-                    const SizedBox(width: AppDimensions.space2),
-                    Expanded(
-                      child: Text(
-                        table.name,
-                        style: tt.titleLarge?.copyWith(color: t.ink),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppDimensions.space1_5),
-                Text(
-                  '${table.seats} ที่นั่ง',
-                  style: tt.bodySmall?.copyWith(color: t.muted),
-                ),
-                const SizedBox(height: AppDimensions.space3),
-                Container(
-                  height: AppDimensions.btnSmH,
-                  decoration: BoxDecoration(
-                    color: t.primary,
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    'ว่าง',
-                    style: tt.bodySmall?.copyWith(
-                      color: t.onPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    PackageItem? pkg;
-    for (final p in posState.packages) {
-      if (p.id == o.packageId) {
-        pkg = p;
-        break;
-      }
-    }
-    final tm = tableTimer(posState, o, now: now);
-    final due = tableDue(posState, o);
-    final headCount = o.heads.a + o.heads.c + o.heads.f;
-    final borderColor = tm.late ? t.danger : (due > 0 ? t.primary : t.line);
+    final pkg = o == null
+        ? null
+        : posState.packages.where((p) => p.id == o.packageId).firstOrNull;
+    final tm = o == null ? null : tableTimer(posState, o, now: now);
+    final due = o == null ? 0.0 : tableDue(posState, o);
+    final isLate = tm?.late ?? false;
+    final isAfterPaid =
+        o != null && o.timing == 'after' && due == 0 && o.billIds.isNotEmpty;
+    final borderColor = isLate
+        ? t.danger
+        : (due > 0 ? t.primary : (isAfterPaid ? t.success : t.line));
+    final statusBg = isLate
+        ? t.dangerSoft
+        : (due > 0 ? t.primary : (isAfterPaid ? t.successSoft : t.surface2));
+    final statusFg = isLate
+        ? t.dangerInk
+        : (due > 0 ? t.onPrimary : (isAfterPaid ? t.successInk : t.ink));
+    final statusTxt = isLate
+        ? 'มีลูกค้า · เกินเวลา'
+        : (due > 0
+              ? 'เช็กบิล ${baht(due)}'
+              : (isAfterPaid ? 'ชำระแล้ว · เก็บโต๊ะ' : 'มีลูกค้า'));
 
     return Material(
       color: t.surface,
@@ -106,7 +58,7 @@ class TableCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
         side: BorderSide(
           color: borderColor,
-          width: (tm.late || due > 0)
+          width: (isLate || due > 0 || isAfterPaid)
               ? AppDimensions.borderThick
               : AppDimensions.borderThin,
         ),
@@ -138,65 +90,132 @@ class TableCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  Pill(
-                    label: '$headCount คน',
-                    tone: tm.late ? PillTone.red : PillTone.orange,
-                  ),
+                  if (o == null)
+                    const Pill(label: 'ว่าง')
+                  else
+                    Pill(
+                      label: '${o.heads.a + o.heads.c + o.heads.f} คน',
+                      tone: isLate
+                          ? PillTone.red
+                          : (o.timing == 'after'
+                                ? PillTone.orange
+                                : PillTone.green),
+                    ),
                 ],
               ),
               const SizedBox(height: AppDimensions.space1_5),
-              Text(
-                '${pkg?.name ?? ""}'
-                '${o.timing == "after" ? " · กินก่อนจ่าย" : ""}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: tt.bodySmall?.copyWith(color: t.muted),
-              ),
-              const SizedBox(height: AppDimensions.space1),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Text(
-                      tm.text,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: tt.labelSmall?.copyWith(
-                        color: tm.late ? t.danger : t.muted,
-                        fontWeight: tm.late ? FontWeight.w700 : FontWeight.w500,
-                      ),
+              if (o == null) ...[
+                Text(
+                  '${table.seats} ที่นั่ง',
+                  style: tt.bodySmall?.copyWith(color: t.muted),
+                ),
+                const SizedBox(height: AppDimensions.space3),
+                Container(
+                  height: AppDimensions.btnSmH,
+                  decoration: BoxDecoration(
+                    color: t.primarySoft.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+                    border: Border.all(
+                      color: t.primary.withValues(alpha: 0.35),
                     ),
                   ),
-                  if (due > 0)
-                    Text(
-                      'รอชำระ ${baht(due)}',
-                      style: tt.labelSmall?.copyWith(
-                        color: t.primaryInk,
-                        fontWeight: FontWeight.w700,
-                      ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '+ เปิดโต๊ะ',
+                    style: tt.bodySmall?.copyWith(
+                      color: t.primaryInk,
+                      fontWeight: FontWeight.w700,
                     ),
-                ],
-              ),
-              const SizedBox(height: AppDimensions.space3),
-              Container(
-                height: AppDimensions.btnSmH,
-                decoration: BoxDecoration(
-                  color: tm.late
-                      ? t.dangerSoft
-                      : (due > 0 ? t.primarySoft : t.surface2),
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  tm.late ? 'มีลูกค้า · เกินเวลา' : 'มีลูกค้า',
-                  style: tt.bodySmall?.copyWith(
-                    color: tm.late
-                        ? t.dangerInk
-                        : (due > 0 ? t.primaryInk : t.muted),
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
+              ] else ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        pkg?.name ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: tt.bodySmall?.copyWith(color: t.muted),
+                      ),
+                    ),
+                    const SizedBox(width: AppDimensions.space1),
+                    Pill(
+                      label: o.timing == 'after'
+                          ? 'กินก่อนจ่าย'
+                          : 'จ่ายก่อนกิน',
+                      tone: o.timing == 'after'
+                          ? PillTone.orange
+                          : PillTone.green,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppDimensions.space1),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        tm!.text,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: tt.labelSmall?.copyWith(
+                          color: isLate ? t.danger : t.muted,
+                          fontWeight: isLate
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    if (due > 0)
+                      Text(
+                        'รอชำระ ${baht(due)}',
+                        style: tt.labelSmall?.copyWith(
+                          color: t.primaryInk,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppDimensions.space3),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: AppDimensions.btnSmH,
+                        decoration: BoxDecoration(
+                          color: statusBg,
+                          borderRadius: BorderRadius.circular(
+                            AppDimensions.radiusSm,
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          statusTxt,
+                          style: tt.bodySmall?.copyWith(
+                            color: statusFg,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (due > 0 || isAfterPaid)
+                      SizedBox.shrink(
+                        child: Text('มีลูกค้า', style: tt.labelSmall),
+                      ),
+                    if (onViewSlip != null) ...[
+                      const SizedBox(width: AppDimensions.space1_5),
+                      Btn(
+                        key: ValueKey('table-slip-btn-${table.id}'),
+                        size: BtnSize.sm,
+                        icon: 'receipt',
+                        label: 'สลิป POS',
+                        onPressed: onViewSlip,
+                      ),
+                    ],
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -205,8 +224,7 @@ class TableCard extends StatelessWidget {
   }
 }
 
-/// Compact table switcher chip at the top of `SalePage` (`const TableChip` in
-/// `prototype/index.html`).
+/// Compact table switcher chip at the top of `SalePage` (`const TableChip`).
 class TableChip extends StatelessWidget {
   const new({
     required this.posState,
@@ -233,7 +251,6 @@ class TableChip extends StatelessWidget {
     final due = o != null ? tableDue(posState, o) : 0.0;
     final tm = o != null ? tableTimer(posState, o, now: now) : null;
     final sub = o != null ? '${o.heads.a + o.heads.c + o.heads.f} คน' : 'ใหม่';
-
     final borderColor = active
         ? t.primary
         : ((tm?.late ?? false) ? t.danger : (due > 0 ? t.primary : t.line));

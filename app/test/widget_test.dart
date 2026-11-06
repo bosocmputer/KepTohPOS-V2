@@ -25,6 +25,24 @@ void main() {
       expect(dark.side, AppRawTokens.darkSurface);
       expect(dark.ink, AppRawTokens.darkInk);
     });
+
+    test('resolves all 5 AppBrandPalette tokens with proper contrast', () {
+      for (final p in AppBrandPalette.values) {
+        final light = AppTokens.resolve(
+          brightness: Brightness.light,
+          palette: p,
+        );
+        final dark = AppTokens.resolve(brightness: Brightness.dark, palette: p);
+        expect(light.primary, p.primary);
+        expect(light.onPrimary, p.onPrimary);
+        expect(light.primarySoft, p.primarySoft);
+        expect(light.primaryInk, p.primaryInk);
+        expect(dark.primary, p.primary);
+        expect(dark.onPrimary, p.onPrimary);
+      }
+      expect(AppBrandPalette.fromId('emerald'), AppBrandPalette.emerald);
+      expect(AppBrandPalette.fromId('unknown'), AppBrandPalette.orange);
+    });
   });
 
   group('KepTohApp F0 shell and theme mode switching', () {
