@@ -50,7 +50,8 @@ class SupabaseStateLoader {
   }
 
   /// Loads the snapshot. [token] is the staff session; manager-only data is
-  /// included only when the server accepts it, so a cashier gets none.
+  /// included only when the server accepts it; a cashier gets only today's
+  /// purchases and expenses, without amounts.
   Future<SupabaseSnapshot> load({
     required String currentStaffId,
     String? token,
@@ -110,6 +111,12 @@ class SupabaseStateLoader {
                   .substring(0, 10),
               'p_token': token,
             },
+          )
+        // A cashier sees today's entries without amounts, to confirm saves.
+        : token != null
+        ? await _client.rpc<Map<String, dynamic>>(
+            'get_day_entries',
+            params: <String, dynamic>{'p_token': token},
           )
         : const <String, dynamic>{};
 

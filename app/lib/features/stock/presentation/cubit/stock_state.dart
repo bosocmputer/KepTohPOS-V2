@@ -3,6 +3,10 @@ import 'dart:math' as math;
 import 'package:app/domain/domain.dart';
 import 'package:equatable/equatable.dart';
 
+/// Shows [text] when costs are readable, otherwise a dash, so a cashier sees
+/// that an amount exists without seeing it.
+String costOrDash(String text, {required bool show}) => show ? text : '–';
+
 /// Immutable state for `StockCubit` covering tabs, purchases, daily expenses,
 /// and stock balance (`StockView` in `prototype/index.html:1420-1509`).
 class StockState extends Equatable {
@@ -19,6 +23,7 @@ class StockState extends Equatable {
     this.statusFilter = 'all',
     this.balancePage = 1,
     this.toastMessage = '',
+    this.showCosts = true,
   });
 
   final PosState posState;
@@ -33,6 +38,12 @@ class StockState extends Equatable {
   final String statusFilter;
   final int balancePage;
   final String toastMessage;
+
+  /// Whether purchase, expense and stock amounts may be shown.
+  final bool showCosts;
+
+  /// [costOrDash] for this state.
+  String costText(String text) => costOrDash(text, show: showCosts);
 
   /// All selectable dates from `startDate` through `todayDate` (newest first).
   List<String> get availableDates {
@@ -174,6 +185,7 @@ class StockState extends Equatable {
     String? statusFilter,
     int? balancePage,
     String? toastMessage,
+    bool? showCosts,
   }) => StockState(
     posState: posState ?? this.posState,
     ledger: ledger ?? this.ledger,
@@ -187,6 +199,7 @@ class StockState extends Equatable {
     statusFilter: statusFilter ?? this.statusFilter,
     balancePage: balancePage ?? this.balancePage,
     toastMessage: toastMessage ?? this.toastMessage,
+    showCosts: showCosts ?? this.showCosts,
   );
 
   @override
@@ -203,5 +216,6 @@ class StockState extends Equatable {
     statusFilter,
     balancePage,
     toastMessage,
+    showCosts,
   ];
 }

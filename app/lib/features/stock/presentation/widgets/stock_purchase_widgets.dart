@@ -14,9 +14,11 @@ class SupplierShortcutCard extends StatelessWidget {
     required this.onNew,
     super.key,
     this.width = 300,
+    this.showCosts = true,
   });
 
   final SupplierItem supplier;
+  final bool showCosts;
   final PurchaseRecord? lastPurchase;
   final VoidCallback onCopyLast;
   final VoidCallback onNew;
@@ -52,7 +54,7 @@ class SupplierShortcutCard extends StatelessWidget {
             lastPurchase != null
                 ? 'ครั้งก่อน ${thDateShort(lastPurchase!.date)} · '
                       '${lastPurchase!.lines.length} รายการ · '
-                      '${baht(lastTotal)}'
+                      '${costOrDash(baht(lastTotal), show: showCosts)}'
                 : 'ยังไม่เคยซื้อจากที่นี่',
             style: tt.bodySmall?.copyWith(color: t.muted),
           ),
@@ -153,7 +155,7 @@ class PurchaseBillsTable extends StatelessWidget {
                       '${state.ingredientOf(l.ingId)?.name ?? "?"} '
                       '${fmtQ(l.qty)} '
                       '${state.ingredientOf(l.ingId)?.unit ?? ""} · '
-                      '${fmtBaht(l.total)}฿',
+                      '${state.costText('${fmtBaht(l.total)}฿')}',
                 ),
               if (p.lines.length > 4)
                 Pill(
@@ -171,7 +173,7 @@ class PurchaseBillsTable extends StatelessWidget {
           cellBuilder: (context, p) {
             final sum = p.lines.fold<double>(0, (acc, l) => acc + l.total);
             return Text(
-              baht(sum),
+              state.costText(baht(sum)),
               textAlign: TextAlign.right,
               style: tt.bodyMedium?.copyWith(
                 color: t.ink,

@@ -72,7 +72,7 @@ class _StockExpenseTabState extends State<StockExpenseTab> {
                 desc:
                     'ไม่เข้าสต็อก · ใช้หักกำไรสุทธิ · '
                     '${rows.length} รายการ · '
-                    'รวม ${baht(state.dayExpensesTotal)}',
+                    'รวม ${state.costText(baht(state.dayExpensesTotal))}',
                 actions: [
                   Btn(
                     key: const ValueKey('expense-copy-prev-btn'),
@@ -127,7 +127,7 @@ class _StockExpenseTabState extends State<StockExpenseTab> {
                     label: 'ยอด',
                     align: ColAlign.right,
                     cellBuilder: (context, e) => Text(
-                      baht(e.amount),
+                      state.costText(baht(e.amount)),
                       textAlign: TextAlign.right,
                       style: tt.bodyMedium?.copyWith(
                         color: t.ink,
@@ -173,7 +173,7 @@ class _StockExpenseTabState extends State<StockExpenseTab> {
                   SizedBox(
                     width: double.infinity,
                     child: Text(
-                      baht(state.dayExpensesTotal),
+                      state.costText(baht(state.dayExpensesTotal)),
                       key: const ValueKey('expense-day-total'),
                       textAlign: TextAlign.right,
                       style: tt.bodyMedium?.copyWith(
@@ -216,7 +216,7 @@ class _StockExpenseTabState extends State<StockExpenseTab> {
                   title: 'ลบค่าใช้จ่ายนี้?',
                   text:
                       '${state.expenseTypeNameOf(_deletingExpense!.typeId)} · '
-                      '${baht(_deletingExpense!.amount)}',
+                      '${state.costText(baht(_deletingExpense!.amount))}',
                   yesLabel: 'ลบ',
                   danger: true,
                   onNo: () => setState(() => _deletingExpense = null),

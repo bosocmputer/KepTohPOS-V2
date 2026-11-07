@@ -128,6 +128,7 @@ class _StockPurchaseTabState extends State<StockPurchaseTab> {
                           width: cardW,
                           supplier: sup,
                           lastPurchase: state.lastPurchaseOf(sup.id),
+                          showCosts: state.showCosts,
                           onCopyLast: () => _openCopyLast(sup.id),
                           onNew: () => _openNew(supplierId: sup.id),
                         ),
@@ -148,7 +149,7 @@ class _StockPurchaseTabState extends State<StockPurchaseTab> {
                   ),
                   Text(
                     '${dayPurchases.length} บิล · '
-                    'รวม ${baht(state.dayPurchasesTotal)}',
+                    'รวม ${state.costText(baht(state.dayPurchasesTotal))}',
                     key: const ValueKey('purchase-day-summary'),
                     style: tt.titleMedium?.copyWith(
                       color: t.primary,
@@ -207,7 +208,7 @@ class _StockPurchaseTabState extends State<StockPurchaseTab> {
                   title: 'ลบบิลซื้อของนี้?',
                   text:
                       '${state.supplierNameOf(deleting.supplierId)} · '
-                      '${baht(deletingTotal)}',
+                      '${state.costText(baht(deletingTotal))}',
                   yesLabel: 'ลบ',
                   danger: true,
                   onNo: () => setState(() => _deletingPurchase = null),

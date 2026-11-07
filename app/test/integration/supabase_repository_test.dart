@@ -274,17 +274,18 @@ void main() {
     );
 
     test(
-      'manager records purchase, expense, count; cashier then sees no costs',
+      'manager records an expense; cashier sees it without the amount',
       () async {
         // Arrange
         final type = repo.state.expenseTypes.first;
         final manager = staffOf(managerId);
         final now = DateTime.now();
+        final today = businessDayKey(now, repo.state.shop.dayCutoffMinutes);
 
         // Act
         expect(
           await repo.recordExpenses(
-            date: '2026-11-07',
+            date: today,
             lines: <ExpenseDraftLine>[
               ExpenseDraftLine(typeId: type.id, amount: 45050, note: 'น้ำแข็ง'),
             ],
@@ -303,7 +304,10 @@ void main() {
           await repo.signInWithPin(cashierId, '1111'),
           PinSignInResult.success,
         );
-        expect(repo.state.expenses, isEmpty);
+        final seen = repo.state.expenses.single;
+        expect(seen.note, 'น้ำแข็ง');
+        expect(seen.amount, 0);
+        expect(repo.canReadCosts, isFalse);
         expect(repo.state.sales.last.lines.last.cost, isNull);
       },
     );

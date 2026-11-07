@@ -2,6 +2,7 @@ import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
+import 'package:app/features/stock/presentation/cubit/stock_state.dart';
 import 'package:flutter/material.dart';
 
 /// Status pill badge (`พอ` / `ใกล้หมด` / `หมด`) for a [StockBalanceRow].
@@ -33,11 +34,13 @@ class BalanceGridView extends StatelessWidget {
     required this.totalValue,
     required this.costLabel,
     super.key,
+    this.showCosts = true,
   });
 
   final List<StockBalanceRow> rows;
   final double totalValue;
   final String costLabel;
+  final bool showCosts;
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +78,11 @@ class BalanceGridView extends StatelessWidget {
                 for (final r in rows)
                   SizedBox(
                     width: cardW,
-                    child: _BalanceGridCard(row: r, costLabel: costLabel),
+                    child: _BalanceGridCard(
+                      row: r,
+                      costLabel: costLabel,
+                      showCosts: showCosts,
+                    ),
                   ),
               ],
             );
@@ -103,7 +110,7 @@ class BalanceGridView extends StatelessWidget {
                 ),
               ),
               Text(
-                baht(totalValue),
+                costOrDash(baht(totalValue), show: showCosts),
                 key: const ValueKey('balance-total-value'),
                 style: tt.bodyMedium?.copyWith(
                   color: t.ink,
@@ -119,10 +126,15 @@ class BalanceGridView extends StatelessWidget {
 }
 
 class _BalanceGridCard extends StatelessWidget {
-  const new({required this.row, required this.costLabel});
+  const new({
+    required this.row,
+    required this.costLabel,
+    required this.showCosts,
+  });
 
   final StockBalanceRow row;
   final String costLabel;
+  final bool showCosts;
 
   static String _ingredientIcon(String name) {
     if (name.contains('หมู') ||
@@ -144,6 +156,7 @@ class _BalanceGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final unitCost = '${fmtBaht(row.unitCost, 2)} ฿/${row.ing.unit}';
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
     final iconName = _ingredientIcon(row.ing.name);
@@ -192,7 +205,8 @@ class _BalanceGridCard extends StatelessWidget {
                     ),
                     Text(
                       '${kLocations[row.ing.location] ?? "-"} · '
-                      '$costLabel ${fmtBaht(row.unitCost, 2)} ฿/${row.ing.unit}',
+                      '$costLabel '
+                      '${costOrDash(unitCost, show: showCosts)}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: tt.labelSmall?.copyWith(color: t.muted),
@@ -220,7 +234,7 @@ class _BalanceGridCard extends StatelessWidget {
                   style: tt.labelSmall?.copyWith(color: t.muted),
                 ),
                 Text(
-                  'มูลค่า ${baht(row.val)}',
+                  'มูลค่า ${costOrDash(baht(row.val), show: showCosts)}',
                   style: tt.labelSmall?.copyWith(
                     color: t.ink,
                     fontWeight: FontWeight.w700,

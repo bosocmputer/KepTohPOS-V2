@@ -44,13 +44,21 @@ class StockCubit extends Cubit<StockState> {
       todayDate: today,
       selectedDate: today,
       activeTab: initialTab,
+      showCosts: repo.canReadCosts,
     );
   }
 
   void _onRepositoryUpdated(PosState s) {
     final today = businessDayKey(_clock(), s.shop.dayCutoffMinutes);
     final ledger = computeLedger(s, today: today);
-    emit(state.copyWith(posState: s, ledger: ledger, todayDate: today));
+    emit(
+      state.copyWith(
+        posState: s,
+        ledger: ledger,
+        todayDate: today,
+        showCosts: _repository.canReadCosts,
+      ),
+    );
   }
 
   /// Switches the active `/stock` tab (`'count'|'purchase'|'expense'|'balance'`).
