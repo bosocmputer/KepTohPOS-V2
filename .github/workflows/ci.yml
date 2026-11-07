@@ -52,3 +52,7 @@ jobs:
           flutter pub get
           SUPABASE_TEST_URL="$API_URL" SUPABASE_TEST_ANON_KEY="$ANON_KEY" \
             flutter test test/integration
+      - name: Browser end-to-end tests
+        run: |
+          export PATH="$CHROMEWEBDRIVER:$PATH"
+          scripts/e2e.sh
