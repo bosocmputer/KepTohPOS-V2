@@ -1,6 +1,7 @@
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/features/onboarding/data/device_session.dart';
+import 'package:app/features/onboarding/presentation/owner_pin_setup.dart';
 import 'package:flutter/material.dart';
 
 /// After the owner signs in: use an existing shop or create the first one.
@@ -18,15 +19,13 @@ class _OwnerShopStepState extends State<OwnerShopStep> {
   late final Future<List<OwnedShop>> _shops = widget.session.ownerShops();
   String _shopName = '';
   String _ownerName = '';
-  String _pin = '';
+  bool _settingPin = false;
   String _error = '';
   bool _busy = false;
   String? _createdShopId;
 
-  bool get _canCreate =>
-      _shopName.trim().isNotEmpty &&
-      _ownerName.trim().isNotEmpty &&
-      RegExp(r'^\d{4}$').hasMatch(_pin);
+  bool get _canContinue =>
+      _shopName.trim().isNotEmpty && _ownerName.trim().isNotEmpty;
 
   Future<void> _pair(Future<String> Function() shopId) async {
     setState(() {
@@ -65,35 +64,33 @@ class _OwnerShopStepState extends State<OwnerShopStep> {
           onChanged: (v) => setState(() => _ownerName = v),
         ),
       ),
-      const SizedBox(height: AppDimensions.space3),
-      Field(
-        label: 'PIN 4 หลักสำหรับเข้าใช้งานเครื่อง',
-        child: AppTextInput(
-          key: const ValueKey('owner-pin-input'),
-          value: _pin,
-          obscureText: true,
-          keyboardType: TextInputType.number,
-          onChanged: (v) => setState(() => _pin = v.trim()),
-        ),
-      ),
       const SizedBox(height: AppDimensions.space4),
       Btn(
-        key: const ValueKey('create-shop-btn'),
-        label: 'สร้างร้านและเริ่มใช้งานเครื่องนี้',
+        key: const ValueKey('shop-next-btn'),
+        label: 'ถัดไป: ตั้ง PIN',
         kind: BtnKind.primary,
         block: true,
-        disabled: _busy || !_canCreate,
-        onPressed: () => _pair(
-          // Reuse the shop if pairing failed last time; retrying must not
-          // create a second organization.
-          () async => _createdShopId ??= await widget.session.createShop(
-            shopName: _shopName.trim(),
-            ownerName: _ownerName.trim(),
-            pin: _pin,
-          ),
-        ),
+        disabled: _busy || !_canContinue,
+        onPressed: () => setState(() {
+          _settingPin = true;
+          _error = '';
+        }),
       ),
     ],
+  );
+
+  Widget _pinStep() => OwnerPinSetup(
+    busy: _busy,
+    onBack: () => setState(() => _settingPin = false),
+    onConfirmed: (pin) => _pair(
+      // Reuse the shop if pairing failed last time; retrying must not
+      // create a second organization.
+      () async => _createdShopId ??= await widget.session.createShop(
+        shopName: _shopName.trim(),
+        ownerName: _ownerName.trim(),
+        pin: pin,
+      ),
+    ),
   );
 
   @override
@@ -116,7 +113,9 @@ class _OwnerShopStepState extends State<OwnerShopStep> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (shops.isEmpty)
+            if (shops.isEmpty && _settingPin)
+              _pinStep()
+            else if (shops.isEmpty)
               _createForm()
             else
               for (final shop in shops)
