@@ -1,0 +1,136 @@
+import 'dart:async';
+
+import 'package:app/core/data/supabase/supabase_pos_base.dart';
+import 'package:app/core/data/supabase/supabase_pos_sale_commands.dart';
+import 'package:app/core/data/supabase/supabase_pos_setup_commands.dart';
+import 'package:app/core/data/supabase/supabase_pos_stock_commands.dart';
+import 'package:app/core/data/supabase/supabase_state_loader.dart';
+import 'package:app/domain/domain.dart';
+import 'package:app/domain/pos_command_exception.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+/// [PosRepository] backed by Supabase RPCs, for a paired POS device.
+///
+/// The server recalculates and checks every bill. This class keeps a snapshot
+/// in [PosState] so the existing domain code and screens work unchanged.
+class SupabasePosRepository extends SupabasePosBase
+    with
+        SupabasePosSaleCommands,
+        SupabasePosStockCommands,
+        SupabasePosSetupCommands
+    implements PosRepository {
+  new({
+    required super.deviceClient,
+    required super.ownerClient,
+    required super.shopId,
+    required super.snapshot,
+  });
+
+  /// Loads the shop for a paired device.
+  static Future<SupabasePosRepository> open({
+    required SupabaseClient deviceClient,
+    required String shopId,
+    SupabaseClient? ownerClient,
+  }) async {
+    final snapshot = await SupabaseStateLoader(
+      deviceClient,
+      shopId,
+    ).load(currentStaffId: '');
+    return SupabasePosRepository(
+      deviceClient: deviceClient,
+      ownerClient: ownerClient,
+      shopId: shopId,
+      snapshot: snapshot,
+    );
+  }
+
+  @override
+  PosState get state => posState;
+
+  @override
+  Stream<PosState> get stream => controller.stream;
+
+  @override
+  StaffMember? get currentStaff => posState.staff
+      .where((x) => x.id == signedInStaffId && x.active)
+      .firstOrNull;
+
+  @override
+  bool get isDemoData => false;
+
+  @override
+  bool get canReadCosts => costsLoaded;
+
+  @override
+  String newBillId(DateTime now) => newId();
+
+  @override
+  Future<PinSignInResult> signInWithPin(String staffId, String pin) async {
+    final Map<String, dynamic> result;
+    try {
+      result = await deviceClient.rpc<Map<String, dynamic>>(
+        'verify_staff_pin',
+        params: <String, dynamic>{'p_staff_id': staffId, 'p_pin': pin},
+      );
+    } on Object catch (e) {
+      throw describeError(e);
+    }
+    if (result['ok'] != true) {
+      return result['reason'] == 'locked'
+          ? PinSignInResult.locked
+          : PinSignInResult.invalid;
+    }
+    staffToken = result['session_token'] as String?;
+    signedInStaffId = staffId;
+    await reload();
+    return PinSignInResult.success;
+  }
+
+  @override
+  Future<void> signOutStaff() async {
+    final token = staffToken;
+    staffToken = null;
+    signedInStaffId = null;
+    if (token != null) {
+      try {
+        await deviceClient.rpc<void>(
+          'end_staff_session',
+          params: <String, dynamic>{'p_token': token},
+        );
+      } on Object {
+        // The token is already forgotten here and expires on the server.
+      }
+    }
+    await reload();
+  }
+
+  /// Applies theme changes locally, and saves them when an owner is signed in.
+  /// A device-only session cannot write shop settings.
+  @override
+  Future<void> saveThemePreference({String? mode, String? palette}) async {
+    final next = posState.copy();
+    next.shop = next.shop.copyWith(themeMode: mode, themePalette: palette);
+    posState = next.freeze();
+    if (!controller.isClosed) controller.add(posState);
+    if (!hasOwnerSession) return;
+    try {
+      await ownerClient!
+          .from('shops')
+          .update(<String, dynamic>{
+            'theme_mode': ?mode,
+            'theme_palette': ?palette,
+          })
+          .eq('id', shopId);
+    } on Object {
+      // The appearance still applies on this device; the next save retries it.
+    }
+  }
+
+  @override
+  String exportStateJson() =>
+      throw const PosCommandException('ไม่รองรับการส่งออกในโหมดร้านจริง');
+
+  @override
+  PosState importStateJson(String rawJson) =>
+      throw const PosCommandException('ไม่รองรับการนำเข้าในโหมดร้านจริง');
+}

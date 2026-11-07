@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/utils/sequential_events.dart';
 import 'package:app/domain/domain.dart';
+import 'package:app/domain/pos_command_exception.dart';
 import 'package:app/features/sale/presentation/bloc/sale_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -43,53 +44,59 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
 
   /// Runs every event in one queue so async handlers cannot overlap.
   Future<void> _dispatch(SaleEvent event, Emitter<SaleState> emit) async {
-    switch (event) {
-      case final SaleTableSelected e:
-        emit(SaleState.blankCart(_repository.state, e.tableId, now: _fixedNow));
-      case final SalePackageSelected e:
-        emit(state.copyWith(pkgId: e.packageId));
-      case final SaleTimingChanged e:
-        emit(state.copyWith(timing: e.timing));
-      case final SaleCategorySelected e:
-        emit(state.copyWith(selectedCategory: e.category));
-      case final SaleHeadsChanged e:
-        _onHeadsChanged(e, emit);
-      case final SaleAddonQtyChanged e:
-        _onAddonQtyChanged(e, emit);
-      case final SaleAddonIncremented e:
-        _onAddonIncremented(e, emit);
-      case final SaleNotesSaved e:
-        await _onNotesSaved(e, emit);
-      case final SaleRoundSent e:
-        await _onRoundSent(e, emit);
-      case final SaleSentItemAdjusted e:
-        await _onSentItemAdjusted(e, emit);
-      case final SalePaymentStepChanged e:
-        _onPaymentStepChanged(e, emit);
-      case final SalePaymentMethodSelected e:
-        emit(
-          state.copyWith(payMethodId: e.methodId, transferStatus: 'waiting'),
-        );
-      case final SaleCashReceivedChanged e:
-        emit(state.copyWith(cashReceived: e.value));
-      case final SaleTransferStatusChanged e:
-        emit(state.copyWith(transferStatus: e.status));
-      case final SaleBankAccountSelected e:
-        emit(state.copyWith(bankAccountId: e.bankAccountId));
-      case final SalePaymentSubmitted e:
-        await _onPaymentSubmitted(e, emit);
-      case final SaleSettledBillVoided e:
-        await _onSettledBillVoided(e, emit);
-      case final SaleOpenTableCancelled e:
-        await _onOpenTableCancelled(e, emit);
-      case SaleReceiptDismissed():
-        emit(state.copyWith(clearSettledBill: true));
-      case final SaleTableClosed e:
-        await _onTableClosed(e, emit);
-      case SaleToastCleared():
-        emit(state.copyWith(toastMessage: ''));
-      case SalePosStateUpdated():
-        emit(state.copyWith(posState: _repository.state));
+    try {
+      switch (event) {
+        case final SaleTableSelected e:
+          emit(
+            SaleState.blankCart(_repository.state, e.tableId, now: _fixedNow),
+          );
+        case final SalePackageSelected e:
+          emit(state.copyWith(pkgId: e.packageId));
+        case final SaleTimingChanged e:
+          emit(state.copyWith(timing: e.timing));
+        case final SaleCategorySelected e:
+          emit(state.copyWith(selectedCategory: e.category));
+        case final SaleHeadsChanged e:
+          _onHeadsChanged(e, emit);
+        case final SaleAddonQtyChanged e:
+          _onAddonQtyChanged(e, emit);
+        case final SaleAddonIncremented e:
+          _onAddonIncremented(e, emit);
+        case final SaleNotesSaved e:
+          await _onNotesSaved(e, emit);
+        case final SaleRoundSent e:
+          await _onRoundSent(e, emit);
+        case final SaleSentItemAdjusted e:
+          await _onSentItemAdjusted(e, emit);
+        case final SalePaymentStepChanged e:
+          _onPaymentStepChanged(e, emit);
+        case final SalePaymentMethodSelected e:
+          emit(
+            state.copyWith(payMethodId: e.methodId, transferStatus: 'waiting'),
+          );
+        case final SaleCashReceivedChanged e:
+          emit(state.copyWith(cashReceived: e.value));
+        case final SaleTransferStatusChanged e:
+          emit(state.copyWith(transferStatus: e.status));
+        case final SaleBankAccountSelected e:
+          emit(state.copyWith(bankAccountId: e.bankAccountId));
+        case final SalePaymentSubmitted e:
+          await _onPaymentSubmitted(e, emit);
+        case final SaleSettledBillVoided e:
+          await _onSettledBillVoided(e, emit);
+        case final SaleOpenTableCancelled e:
+          await _onOpenTableCancelled(e, emit);
+        case SaleReceiptDismissed():
+          emit(state.copyWith(clearSettledBill: true));
+        case final SaleTableClosed e:
+          await _onTableClosed(e, emit);
+        case SaleToastCleared():
+          emit(state.copyWith(toastMessage: ''));
+        case SalePosStateUpdated():
+          emit(state.copyWith(posState: _repository.state));
+      }
+    } on PosCommandException catch (e) {
+      emit(state.copyWith(toastMessage: e.message));
     }
   }
 

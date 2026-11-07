@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:app/domain/domain.dart';
+import 'package:app/domain/pos_command_exception.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -254,12 +255,18 @@ class BillsCubit extends Cubit<BillsState> {
         .firstOrNull;
     if (bill == null || bill.voided) return false;
     final billNo = bill.no;
-    final ok = await _repository.voidSale(
-      billId: targetId,
-      staff: staff,
-      reason: reason,
-      now: _fixedNow ?? state.now,
-    );
+    final bool ok;
+    try {
+      ok = await _repository.voidSale(
+        billId: targetId,
+        staff: staff,
+        reason: reason,
+        now: _fixedNow ?? state.now,
+      );
+    } on PosCommandException catch (e) {
+      emit(state.copyWith(toastMessage: e.message));
+      return false;
+    }
     if (ok) {
       emit(
         state.copyWith(

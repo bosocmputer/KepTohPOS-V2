@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app/core/utils/sequential_events.dart';
 import 'package:app/domain/domain.dart';
+import 'package:app/domain/pos_command_exception.dart';
 import 'package:app/features/stock/presentation/bloc/stock_count_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -50,27 +51,31 @@ class StockCountBloc extends Bloc<StockCountEvent, StockCountState> {
     StockCountEvent event,
     Emitter<StockCountState> emit,
   ) async {
-    switch (event) {
-      case final StockCountRepositoryUpdated e:
-        _onRepositoryUpdated(e, emit);
-      case final StockCountDateChanged e:
-        _onDateChanged(e, emit);
-      case final StockCountItemSelected e:
-        _onItemSelected(e, emit);
-      case final StockCountValueChanged e:
-        _onValueChanged(e, emit);
-      case final StockCountNextPressed e:
-        _onNextPressed(e, emit);
-      case final StockCountPadToggled e:
-        _onPadToggled(e, emit);
-      case final StockCountDraftCancelled e:
-        _onDraftCancelled(e, emit);
-      case final StockCountSaved e:
-        await _onSaved(e, emit);
-      case final StockCountDayReopened e:
-        await _onDayReopened(e, emit);
-      case final StockCountToastCleared e:
-        _onToastCleared(e, emit);
+    try {
+      switch (event) {
+        case final StockCountRepositoryUpdated e:
+          _onRepositoryUpdated(e, emit);
+        case final StockCountDateChanged e:
+          _onDateChanged(e, emit);
+        case final StockCountItemSelected e:
+          _onItemSelected(e, emit);
+        case final StockCountValueChanged e:
+          _onValueChanged(e, emit);
+        case final StockCountNextPressed e:
+          _onNextPressed(e, emit);
+        case final StockCountPadToggled e:
+          _onPadToggled(e, emit);
+        case final StockCountDraftCancelled e:
+          _onDraftCancelled(e, emit);
+        case final StockCountSaved e:
+          await _onSaved(e, emit);
+        case final StockCountDayReopened e:
+          await _onDayReopened(e, emit);
+        case final StockCountToastCleared e:
+          _onToastCleared(e, emit);
+      }
+    } on PosCommandException catch (e) {
+      emit(state.copyWith(toastMessage: e.message));
     }
   }
 

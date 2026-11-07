@@ -4,7 +4,7 @@ import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/sale/presentation/widgets/sale_receipt_modal.dart';
 import 'package:app/features/tables/presentation/cubit/tables_cubit.dart';
-import 'package:app/features/tables/presentation/widgets/table_card.dart';
+import 'package:app/features/tables/presentation/widgets/tables_zone_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -38,6 +38,8 @@ Widget buildTablesZoneDropdown(TablesCubit cubit, TablesState state) =>
 
 /// Floor and table overview screen (`function TablesView` in
 /// `prototype/index.html` & `design/figma/table.png`).
+const String _kFailed = 'ทำรายการไม่สำเร็จ กรุณาลองใหม่';
+
 class TablesPage extends StatefulWidget {
   const new({
     required this.onSelectTable,
@@ -55,6 +57,17 @@ class TablesPage extends StatefulWidget {
 }
 
 class _TablesPageState extends State<TablesPage> {
+  Future<void> _runSlipAction(
+    Future<bool> Function() action,
+    String doneMessage, {
+    bool closeSlip = true,
+  }) async {
+    final ok = await action();
+    if (!mounted) return;
+    if (closeSlip) setState(() => _slipTableId = null);
+    showAppToast(context, ok ? doneMessage : _kFailed);
+  }
+
   String? _slipTableId;
 
   @override
@@ -168,7 +181,7 @@ class _TablesPageState extends State<TablesPage> {
                     )
                   else
                     for (final z in state.visibleZones) ...[
-                      _ZoneTablesSection(
+                      ZoneTablesSection(
                         zone: z,
                         state: state,
                         onSelectTable: widget.onSelectTable,
@@ -196,103 +209,26 @@ class _TablesPageState extends State<TablesPage> {
                     showAppToast(context, 'ส่งพิมพ์สลิป POS แล้ว (จำลอง)'),
                 onVoid: defaultStaff == null
                     ? null
-                    : (reason) async {
-                        await cubit.voidBill(slip.id, reason, defaultStaff);
-                        if (!context.mounted) return;
-                        setState(() => _slipTableId = null);
-                        showAppToast(
-                          context,
-                          'ยกเลิกบิลและคืนสถานะโต๊ะเรียบร้อย',
-                        );
-                      },
+                    : (reason) => _runSlipAction(
+                        () => cubit.voidBill(slip.id, reason, defaultStaff),
+                        'ยกเลิกบิลและคืนสถานะโต๊ะเรียบร้อย',
+                      ),
                 onVoidSubBill: defaultStaff == null
                     ? null
-                    : (billId, reason) async {
-                        await cubit.voidBill(billId, reason, defaultStaff);
-                        if (!context.mounted) return;
-                        showAppToast(context, 'ยกเลิกบิลย่อยเรียบร้อย');
-                      },
-                onCancelTable: () async {
-                  await cubit.cancelTable(_slipTableId!);
-                  if (!context.mounted) return;
-                  setState(() => _slipTableId = null);
-                  showAppToast(context, 'ยกเลิกรายการโต๊ะเรียบร้อย');
-                },
+                    : (billId, reason) => _runSlipAction(
+                        () => cubit.voidBill(billId, reason, defaultStaff),
+                        'ยกเลิกบิลย่อยเรียบร้อย',
+                        closeSlip: false,
+                      ),
+                onCancelTable: () => _runSlipAction(
+                  () => cubit.cancelTable(_slipTableId!),
+                  'ยกเลิกรายการโต๊ะเรียบร้อย',
+                ),
                 onDone: () => setState(() => _slipTableId = null),
               ),
           ],
         );
       },
-    );
-  }
-}
-
-class _ZoneTablesSection extends StatelessWidget {
-  const new({
-    required this.zone,
-    required this.state,
-    required this.onSelectTable,
-    required this.onViewSlip,
-  });
-
-  final String zone;
-  final TablesState state;
-  final ValueChanged<String> onSelectTable;
-  final ValueChanged<String> onViewSlip;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.tokens;
-    final tt = Theme.of(context).textTheme;
-    final tables = state.tablesInZone(zone);
-    if (tables.isEmpty) return const SizedBox.shrink();
-    final free = state.freeInZone(zone);
-    final total = state.totalInZone(zone);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Text(zone, style: tt.headlineMedium?.copyWith(color: t.ink)),
-            const SizedBox(width: AppDimensions.space2_5),
-            Text(
-              'ว่าง $free จาก $total',
-              style: tt.bodySmall?.copyWith(color: t.muted),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppDimensions.space3),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final w = constraints.maxWidth;
-            final cols = w >= 1100 ? 5 : (w >= 840 ? 4 : (w >= 560 ? 3 : 2));
-            const spacing = AppDimensions.space3;
-            final itemW = (w - (cols - 1) * spacing) / cols;
-
-            return Wrap(
-              spacing: spacing,
-              runSpacing: spacing,
-              children: [
-                for (final tb in tables)
-                  SizedBox(
-                    width: itemW,
-                    child: TableCard(
-                      posState: state.posState,
-                      table: tb,
-                      openTable: state.posState.openTables[tb.id],
-                      now: state.now,
-                      onTap: () => onSelectTable(tb.id),
-                      onViewSlip: state.posState.openTables[tb.id] != null
-                          ? () => onViewSlip(tb.id)
-                          : null,
-                    ),
-                  ),
-              ],
-            );
-          },
-        ),
-      ],
     );
   }
 }

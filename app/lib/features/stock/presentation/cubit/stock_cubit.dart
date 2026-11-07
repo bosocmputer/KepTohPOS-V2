@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app/domain/domain.dart';
+import 'package:app/domain/pos_command_exception.dart';
 import 'package:app/features/stock/presentation/cubit/stock_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -113,6 +114,16 @@ class StockCubit extends Cubit<StockState> {
     emit(state.copyWith(balancePage: page));
   }
 
+  /// Runs [command], showing a failure as a toast instead of an error.
+  Future<bool> _attempt(Future<bool> Function() command) async {
+    try {
+      return await command();
+    } on PosCommandException catch (e) {
+      emit(state.copyWith(toastMessage: e.message));
+      return false;
+    }
+  }
+
   /// Saves a new or edited purchase bill. Editing requires
   /// `me.role != 'cashier'`.
   Future<bool> submitPurchase({
@@ -124,14 +135,16 @@ class StockCubit extends Cubit<StockState> {
     String? editId,
   }) async {
     final now = _clock();
-    final ok = await _repository.recordPurchase(
-      date: date,
-      supplierId: supplierId,
-      lines: lines,
-      staff: staff,
-      note: note,
-      editId: editId,
-      now: now,
+    final ok = await _attempt(
+      () => _repository.recordPurchase(
+        date: date,
+        supplierId: supplierId,
+        lines: lines,
+        staff: staff,
+        note: note,
+        editId: editId,
+        now: now,
+      ),
     );
     if (!ok) return false;
     final s = _repository.state;
@@ -154,9 +167,8 @@ class StockCubit extends Cubit<StockState> {
     required StaffMember staff,
   }) async {
     if (staff.role == 'cashier') return false;
-    final ok = await _repository.removePurchase(
-      purchaseId: purchaseId,
-      staff: staff,
+    final ok = await _attempt(
+      () => _repository.removePurchase(purchaseId: purchaseId, staff: staff),
     );
     if (!ok) return false;
     final s = _repository.state;
@@ -182,12 +194,14 @@ class StockCubit extends Cubit<StockState> {
     String? editId,
   }) async {
     final now = _clock();
-    final ok = await _repository.recordExpenses(
-      date: date,
-      lines: lines,
-      staff: staff,
-      editId: editId,
-      now: now,
+    final ok = await _attempt(
+      () => _repository.recordExpenses(
+        date: date,
+        lines: lines,
+        staff: staff,
+        editId: editId,
+        now: now,
+      ),
     );
     if (!ok) return false;
     final s = _repository.state;
@@ -210,9 +224,8 @@ class StockCubit extends Cubit<StockState> {
     required StaffMember staff,
   }) async {
     if (staff.role == 'cashier') return false;
-    final ok = await _repository.removeExpense(
-      expenseId: expenseId,
-      staff: staff,
+    final ok = await _attempt(
+      () => _repository.removeExpense(expenseId: expenseId, staff: staff),
     );
     if (!ok) return false;
     final s = _repository.state;

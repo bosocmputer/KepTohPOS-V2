@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app/domain/domain.dart';
+import 'package:app/domain/pos_command_exception.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -117,8 +118,9 @@ class AuthCubit extends Cubit<AuthState> {
       s,
       today: businessDayKey(now, s.shop.dayCutoffMinutes),
     );
+    // Without cost data the login card would show a wrong profit, so hide it.
     LedgerDaySummary? lastClosed;
-    for (var i = ledger.days.length - 1; i >= 0; i--) {
+    for (var i = repo.canReadCosts ? ledger.days.length - 1 : -1; i >= 0; i--) {
       if (ledger.days[i].closed) {
         lastClosed = ledger.days[i];
         break;
@@ -181,6 +183,9 @@ class AuthCubit extends Cubit<AuthState> {
     final PinSignInResult result;
     try {
       result = await _repository.signInWithPin(who.id, v);
+    } on PosCommandException catch (e) {
+      emit(state.copyWith(pin: '', error: e.message));
+      return false;
     } finally {
       _mutatingSession = false;
     }

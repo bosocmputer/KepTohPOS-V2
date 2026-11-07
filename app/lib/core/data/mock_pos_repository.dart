@@ -258,6 +258,12 @@ class MockPosRepository
   }
 
   @override
+  bool get isDemoData => true;
+
+  @override
+  bool get canReadCosts => true;
+
+  @override
   Future<PinSignInResult> signInWithPin(String staffId, String pin) async {
     final who = _state.staff.where((x) => x.id == staffId).firstOrNull;
     if (who == null || who.pin != pin) return PinSignInResult.invalid;

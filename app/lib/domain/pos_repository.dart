@@ -127,6 +127,14 @@ abstract class PosRepository implements PosSetupCommands {
   /// Currently logged-in staff member (`null` when signed out).
   StaffMember? get currentStaff;
 
+  /// Whether this is local demo data, where export, import and the simulation
+  /// tools are safe. They would overwrite or shift real records otherwise.
+  bool get isDemoData;
+
+  /// Whether cost and expense data is loaded. It is withheld from cashiers on
+  /// the server, so figures derived from it would be wrong when this is false.
+  bool get canReadCosts;
+
   /// Saves kitchen notes on an open table.
   Future<PosState> setTableNotes(String tableId, String notes);
 

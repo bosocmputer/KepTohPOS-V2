@@ -4,7 +4,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(89);
+select plan(92);
 
 create schema tests;
 create function tests.q(p_role text, p_uid uuid, p_anon boolean, p_sql text) returns text
@@ -175,6 +175,9 @@ select is(tests.device_a(format($$select void_bill(%L, '60000000-0000-0000-0000-
 -- ยกเลิกโต๊ะที่ยังไม่จ่าย: คืนสต็อกแล้วปิดโต๊ะ
 select tests.device_a(format($$select 1 from send_round(%L, '80000000-0000-0000-0000-000000000002', '70000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000001', 'after', 1, 0, 0, '{"40000000-0000-0000-0000-000000000001": 4}', now())$$, tests.val('cashier')));
 select is(tests.addon_stock(), 6, 'ส่งรอบใหม่ตัดสต็อก 4');
+select is(tests.device_a(format($$select set_table_notes(%L, '70000000-0000-0000-0000-000000000004', ' ไม่ใส่ผัก ')$$, tests.val('cashier'))), 'true', 'แก้โน้ตโต๊ะที่เปิดอยู่ได้');
+select is((select notes from table_sessions where id = '70000000-0000-0000-0000-000000000004'), 'ไม่ใส่ผัก', 'บันทึกโน้ตแล้วตัดช่องว่าง');
+select is(tests.device_b(format($$select set_table_notes(%L, '70000000-0000-0000-0000-000000000004', 'x')$$, tests.val('token_b'))), 'false', 'ร้านอื่นแก้โน้ตโต๊ะนี้ไม่ได้');
 select is(tests.device_a(format($$select 1 from cancel_table(%L, '70000000-0000-0000-0000-000000000004', now())$$, tests.val('cashier'))), '1', 'ยกเลิกโต๊ะที่ยังมียอดค้างได้');
 select is(tests.addon_stock(), 10, 'ยกเลิกโต๊ะแล้วคืนสต็อก');
 select ok((select closed_at is not null from table_sessions where id = '70000000-0000-0000-0000-000000000004'), 'ยกเลิกแล้วโต๊ะปิด');

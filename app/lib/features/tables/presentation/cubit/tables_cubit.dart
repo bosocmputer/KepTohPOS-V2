@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app/domain/domain.dart';
+import 'package:app/domain/pos_command_exception.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -214,21 +215,31 @@ class TablesCubit extends Cubit<TablesState> {
       buildTablePosSlip(state.posState, tableId, now: _fixedNow ?? state.now);
 
   /// Cancels an unpaid open table (`cancelOpenTable`).
-  Future<void> cancelTable(String tableId) async {
-    await _repository.cancelTable(tableId);
+  Future<bool> cancelTable(String tableId) async {
+    try {
+      await _repository.cancelTable(tableId);
+    } on PosCommandException {
+      return false;
+    }
     refresh();
+    return true;
   }
 
   /// Voids a settled table bill (`voidBill`) and releases the table if empty.
-  Future<void> voidBill(String billId, String reason, StaffMember staff) async {
-    await _repository.voidSale(
-      billId: billId,
-      staff: staff,
-      allowCashier: true,
-      reason: reason.trim().isEmpty ? 'ลูกค้าเปลี่ยนใจไม่รับประทาน' : reason,
-      now: _fixedNow ?? state.now,
-    );
-    refresh();
+  Future<bool> voidBill(String billId, String reason, StaffMember staff) async {
+    try {
+      final ok = await _repository.voidSale(
+        billId: billId,
+        staff: staff,
+        allowCashier: true,
+        reason: reason.trim().isEmpty ? 'ลูกค้าเปลี่ยนใจไม่รับประทาน' : reason,
+        now: _fixedNow ?? state.now,
+      );
+      refresh();
+      return ok;
+    } on PosCommandException {
+      return false;
+    }
   }
 
   @override

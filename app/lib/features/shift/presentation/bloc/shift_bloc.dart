@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/utils/sequential_events.dart';
 import 'package:app/domain/domain.dart';
+import 'package:app/domain/pos_command_exception.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -219,21 +220,25 @@ class ShiftBloc extends Bloc<ShiftEvent, ShiftState> {
 
   /// Runs every event in one queue so async handlers cannot overlap.
   Future<void> _dispatch(ShiftEvent event, Emitter<ShiftState> emit) async {
-    switch (event) {
-      case final ShiftRefreshed e:
-        _onRefreshed(e, emit);
-      case final ShiftFloatInputChanged e:
-        emit(state.copyWith(floatInput: e.value));
-      case final ShiftOpened e:
-        await _onOpened(e, emit);
-      case final ShiftCountedInputChanged e:
-        emit(state.copyWith(countedInput: e.value));
-      case final ShiftConfirmCloseToggled e:
-        emit(state.copyWith(confirmClose: e.show));
-      case final ShiftClosed e:
-        await _onClosed(e, emit);
-      case ShiftToastCleared():
-        emit(state.copyWith(toastMessage: ''));
+    try {
+      switch (event) {
+        case final ShiftRefreshed e:
+          _onRefreshed(e, emit);
+        case final ShiftFloatInputChanged e:
+          emit(state.copyWith(floatInput: e.value));
+        case final ShiftOpened e:
+          await _onOpened(e, emit);
+        case final ShiftCountedInputChanged e:
+          emit(state.copyWith(countedInput: e.value));
+        case final ShiftConfirmCloseToggled e:
+          emit(state.copyWith(confirmClose: e.show));
+        case final ShiftClosed e:
+          await _onClosed(e, emit);
+        case ShiftToastCleared():
+          emit(state.copyWith(toastMessage: ''));
+      }
+    } on PosCommandException catch (e) {
+      emit(state.copyWith(toastMessage: e.message));
     }
   }
 
