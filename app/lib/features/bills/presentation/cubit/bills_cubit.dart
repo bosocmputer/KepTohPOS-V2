@@ -242,11 +242,11 @@ class BillsCubit extends Cubit<BillsState> {
   void clearToast() => emit(state.copyWith(toastMessage: ''));
 
   /// Voids [billId] (or `state.selectedBillId`) and restores addon stock.
-  bool voidBillById({
+  Future<bool> voidBillById({
     required StaffMember staff,
     String? billId,
     String reason = '',
-  }) {
+  }) async {
     final targetId = billId ?? state.selectedBillId;
     if (targetId == null || staff.role == 'cashier') return false;
     final bill = _repository.state.sales
@@ -254,16 +254,12 @@ class BillsCubit extends Cubit<BillsState> {
         .firstOrNull;
     if (bill == null || bill.voided) return false;
     final billNo = bill.no;
-    var ok = false;
-    _repository.update((st) {
-      ok = voidBill(
-        st,
-        billId: targetId,
-        me: staff,
-        reason: reason,
-        now: _fixedNow ?? state.now,
-      );
-    });
+    final ok = await _repository.voidSale(
+      billId: targetId,
+      staff: staff,
+      reason: reason,
+      now: _fixedNow ?? state.now,
+    );
     if (ok) {
       emit(
         state.copyWith(

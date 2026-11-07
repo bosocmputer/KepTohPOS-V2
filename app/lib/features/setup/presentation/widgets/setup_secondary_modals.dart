@@ -67,17 +67,18 @@ class _SetupSecondaryEditorModalState extends State<SetupSecondaryEditorModal> {
     _expType = it is ExpenseType ? it : ExpenseType(id: u('et'), name: '');
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final c = widget.cubit;
-    final res = switch (widget.section) {
+    final res = await switch (widget.section) {
       'tables' => c.upsertTable(_table),
       'staff' => c.upsertStaff(_staff, actorRole: widget.staffRole),
       'payments' => c.upsertPayment(_pay),
       'bankAccounts' => c.upsertBankAccount(_bank),
       'fixedCosts' => c.upsertFixedCost(_fixed),
       'expenseTypes' => c.upsertExpenseType(_expType),
-      _ => const SetupCrudResult.failure('ไม่รู้จักหมวดข้อมูล'),
+      _ => Future.value(const SetupCrudResult.failure('ไม่รู้จักหมวดข้อมูล')),
     };
+    if (!mounted) return;
     res.ok ? widget.onClose() : setState(() => _err = res.message);
   }
 

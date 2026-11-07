@@ -48,8 +48,8 @@ class _SetupCrudEditorModalState extends State<SetupCrudEditorModal> {
         : PackageItem(
             id: nextSetupUid('pk'),
             name: '',
-            adultPrice: 199,
-            childPrice: 99,
+            adultPrice: 19900,
+            childPrice: 9900,
           );
     _addon = it is AddonItem
         ? it.copyWith()
@@ -57,17 +57,18 @@ class _SetupCrudEditorModalState extends State<SetupCrudEditorModal> {
             id: nextSetupUid('ad'),
             name: '',
             category: 'เครื่องดื่ม',
-            price: 25,
-            cost: 12,
+            price: 2500,
+            cost: 1200,
             stock: 24,
           );
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final c = widget.cubit;
-    final res = widget.section == 'packages'
+    final res = await (widget.section == 'packages'
         ? c.upsertPackage(_pkg)
-        : c.upsertAddon(_addon);
+        : c.upsertAddon(_addon));
+    if (!mounted) return;
     if (res.ok) {
       widget.onClose();
     } else {

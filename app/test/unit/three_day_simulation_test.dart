@@ -77,7 +77,7 @@ void main() {
         );
 
     // STEP 0: Clear all daily transactions to 0 (Clean Slate)
-    setupCubit.clearDailyTransactions();
+    await setupCubit.clearDailyTransactions();
     expect(repo.state.sales, isEmpty);
     expect(repo.state.purchases, isEmpty);
     expect(repo.state.counts, isEmpty);
@@ -166,7 +166,7 @@ void main() {
     });
 
     // Guard check: cannot advance simulation day while shift is still open
-    final blockedShiftRes = setupCubit.advanceSimulationDay();
+    final blockedShiftRes = await setupCubit.advanceSimulationDay();
     expect((blockedShiftRes.ok, blockedShiftRes.isGuardBlock), (false, true));
 
     repo.update((s) {
@@ -193,7 +193,7 @@ void main() {
     expect(sh1.expected, 210400);
 
     // DAY 2: Price Spike (Weighted Avg vs Last) + Weekly Estimation + Void
-    expect(setupCubit.advanceSimulationDay().ok, isTrue);
+    expect((await setupCubit.advanceSimulationDay()).ok, isTrue);
     repo.update((s) {
       s.shifts.add(
         ShiftRecord(
@@ -249,7 +249,7 @@ void main() {
     expect((repo.state.shifts.last.counted ?? 0) - sh2.expected, -2000.0);
 
     // DAY 3: Weekly Reconciliation + Low-Volume Net Loss Day
-    expect(setupCubit.advanceSimulationDay().ok, isTrue);
+    expect((await setupCubit.advanceSimulationDay()).ok, isTrue);
     repo.update((s) {
       s.shifts.add(
         ShiftRecord(
@@ -300,13 +300,13 @@ void main() {
     expect(dashAvg.profit, closeTo(554900, 1));
     expect(dashAvg.netProfit, closeTo(-31100, 1));
 
-    setupCubit.saveCosting(repo.state.shop.copyWith(costMethod: 'last'));
+    await setupCubit.saveCosting(repo.state.shop.copyWith(costMethod: 'last'));
     final ledgerLast = computeLedger(repo.state, today: dKey);
     expect(
       ledgerLast.days[1].ingCost! - ledgerAvg.days[1].ingCost!,
       closeTo(30400, 1),
     );
-    setupCubit.saveCosting(repo.state.shop.copyWith(costMethod: 'avg'));
+    await setupCubit.saveCosting(repo.state.shop.copyWith(costMethod: 'avg'));
     await setupCubit.close();
     await repo.dispose();
   });

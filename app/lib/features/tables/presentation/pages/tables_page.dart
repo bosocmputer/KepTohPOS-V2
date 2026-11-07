@@ -196,8 +196,9 @@ class _TablesPageState extends State<TablesPage> {
                     showAppToast(context, 'ส่งพิมพ์สลิป POS แล้ว (จำลอง)'),
                 onVoid: defaultStaff == null
                     ? null
-                    : (reason) {
-                        cubit.voidTableBill(slip.id, reason, defaultStaff);
+                    : (reason) async {
+                        await cubit.voidBill(slip.id, reason, defaultStaff);
+                        if (!context.mounted) return;
                         setState(() => _slipTableId = null);
                         showAppToast(
                           context,
@@ -206,12 +207,14 @@ class _TablesPageState extends State<TablesPage> {
                       },
                 onVoidSubBill: defaultStaff == null
                     ? null
-                    : (billId, reason) {
-                        cubit.voidTableBill(billId, reason, defaultStaff);
+                    : (billId, reason) async {
+                        await cubit.voidBill(billId, reason, defaultStaff);
+                        if (!context.mounted) return;
                         showAppToast(context, 'ยกเลิกบิลย่อยเรียบร้อย');
                       },
-                onCancelTable: () {
-                  cubit.cancelTable(_slipTableId!);
+                onCancelTable: () async {
+                  await cubit.cancelTable(_slipTableId!);
+                  if (!context.mounted) return;
                   setState(() => _slipTableId = null);
                   showAppToast(context, 'ยกเลิกรายการโต๊ะเรียบร้อย');
                 },

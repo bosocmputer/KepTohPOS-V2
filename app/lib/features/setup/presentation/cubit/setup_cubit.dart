@@ -63,7 +63,7 @@ class SetupCubit extends Cubit<SetupState> {
     if (state.errorMessage.isNotEmpty) emit(state.copyWith(errorMessage: ''));
   }
 
-  SetupCrudResult _runMutation(SetupCrudResult Function(PosState s) mutator) {
+  Future<SetupCrudResult> _run(Future<SetupCrudResult> command) async {
     emit(
       state.copyWith(
         status: SetupStatus.saving,
@@ -71,8 +71,7 @@ class SetupCubit extends Cubit<SetupState> {
         guardModalMessage: '',
       ),
     );
-    late SetupCrudResult res;
-    _repository.update((s) => res = mutator(s));
+    final res = await command;
     emit(
       state.copyWith(
         posState: _repository.state,
@@ -86,125 +85,89 @@ class SetupCubit extends Cubit<SetupState> {
   }
 
   /// Saves general store profile and VAT settings (`ShopForm`).
-  SetupCrudResult saveShop(ShopConfig next) => _runMutation((s) {
-    if (next.name.trim().isEmpty) {
-      return const SetupCrudResult.failure('กรุณากรอกชื่อร้าน');
-    }
-    if (next.vatRate < 0 || next.vatRate > 100) {
-      return const SetupCrudResult.failure(
-        'อัตราภาษีมูลค่าเพิ่มต้องอยู่ระหว่าง 0 ถึง 100%',
-        guard: true,
-      );
-    }
-    if (next.servicePct < 0 || next.servicePct > 100) {
-      return const SetupCrudResult.failure(
-        'อัตราค่าบริการต้องอยู่ระหว่าง 0 ถึง 100%',
-        guard: true,
-      );
-    }
-    if (next.defaultFloat < 0) {
-      return const SetupCrudResult.failure(
-        'เงินทอนตั้งต้นกะต้องไม่ติดลบ',
-        guard: true,
-      );
-    }
-    final cleanTax = next.taxId.replaceAll(RegExp(r'[\s-]'), '');
-    if (cleanTax.isNotEmpty && !RegExp(r'^\d{13}$').hasMatch(cleanTax)) {
-      return const SetupCrudResult.failure(
-        'เลขประจำตัวผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก',
-        guard: true,
-      );
-    }
-    s.shop = next.copyWith(
-      themeMode: s.shop.themeMode,
-      themePalette: s.shop.themePalette,
-      bankAccounts: s.shop.bankAccounts,
-    );
-    return const SetupCrudResult.success('บันทึกข้อมูลร้านแล้ว');
-  });
+  Future<SetupCrudResult> saveShop(ShopConfig next) =>
+      _run(_repository.saveShopSettings(next));
 
   /// Saves profit & costing calculation formulas (`CostingForm`).
-  SetupCrudResult saveCosting(ShopConfig next) => _runMutation((s) {
-    s.shop = next.copyWith(
-      themeMode: s.shop.themeMode,
-      themePalette: s.shop.themePalette,
-      bankAccounts: s.shop.bankAccounts,
-    );
-    return const SetupCrudResult.success('บันทึกสูตรคำนวณแล้ว');
-  });
+  Future<SetupCrudResult> saveCosting(ShopConfig next) =>
+      _run(_repository.saveCostingSettings(next));
 
-  /// Validates and saves a buffet [PackageItem].
-  SetupCrudResult upsertPackage(PackageItem item) =>
-      _runMutation((s) => upsertPackageInState(s, item));
+  /// Validates and saves a [PackageItem].
+  Future<SetupCrudResult> upsertPackage(PackageItem item) =>
+      _run(_repository.savePackage(item));
 
   /// Toggles active status on a [PackageItem].
-  SetupCrudResult togglePackageActive(PackageItem x, {required bool active}) =>
-      upsertPackage(x.copyWith(active: active));
+  Future<SetupCrudResult> togglePackageActive(
+    PackageItem x, {
+    required bool active,
+  }) => upsertPackage(x.copyWith(active: active));
 
   /// Validates and saves an [AddonItem].
-  SetupCrudResult upsertAddon(AddonItem item) =>
-      _runMutation((s) => upsertAddonInState(s, item));
+  Future<SetupCrudResult> upsertAddon(AddonItem item) =>
+      _run(_repository.saveAddon(item));
 
   /// Toggles active status on an [AddonItem].
-  SetupCrudResult toggleAddonActive(AddonItem item, {required bool active}) =>
-      upsertAddon(item.copyWith(active: active));
+  Future<SetupCrudResult> toggleAddonActive(
+    AddonItem item, {
+    required bool active,
+  }) => upsertAddon(item.copyWith(active: active));
 
   /// Validates and saves an [IngredientItem].
-  SetupCrudResult upsertIngredient(IngredientItem item) =>
-      _runMutation((s) => upsertIngredientInState(s, item));
+  Future<SetupCrudResult> upsertIngredient(IngredientItem item) =>
+      _run(_repository.saveIngredient(item));
 
   /// Validates and saves a [SupplierItem].
-  SetupCrudResult upsertSupplier(SupplierItem item) =>
-      _runMutation((s) => upsertSupplierInState(s, item));
+  Future<SetupCrudResult> upsertSupplier(SupplierItem item) =>
+      _run(_repository.saveSupplier(item));
 
   /// Validates and saves a [DiningTable].
-  SetupCrudResult upsertTable(DiningTable item) =>
-      _runMutation((s) => upsertTableInState(s, item));
+  Future<SetupCrudResult> upsertTable(DiningTable item) =>
+      _run(_repository.saveDiningTable(item));
 
-  /// Validates and saves a [StaffMember] with PIN and active-owner guards.
-  SetupCrudResult upsertStaff(StaffMember item, {String? actorRole}) =>
-      _runMutation((s) => upsertStaffInState(s, item, actorRole: actorRole));
+  /// Validates and saves a [StaffMember] with active-owner protection.
+  Future<SetupCrudResult> upsertStaff(StaffMember item, {String? actorRole}) =>
+      _run(_repository.saveStaffMember(item, actorRole: actorRole));
 
   /// Toggles active status on a [StaffMember] with active-owner protection.
-  SetupCrudResult toggleStaffActive(
+  Future<SetupCrudResult> toggleStaffActive(
     StaffMember item, {
     required bool active,
     String? actorRole,
   }) => upsertStaff(item.copyWith(active: active), actorRole: actorRole);
 
   /// Validates and saves a [PaymentMethod].
-  SetupCrudResult upsertPayment(PaymentMethod item) =>
-      _runMutation((s) => upsertPaymentInState(s, item));
+  Future<SetupCrudResult> upsertPayment(PaymentMethod item) =>
+      _run(_repository.savePaymentMethod(item));
 
   /// Toggles active status on a [PaymentMethod].
-  SetupCrudResult togglePaymentActive(
-    PaymentMethod x, {
+  Future<SetupCrudResult> togglePaymentActive(
+    PaymentMethod item, {
     required bool active,
-  }) => upsertPayment(x.copyWith(active: active));
+  }) => upsertPayment(item.copyWith(active: active));
 
   /// Validates and saves a [BankAccountItem].
-  SetupCrudResult upsertBankAccount(BankAccountItem item) =>
-      _runMutation((s) => upsertBankAccountInState(s, item));
+  Future<SetupCrudResult> upsertBankAccount(BankAccountItem item) =>
+      _run(_repository.saveBankAccount(item));
 
   /// Toggles active status on a [BankAccountItem].
-  SetupCrudResult toggleBankAccountActive(
+  Future<SetupCrudResult> toggleBankAccountActive(
     BankAccountItem x, {
     required bool active,
   }) => upsertBankAccount(x.copyWith(active: active));
 
   /// Validates and saves a [FixedCostItem].
-  SetupCrudResult upsertFixedCost(FixedCostItem item) =>
-      _runMutation((s) => upsertFixedCostInState(s, item));
+  Future<SetupCrudResult> upsertFixedCost(FixedCostItem item) =>
+      _run(_repository.saveFixedCost(item));
 
   /// Toggles active status on a [FixedCostItem].
-  SetupCrudResult toggleFixedCostActive(
+  Future<SetupCrudResult> toggleFixedCostActive(
     FixedCostItem item, {
     required bool active,
   }) => upsertFixedCost(item.copyWith(active: active));
 
   /// Validates and saves an [ExpenseType].
-  SetupCrudResult upsertExpenseType(ExpenseType item) =>
-      _runMutation((s) => upsertExpenseTypeInState(s, item));
+  Future<SetupCrudResult> upsertExpenseType(ExpenseType item) =>
+      _run(_repository.saveExpenseType(item));
 
   /// Checks whether deleting [id] in [section] is blocked before showing
   /// confirmation. If blocked, emits `guardModalMessage` and returns `false`.
@@ -227,13 +190,12 @@ class SetupCubit extends Cubit<SetupState> {
   }
 
   /// Deletes an item by [id] from [section] after confirmation.
-  SetupCrudResult deleteItem({
+  Future<SetupCrudResult> deleteItem({
     required String section,
     required String id,
     String? currentStaffId,
-  }) => _runMutation(
-    (s) => deleteFromSetupSection(
-      s,
+  }) => _run(
+    _repository.deleteSetupItem(
       section: section,
       id: id,
       currentStaffId: currentStaffId,
@@ -241,20 +203,16 @@ class SetupCubit extends Cubit<SetupState> {
   );
 
   /// Resets 30-day demo transactions while preserving catalog setup.
-  void resetDemoTransactions() => _runMutation((s) {
-    resetDemoTransactionsInState(s, now: _clock());
-    return const SetupCrudResult.success(
-      'รีเซ็ตข้อมูลตัวอย่าง 30 วันเรียบร้อย',
-    );
-  });
+  Future<SetupCrudResult> resetDemoTransactions() =>
+      _run(_repository.resetDemoData(_clock()));
 
   /// Clears all daily transactions to zero while keeping master catalogs.
-  SetupCrudResult clearDailyTransactions() =>
-      _runMutation((s) => clearDailyTransactionsInState(s, now: _clock()));
+  Future<SetupCrudResult> clearDailyTransactions() =>
+      _run(_repository.clearDailyData(_clock()));
 
   /// Advances the simulated calendar by 1 day (shifts recorded history -1 day).
-  SetupCrudResult advanceSimulationDay() =>
-      _runMutation(advanceSimulationDayInState);
+  Future<SetupCrudResult> advanceSimulationDay() =>
+      _run(_repository.advanceSimulationDay());
 
   /// Exports the entire [PosState] as formatted JSON.
   String exportJson() => _repository.exportStateJson();

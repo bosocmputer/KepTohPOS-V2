@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
-PosRepository _buildFullRepo({
+MockPosRepository _buildFullRepo({
   required DateTime fixedNow,
   String sessionStaffId = 'st1',
 }) {

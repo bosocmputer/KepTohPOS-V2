@@ -214,22 +214,19 @@ class TablesCubit extends Cubit<TablesState> {
       buildTablePosSlip(state.posState, tableId, now: _fixedNow ?? state.now);
 
   /// Cancels an unpaid open table (`cancelOpenTable`).
-  void cancelTable(String tableId) {
-    _repository.update((s) => cancelOpenTable(s, tableId));
+  Future<void> cancelTable(String tableId) async {
+    await _repository.cancelTable(tableId);
     refresh();
   }
 
   /// Voids a settled table bill (`voidBill`) and releases the table if empty.
-  void voidTableBill(String billId, String reason, StaffMember staff) {
-    _repository.update(
-      (s) => voidBill(
-        s,
-        billId: billId,
-        me: staff,
-        allowCashier: true,
-        reason: reason.trim().isEmpty ? 'ลูกค้าเปลี่ยนใจไม่รับประทาน' : reason,
-        now: _fixedNow ?? state.now,
-      ),
+  Future<void> voidBill(String billId, String reason, StaffMember staff) async {
+    await _repository.voidSale(
+      billId: billId,
+      staff: staff,
+      allowCashier: true,
+      reason: reason.trim().isEmpty ? 'ลูกค้าเปลี่ยนใจไม่รับประทาน' : reason,
+      now: _fixedNow ?? state.now,
     );
     refresh();
   }

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:app/core/data/mock_pos_commands.dart';
+import 'package:app/core/data/mock_pos_setup_commands.dart';
 import 'package:app/core/data/web_storage.dart';
 import 'package:app/domain/domain.dart';
 import 'package:flutter/services.dart';
@@ -11,7 +13,9 @@ const String _kStaffStorageKey = 'keptoh_pos_v2_staff_v2';
 /// In-memory implementation of [PosRepository] backed by `assets/mock/*.json`
 /// and `seed()`. Copies [PosState] only on [update], while [state] returns the
 /// frozen read-only snapshot in O(1) without copying.
-class MockPosRepository implements PosRepository {
+class MockPosRepository
+    with MockPosCommands, MockPosSetupCommands
+    implements PosRepository {
   new({required PosState initialState, String? sessionStaffId})
     : _state = initialState.copy().freeze() {
     _sessionStaffId = sessionStaffId;

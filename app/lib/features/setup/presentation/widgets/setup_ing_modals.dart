@@ -45,7 +45,7 @@ class _SetupIngredientSupplierModalState
             id: nextSetupUid('i'),
             name: '',
             unit: 'กก.',
-            lastCost: 100,
+            lastCost: 10000,
             par: 5,
             supplierId: s.suppliers.firstOrNull?.id ?? '',
             category: 'วัตถุดิบ',
@@ -56,11 +56,12 @@ class _SetupIngredientSupplierModalState
         : SupplierItem(id: nextSetupUid('sup'), name: '');
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final c = widget.cubit;
-    final res = widget.section == 'ingredients'
+    final res = await (widget.section == 'ingredients'
         ? c.upsertIngredient(_ing)
-        : c.upsertSupplier(_sup);
+        : c.upsertSupplier(_sup));
+    if (!mounted) return;
     if (res.ok) {
       widget.onClose();
     } else {

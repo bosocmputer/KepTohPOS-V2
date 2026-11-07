@@ -184,8 +184,8 @@ class _StockPurchaseTabState extends State<StockPurchaseTab> {
                   required note,
                   required lines,
                   editId,
-                }) {
-                  final ok = cubit.submitPurchase(
+                }) async {
+                  final ok = await cubit.submitPurchase(
                     date: date,
                     supplierId: supplierId,
                     note: note,
@@ -193,7 +193,7 @@ class _StockPurchaseTabState extends State<StockPurchaseTab> {
                     staff: widget.staff,
                     editId: editId,
                   );
-                  if (ok) {
+                  if (ok && mounted) {
                     setState(() => _modalOpen = false);
                   }
                 },
@@ -211,9 +211,9 @@ class _StockPurchaseTabState extends State<StockPurchaseTab> {
                   yesLabel: 'ลบ',
                   danger: true,
                   onNo: () => setState(() => _deletingPurchase = null),
-                  onYes: () {
+                  onYes: () async {
                     setState(() => _deletingPurchase = null);
-                    cubit.removePurchase(
+                    await cubit.removePurchase(
                       purchaseId: deleting.id,
                       staff: widget.staff,
                     );

@@ -36,6 +36,43 @@ void main() {
   final fixedNow = DateTime(2026, 11, 4, 12);
 
   testWidgets(
+    'new package form shows default prices in baht and saves satang',
+    (tester) async {
+      // Arrange
+      await tester.binding.setSurfaceSize(const Size(1366, 1024));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final fixedNow = DateTime(2026, 11, 4, 18);
+      final repo = _buildFullRepo(fixedNow: fixedNow);
+      final countBefore = repo.state.packages.length;
+      await tester.pumpWidget(
+        KepTohApp(repository: repo, now: fixedNow, initialLocation: '/setup'),
+      );
+      await tester.pumpAndSettle();
+      final pkgNav = find.byKey(const ValueKey('setup-tab-packages'));
+      await tester.ensureVisible(pkgNav);
+      await tester.tap(pkgNav);
+      await tester.pumpAndSettle();
+
+      // Act
+      await tester.tap(find.byKey(const ValueKey('setup-add-packages-btn')));
+      await tester.pumpAndSettle();
+      final inputs = tester.widgetList<TextField>(find.byType(TextField));
+      final shown = inputs.map((f) => f.controller?.text).toList();
+      await tester.enterText(find.byType(TextField).at(1), 'แพ็กเกจทดสอบ');
+      final save = find.byKey(const ValueKey('setup-modal-save-btn'));
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+
+      // Assert
+      expect(shown, containsAll(<String>['199', '99']));
+      expect(repo.state.packages.length, countBefore + 1);
+      expect(repo.state.packages.last.adultPrice, 19900);
+      expect(repo.state.packages.last.childPrice, 9900);
+    },
+  );
+
+  testWidgets(
     'SetupPage renders 4 grouped nav sections, dedicated theme tab, and CRUD',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(1024, 768));

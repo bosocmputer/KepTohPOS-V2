@@ -107,7 +107,7 @@ void main() {
 
     test(
       'cashier cannot void bills while owner can void and restore stock',
-      () {
+      () async {
         final repo = _buildSeededBillsRepo(fixedNow);
         final cubit = BillsCubit(repo, now: fixedNow);
         addTearDown(cubit.close);
@@ -117,7 +117,7 @@ void main() {
         final stockBefore = repo.state.addons.first.stock;
 
         expect(
-          cubit.voidBillById(
+          await cubit.voidBillById(
             staff: cashier,
             billId: 'b1',
             reason: 'ไม่ควรผ่าน',
@@ -131,7 +131,7 @@ void main() {
         expect(repo.state.addons.first.stock, stockBefore);
 
         expect(
-          cubit.voidBillById(
+          await cubit.voidBillById(
             staff: owner,
             billId: 'b1',
             reason: 'ลูกค้าเปลี่ยนแพ็กเกจ',

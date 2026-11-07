@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:app/domain/models.dart';
+import 'package:app/domain/pos_setup_commands.dart';
+import 'package:app/domain/stock_balance_ops.dart';
 
 int _shiftCounter = 0;
 
@@ -99,21 +101,132 @@ ShiftRecord? closeShift(
   return sh;
 }
 
-/// Abstract repository contract for reading and updating [PosState].
-/// Implementations MUST deep-copy [PosState] before invoking [update] mutators.
-abstract class PosRepository {
+/// Abstract repository contract for reading [PosState] and running commands.
+///
+/// Commands return a [Future] because real implementations write to a local
+/// database or the network; each one broadcasts on [stream] when it finishes.
+abstract class PosRepository implements PosSetupCommands {
   /// Current snapshot of [PosState].
   PosState get state;
 
-  /// Stream of [PosState] updates emitted after every [update].
+  /// Stream of [PosState] updates emitted after every command.
   Stream<PosState> get stream;
 
   /// Currently logged-in staff member (`null` when signed out).
   StaffMember? get currentStaff;
 
-  /// Deep-copies the current [PosState], applies [mutator] to the copy,
-  /// stores and broadcasts the new [PosState], and returns it.
-  PosState update(void Function(PosState s) mutator);
+  /// Saves kitchen notes on an open table.
+  Future<PosState> setTableNotes(String tableId, String notes);
+
+  /// Sends an order round and deducts addon stock.
+  Future<PosState> sendOrderRound({
+    required DiningTable table,
+    required TableTotals cart,
+    required StaffMember staff,
+    required String timing,
+    required String packageId,
+    required String notes,
+    DateTime? now,
+  });
+
+  /// Reduces an already-sent item and restores addon stock.
+  Future<PosState> adjustSentItem({
+    required String tableId,
+    required String kind,
+    required String key,
+    required int qty,
+    required String reason,
+    required StaffMember staff,
+    DateTime? now,
+  });
+
+  /// Settles an order into a bill. [received] is in satang.
+  Future<PosState> settleOrder({
+    required DiningTable table,
+    required TableTotals cart,
+    required StaffMember staff,
+    required String timing,
+    required String packageId,
+    required PaymentMethod method,
+    required int received,
+    required String billId,
+    required String notes,
+    BankAccountItem? bankAccount,
+    DateTime? now,
+  });
+
+  /// Voids a bill; returns `false` if not permitted, unknown or already voided.
+  Future<bool> voidSale({
+    required String billId,
+    required StaffMember staff,
+    required String reason,
+    bool allowCashier = false,
+    DateTime? now,
+  });
+
+  /// Cancels an unpaid open table and restores its addon stock.
+  Future<PosState> cancelTable(String tableId);
+
+  /// Clears a table whose balance is settled.
+  Future<PosState> closeTable(String tableId);
+
+  /// Opens a cash shift unless one is already open. Amounts are in satang.
+  Future<PosState> openCashShift({
+    required String staffId,
+    required int floatAmount,
+    DateTime? now,
+  });
+
+  /// Closes the open cash shift with the counted cash in satang.
+  Future<PosState> closeCashShift({
+    required String staffId,
+    required int counted,
+    DateTime? now,
+  });
+
+  /// Saves a new or edited purchase bill; returns `false` if not permitted.
+  Future<bool> recordPurchase({
+    required String date,
+    required String supplierId,
+    required List<PurchaseLine> lines,
+    required StaffMember staff,
+    required String note,
+    required DateTime now,
+    String? editId,
+  });
+
+  /// Deletes a purchase bill; returns `false` if not permitted.
+  Future<bool> removePurchase({
+    required String purchaseId,
+    required StaffMember staff,
+  });
+
+  /// Saves new or edited daily expenses; returns `false` if not permitted.
+  Future<bool> recordExpenses({
+    required String date,
+    required List<ExpenseDraftLine> lines,
+    required StaffMember staff,
+    required DateTime now,
+    String? editId,
+  });
+
+  /// Deletes a daily expense; returns `false` if not permitted.
+  Future<bool> removeExpense({
+    required String expenseId,
+    required StaffMember staff,
+  });
+
+  /// Saves the daily stock count and closes the business day.
+  Future<void> saveStockCount({
+    required String date,
+    required Map<String, String> draftValues,
+  });
+
+  /// Reopens a closed day; returns `false` if not permitted.
+  Future<bool> reopenDay({required String date, required StaffMember staff});
+
+  /// Saves the theme mode and/or palette to the shop settings.
+  Future<void> saveThemePreference({String? mode, String? palette});
 
   /// Updates the active session staff ID (`null` to sign out).
   void setSessionStaffId(String? staffId);

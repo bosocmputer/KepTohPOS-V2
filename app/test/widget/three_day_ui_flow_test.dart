@@ -7,7 +7,7 @@ import 'package:app/domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-PosRepository _buildFullRepo({required DateTime fixedNow}) {
+MockPosRepository _buildFullRepo({required DateTime fixedNow}) {
   const keys = [
     'shop',
     'packages',

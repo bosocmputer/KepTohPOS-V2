@@ -116,7 +116,7 @@ void main() {
 
   group('StockCubit permissions & filters (Rule 4)', () {
     test('cashier can add purchases and daily expenses, but only manager/owner '
-        'can edit or delete purchases and expenses', () {
+        'can edit or delete purchases and expenses', () async {
       final repo = _buildFullStockRepo(fixedNow);
       final cubit = StockCubit(repo, now: fixedNow);
       addTearDown(cubit.close);
@@ -125,7 +125,7 @@ void main() {
       final owner = repo.state.staff.firstWhere((s) => s.role == 'owner');
 
       // Cashier adds a purchase on 2026-11-04
-      final addedPur = cubit.submitPurchase(
+      final addedPur = await cubit.submitPurchase(
         date: '2026-11-04',
         supplierId: 's1',
         lines: const <PurchaseLine>[
@@ -139,7 +139,7 @@ void main() {
 
       // Cashier cannot edit or delete that purchase
       expect(
-        cubit.submitPurchase(
+        await cubit.submitPurchase(
           date: '2026-11-04',
           supplierId: 's1',
           lines: const <PurchaseLine>[
@@ -150,11 +150,14 @@ void main() {
         ),
         isFalse,
       );
-      expect(cubit.removePurchase(purchaseId: purId, staff: cashier), isFalse);
+      expect(
+        await cubit.removePurchase(purchaseId: purId, staff: cashier),
+        isFalse,
+      );
 
       // Owner can edit and delete that purchase
       expect(
-        cubit.submitPurchase(
+        await cubit.submitPurchase(
           date: '2026-11-04',
           supplierId: 's1',
           lines: const <PurchaseLine>[
@@ -165,10 +168,13 @@ void main() {
         ),
         isTrue,
       );
-      expect(cubit.removePurchase(purchaseId: purId, staff: owner), isTrue);
+      expect(
+        await cubit.removePurchase(purchaseId: purId, staff: owner),
+        isTrue,
+      );
 
       // Cashier adds a daily expense on 2026-11-04
-      final addedExp = cubit.submitExpenses(
+      final addedExp = await cubit.submitExpenses(
         date: '2026-11-04',
         lines: const <ExpenseDraftLine>[
           ExpenseDraftLine(typeId: 'et1', amount: 25000, note: 'น้ำแข็ง'),
@@ -180,7 +186,7 @@ void main() {
 
       // Cashier cannot edit or delete daily expense
       expect(
-        cubit.submitExpenses(
+        await cubit.submitExpenses(
           date: '2026-11-04',
           lines: const <ExpenseDraftLine>[
             ExpenseDraftLine(typeId: 'et1', amount: 30000, note: 'แก้ยอด'),
@@ -190,11 +196,14 @@ void main() {
         ),
         isFalse,
       );
-      expect(cubit.removeExpense(expenseId: expId, staff: cashier), isFalse);
+      expect(
+        await cubit.removeExpense(expenseId: expId, staff: cashier),
+        isFalse,
+      );
 
       // Owner can edit and delete daily expense
       expect(
-        cubit.submitExpenses(
+        await cubit.submitExpenses(
           date: '2026-11-04',
           lines: const <ExpenseDraftLine>[
             ExpenseDraftLine(typeId: 'et1', amount: 30000, note: 'แก้ยอด'),
@@ -208,7 +217,7 @@ void main() {
         cubit.state.dayExpenses.firstWhere((e) => e.id == expId).amount,
         30000,
       );
-      expect(cubit.removeExpense(expenseId: expId, staff: owner), isTrue);
+      expect(await cubit.removeExpense(expenseId: expId, staff: owner), isTrue);
     });
 
     blocTest<StockCubit, StockState>(

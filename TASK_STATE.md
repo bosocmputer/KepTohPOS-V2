@@ -4,8 +4,8 @@
   - `supabase/migrations/*`, `supabase/tests/rls_test.sql`: F0 → `supabase test db` ผ่าน 57/57 (local) · `supabase db push` ขึ้นโปรเจกต์ `pbujdexhdzglymgnbsuw` แล้ว · `supabase migration list --linked` ตรงครบ 5 ไฟล์
   - LINE Login: `custom:line` แบบ Manual configuration ล็อกอินจริงสำเร็จ (Auto-discovery ใช้ไม่ได้ น่าจะเพราะ LINE web login เซ็น ID token ด้วย HS256) · เปิด anonymous sign-ins แล้ว
 - **Next Immediate Step:**
-  - F1 ขั้น 1-2 เสร็จบนกิ่ง `flutter/f1-satang` (ต่อจาก `backend/f1-rpc`) ยังไม่ push/merge · migration 000600-000800 ยังไม่ขึ้นโปรเจกต์จริง · อย่า merge เข้า `main` จนกว่าผู้ใช้สั่ง (Production คือที่คุณอัยทดสอบ)
-  - ถัดไป F1 ขั้น 3: เปลี่ยน `PosRepository.update(mutator)` (19 จุด) เป็น method แยกตามงาน · ขั้น 4: `SupabasePosRepository` + login/จับคู่เครื่อง + RPC ค่าใช้จ่าย/การซื้อ/การนับสต็อก (ต้องขออนุมัติเพิ่ม `supabase_flutter`, `uuid`)
+  - F1 ขั้น 1-3 เสร็จบนกิ่ง `flutter/f1-repository` ยังไม่ push/merge · migration 000600-000900 ยังไม่ขึ้นโปรเจกต์จริง · อย่า merge เข้า `main` จนกว่าผู้ใช้สั่ง (Production คือที่คุณอัยทดสอบ)
+  - ถัดไป F1 ขั้น 4: `SupabasePosRepository` + login/จับคู่เครื่อง + RPC ค่าใช้จ่าย/การซื้อ/การนับสต็อก + เลือก mock/Supabase ด้วยค่า build (Production ใช้ mock เป็นค่าเริ่มต้น) · ผู้ใช้อนุมัติเพิ่ม `supabase_flutter`, `uuid` แล้ว
   - ปัญหาเดิมที่ยังไม่แก้ (ตกบน `main` เหมือนกัน): `test/bloc/bills_cubit_test.dart` ค้นชื่อ `คุณแอน` · golden ตก 50/54 ข้อ
 - **Known Constraints / Decisions:**
   - เงินที่บันทึกเป็น `int` สตางค์ · ค่าคำนวณใน ledger/รายงานเป็น `double` หน่วยสตางค์ · แปลงข้อมูลเก่าที่ `PosState.fromJson` (`state_migration.dart`)

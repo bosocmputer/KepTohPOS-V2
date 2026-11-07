@@ -87,15 +87,15 @@ class _SetupPageState extends State<SetupPage> {
       yesLabel: yesLabel,
       danger: danger,
       onNo: () => setState(() => _demoConfirmKind = null),
-      onYes: () {
+      onYes: () async {
         setState(() => _demoConfirmKind = null);
         switch (kind) {
           case 'clear':
-            cubit.clearDailyTransactions();
+            await cubit.clearDailyTransactions();
           case 'advance':
-            cubit.advanceSimulationDay();
+            await cubit.advanceSimulationDay();
           default:
-            cubit.resetDemoTransactions();
+            await cubit.resetDemoTransactions();
         }
       },
     );
@@ -204,10 +204,10 @@ class _SetupPageState extends State<SetupPage> {
                 yesLabel: 'ลบรายการ',
                 danger: true,
                 onNo: () => setState(() => _deleting = null),
-                onYes: () {
+                onYes: () async {
                   final d = _deleting!;
                   setState(() => _deleting = null);
-                  cubit.deleteItem(
+                  await cubit.deleteItem(
                     section: d.$1,
                     id: d.$2,
                     currentStaffId: widget.currentStaffId,

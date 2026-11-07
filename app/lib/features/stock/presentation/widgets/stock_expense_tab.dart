@@ -195,14 +195,14 @@ class _StockExpenseTabState extends State<StockExpenseTab> {
             initialLines: _modalSeed,
             editId: _editId,
             onClose: () => setState(() => _modalOpen = false),
-            onSave: (lines) {
-              final ok = cubit.submitExpenses(
+            onSave: (lines) async {
+              final ok = await cubit.submitExpenses(
                 date: state.selectedDate,
                 lines: lines,
                 staff: widget.staff,
                 editId: _editId,
               );
-              if (ok) {
+              if (ok && mounted) {
                 setState(() => _modalOpen = false);
               }
             },
@@ -220,10 +220,10 @@ class _StockExpenseTabState extends State<StockExpenseTab> {
                   yesLabel: 'ลบ',
                   danger: true,
                   onNo: () => setState(() => _deletingExpense = null),
-                  onYes: () {
+                  onYes: () async {
                     final target = _deletingExpense!;
                     setState(() => _deletingExpense = null);
-                    cubit.removeExpense(
+                    await cubit.removeExpense(
                       expenseId: target.id,
                       staff: widget.staff,
                     );

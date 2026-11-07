@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:app/core/utils/formatters.dart';
+import 'package:app/core/utils/sequential_events.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/sale/presentation/bloc/sale_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,50 +17,7 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
     : _repository = repository,
       _fixedNow = now,
       super(SaleState.blankCart(repository.state, initialTableId, now: now)) {
-    on<SaleTableSelected>(
-      (e, emit) => emit(
-        SaleState.blankCart(_repository.state, e.tableId, now: _fixedNow),
-      ),
-    );
-    on<SalePackageSelected>(
-      (e, emit) => emit(state.copyWith(pkgId: e.packageId)),
-    );
-    on<SaleTimingChanged>((e, emit) => emit(state.copyWith(timing: e.timing)));
-    on<SaleCategorySelected>(
-      (e, emit) => emit(state.copyWith(selectedCategory: e.category)),
-    );
-    on<SaleHeadsChanged>(_onHeadsChanged);
-    on<SaleAddonQtyChanged>(_onAddonQtyChanged);
-    on<SaleAddonIncremented>(_onAddonIncremented);
-    on<SaleNotesSaved>(_onNotesSaved);
-    on<SaleRoundSent>(_onRoundSent);
-    on<SaleSentItemAdjusted>(_onSentItemAdjusted);
-    on<SalePaymentStepChanged>(_onPaymentStepChanged);
-    on<SalePaymentMethodSelected>(
-      (e, emit) => emit(
-        state.copyWith(payMethodId: e.methodId, transferStatus: 'waiting'),
-      ),
-    );
-    on<SaleCashReceivedChanged>(
-      (e, emit) => emit(state.copyWith(cashReceived: e.value)),
-    );
-    on<SaleTransferStatusChanged>(
-      (e, emit) => emit(state.copyWith(transferStatus: e.status)),
-    );
-    on<SaleBankAccountSelected>(
-      (e, emit) => emit(state.copyWith(bankAccountId: e.bankAccountId)),
-    );
-    on<SalePaymentSubmitted>(_onPaymentSubmitted);
-    on<SaleSettledBillVoided>(_onSettledBillVoided);
-    on<SaleOpenTableCancelled>(_onOpenTableCancelled);
-    on<SaleReceiptDismissed>(
-      (e, emit) => emit(state.copyWith(clearSettledBill: true)),
-    );
-    on<SaleTableClosed>(_onTableClosed);
-    on<SaleToastCleared>((e, emit) => emit(state.copyWith(toastMessage: '')));
-    on<SalePosStateUpdated>(
-      (e, emit) => emit(state.copyWith(posState: _repository.state)),
-    );
+    on<SaleEvent>(_dispatch, transformer: sequentialEvents());
 
     _sub = _repository.stream.listen((_) => add(const SalePosStateUpdated()));
   }
@@ -83,6 +41,58 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
       toastMessage: toast,
     ),
   );
+
+  /// Runs every event in one queue so async handlers cannot overlap.
+  Future<void> _dispatch(SaleEvent event, Emitter<SaleState> emit) async {
+    switch (event) {
+      case final SaleTableSelected e:
+        emit(SaleState.blankCart(_repository.state, e.tableId, now: _fixedNow));
+      case final SalePackageSelected e:
+        emit(state.copyWith(pkgId: e.packageId));
+      case final SaleTimingChanged e:
+        emit(state.copyWith(timing: e.timing));
+      case final SaleCategorySelected e:
+        emit(state.copyWith(selectedCategory: e.category));
+      case final SaleHeadsChanged e:
+        _onHeadsChanged(e, emit);
+      case final SaleAddonQtyChanged e:
+        _onAddonQtyChanged(e, emit);
+      case final SaleAddonIncremented e:
+        _onAddonIncremented(e, emit);
+      case final SaleNotesSaved e:
+        await _onNotesSaved(e, emit);
+      case final SaleRoundSent e:
+        await _onRoundSent(e, emit);
+      case final SaleSentItemAdjusted e:
+        await _onSentItemAdjusted(e, emit);
+      case final SalePaymentStepChanged e:
+        _onPaymentStepChanged(e, emit);
+      case final SalePaymentMethodSelected e:
+        emit(
+          state.copyWith(payMethodId: e.methodId, transferStatus: 'waiting'),
+        );
+      case final SaleCashReceivedChanged e:
+        emit(state.copyWith(cashReceived: e.value));
+      case final SaleTransferStatusChanged e:
+        emit(state.copyWith(transferStatus: e.status));
+      case final SaleBankAccountSelected e:
+        emit(state.copyWith(bankAccountId: e.bankAccountId));
+      case final SalePaymentSubmitted e:
+        await _onPaymentSubmitted(e, emit);
+      case final SaleSettledBillVoided e:
+        await _onSettledBillVoided(e, emit);
+      case final SaleOpenTableCancelled e:
+        await _onOpenTableCancelled(e, emit);
+      case SaleReceiptDismissed():
+        emit(state.copyWith(clearSettledBill: true));
+      case final SaleTableClosed e:
+        await _onTableClosed(e, emit);
+      case SaleToastCleared():
+        emit(state.copyWith(toastMessage: ''));
+      case SalePosStateUpdated():
+        emit(state.copyWith(posState: _repository.state));
+    }
+  }
 
   void _onHeadsChanged(SaleHeadsChanged event, Emitter<SaleState> emit) => emit(
     state.copyWith(
@@ -117,57 +127,55 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
     emit,
   );
 
-  void _onNotesSaved(SaleNotesSaved event, Emitter<SaleState> emit) {
+  Future<void> _onNotesSaved(
+    SaleNotesSaved event,
+    Emitter<SaleState> emit,
+  ) async {
     final trimmed = event.notes.trim();
     if (state.openTable != null) {
-      final nextPos = _repository.update(
-        (s) => s.openTables[state.tableId]?.notes = trimmed,
-      );
+      final nextPos = await _repository.setTableNotes(state.tableId, trimmed);
       emit(state.copyWith(posState: nextPos, toastMessage: 'บันทึกโน้ตแล้ว'));
     } else {
       emit(state.copyWith(notes: trimmed, toastMessage: 'บันทึกโน้ตแล้ว'));
     }
   }
 
-  void _onRoundSent(SaleRoundSent event, Emitter<SaleState> emit) {
+  Future<void> _onRoundSent(
+    SaleRoundSent event,
+    Emitter<SaleState> emit,
+  ) async {
     final tb = state.table;
     final pkg = state.activePackage;
     if (tb == null || pkg == null || !state.canSend) return;
-    final nextPos = _repository.update(
-      (s) => sendRound(
-        s,
-        tb,
-        state.cartTotals,
-        event.staff,
-        state.effectiveTiming,
-        pkg.id,
-        state.notes,
-        now: event.now ?? _fixedNow,
-      ),
+    final nextPos = await _repository.sendOrderRound(
+      table: tb,
+      cart: state.cartTotals,
+      staff: event.staff,
+      timing: state.effectiveTiming,
+      packageId: pkg.id,
+      notes: state.notes,
+      now: event.now ?? _fixedNow,
     );
     _emitReset(emit, nextPos, toast: 'ส่งออเดอร์โต๊ะ ${tb.name} แล้ว');
   }
 
-  void _onSentItemAdjusted(
+  Future<void> _onSentItemAdjusted(
     SaleSentItemAdjusted event,
     Emitter<SaleState> emit,
-  ) {
+  ) async {
     if (event.staff.role == 'cashier') {
       emit(state.copyWith(toastMessage: 'ผู้จัดการขึ้นไปเท่านั้น'));
       return;
     }
     if (event.reason.trim().isEmpty || event.qty <= 0) return;
-    final nextPos = _repository.update(
-      (s) => adjustSent(
-        s,
-        state.tableId,
-        event.kind,
-        event.key,
-        event.qty,
-        event.reason.trim(),
-        event.staff,
-        now: event.now ?? _fixedNow,
-      ),
+    final nextPos = await _repository.adjustSentItem(
+      tableId: state.tableId,
+      kind: event.kind,
+      key: event.key,
+      qty: event.qty,
+      reason: event.reason.trim(),
+      staff: event.staff,
+      now: event.now ?? _fixedNow,
     );
     emit(state.copyWith(posState: nextPos, toastMessage: 'ลบรายการแล้ว'));
   }
@@ -196,10 +204,10 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
     }
   }
 
-  void _onPaymentSubmitted(
+  Future<void> _onPaymentSubmitted(
     SalePaymentSubmitted event,
     Emitter<SaleState> emit,
-  ) {
+  ) async {
     final tb = state.table;
     final pkg = state.activePackage;
     final method = state.activePaymentMethod;
@@ -216,67 +224,63 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
     final recv = method.type == 'cash'
         ? state.cashReceivedAmount
         : state.payOrder.total;
-    final nextPos = _repository.update(
-      (s) => settle(
-        s,
-        tb,
-        state.cartTotals,
-        event.staff,
-        timing: state.effectiveTiming,
-        pkgId: pkg.id,
-        method: method,
-        received: recv,
-        billId: billId,
-        bankAccount: state.activeBankAccount,
-        notes: state.notes,
-        now: currentNow,
-      ),
+    final nextPos = await _repository.settleOrder(
+      table: tb,
+      cart: state.cartTotals,
+      staff: event.staff,
+      timing: state.effectiveTiming,
+      packageId: pkg.id,
+      method: method,
+      received: recv,
+      billId: billId,
+      bankAccount: state.activeBankAccount,
+      notes: state.notes,
+      now: currentNow,
     );
     _emitReset(emit, nextPos, settledBillId: billId);
   }
 
-  void _onSettledBillVoided(
+  Future<void> _onSettledBillVoided(
     SaleSettledBillVoided event,
     Emitter<SaleState> emit,
-  ) {
+  ) async {
     final targetId = event.billId ?? state.settledBillId;
     if (targetId == null) return;
-    var ok = false;
-    final nextPos = _repository.update(
-      (s) => ok = voidBill(
-        s,
-        billId: targetId,
-        me: event.staff,
-        allowCashier: true,
-        reason: event.reason.trim().isEmpty
-            ? 'ลูกค้าเปลี่ยนใจไม่รับประทาน'
-            : event.reason,
-        now: _fixedNow,
-      ),
+    final ok = await _repository.voidSale(
+      billId: targetId,
+      staff: event.staff,
+      allowCashier: true,
+      reason: event.reason.trim().isEmpty
+          ? 'ลูกค้าเปลี่ยนใจไม่รับประทาน'
+          : event.reason,
+      now: _fixedNow,
     );
     if (ok) {
-      _emitReset(emit, nextPos, toast: 'ยกเลิกบิลและคืนสถานะโต๊ะเรียบร้อย');
+      _emitReset(
+        emit,
+        _repository.state,
+        toast: 'ยกเลิกบิลและคืนสถานะโต๊ะเรียบร้อย',
+      );
     }
   }
 
-  void _onOpenTableCancelled(
+  Future<void> _onOpenTableCancelled(
     SaleOpenTableCancelled event,
     Emitter<SaleState> emit,
-  ) {
+  ) async {
     final tb = state.table;
     if (tb == null) return;
-    final nextPos = _repository.update(
-      (s) => cancelOpenTable(s, state.tableId),
-    );
+    final nextPos = await _repository.cancelTable(state.tableId);
     _emitReset(emit, nextPos, toast: 'ยกเลิกรายการโต๊ะ ${tb.name} เรียบร้อย');
   }
 
-  void _onTableClosed(SaleTableClosed event, Emitter<SaleState> emit) {
+  Future<void> _onTableClosed(
+    SaleTableClosed event,
+    Emitter<SaleState> emit,
+  ) async {
     final tb = state.table;
     if (tb == null || state.due > 0) return;
-    final nextPos = _repository.update(
-      (s) => s.openTables.remove(state.tableId),
-    );
+    final nextPos = await _repository.closeTable(state.tableId);
     _emitReset(emit, nextPos, toast: 'เก็บโต๊ะ ${tb.name} แล้ว');
   }
 
