@@ -174,10 +174,9 @@ Future<String> shopIdOf(SupabaseClient owner, E2eShop shop) async {
 
 /// Visible text, to show where a timed-out test was stuck.
 String _screenText() => find
-    .byType(Text)
+    .byType(RichText)
     .evaluate()
-    .map((e) => (e.widget as Text).data)
-    .whereType<String>()
+    .map((e) => (e.widget as RichText).text.toPlainText())
     .where((t) => t.trim().isNotEmpty)
-    .take(40)
+    .take(80)
     .join(' | ');
