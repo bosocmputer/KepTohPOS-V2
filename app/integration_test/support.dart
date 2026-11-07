@@ -1,4 +1,5 @@
 import 'package:app/core/widgets/widgets.dart';
+import 'package:app/main.dart' as app;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -19,7 +20,9 @@ Future<void> waitFor(
     await tester.pump(const Duration(milliseconds: 100));
     if (finder.evaluate().isNotEmpty) return;
   }
-  throw TestFailure('Timed out waiting for $finder');
+  throw TestFailure(
+    'Timed out waiting for $finder\nOn screen: ${_screenText()}',
+  );
 }
 
 /// Pumps until [finder] no longer matches.
@@ -93,3 +96,88 @@ Future<SupabaseClient> ownerClient(String email, String password) async {
   await client.auth.signInWithPassword(email: email, password: password);
   return client;
 }
+
+/// Types [text] into the form field labelled [label].
+Future<void> typeIntoField(
+  WidgetTester tester,
+  String label,
+  String text,
+) async {
+  final field = find.descendant(
+    of: find.byWidgetPredicate((w) => w is Field && w.label == label),
+    matching: find.byType(EditableText),
+  );
+  await waitFor(tester, field);
+  await tester.enterText(field.first, text);
+  await tester.pump(const Duration(milliseconds: 200));
+}
+
+/// A freshly signed-up owner and the shop they created.
+class E2eShop {
+  const new({
+    required this.email,
+    required this.password,
+    required this.shopName,
+  });
+
+  final String email;
+  final String password;
+  final String shopName;
+}
+
+/// Starts the app, signs up a new owner and creates a shop with PIN 1234,
+/// ending on the staff PIN screen.
+Future<E2eShop> createShop(WidgetTester tester) async {
+  final stamp = DateTime.now().millisecondsSinceEpoch;
+  final shop = E2eShop(
+    email: 'e2e-$stamp@example.test',
+    password: 'e2e-pass-$stamp',
+    shopName: 'ร้าน E2E $stamp',
+  );
+  await app.main();
+  await tapKey(tester, 'choose-owner-btn');
+  await typeInto(tester, 'owner-email-input', shop.email);
+  await typeInto(tester, 'owner-password-input', shop.password);
+  await tapKey(tester, 'owner-signup-btn');
+  await typeInto(tester, 'shop-name-input', shop.shopName);
+  await typeInto(tester, 'owner-name-input', 'เจ้าของ E2E');
+  await tapKey(tester, 'shop-next-btn');
+  await typeOnPad(tester, '1234');
+  await waitFor(tester, find.text('ยืนยัน PIN อีกครั้ง'));
+  await typeOnPad(tester, '1234');
+  await waitFor(tester, find.text('เข้าสู่ระบบ'));
+  return shop;
+}
+
+/// Enters [pin] on the login screen and opens the shift if asked to.
+Future<void> signInAndOpenShift(WidgetTester tester, String pin) async {
+  await typeOnPad(tester, pin);
+  await waitForServer(tester);
+  final openShift = find.byKey(const ValueKey('open-shift-submit-btn'));
+  await waitFor(tester, find.textContaining('กะ'));
+  if (openShift.evaluate().isNotEmpty) {
+    await tapKey(tester, 'open-shift-submit-btn');
+    await waitForServer(tester);
+  }
+  await waitFor(tester, find.text('กะเปิด'));
+}
+
+/// The shop's id, read with the owner's own login.
+Future<String> shopIdOf(SupabaseClient owner, E2eShop shop) async {
+  final row = await owner
+      .from('shops')
+      .select('id')
+      .eq('name', shop.shopName)
+      .single();
+  return row['id'] as String;
+}
+
+/// Visible text, to show where a timed-out test was stuck.
+String _screenText() => find
+    .byType(Text)
+    .evaluate()
+    .map((e) => (e.widget as Text).data)
+    .whereType<String>()
+    .where((t) => t.trim().isNotEmpty)
+    .take(40)
+    .join(' | ');

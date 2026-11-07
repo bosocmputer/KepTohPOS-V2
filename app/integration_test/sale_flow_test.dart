@@ -1,4 +1,3 @@
-import 'package:app/main.dart' as app;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -13,33 +12,12 @@ void main() {
   testWidgets('owner opens a shop and sells a pay-later table for cash', (
     tester,
   ) async {
-    final stamp = DateTime.now().millisecondsSinceEpoch;
-    final email = 'e2e-$stamp@example.test';
-    final password = 'e2e-pass-$stamp';
-    final shopName = 'ร้าน E2E $stamp';
-
     // Arrange: sign up and create the shop with PIN 1234 entered twice.
-    await app.main();
-    await tapKey(tester, 'choose-owner-btn');
-    await typeInto(tester, 'owner-email-input', email);
-    await typeInto(tester, 'owner-password-input', password);
-    await tapKey(tester, 'owner-signup-btn');
-    await typeInto(tester, 'shop-name-input', shopName);
-    await typeInto(tester, 'owner-name-input', 'เจ้าของ E2E');
-    await tapKey(tester, 'shop-next-btn');
-    await typeOnPad(tester, '1234');
-    await waitFor(tester, find.text('ยืนยัน PIN อีกครั้ง'));
-    await typeOnPad(tester, '1234');
-    await waitFor(tester, find.text('เข้าสู่ระบบ'));
+    final e2e = await createShop(tester);
 
     // Catalog set up directly; the setup screens have their own test.
-    final owner = await ownerClient(email, password);
-    final shop = await owner
-        .from('shops')
-        .select('id')
-        .eq('name', shopName)
-        .single();
-    final shopId = shop['id'] as String;
+    final owner = await ownerClient(e2e.email, e2e.password);
+    final shopId = await shopIdOf(owner, e2e);
     await owner.from('packages').insert(<String, dynamic>{
       'shop_id': shopId,
       'name': 'บุฟเฟต์ 399',
@@ -72,10 +50,7 @@ void main() {
     ]);
 
     // Act: sign in with the PIN and open the shift.
-    await typeOnPad(tester, '1234');
-    await tapKey(tester, 'open-shift-submit-btn');
-    await waitForServer(tester);
-    await waitFor(tester, find.text('กะเปิด'));
+    await signInAndOpenShift(tester, '1234');
 
     // Act: table A1, pay later, 2 adults + 1 child, two rounds of drinks.
     await tapOn(tester, find.text('+ เปิดโต๊ะ'));
