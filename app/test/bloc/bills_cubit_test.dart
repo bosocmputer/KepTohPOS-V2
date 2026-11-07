@@ -91,9 +91,14 @@ void main() {
       'filters by search query across bill no, table, method, and cashier',
       build: () => BillsCubit(_buildSeededBillsRepo(fixedNow), now: fixedNow),
       act: (cubit) {
+        // The owner rang up b12; read the name so renaming staff in the
+        // fixture does not break the search.
+        final owner = cubit.state.posState.staff.firstWhere(
+          (s) => s.role == 'owner',
+        );
         cubit
           ..setSearchQuery('261104-005')
-          ..setSearchQuery('คุณแอน');
+          ..setSearchQuery(owner.name);
       },
       expect: () => <Matcher>[
         isA<BillsState>()
