@@ -36,10 +36,10 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
     const pkg = PackageItem(
       id: 'pk1',
       name: 'บุฟเฟต์หมูกระทะ',
-      adultPrice: 199,
-      childPrice: 99,
+      adultPrice: 19900,
+      childPrice: 9900,
     );
-    AddonLineInput ad(String id, String n, double p, int q) => AddonLineInput(
+    AddonLineInput ad(String id, String n, int p, int q) => AddonLineInput(
       addon: AddonItem(
         id: id,
         name: n,
@@ -51,8 +51,8 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
       qty: q,
     );
     final order = calcOrder(_v, pkg, 3, 1, 0, [
-      ad('ad1', 'เบียร์สิงห์ ขวดใหญ่', 90, 2),
-      ad('ad2', 'น้ำแข็งถัง', 20, 1),
+      ad('ad1', 'เบียร์สิงห์ ขวดใหญ่', 9000, 2),
+      ad('ad2', 'น้ำแข็งถัง', 2000, 1),
     ]);
     return BillRecord(
       id: 'pv',
@@ -74,8 +74,8 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
       methodId: 'pm1',
       methodName: 'เงินสด',
       methodType: 'cash',
-      received: 1000,
-      change: r2(1000 - order.total),
+      received: 100000,
+      change: 100000 - order.total,
       vatMode: _v.vatMode,
       vatRate: _v.vatRate,
     );
@@ -188,8 +188,8 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
                   _row(
                     _txt(
                       'เงินทอนตั้งต้นกะ (บาท)',
-                      fmtQ(_v.defaultFloat),
-                      (s) => _v.copyWith(defaultFloat: double.tryParse(s) ?? 0),
+                      bahtInputText(_v.defaultFloat),
+                      (s) => _v.copyWith(defaultFloat: parseBaht(s)),
                       numKey: true,
                     ),
                     _txt(

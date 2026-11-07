@@ -217,7 +217,7 @@ class LocationCountTable extends StatelessWidget {
               Expanded(
                 flex: 2,
                 child: Text(
-                  costVal != null ? fmt(costVal) : '–',
+                  costVal != null ? fmtBaht(costVal) : '–',
                   textAlign: TextAlign.right,
                   style: tt.bodyMedium?.copyWith(
                     color: costVal != null ? t.ink : t.muted,

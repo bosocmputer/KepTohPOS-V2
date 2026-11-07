@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:app/core/data/mock_fallback_state.dart';
+import 'package:app/core/data/mock_pos_commands.dart';
+import 'package:app/core/data/mock_pos_setup_commands.dart';
 import 'package:app/core/data/web_storage.dart';
 import 'package:app/domain/domain.dart';
 import 'package:flutter/services.dart';
@@ -11,7 +14,9 @@ const String _kStaffStorageKey = 'keptoh_pos_v2_staff_v2';
 /// In-memory implementation of [PosRepository] backed by `assets/mock/*.json`
 /// and `seed()`. Copies [PosState] only on [update], while [state] returns the
 /// frozen read-only snapshot in O(1) without copying.
-class MockPosRepository implements PosRepository {
+class MockPosRepository
+    with MockPosCommands, MockPosSetupCommands
+    implements PosRepository {
   new({required PosState initialState, String? sessionStaffId})
     : _state = initialState.copy().freeze() {
     _sessionStaffId = sessionStaffId;
@@ -66,70 +71,7 @@ class MockPosRepository implements PosRepository {
   /// Synchronous minimal fallback for widget tests that do not call
   /// `configureDependencies()` before pumping `KepTohApp`.
   factory createFallback({DateTime? now, String? sessionStaffId = 'st1'}) {
-    final currentNow = now ?? DateTime(2026, 11, 4, 12);
-    final state = PosState(
-      startDate: '2026-10-05',
-      shop: const ShopConfig(
-        name: 'จ่าโบ้หมูกะทะ',
-        address:
-            '95/7 Faham , Muang Chiang Mai, Chiang Mai, Thailand, Chiang Mai',
-        phone: '082 929 5566',
-        promptpay: '0829295566',
-      ),
-      packages: const <PackageItem>[
-        PackageItem(
-          id: 'pk1',
-          name: 'บุฟเฟต์หมู',
-          adultPrice: 199,
-          childPrice: 99,
-        ),
-        PackageItem(
-          id: 'pk2',
-          name: 'หมู + ทะเล',
-          adultPrice: 279,
-          childPrice: 139,
-          timeLimit: 120,
-        ),
-      ],
-      addons: <AddonItem>[
-        AddonItem(
-          id: 'ad1',
-          name: 'น้ำเปล่า',
-          category: 'เครื่องดื่ม',
-          price: 15,
-          cost: 6,
-          stock: 96,
-        ),
-      ],
-      suppliers: const <SupplierItem>[SupplierItem(id: 'sup1', name: 'ตลาดสด')],
-      ingredients: const <IngredientItem>[],
-      tables: const <DiningTable>[
-        DiningTable(id: 't1', name: 'A1', seats: 4, zone: 'ในร้าน'),
-      ],
-      staff: const <StaffMember>[
-        StaffMember(id: 'st1', name: 'อัย', role: 'owner', pin: '1234'),
-        StaffMember(id: 'st2', name: 'ไอติม', role: 'manager', pin: '2222'),
-        StaffMember(id: 'st3', name: 'เนส', role: 'cashier', pin: '1111'),
-      ],
-      payments: const <PaymentMethod>[
-        PaymentMethod(id: 'pm1', name: 'เงินสด', type: 'cash'),
-        PaymentMethod(id: 'pm2', name: 'QR พร้อมเพย์', type: 'qr'),
-        PaymentMethod(id: 'pm3', name: 'โอนเงิน', type: 'transfer'),
-      ],
-      expenseTypes: const <ExpenseType>[ExpenseType(id: 'et1', name: 'แก๊ส')],
-      fixedCosts: const <FixedCostItem>[],
-      shifts: <ShiftRecord>[
-        ShiftRecord(
-          id: 'sh1',
-          staffId: 'st3',
-          openedAt: currentNow
-              .subtract(const Duration(hours: 3))
-              .toUtc()
-              .toIso8601String(),
-          floatAmount: 1000,
-        ),
-      ],
-    );
+    final state = buildFallbackState(now ?? DateTime(2026, 11, 4, 12));
     return MockPosRepository(
       initialState: state,
       sessionStaffId: sessionStaffId,
@@ -195,6 +137,7 @@ class MockPosRepository implements PosRepository {
     return repo;
   }
 
+  static int _billSeq = 0;
   PosState _state;
   String? _sessionStaffId;
   bool _persistWeb = false;
@@ -239,7 +182,7 @@ class MockPosRepository implements PosRepository {
     return _state;
   }
 
-  @override
+  /// Updates the active session staff ID (`null` to sign out).
   void setSessionStaffId(String? staffId) {
     _sessionStaffId = staffId;
     if (staffId != null) {
@@ -250,6 +193,32 @@ class MockPosRepository implements PosRepository {
         _controller.add(_state);
       }
     }
+  }
+
+  @override
+  bool get isDemoData => true;
+
+  @override
+  bool get canEditSetup => true;
+
+  @override
+  bool get canReadCosts => true;
+
+  @override
+  Future<PinSignInResult> signInWithPin(String staffId, String pin) async {
+    final who = _state.staff.where((x) => x.id == staffId).firstOrNull;
+    if (who == null || who.pin != pin) return PinSignInResult.invalid;
+    setSessionStaffId(staffId);
+    return PinSignInResult.success;
+  }
+
+  @override
+  Future<void> signOutStaff() async => setSessionStaffId(null);
+
+  @override
+  String newBillId(DateTime now) {
+    _billSeq = (_billSeq + 1) & 0xFFFFF;
+    return 'b${now.millisecondsSinceEpoch.toRadixString(36)}$_billSeq';
   }
 
   @override

@@ -83,11 +83,22 @@ String fmtInputNum(String raw) {
   return parts.length > 1 ? '$intPart.${parts.sublist(1).join()}' : intPart;
 }
 
-/// Formats an amount in Thai Baht (`baht` in `prototype/index.html`).
-String baht(num? n, [int decimals = 0]) {
-  if (n == null || n.isNaN) return '–';
-  return '฿${fmt(n, decimals)}';
+/// Formats a [satang] amount in Thai Baht (`baht` in `prototype/index.html`).
+String baht(num? satang, [int decimals = 0]) {
+  if (satang == null || satang.isNaN) return '–';
+  return '฿${fmt(satang / 100, decimals)}';
 }
+
+/// Formats a [satang] amount with thousand separators, without the currency
+/// sign (tables and chart labels).
+String fmtBaht(num? satang, [int decimals = 0]) =>
+    fmt(satang == null ? null : satang / 100, decimals);
+
+/// Formats [satang] as the plain baht text used in number inputs
+/// (`199`, `199.50`).
+String bahtInputText(int satang) => satang % 100 == 0
+    ? (satang ~/ 100).toString()
+    : (satang / 100).toStringAsFixed(2);
 
 /// Formats a `YYYY-MM-DD` key as Thai short date (`thDate` in `index.html`).
 String thDate(String key) {

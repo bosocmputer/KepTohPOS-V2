@@ -4,9 +4,12 @@
   - `supabase/migrations/*`, `supabase/tests/rls_test.sql`: F0 → `supabase test db` ผ่าน 57/57 (local) · `supabase db push` ขึ้นโปรเจกต์ `pbujdexhdzglymgnbsuw` แล้ว · `supabase migration list --linked` ตรงครบ 5 ไฟล์
   - LINE Login: `custom:line` แบบ Manual configuration ล็อกอินจริงสำเร็จ (Auto-discovery ใช้ไม่ได้ น่าจะเพราะ LINE web login เซ็น ID token ด้วย HS256) · เปิด anonymous sign-ins แล้ว
 - **Next Immediate Step:**
-  - รอผู้ใช้ยืนยันแผน F1 และการเพิ่มแพ็กเกจ `supabase_flutter` ก่อนแก้โค้ด
-  - migration ใหม่ `supabase/migrations/`: session พนักงาน (เก็บ hash) + `settle_bill`/`void_bill`/`close_shift` + ถอนสิทธิ์เครื่องอ่านข้อมูลต้นทุนตรง
+  - F1 โค้ดครบบนกิ่ง `flutter/f1-supabase` ยังไม่ push/merge · migration 000600-001100 ยังไม่ขึ้นโปรเจกต์จริง · อย่า merge เข้า `main` จนกว่าผู้ใช้สั่ง
+  - ถัดไป: ผู้ใช้สั่ง `supabase db push`, ตั้ง Site URL/Redirect + env บน Vercel Preview (`POS_BACKEND=supabase`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`) แล้วทดสอบ LINE จริงบน Preview
+  - ยังเหลือ: แคชเชียร์เห็นต้นทุนเป็น ฿0 และไม่เห็นรายการซื้อ/ค่าใช้จ่ายของวัน (ต้องตัดสินใจ) · ยังไม่มีปุ่ม Google · การเชิญผู้จัดการ · captcha
+  - ปัญหาเดิมบน `main`: `test/bloc/bills_cubit_test.dart` ค้นชื่อ `คุณแอน` · golden ตก 50/54 ข้อ
 - **Known Constraints / Decisions:**
+  - เงินที่บันทึกเป็น `int` สตางค์ · ค่าคำนวณใน ledger/รายงานเป็น `double` หน่วยสตางค์ · แปลงข้อมูลเก่าที่ `PosState.fromJson` (`state_migration.dart`)
   - Session พนักงาน 12 ชม. สลับคนได้ · แคชเชียร์ไม่เห็นต้นทุน · ยกเลิกบิลออฟไลน์ไม่ได้ · ตั้งค่าร้านต้องล็อกอินบัญชีจริง · ออฟไลน์ตรวจ PIN ในเครื่อง + ตรวจซ้ำตอน sync
   - ก่อนเปิดร้านจริง: เปิด captcha (anonymous), เปลี่ยน LINE channel เป็น Published, ออกแบบการเชิญผู้จัดการ, ตั้ง Site URL
   - ฟรีทั้ง DB/Backend · ออฟไลน์ต้องขายได้ (F2) · เงินเก็บเป็นสตางค์ · ห้ามอ่าน `.env*` · ไฟล์ `app/lib/**/*.dart` ≤ 300 บรรทัด

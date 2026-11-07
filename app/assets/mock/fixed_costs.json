@@ -2,25 +2,25 @@
   {
     "id": "fc1",
     "name": "ค่าเช่าร้าน",
-    "amount": 15000,
+    "amount": 1500000,
     "active": true
   },
   {
     "id": "fc2",
     "name": "ค่าแรงพนักงาน (2 คน)",
-    "amount": 24000,
+    "amount": 2400000,
     "active": true
   },
   {
     "id": "fc3",
     "name": "ค่าน้ำ-ไฟ",
-    "amount": 6500,
+    "amount": 650000,
     "active": true
   },
   {
     "id": "fc4",
     "name": "อินเทอร์เน็ต / แอป",
-    "amount": 600,
+    "amount": 60000,
     "active": true
   }
 ]

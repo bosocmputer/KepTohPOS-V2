@@ -219,7 +219,7 @@ class DashboardBreakdownGrid extends StatelessWidget {
           _col(
             'v',
             'บาท',
-            (x) => Text(fmt(x.cost), style: bold),
+            (x) => Text(fmtBaht(x.cost), style: bold),
             2,
             ColAlign.right,
           ),
@@ -261,11 +261,11 @@ class DashboardBreakdownGrid extends StatelessWidget {
             4,
           ),
           _col('q', 'จำนวน', (x) => Text(fmt(x.qty)), 2, ColAlign.right),
-          _col('rev', 'ยอดขาย', (x) => Text(fmt(x.rev)), 2, ColAlign.right),
+          _col('rev', 'ยอดขาย', (x) => Text(fmtBaht(x.rev)), 2, ColAlign.right),
           _col(
             'gp',
             'กำไร',
-            (x) => Text(fmt(x.grossProfit), style: gpText),
+            (x) => Text(fmtBaht(x.grossProfit), style: gpText),
             2,
             ColAlign.right,
           ),

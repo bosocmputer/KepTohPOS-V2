@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app/domain/domain.dart';
+import 'package:app/domain/pos_command_exception.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -11,6 +12,8 @@ class AuthState extends Equatable {
     required this.selectedStaffId,
     this.pin = '',
     this.error = '',
+    this.checking = false,
+    this.isDemoData = true,
     this.currentStaff,
     this.hasOpenShift = false,
     this.shouldPromptOpenShift = false,
@@ -23,12 +26,18 @@ class AuthState extends Equatable {
   final String selectedStaffId;
   final String pin;
   final String error;
+
+  /// Whether the entered PIN is being checked by the server.
+  final bool checking;
   final StaffMember? currentStaff;
   final bool hasOpenShift;
   final bool shouldPromptOpenShift;
   final LedgerDaySummary? lastClosedDay;
   final double heroProfitValue;
   final bool showNetProfit;
+
+  /// Whether sample wording and demo PIN hints may be shown.
+  final bool isDemoData;
 
   bool get isAuthenticated => currentStaff != null;
 
@@ -44,6 +53,7 @@ class AuthState extends Equatable {
     String? selectedStaffId,
     String? pin,
     String? error,
+    bool? checking,
     StaffMember? Function()? currentStaff,
     bool? hasOpenShift,
     bool? shouldPromptOpenShift,
@@ -55,12 +65,14 @@ class AuthState extends Equatable {
     selectedStaffId: selectedStaffId ?? this.selectedStaffId,
     pin: pin ?? this.pin,
     error: error ?? this.error,
+    checking: checking ?? this.checking,
     currentStaff: currentStaff != null ? currentStaff() : this.currentStaff,
     hasOpenShift: hasOpenShift ?? this.hasOpenShift,
     shouldPromptOpenShift: shouldPromptOpenShift ?? this.shouldPromptOpenShift,
     lastClosedDay: lastClosedDay != null ? lastClosedDay() : this.lastClosedDay,
     heroProfitValue: heroProfitValue ?? this.heroProfitValue,
     showNetProfit: showNetProfit ?? this.showNetProfit,
+    isDemoData: isDemoData,
   );
 
   @override
@@ -69,6 +81,7 @@ class AuthState extends Equatable {
     selectedStaffId,
     pin,
     error,
+    checking,
     currentStaff?.id,
     hasOpenShift,
     shouldPromptOpenShift,
@@ -117,8 +130,9 @@ class AuthCubit extends Cubit<AuthState> {
       s,
       today: businessDayKey(now, s.shop.dayCutoffMinutes),
     );
+    // Without cost data the login card would show a wrong profit, so hide it.
     LedgerDaySummary? lastClosed;
-    for (var i = ledger.days.length - 1; i >= 0; i--) {
+    for (var i = repo.canReadCosts ? ledger.days.length - 1 : -1; i >= 0; i--) {
       if (ledger.days[i].closed) {
         lastClosed = ledger.days[i];
         break;
@@ -130,6 +144,7 @@ class AuthCubit extends Cubit<AuthState> {
         : 0.0;
 
     return AuthState(
+      isDemoData: repo.isDemoData,
       staff: activeStaff,
       selectedStaffId: selId,
       pin: pin,
@@ -169,7 +184,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   /// Validates the 4-digit PIN and logs in when valid (`submit` in `Login`).
-  bool submitPin([String? pinOverride]) {
+  Future<bool> submitPin([String? pinOverride]) async {
     final who = state.selectedStaff;
     if (who == null) return false;
     final v = pinOverride ?? state.pin;
@@ -177,13 +192,28 @@ class AuthCubit extends Cubit<AuthState> {
       emit(state.copyWith(error: 'ใส่ PIN ให้ครบ 4 หลัก'));
       return false;
     }
-    if (v != who.pin) {
-      emit(state.copyWith(pin: '', error: 'PIN ไม่ถูกต้อง ลองใหม่อีกครั้ง'));
+    _mutatingSession = true;
+    // Only a slow reply shows "checking", so a fast one does not flicker.
+    final slow = Timer(const Duration(milliseconds: 150), () {
+      if (!isClosed) emit(state.copyWith(checking: true));
+    });
+    final PinSignInResult result;
+    try {
+      result = await _repository.signInWithPin(who.id, v);
+    } on PosCommandException catch (e) {
+      emit(state.copyWith(pin: '', error: e.message, checking: false));
+      return false;
+    } finally {
+      slow.cancel();
+      _mutatingSession = false;
+    }
+    if (result != PinSignInResult.success) {
+      final message = result == PinSignInResult.locked
+          ? 'ใส่ PIN ผิดหลายครั้ง กรุณาลองใหม่ภายหลัง'
+          : 'PIN ไม่ถูกต้อง ลองใหม่อีกครั้ง';
+      emit(state.copyWith(pin: '', error: message, checking: false));
       return false;
     }
-    _mutatingSession = true;
-    _repository.setSessionStaffId(who.id);
-    _mutatingSession = false;
     final hasShift = openShiftOf(_repository.state) != null;
     _syncFromRepo(shouldPromptOpenShift: !hasShift);
     return true;
@@ -195,10 +225,13 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   /// Signs out the current staff member (`logout` in `prototype/index.html`).
-  void logout() {
+  Future<void> logout() async {
     _mutatingSession = true;
-    _repository.setSessionStaffId(null);
-    _mutatingSession = false;
+    try {
+      await _repository.signOutStaff();
+    } finally {
+      _mutatingSession = false;
+    }
     emit(
       _buildStateFromRepo(
         _repository,

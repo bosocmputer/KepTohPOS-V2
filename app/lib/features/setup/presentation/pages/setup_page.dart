@@ -6,6 +6,7 @@ import 'package:app/features/setup/presentation/widgets/setup_catalog_panels.dar
 import 'package:app/features/setup/presentation/widgets/setup_costing_demo_panels.dart';
 import 'package:app/features/setup/presentation/widgets/setup_crud_modals.dart';
 import 'package:app/features/setup/presentation/widgets/setup_nav_sidebar.dart';
+import 'package:app/features/setup/presentation/widgets/setup_owner_login_banner.dart';
 import 'package:app/features/setup/presentation/widgets/setup_shop_costing_panels.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -87,15 +88,15 @@ class _SetupPageState extends State<SetupPage> {
       yesLabel: yesLabel,
       danger: danger,
       onNo: () => setState(() => _demoConfirmKind = null),
-      onYes: () {
+      onYes: () async {
         setState(() => _demoConfirmKind = null);
         switch (kind) {
           case 'clear':
-            cubit.clearDailyTransactions();
+            await cubit.clearDailyTransactions();
           case 'advance':
-            cubit.advanceSimulationDay();
+            await cubit.advanceSimulationDay();
           default:
-            cubit.resetDemoTransactions();
+            await cubit.resetDemoTransactions();
         }
       },
     );
@@ -174,7 +175,12 @@ class _SetupPageState extends State<SetupPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SetupNavSidebar(state: state, onSelectTab: cubit.setTab),
+                    if (!cubit.canEditSetup) const SetupOwnerLoginBanner(),
+                    SetupNavSidebar(
+                      state: state,
+                      onSelectTab: cubit.setTab,
+                      showDemoTab: cubit.isDemoData,
+                    ),
                     const SizedBox(height: AppDimensions.space4),
                     detail,
                   ],
@@ -204,10 +210,10 @@ class _SetupPageState extends State<SetupPage> {
                 yesLabel: 'ลบรายการ',
                 danger: true,
                 onNo: () => setState(() => _deleting = null),
-                onYes: () {
+                onYes: () async {
                   final d = _deleting!;
                   setState(() => _deleting = null);
-                  cubit.deleteItem(
+                  await cubit.deleteItem(
                     section: d.$1,
                     id: d.$2,
                     currentStaffId: widget.currentStaffId,

@@ -43,7 +43,7 @@ class StockBalanceTab extends StatelessWidget {
             children: [
               Stat(
                 label: 'มูลค่าคงเหลือรวม',
-                value: baht(state.totalBalanceValue),
+                value: state.costText(baht(state.totalBalanceValue)),
                 sub: '${allFiltered.length} รายการวัตถุดิบ',
               ),
               Stat(
@@ -135,6 +135,7 @@ class StockBalanceTab extends StatelessWidget {
               rows: rows,
               totalValue: state.totalBalanceValue,
               costLabel: state.costColumnLabel,
+              showCosts: state.showCosts,
             )
           else
             PosDataTable<StockBalanceRow>(
@@ -194,7 +195,7 @@ class StockBalanceTab extends StatelessWidget {
                   label: state.costColumnLabel,
                   align: ColAlign.right,
                   cellBuilder: (context, r) => Text(
-                    fmt(r.unitCost, 2),
+                    state.costText(fmtBaht(r.unitCost, 2)),
                     key: ValueKey('balance-unit-cost-${r.ing.id}'),
                     textAlign: TextAlign.right,
                     style: tt.bodyMedium?.copyWith(color: t.ink),
@@ -205,7 +206,7 @@ class StockBalanceTab extends StatelessWidget {
                   label: 'มูลค่าคงเหลือ',
                   align: ColAlign.right,
                   cellBuilder: (context, r) => Text(
-                    fmt(r.val),
+                    state.costText(fmtBaht(r.val)),
                     key: ValueKey('balance-val-${r.ing.id}'),
                     textAlign: TextAlign.right,
                     style: tt.bodyMedium?.copyWith(
@@ -240,7 +241,7 @@ class StockBalanceTab extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: Text(
-                    baht(state.totalBalanceValue),
+                    state.costText(baht(state.totalBalanceValue)),
                     key: const ValueKey('balance-total-value'),
                     textAlign: TextAlign.right,
                   ),

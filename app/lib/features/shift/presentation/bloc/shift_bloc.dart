@@ -1,6 +1,9 @@
 import 'dart:async';
 
+import 'package:app/core/utils/formatters.dart';
+import 'package:app/core/utils/sequential_events.dart';
 import 'package:app/domain/domain.dart';
+import 'package:app/domain/pos_command_exception.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -30,7 +33,7 @@ final class ShiftFloatInputChanged extends ShiftEvent {
 final class ShiftOpened extends ShiftEvent {
   const new({required this.staffId, this.floatAmount, this.now});
   final String staffId;
-  final double? floatAmount;
+  final int? floatAmount;
   final DateTime? now;
 
   @override
@@ -59,7 +62,7 @@ final class ShiftConfirmCloseToggled extends ShiftEvent {
 final class ShiftClosed extends ShiftEvent {
   const new({required this.staffId, this.counted, this.now});
   final String staffId;
-  final double? counted;
+  final int? counted;
   final DateTime? now;
 
   @override
@@ -91,7 +94,7 @@ class ShiftState extends Equatable {
   final ShiftStats? activeStats;
   final List<ShiftRecord> history;
   final List<DiningTable> owingTables;
-  final double owedTotal;
+  final int owedTotal;
   final String floatInput;
   final String countedInput;
   final bool confirmClose;
@@ -99,13 +102,13 @@ class ShiftState extends Equatable {
 
   bool get isShiftOpen => activeShift != null;
 
-  double? get countedValue {
-    final cleaned = countedInput.replaceAll(',', '').trim();
-    return cleaned.isEmpty ? null : double.tryParse(cleaned);
+  int? get countedValue {
+    final parsed = double.tryParse(countedInput.replaceAll(',', '').trim());
+    return parsed == null ? null : satangFromBaht(parsed);
   }
 
   /// Difference between counted cash and expected cash (`+counted - expected`).
-  double? get diff => (activeStats != null && countedValue != null)
+  int? get diff => (activeStats != null && countedValue != null)
       ? countedValue! - activeStats!.expected
       : null;
 
@@ -166,19 +169,7 @@ class ShiftBloc extends Bloc<ShiftEvent, ShiftState> {
   new(PosRepository repository)
     : _repository = repository,
       super(_buildState(repository.state)) {
-    on<ShiftRefreshed>(_onRefreshed);
-    on<ShiftFloatInputChanged>(
-      (e, emit) => emit(state.copyWith(floatInput: e.value)),
-    );
-    on<ShiftOpened>(_onOpened);
-    on<ShiftCountedInputChanged>(
-      (e, emit) => emit(state.copyWith(countedInput: e.value)),
-    );
-    on<ShiftConfirmCloseToggled>(
-      (e, emit) => emit(state.copyWith(confirmClose: e.show)),
-    );
-    on<ShiftClosed>(_onClosed);
-    on<ShiftToastCleared>((e, emit) => emit(state.copyWith(toastMessage: '')));
+    on<ShiftEvent>(_dispatch, transformer: sequentialEvents());
 
     _sub = _repository.stream.listen((_) => add(const ShiftRefreshed()));
   }
@@ -200,7 +191,7 @@ class ShiftBloc extends Bloc<ShiftEvent, ShiftState> {
     final history = closedShifts.take(14).toList();
 
     final owing = <DiningTable>[];
-    var owed = 0.0;
+    var owed = 0;
     for (final tb in s.tables) {
       final ot = s.openTables[tb.id];
       if (ot != null) {
@@ -212,7 +203,7 @@ class ShiftBloc extends Bloc<ShiftEvent, ShiftState> {
       }
     }
 
-    final defFloat = s.shop.defaultFloat.toInt().toString();
+    final defFloat = bahtInputText(s.shop.defaultFloat);
     return ShiftState(
       posState: s,
       activeShift: active,
@@ -227,6 +218,30 @@ class ShiftBloc extends Bloc<ShiftEvent, ShiftState> {
     );
   }
 
+  /// Runs every event in one queue so async handlers cannot overlap.
+  Future<void> _dispatch(ShiftEvent event, Emitter<ShiftState> emit) async {
+    try {
+      switch (event) {
+        case final ShiftRefreshed e:
+          _onRefreshed(e, emit);
+        case final ShiftFloatInputChanged e:
+          emit(state.copyWith(floatInput: e.value));
+        case final ShiftOpened e:
+          await _onOpened(e, emit);
+        case final ShiftCountedInputChanged e:
+          emit(state.copyWith(countedInput: e.value));
+        case final ShiftConfirmCloseToggled e:
+          emit(state.copyWith(confirmClose: e.show));
+        case final ShiftClosed e:
+          await _onClosed(e, emit);
+        case ShiftToastCleared():
+          emit(state.copyWith(toastMessage: ''));
+      }
+    } on PosCommandException catch (e) {
+      emit(state.copyWith(toastMessage: e.message));
+    }
+  }
+
   void _onRefreshed(ShiftRefreshed event, Emitter<ShiftState> emit) {
     emit(
       _buildState(
@@ -239,28 +254,25 @@ class ShiftBloc extends Bloc<ShiftEvent, ShiftState> {
     );
   }
 
-  void _onOpened(ShiftOpened event, Emitter<ShiftState> emit) {
+  Future<void> _onOpened(ShiftOpened event, Emitter<ShiftState> emit) async {
     final cleaned = state.floatInput.replaceAll(',', '').trim();
-    final amount = event.floatAmount ?? (double.tryParse(cleaned) ?? 0);
-    final nextPos = _repository.update((s) {
-      if (openShiftOf(s) == null) {
-        openShift(
-          s,
-          staffId: event.staffId,
-          floatAmount: amount,
-          now: event.now,
-        );
-      }
-    });
+    final amount = event.floatAmount ?? parseBaht(cleaned);
+    final nextPos = await _repository.openCashShift(
+      staffId: event.staffId,
+      floatAmount: amount,
+      now: event.now,
+    );
     emit(_buildState(nextPos, toastMessage: 'เปิดกะแล้ว'));
   }
 
-  void _onClosed(ShiftClosed event, Emitter<ShiftState> emit) {
+  Future<void> _onClosed(ShiftClosed event, Emitter<ShiftState> emit) async {
     final cnt = event.counted ?? state.countedValue;
     if (cnt == null) return;
-    final nextPos = _repository.update((s) {
-      closeShift(s, staffId: event.staffId, counted: cnt, now: event.now);
-    });
+    final nextPos = await _repository.closeCashShift(
+      staffId: event.staffId,
+      counted: cnt,
+      now: event.now,
+    );
     emit(_buildState(nextPos, toastMessage: 'ปิดกะแล้ว'));
   }
 

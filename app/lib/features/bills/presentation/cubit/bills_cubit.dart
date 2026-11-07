@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:app/domain/domain.dart';
+import 'package:app/domain/pos_command_exception.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -242,11 +243,11 @@ class BillsCubit extends Cubit<BillsState> {
   void clearToast() => emit(state.copyWith(toastMessage: ''));
 
   /// Voids [billId] (or `state.selectedBillId`) and restores addon stock.
-  bool voidBillById({
+  Future<bool> voidBillById({
     required StaffMember staff,
     String? billId,
     String reason = '',
-  }) {
+  }) async {
     final targetId = billId ?? state.selectedBillId;
     if (targetId == null || staff.role == 'cashier') return false;
     final bill = _repository.state.sales
@@ -254,16 +255,18 @@ class BillsCubit extends Cubit<BillsState> {
         .firstOrNull;
     if (bill == null || bill.voided) return false;
     final billNo = bill.no;
-    var ok = false;
-    _repository.update((st) {
-      ok = voidBill(
-        st,
+    final bool ok;
+    try {
+      ok = await _repository.voidSale(
         billId: targetId,
-        me: staff,
+        staff: staff,
         reason: reason,
         now: _fixedNow ?? state.now,
       );
-    });
+    } on PosCommandException catch (e) {
+      emit(state.copyWith(toastMessage: e.message));
+      return false;
+    }
     if (ok) {
       emit(
         state.copyWith(

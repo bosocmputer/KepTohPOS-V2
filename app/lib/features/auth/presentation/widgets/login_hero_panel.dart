@@ -93,12 +93,13 @@ class LoginHeroPanel extends StatelessWidget {
           const Spacer()
         else
           const SizedBox(height: AppDimensions.space4),
-        Text(
-          'ต้นแบบสำหรับทดลองกด · ข้อมูลทั้งหมดเป็นข้อมูลจำลอง',
-          style: textTheme.bodySmall?.copyWith(
-            color: tokens.onPrimary.withValues(alpha: 0.85),
+        if (state.isDemoData)
+          Text(
+            'ต้นแบบสำหรับทดลองกด · ข้อมูลทั้งหมดเป็นข้อมูลจำลอง',
+            style: textTheme.bodySmall?.copyWith(
+              color: tokens.onPrimary.withValues(alpha: 0.85),
+            ),
           ),
-        ),
       ],
     );
 

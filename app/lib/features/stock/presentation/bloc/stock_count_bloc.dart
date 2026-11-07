@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:app/core/utils/sequential_events.dart';
 import 'package:app/domain/domain.dart';
+import 'package:app/domain/pos_command_exception.dart';
 import 'package:app/features/stock/presentation/bloc/stock_count_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -21,16 +23,7 @@ class StockCountBloc extends Bloc<StockCountEvent, StockCountState> {
            (clock ?? (now != null ? () => now : DateTime.now))(),
          ),
        ) {
-    on<StockCountRepositoryUpdated>(_onRepositoryUpdated);
-    on<StockCountDateChanged>(_onDateChanged);
-    on<StockCountItemSelected>(_onItemSelected);
-    on<StockCountValueChanged>(_onValueChanged);
-    on<StockCountNextPressed>(_onNextPressed);
-    on<StockCountPadToggled>(_onPadToggled);
-    on<StockCountDraftCancelled>(_onDraftCancelled);
-    on<StockCountSaved>(_onSaved);
-    on<StockCountDayReopened>(_onDayReopened);
-    on<StockCountToastCleared>(_onToastCleared);
+    on<StockCountEvent>(_dispatch, transformer: sequentialEvents());
 
     _sub = _repository.stream.listen((s) {
       add(StockCountRepositoryUpdated(s));
@@ -51,6 +44,39 @@ class StockCountBloc extends Bloc<StockCountEvent, StockCountState> {
       todayDate: today,
       selectedDate: today,
     );
+  }
+
+  /// Runs every event in one queue so async handlers cannot overlap.
+  Future<void> _dispatch(
+    StockCountEvent event,
+    Emitter<StockCountState> emit,
+  ) async {
+    try {
+      switch (event) {
+        case final StockCountRepositoryUpdated e:
+          _onRepositoryUpdated(e, emit);
+        case final StockCountDateChanged e:
+          _onDateChanged(e, emit);
+        case final StockCountItemSelected e:
+          _onItemSelected(e, emit);
+        case final StockCountValueChanged e:
+          _onValueChanged(e, emit);
+        case final StockCountNextPressed e:
+          _onNextPressed(e, emit);
+        case final StockCountPadToggled e:
+          _onPadToggled(e, emit);
+        case final StockCountDraftCancelled e:
+          _onDraftCancelled(e, emit);
+        case final StockCountSaved e:
+          await _onSaved(e, emit);
+        case final StockCountDayReopened e:
+          await _onDayReopened(e, emit);
+        case final StockCountToastCleared e:
+          _onToastCleared(e, emit);
+      }
+    } on PosCommandException catch (e) {
+      emit(state.copyWith(toastMessage: e.message));
+    }
   }
 
   void _onRepositoryUpdated(
@@ -150,13 +176,14 @@ class StockCountBloc extends Bloc<StockCountEvent, StockCountState> {
     emit(state.copyWith(draft: null, activeId: null));
   }
 
-  void _onSaved(StockCountSaved event, Emitter<StockCountState> emit) {
+  Future<void> _onSaved(
+    StockCountSaved event,
+    Emitter<StockCountState> emit,
+  ) async {
     if (!state.canSave) return;
     final date = state.selectedDate;
     final draftValues = Map<String, String>.from(state.values);
-    _repository.update((st) {
-      saveDailyCount(st, date: date, draftValues: draftValues);
-    });
+    await _repository.saveStockCount(date: date, draftValues: draftValues);
     final s = _repository.state;
     final today = businessDayKey(_clock(), s.shop.dayCutoffMinutes);
     final ledger = computeLedger(s, today: today);
@@ -171,16 +198,16 @@ class StockCountBloc extends Bloc<StockCountEvent, StockCountState> {
     );
   }
 
-  void _onDayReopened(
+  Future<void> _onDayReopened(
     StockCountDayReopened event,
     Emitter<StockCountState> emit,
-  ) {
+  ) async {
     if (event.staff.role == 'cashier') return;
     final date = state.selectedDate;
-    var reopened = false;
-    _repository.update((st) {
-      reopened = reopenClosedDay(st, date: date, me: event.staff);
-    });
+    final reopened = await _repository.reopenDay(
+      date: date,
+      staff: event.staff,
+    );
     if (!reopened) return;
     final s = _repository.state;
     final today = businessDayKey(_clock(), s.shop.dayCutoffMinutes);

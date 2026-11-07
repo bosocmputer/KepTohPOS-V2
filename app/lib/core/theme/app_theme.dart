@@ -148,20 +148,12 @@ class ThemeCubit extends Cubit<ThemeState> {
 
   void setMode(AppThemeMode mode) {
     emit(state.copyWith(mode: mode));
-    _repository?.update((s) {
-      if (s.shop.themeMode != mode.id) {
-        s.shop = s.shop.copyWith(themeMode: mode.id);
-      }
-    });
+    unawaited(_repository?.saveThemePreference(mode: mode.id));
   }
 
   void setPalette(AppBrandPalette palette) {
     emit(state.copyWith(palette: palette));
-    _repository?.update((s) {
-      if (s.shop.themePalette != palette.id) {
-        s.shop = s.shop.copyWith(themePalette: palette.id);
-      }
-    });
+    unawaited(_repository?.saveThemePreference(palette: palette.id));
   }
 
   @override

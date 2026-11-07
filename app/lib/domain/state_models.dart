@@ -87,16 +87,16 @@ class OrderLineItem {
     id: json['id'] as String?,
     name: json['name'] as String,
     qty: (json['qty'] as num).toInt(),
-    price: (json['price'] as num).toDouble(),
-    cost: (json['cost'] as num?)?.toDouble(),
+    price: (json['price'] as num).toInt(),
+    cost: (json['cost'] as num?)?.toInt(),
   );
 
   final String type;
   final String? id;
   final String name;
   final int qty;
-  final double price;
-  final double? cost;
+  final int price;
+  final int? cost;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'type': type,
@@ -121,11 +121,11 @@ class CalculatedOrder {
   });
 
   final List<OrderLineItem> lines;
-  final double subtotal;
-  final double service;
-  final double vat;
-  final double rounding;
-  final double total;
+  final int subtotal;
+  final int service;
+  final int vat;
+  final int rounding;
+  final int total;
   final HeadsCount heads;
 }
 
@@ -268,7 +268,7 @@ class SentLineItem {
   final String key;
   final String name;
   final int qty;
-  final double price;
+  final int price;
 }
 
 /// Timer status returned by `tableTimer`.

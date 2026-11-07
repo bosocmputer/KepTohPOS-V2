@@ -18,4 +18,14 @@ flutter config --enable-web
 
 cd "$REPO_ROOT/app"
 flutter pub get
-flutter build web --release
+# Mock data unless this environment explicitly opts in to the real backend.
+DEFINES=()
+if [ "${POS_BACKEND:-}" = "supabase" ]; then
+  DEFINES+=(
+    "--dart-define=POS_BACKEND=supabase"
+    "--dart-define=SUPABASE_URL=${SUPABASE_URL:?SUPABASE_URL is required}"
+    "--dart-define=SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:?SUPABASE_ANON_KEY is required}"
+  )
+fi
+
+flutter build web --release ${DEFINES[@]+"${DEFINES[@]}"}

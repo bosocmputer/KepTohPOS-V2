@@ -50,7 +50,7 @@ void main() {
       final fixedNow = DateTime(2026, 11, 4, 12);
       final s = migrate(_loadSeededState(fixedNow));
 
-      expect(s.version, 2);
+      expect(s.version, 3);
       expect(s.startDate, '2026-10-05');
       expect(s.sales.length, 882);
       expect(s.purchases.length, 124);
@@ -75,12 +75,12 @@ void main() {
         (acc, e) => acc + e.amount,
       );
 
-      expect(r2(totalSalesGross), 868006);
-      expect(r2(totalPurchasesValue), 253628);
-      expect(r2(totalExpensesAmount), 7720);
+      expect(r2(totalSalesGross / 100), 868006);
+      expect(r2(totalPurchasesValue / 100), 253628);
+      expect(r2(totalExpensesAmount / 100), 7720);
 
       final ot4 = s.openTables['t4']!;
-      expect(tableDue(s, ot4), 886);
+      expect(tableDue(s, ot4), 88600);
       final timer4 = tableTimer(s, ot4, now: fixedNow);
       expect(timer4.mins, 38);
       expect(timer4.limit, 0);
@@ -105,14 +105,14 @@ void main() {
         expect(day0Half.f, 3);
         expect(day0Half.heads, 92);
         expect(day0Half.headsW, 88.5);
-        expect(r2(day0Half.ingCost!), 6754.55);
-        expect(r2(day0Half.costPerHead!), 76.32);
+        expect(r2(day0Half.ingCost! / 100), 6754.55);
+        expect(r2(day0Half.costPerHead! / 100), 76.32);
 
         s.shop = s.shop.copyWith(childHeadWeight: 1);
         final day0Full = computeLedger(s, today: '2026-11-04').days.first;
         expect(day0Full.headsW, 92);
-        expect(r2(day0Full.ingCost!), 6754.55);
-        expect(r2(day0Full.costPerHead!), 73.42);
+        expect(r2(day0Full.ingCost! / 100), 6754.55);
+        expect(r2(day0Full.costPerHead! / 100), 73.42);
       },
     );
 
@@ -127,19 +127,19 @@ void main() {
 
         final lastAvg = closedAvg.last;
         expect(lastAvg.date, '2026-11-03');
-        expect(lastAvg.gross, 28447);
-        expect(lastAvg.net, 28447);
-        expect(r2(lastAvg.buffetNet), 22727);
-        expect(r2(lastAvg.addonNet), 5720);
-        expect(lastAvg.addonCost, 3451);
+        expect(lastAvg.gross, 2844700);
+        expect(lastAvg.net, 2844700);
+        expect(r2(lastAvg.buffetNet / 100), 22727);
+        expect(r2(lastAvg.addonNet / 100), 5720);
+        expect(lastAvg.addonCost, 345100);
         expect(lastAvg.headsW, 110);
-        expect(r2(lastAvg.fixed), 1536.67);
-        expect(lastAvg.expenses, 100);
+        expect(r2(lastAvg.fixed / 100), 1536.67);
+        expect(lastAvg.expenses, 10000);
         expect(lastAvg.estItems, 4);
-        expect(r2(lastAvg.ingCost!), 8060.36);
-        expect(r2(lastAvg.profit!), 16935.64);
-        expect(r2(lastAvg.netProfit!), 15298.97);
-        expect(r2(lastAvg.costPerHead!), 73.28);
+        expect(r2(lastAvg.ingCost! / 100), 8060.36);
+        expect(r2(lastAvg.profit! / 100), 16935.64);
+        expect(r2(lastAvg.netProfit! / 100), 15298.97);
+        expect(r2(lastAvg.costPerHead! / 100), 73.28);
         expect(r2(lastAvg.foodPct!), 35.47);
 
         s.shop = s.shop.copyWith(costMethod: 'last');
@@ -147,9 +147,9 @@ void main() {
           s,
           today: '2026-11-04',
         ).days.where((d) => d.closed).last;
-        expect(r2(lastLatest.ingCost!), 8068.89);
-        expect(r2(lastLatest.profit!), 16927.11);
-        expect(r2(lastLatest.netProfit!), 15290.44);
+        expect(r2(lastLatest.ingCost! / 100), 8068.89);
+        expect(r2(lastLatest.profit! / 100), 16927.11);
+        expect(r2(lastLatest.netProfit! / 100), 15290.44);
       },
     );
 
@@ -166,7 +166,9 @@ void main() {
           date: futureDate,
           at: '2099-12-31T10:00:00Z',
           supplierId: 's1',
-          lines: <PurchaseLine>[PurchaseLine(ingId: 'i1', qty: 2, total: 370)],
+          lines: <PurchaseLine>[
+            PurchaseLine(ingId: 'i1', qty: 2, total: 37000),
+          ],
           note: 'future',
         ),
       );
@@ -176,7 +178,7 @@ void main() {
           date: futureDate,
           at: '2099-12-31T11:00:00Z',
           typeId: 'et1',
-          amount: 100,
+          amount: 10000,
           note: 'future',
         ),
       );
@@ -197,12 +199,12 @@ void main() {
         '6304823E',
       );
       expect(
-        promptPayPayload('081-234-5678', 607),
+        promptPayPayload('081-234-5678', 60700),
         '00020101021229370016A0000006770101110113006681234567853037645406'
         '607.005802TH6304E9DB',
       );
       expect(
-        promptPayPayload('0105565098765', 1196.5),
+        promptPayPayload('0105565098765', 119650),
         '00020101021229370016A0000006770101110213010556509876553037645407'
         '1196.505802TH6304B135',
       );

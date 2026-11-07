@@ -7,7 +7,7 @@ import 'package:app/domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-PosRepository _buildFullRepo({required DateTime fixedNow}) {
+MockPosRepository _buildFullRepo({required DateTime fixedNow}) {
   const keys = [
     'shop',
     'packages',
@@ -60,7 +60,7 @@ void _sell(
   StaffMember by,
   String pkg,
   int pmIdx,
-  double rec,
+  int rec,
   String id,
   DateTime now, {
   String timing = 'before',
@@ -80,10 +80,10 @@ void _sell(
   s.openTables.remove(s.tables[tIdx].id);
 }
 
-PurchaseLine _pl(String id, double q, double tot) =>
+PurchaseLine _pl(String id, double q, int tot) =>
     PurchaseLine(ingId: id, qty: q, total: tot);
 
-void _addExp(PosState s, String id, String d, String at, double amt) =>
+void _addExp(PosState s, String id, String d, String at, int amt) =>
     s.expenses.add(
       ExpenseRecord(
         id: id,
@@ -108,23 +108,23 @@ void _seedDay1Remainder(PosState s, DateTime now) {
     note: 'รับของวันแรก',
     now: now,
     lines: [
-      _pl('i1', 20, 3600),
-      _pl('i2', 10, 1700),
-      _pl('i6', 8, 1760),
-      _pl('i9', 15, 525),
-      _pl('i11', 5, 300),
-      _pl('i13', 10, 700),
-      _pl('i15', 30, 540),
+      _pl('i1', 20, 360000),
+      _pl('i2', 10, 170000),
+      _pl('i6', 8, 176000),
+      _pl('i9', 15, 52500),
+      _pl('i11', 5, 30000),
+      _pl('i13', 10, 70000),
+      _pl('i15', 30, 54000),
     ],
   );
-  _addExp(s, 'ex_d1', dKey, isoNow, 350);
+  _addExp(s, 'ex_d1', dKey, isoNow, 35000);
   final r1 = TableTotals(a: 6, ad: {'ad5': 4});
   sendRound(s, s.tables[1], r1, cashier, 'after', 'pk2', '', now: now);
   adjustSent(s, s.tables[1].id, 'addon', 'ad5', 1, 'ลด', manager, now: now);
   final empty = TableTotals();
-  _sell(s, 1, empty, cashier, 'pk2', 1, 1914, 'b_d1_2', now, timing: 'after');
+  _sell(s, 1, empty, cashier, 'pk2', 1, 191400, 'b_d1_2', now, timing: 'after');
   final c3 = TableTotals(a: 8, c: 2, ad: {'ad2': 3});
-  _sell(s, 2, c3, cashier, 'pk2', 2, 2570, 'b_d1_3', now);
+  _sell(s, 2, c3, cashier, 'pk2', 2, 257000, 'b_d1_3', now);
   const d1Counts = {
     'i1': '14',
     'i2': '7',
@@ -150,7 +150,7 @@ void _seedRemainingDays(PosState s, DateTime now) {
       id: 'sh_d2',
       staffId: cashier.id,
       openedAt: isoNow,
-      floatAmount: 1000,
+      floatAmount: 100000,
     ),
   );
   savePurchase(
@@ -160,21 +160,21 @@ void _seedRemainingDays(PosState s, DateTime now) {
     me: manager,
     note: 'รับของวันที่ 2',
     now: now,
-    lines: [_pl('i1', 6, 1320), _pl('i6', 5, 1300)],
+    lines: [_pl('i1', 6, 132000), _pl('i6', 5, 130000)],
   );
-  _addExp(s, 'ex_d2', dKey, isoNow, 500);
+  _addExp(s, 'ex_d2', dKey, isoNow, 50000);
   final c1 = TableTotals(a: 10, c: 4, ad: {'ad1': 6});
   final c2 = TableTotals(a: 11, c: 2, ad: {'ad3': 5});
   final c3 = TableTotals(a: 2, ad: {'ad5': 2});
-  _sell(s, 0, c1, cashier, 'pk2', 0, 3500, 'b_d2_1', now);
-  _sell(s, 3, c2, cashier, 'pk1', 1, 2512, 'b_d2_2', now);
-  _sell(s, 4, c3, cashier, 'pk1', 0, 600, 'b_d2_void', now);
+  _sell(s, 0, c1, cashier, 'pk2', 0, 350000, 'b_d2_1', now);
+  _sell(s, 3, c2, cashier, 'pk1', 1, 251200, 'b_d2_2', now);
+  _sell(s, 4, c3, cashier, 'pk1', 0, 60000, 'b_d2_void', now);
   voidBill(s, billId: 'b_d2_void', me: manager, reason: 'ย้ายโต๊ะ', now: now);
   const d2Counts = {'i1': '12', 'i2': '3', 'i6': '6', 'i9': '4'};
   saveDailyCount(s, date: dKey, draftValues: d2Counts);
   s.shifts.last
     ..closedAt = isoEnd
-    ..counted = 4416
+    ..counted = 441600
     ..closedBy = manager.id;
 
   advanceSimulationDayInState(s);
@@ -183,13 +183,13 @@ void _seedRemainingDays(PosState s, DateTime now) {
       id: 'sh_d3',
       staffId: owner.id,
       openedAt: isoNow,
-      floatAmount: 1000,
+      floatAmount: 100000,
     ),
   );
-  _sell(s, 0, TableTotals(a: 6), owner, 'pk1', 0, 1200, 'b_d3_1', now);
+  _sell(s, 0, TableTotals(a: 6), owner, 'pk1', 0, 120000, 'b_d3_1', now);
   final c4 = TableTotals(a: 4, ad: {'ad1': 2});
-  _sell(s, 1, c4, owner, 'pk2', 1, 1146, 'b_d3_2', now);
-  _addExp(s, 'ex_d3', dKey, isoNow, 400);
+  _sell(s, 1, c4, owner, 'pk2', 1, 114600, 'b_d3_2', now);
+  _addExp(s, 'ex_d3', dKey, isoNow, 40000);
   const d3Counts = {
     'i1': '9',
     'i2': '1.5',
@@ -202,7 +202,7 @@ void _seedRemainingDays(PosState s, DateTime now) {
   saveDailyCount(s, date: dKey, draftValues: d3Counts);
   s.shifts.last
     ..closedAt = isoEnd
-    ..counted = 2194
+    ..counted = 219400
     ..closedBy = owner.id;
 }
 

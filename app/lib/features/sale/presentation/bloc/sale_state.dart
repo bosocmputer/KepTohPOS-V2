@@ -149,7 +149,7 @@ class SaleState extends Equatable {
       ? sentLines(posState, activePackage, sentTotals)
       : const <SentLineItem>[];
 
-  double get due => openTable != null ? tableDue(posState, openTable!) : 0;
+  int get due => openTable != null ? tableDue(posState, openTable!) : 0;
 
   TableTimerStatus? get timer =>
       openTable != null ? tableTimer(posState, openTable!, now: now) : null;
@@ -166,12 +166,11 @@ class SaleState extends Equatable {
       payOrder.total > 0 &&
       (openTable != null || (a + c + f) > 0);
 
-  double get cashReceivedAmount => double.tryParse(cashReceived) ?? 0;
+  int get cashReceivedAmount => parseBaht(cashReceived);
 
-  double get cashChange => math.max(0, r2(cashReceivedAmount - payOrder.total));
+  int get cashChange => math.max(0, cashReceivedAmount - payOrder.total);
 
-  double get cashShortage =>
-      math.max(0, r2(payOrder.total - cashReceivedAmount));
+  int get cashShortage => math.max(0, payOrder.total - cashReceivedAmount);
 
   bool get canConfirmPayment {
     final m = activePaymentMethod;

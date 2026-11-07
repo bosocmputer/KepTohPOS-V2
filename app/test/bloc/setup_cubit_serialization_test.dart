@@ -6,7 +6,7 @@ import 'package:app/domain/domain.dart';
 import 'package:app/features/setup/presentation/cubit/setup_cubit.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-PosRepository _buildRepo(DateTime fixedNow) {
+MockPosRepository _buildRepo(DateTime fixedNow) {
   const keys = <String>[
     'shop',
     'packages',
@@ -72,7 +72,7 @@ void main() {
   });
 
   group('SetupCubit CRUD & Relational Guards', () {
-    test('create, update, inline toggle, and search filter packages', () {
+    test('create, update, inline toggle, and search filter packages', () async {
       final repo = _buildRepo(fixedNow);
       final cubit = SetupCubit(repo);
       addTearDown(cubit.close);
@@ -81,16 +81,16 @@ void main() {
       const newPkg = PackageItem(
         id: 'pkg_test_99',
         name: 'ชุดพรีเมียมวากิว',
-        adultPrice: 499,
-        childPrice: 249,
+        adultPrice: 49900,
+        childPrice: 24900,
         timeLimit: 120,
       );
 
-      final createRes = cubit.upsertPackage(newPkg);
+      final createRes = await cubit.upsertPackage(newPkg);
       expect(createRes.ok, isTrue);
       expect(cubit.state.posState.packages.length, initialCount + 1);
 
-      cubit.togglePackageActive(newPkg, active: false);
+      await cubit.togglePackageActive(newPkg, active: false);
       final toggled = cubit.state.posState.packages.firstWhere(
         (p) => p.id == 'pkg_test_99',
       );
@@ -101,38 +101,47 @@ void main() {
       expect(cubit.state.filteredPackages.first.id, 'pkg_test_99');
 
       cubit.setSearchQuery('');
-      final delRes = cubit.deleteItem(section: 'packages', id: 'pkg_test_99');
+      final delRes = await cubit.deleteItem(
+        section: 'packages',
+        id: 'pkg_test_99',
+      );
       expect(delRes.ok, isTrue);
       expect(cubit.state.posState.packages.length, initialCount);
     });
 
-    test('relational delete guard blocks deleting package used in sales', () {
-      final repo = _buildRepo(fixedNow);
-      final cubit = SetupCubit(repo);
-      addTearDown(cubit.close);
+    test(
+      'relational delete guard blocks deleting package used in sales',
+      () async {
+        final repo = _buildRepo(fixedNow);
+        final cubit = SetupCubit(repo);
+        addTearDown(cubit.close);
 
-      final usedPkgId = cubit.state.posState.sales.first.packageId;
-      final canDel = cubit.checkCanDelete(section: 'packages', id: usedPkgId);
-      expect(canDel, isFalse);
-      expect(cubit.state.guardModalMessage, isNotEmpty);
+        final usedPkgId = cubit.state.posState.sales.first.packageId;
+        final canDel = cubit.checkCanDelete(section: 'packages', id: usedPkgId);
+        expect(canDel, isFalse);
+        expect(cubit.state.guardModalMessage, isNotEmpty);
 
-      final res = cubit.deleteItem(section: 'packages', id: usedPkgId);
-      expect(res.ok, isFalse);
-      expect(res.isGuardBlock, isTrue);
-    });
+        final res = await cubit.deleteItem(section: 'packages', id: usedPkgId);
+        expect(res.ok, isFalse);
+        expect(res.isGuardBlock, isTrue);
+      },
+    );
 
-    test('relational delete guard blocks deleting currently open table', () {
-      final repo = _buildRepo(fixedNow);
-      final cubit = SetupCubit(repo);
-      addTearDown(cubit.close);
+    test(
+      'relational delete guard blocks deleting currently open table',
+      () async {
+        final repo = _buildRepo(fixedNow);
+        final cubit = SetupCubit(repo);
+        addTearDown(cubit.close);
 
-      final openTableId = cubit.state.posState.openTables.keys.first;
-      final res = cubit.deleteItem(section: 'tables', id: openTableId);
-      expect(res.ok, isFalse);
-      expect(res.isGuardBlock, isTrue);
-    });
+        final openTableId = cubit.state.posState.openTables.keys.first;
+        final res = await cubit.deleteItem(section: 'tables', id: openTableId);
+        expect(res.ok, isFalse);
+        expect(res.isGuardBlock, isTrue);
+      },
+    );
 
-    test('non-owner cannot modify staff accounts', () {
+    test('non-owner cannot modify staff accounts', () async {
       final repo = _buildRepo(fixedNow);
       final cubit = SetupCubit(repo);
       addTearDown(cubit.close);
@@ -143,10 +152,10 @@ void main() {
         role: 'cashier',
         pin: '9999',
       );
-      final denied = cubit.upsertStaff(st, actorRole: 'manager');
+      final denied = await cubit.upsertStaff(st, actorRole: 'manager');
       expect(denied.ok, isFalse);
 
-      final allowed = cubit.upsertStaff(st, actorRole: 'owner');
+      final allowed = await cubit.upsertStaff(st, actorRole: 'owner');
       expect(allowed.ok, isTrue);
     });
   });

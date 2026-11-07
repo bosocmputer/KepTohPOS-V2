@@ -2,7 +2,6 @@ import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
-import 'package:app/features/stock/presentation/bloc/stock_count_state.dart';
 import 'package:flutter/material.dart';
 
 class _ExpenseModalRow {
@@ -73,7 +72,7 @@ class _ExpenseModalState extends State<ExpenseModal> {
           .map(
             (e) => _ExpenseModalRow(
               typeId: e.typeId,
-              amount: formatJsNumber(e.amount),
+              amount: bahtInputText(e.amount),
               note: e.note,
             ),
           )
@@ -89,7 +88,7 @@ class _ExpenseModalState extends State<ExpenseModal> {
   void _save() {
     final valid = <ExpenseDraftLine>[];
     for (final l in _lines) {
-      final amt = double.tryParse(l.amount.trim()) ?? 0;
+      final amt = parseBaht(l.amount.trim());
       if (l.typeId.isNotEmpty && amt > 0) {
         valid.add(
           ExpenseDraftLine(typeId: l.typeId, amount: amt, note: l.note),
@@ -107,9 +106,9 @@ class _ExpenseModalState extends State<ExpenseModal> {
   Widget build(BuildContext context) {
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
-    final modalTotal = _lines.fold<double>(
+    final modalTotal = _lines.fold<int>(
       0,
-      (sum, l) => sum + (double.tryParse(l.amount.trim()) ?? 0),
+      (sum, l) => sum + parseBaht(l.amount.trim()),
     );
 
     return RootOverlayBox(

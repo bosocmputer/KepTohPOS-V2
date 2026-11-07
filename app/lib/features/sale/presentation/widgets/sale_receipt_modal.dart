@@ -68,7 +68,7 @@ class _ReceiptModalState extends State<ReceiptModal> {
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
     final bill = widget.bill;
-    final changeTxt = baht(bill.change, bill.change % 1 != 0 ? 2 : 0);
+    final changeTxt = baht(bill.change, bill.change % 100 != 0 ? 2 : 0);
     final canVoid =
         !bill.voided &&
         !bill.isSlipPreview &&

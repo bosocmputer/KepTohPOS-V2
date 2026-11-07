@@ -24,7 +24,7 @@ class ProductCard extends StatelessWidget {
   });
 
   final String name;
-  final double price;
+  final int price;
   final String? category;
   final String? subtitle;
   final int? stock;

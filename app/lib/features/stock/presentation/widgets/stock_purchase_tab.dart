@@ -34,9 +34,7 @@ class _StockPurchaseTabState extends State<StockPurchaseTab> {
         (l) => PurchaseModalLineDraft(
           ingId: l.ingId,
           qty: fmtQ(l.qty),
-          total: l.total == l.total.roundToDouble()
-              ? l.total.toInt().toString()
-              : l.total.toString(),
+          total: bahtInputText(l.total),
         ),
       )
       .toList();
@@ -130,6 +128,7 @@ class _StockPurchaseTabState extends State<StockPurchaseTab> {
                           width: cardW,
                           supplier: sup,
                           lastPurchase: state.lastPurchaseOf(sup.id),
+                          showCosts: state.showCosts,
                           onCopyLast: () => _openCopyLast(sup.id),
                           onNew: () => _openNew(supplierId: sup.id),
                         ),
@@ -150,7 +149,7 @@ class _StockPurchaseTabState extends State<StockPurchaseTab> {
                   ),
                   Text(
                     '${dayPurchases.length} บิล · '
-                    'รวม ${baht(state.dayPurchasesTotal)}',
+                    'รวม ${state.costText(baht(state.dayPurchasesTotal))}',
                     key: const ValueKey('purchase-day-summary'),
                     style: tt.titleMedium?.copyWith(
                       color: t.primary,
@@ -186,8 +185,8 @@ class _StockPurchaseTabState extends State<StockPurchaseTab> {
                   required note,
                   required lines,
                   editId,
-                }) {
-                  final ok = cubit.submitPurchase(
+                }) async {
+                  final ok = await cubit.submitPurchase(
                     date: date,
                     supplierId: supplierId,
                     note: note,
@@ -195,7 +194,7 @@ class _StockPurchaseTabState extends State<StockPurchaseTab> {
                     staff: widget.staff,
                     editId: editId,
                   );
-                  if (ok) {
+                  if (ok && mounted) {
                     setState(() => _modalOpen = false);
                   }
                 },
@@ -209,13 +208,13 @@ class _StockPurchaseTabState extends State<StockPurchaseTab> {
                   title: 'ลบบิลซื้อของนี้?',
                   text:
                       '${state.supplierNameOf(deleting.supplierId)} · '
-                      '${baht(deletingTotal)}',
+                      '${state.costText(baht(deletingTotal))}',
                   yesLabel: 'ลบ',
                   danger: true,
                   onNo: () => setState(() => _deletingPurchase = null),
-                  onYes: () {
+                  onYes: () async {
                     setState(() => _deletingPurchase = null);
-                    cubit.removePurchase(
+                    await cubit.removePurchase(
                       purchaseId: deleting.id,
                       staff: widget.staff,
                     );

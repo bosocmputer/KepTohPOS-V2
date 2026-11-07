@@ -69,10 +69,8 @@ class _PurchaseModalState extends State<PurchaseModal> {
     });
   }
 
-  double get _total => _lines.fold<double>(
-    0,
-    (sum, l) => sum + (double.tryParse(l.total.trim()) ?? 0),
-  );
+  int get _total =>
+      _lines.fold<int>(0, (sum, l) => sum + parseBaht(l.total.trim()));
 
   void _copyLast() {
     final last = widget.state.lastPurchaseOf(
@@ -90,9 +88,7 @@ class _PurchaseModalState extends State<PurchaseModal> {
             (l) => PurchaseModalLineDraft(
               ingId: l.ingId,
               qty: fmtQ(l.qty),
-              total: l.total == l.total.roundToDouble()
-                  ? l.total.toInt().toString()
-                  : l.total.toString(),
+              total: bahtInputText(l.total),
             ),
           )
           .toList();
@@ -103,7 +99,7 @@ class _PurchaseModalState extends State<PurchaseModal> {
     final parsed = <PurchaseLine>[];
     for (final l in _lines) {
       final q = double.tryParse(l.qty.trim()) ?? 0;
-      final t = double.tryParse(l.total.trim()) ?? 0;
+      final t = parseBaht(l.total.trim());
       if (l.ingId.isNotEmpty && q > 0) {
         parsed.add(PurchaseLine(ingId: l.ingId, qty: q, total: t));
       }

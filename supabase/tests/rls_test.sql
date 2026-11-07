@@ -4,7 +4,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(57);
+select plan(59);
 
 -- รัน SQL ในบทบาท + ผู้ใช้ที่กำหนด แล้วคืนผลเป็น text หรือ ERR:<sqlstate>
 -- กลับมาเป็น postgres ก่อนคืนค่า เพราะตารางภายในของ pgTAP ใช้ไม่ได้จากบทบาทอื่น
@@ -148,6 +148,21 @@ select is(tests.device_a(format($$select verify_staff_pin(%L, '1234') ->> 'ok'$$
 -- เพิกถอนเครื่อง
 update devices set revoked_at = now() where shop_id = tests.shop_b();
 select is(tests.device_b('select count(*) from packages'), '0', 'เครื่องที่ถูกเพิกถอนไม่เห็นข้อมูล');
+
+-- สิทธิ์เรียกฟังก์ชัน: ฟังก์ชันใหม่ได้ EXECUTE ให้ PUBLIC โดยอัตโนมัติ จึงต้องตรวจทุกตัว
+select is(
+  (select coalesce(string_agg(p.proname, ',' order by p.proname), '')
+   from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'private' and has_function_privilege('authenticated', p.oid, 'execute')),
+  'can_manage_shop,can_read_org,can_read_shop,is_active_device_of,is_org_owner',
+  'authenticated เรียกได้เฉพาะตัวช่วย RLS ใน private'
+);
+select is(
+  (select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')),
+  0,
+  'anon เรียกฟังก์ชันใน public ไม่ได้'
+);
 
 select * from finish();
 rollback;

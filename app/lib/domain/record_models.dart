@@ -54,19 +54,19 @@ class BillRecord {
         .cast<Map<String, dynamic>>()
         .map(OrderLineItem.fromJson)
         .toList(),
-    subtotal: (json['subtotal'] as num).toDouble(),
-    service: (json['service'] as num?)?.toDouble() ?? 0,
-    vat: (json['vat'] as num?)?.toDouble() ?? 0,
-    rounding: (json['rounding'] as num?)?.toDouble() ?? 0,
-    total: (json['total'] as num).toDouble(),
+    subtotal: (json['subtotal'] as num).toInt(),
+    service: (json['service'] as num?)?.toInt() ?? 0,
+    vat: (json['vat'] as num?)?.toInt() ?? 0,
+    rounding: (json['rounding'] as num?)?.toInt() ?? 0,
+    total: (json['total'] as num).toInt(),
     heads: HeadsCount.fromJson(
       (json['heads'] as Map<String, dynamic>?) ?? const <String, dynamic>{},
     ),
     methodId: (json['methodId'] as String?) ?? '',
     methodName: (json['methodName'] as String?) ?? '',
     methodType: (json['methodType'] as String?) ?? 'cash',
-    received: (json['received'] as num).toDouble(),
-    change: (json['change'] as num?)?.toDouble() ?? 0,
+    received: (json['received'] as num).toInt(),
+    change: (json['change'] as num?)?.toInt() ?? 0,
     vatMode: json['vatMode'] as String?,
     vatRate: (json['vatRate'] as num?)?.toDouble(),
     bankAccountId: json['bankAccountId'] as String?,
@@ -90,17 +90,17 @@ class BillRecord {
   final String? shiftId;
   final String packageId;
   final List<OrderLineItem> lines;
-  final double subtotal;
-  final double service;
-  final double vat;
-  final double rounding;
-  final double total;
+  final int subtotal;
+  final int service;
+  final int vat;
+  final int rounding;
+  final int total;
   final HeadsCount heads;
   final String methodId;
   final String methodName;
   final String methodType;
-  final double received;
-  final double change;
+  final int received;
+  final int change;
   final String? vatMode;
   final double? vatRate;
   final String? bankAccountId;
@@ -191,11 +191,11 @@ class PurchaseLine {
   factory fromJson(Map<String, dynamic> j) => PurchaseLine(
     ingId: j['ingId'] as String,
     qty: (j['qty'] as num).toDouble(),
-    total: (j['total'] as num).toDouble(),
+    total: (j['total'] as num).toInt(),
   );
   final String ingId;
   final double qty;
-  final double total;
+  final int total;
   Map<String, dynamic> toJson() => <String, dynamic>{
     'ingId': ingId,
     'qty': qty,
@@ -255,14 +255,14 @@ class ExpenseRecord {
     date: json['date'] as String,
     at: json['at'] as String,
     typeId: json['typeId'] as String,
-    amount: (json['amount'] as num).toDouble(),
+    amount: (json['amount'] as num).toInt(),
     note: (json['note'] as String?) ?? '',
   );
   final String id;
   final String date;
   final String at;
   final String typeId;
-  final double amount;
+  final int amount;
   final String note;
   Map<String, dynamic> toJson() => <String, dynamic>{
     'id': id,

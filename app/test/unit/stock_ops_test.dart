@@ -111,11 +111,11 @@ void main() {
       final led1 = computeLedger(s, today: today);
       final d1 = led1.byDate[today]!;
       expect(d1.closed, isTrue);
-      expect(r2(d1.ingCost!), 3045.39);
-      expect(r2(d1.costPerHead!), 93.7);
+      expect(r2(d1.ingCost! / 100), 3045.39);
+      expect(r2(d1.costPerHead! / 100), 93.7);
       expect(r2(d1.foodPct!), 44.36);
-      expect(r2(d1.profit!), 4604.61);
-      expect(r2(d1.netProfit!), 2547.94);
+      expect(r2(d1.profit! / 100), 4604.61);
+      expect(r2(d1.netProfit! / 100), 2547.94);
       expect(r2(led1.current['i1']!.qty), 10.2);
       expect(r2(led1.current['i7']!.qty), 0.6);
 
@@ -141,7 +141,7 @@ void main() {
         const today = '2026-11-04';
 
         final i1Before = s.ingredients.firstWhere((x) => x.id == 'i1');
-        expect(i1Before.lastCost, 185);
+        expect(i1Before.lastCost, 18500);
 
         final saved = savePurchase(
           s,
@@ -149,7 +149,7 @@ void main() {
           supplierId: 'sup1',
           note: 'test',
           lines: const <PurchaseLine>[
-            PurchaseLine(ingId: 'i1', qty: 10, total: 2000),
+            PurchaseLine(ingId: 'i1', qty: 10, total: 200000),
           ],
           me: cashier,
           now: fixedNow,
@@ -158,15 +158,15 @@ void main() {
 
         // ing.lastCost remains untouched at initial fallback 185
         final i1After = s.ingredients.firstWhere((x) => x.id == 'i1');
-        expect(i1After.lastCost, 185);
+        expect(i1After.lastCost, 18500);
 
         // costMethod == 'avg'
         final ledAvg = computeLedger(s, today: today);
         final rowsAvg = computeStockBalanceRows(s, ledAvg);
         final rowI1Avg = rowsAvg.firstWhere((r) => r.ing.id == 'i1');
         expect(r2(rowI1Avg.qty), 22.5);
-        expect(r2(rowI1Avg.unitCost), 196.03);
-        expect(r2(rowI1Avg.val), 4410.61);
+        expect(r2(rowI1Avg.unitCost / 100), 196.03);
+        expect(r2(rowI1Avg.val / 100), 4410.61);
 
         // costMethod == 'last'
         s.shop = s.shop.copyWith(costMethod: 'last');
@@ -174,8 +174,8 @@ void main() {
         final rowsLast = computeStockBalanceRows(s, ledLast);
         final rowI1Last = rowsLast.firstWhere((r) => r.ing.id == 'i1');
         expect(r2(rowI1Last.qty), 22.5);
-        expect(r2(rowI1Last.unitCost), 196.23);
-        expect(r2(rowI1Last.val), 4415.11);
+        expect(r2(rowI1Last.unitCost / 100), 196.23);
+        expect(r2(rowI1Last.val / 100), 4415.11);
       },
     );
   });
@@ -188,14 +188,14 @@ void main() {
       const targetDate = '2026-11-03';
 
       final before = computeLedger(s, today: '2026-11-04').byDate[targetDate]!;
-      expect(before.expenses, 100);
-      expect(r2(before.netProfit!), 15298.97);
+      expect(before.expenses, 10000);
+      expect(r2(before.netProfit! / 100), 15298.97);
 
       final ok = saveExpenses(
         s,
         date: targetDate,
         lines: const <ExpenseDraftLine>[
-          ExpenseDraftLine(typeId: 'et1', amount: 350, note: 'น้ำแข็งเพิ่ม'),
+          ExpenseDraftLine(typeId: 'et1', amount: 35000, note: 'น้ำแข็งเพิ่ม'),
         ],
         me: cashier,
         now: fixedNow,
@@ -203,8 +203,8 @@ void main() {
       expect(ok, isTrue);
 
       final after = computeLedger(s, today: '2026-11-04').byDate[targetDate]!;
-      expect(after.expenses, 450);
-      expect(r2(after.netProfit!), 14948.97);
+      expect(after.expenses, 45000);
+      expect(r2(after.netProfit! / 100), 14948.97);
     });
   });
 }

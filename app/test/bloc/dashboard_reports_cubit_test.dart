@@ -47,23 +47,31 @@ void main() {
         ..setRange('today'),
       verify: (cubit) {
         expect(cubit.state.range, 'today');
-        expect(r2(cubit.state.summary.net), 8830);
+        expect(r2(cubit.state.summary.net / 100), 8830);
         expect(cubit.state.summary.closedDays, isEmpty);
       },
       expect: () => [
         isA<DashboardState>()
             .having((s) => s.range, 'range', '7')
-            .having((s) => r2(s.summary.net), 'net', 189100)
-            .having((s) => r2(s.summary.profit), 'profit', 109272.94)
-            .having((s) => r2(s.summary.netProfit), 'netProfit', 98612.94),
+            .having((s) => r2(s.summary.net / 100), 'net', 189100)
+            .having((s) => r2(s.summary.profit / 100), 'profit', 109272.94)
+            .having(
+              (s) => r2(s.summary.netProfit / 100),
+              'netProfit',
+              98612.94,
+            ),
         isA<DashboardState>()
             .having((s) => s.range, 'range', 'month')
-            .having((s) => r2(s.summary.net), 'net', 90379)
-            .having((s) => r2(s.summary.profit), 'profit', 49294.34)
-            .having((s) => r2(s.summary.netProfit), 'netProfit', 43964.34),
+            .having((s) => r2(s.summary.net / 100), 'net', 90379)
+            .having((s) => r2(s.summary.profit / 100), 'profit', 49294.34)
+            .having(
+              (s) => r2(s.summary.netProfit / 100),
+              'netProfit',
+              43964.34,
+            ),
         isA<DashboardState>()
             .having((s) => s.range, 'range', 'today')
-            .having((s) => r2(s.summary.net), 'net', 8830)
+            .having((s) => r2(s.summary.net / 100), 'net', 8830)
             .having((s) => s.summary.closedDays.length, 'closedDays', 0),
       ],
     );
@@ -82,8 +90,8 @@ void main() {
       verify: (cubit) {
         final barDay = cubit.state.selectedBarDay!;
         expect(barDay.date, '2026-11-03');
-        expect(r2(barDay.profit!), 16935.64);
-        expect(r2(barDay.netProfit!), 15298.97);
+        expect(r2(barDay.profit! / 100), 16935.64);
+        expect(r2(barDay.netProfit! / 100), 15298.97);
       },
     );
 
@@ -107,7 +115,7 @@ void main() {
         expect(cubit.state.summary.showNetProfit, isFalse);
         expect(cubit.state.summary.fieldName, 'กำไรขั้นต้น');
         final last = cubit.state.summary.lastClosedDay!;
-        expect(r2(cubit.state.summary.dayMetric(last)!), 16935.64);
+        expect(r2(cubit.state.summary.dayMetric(last)! / 100), 16935.64);
       },
     );
   });
@@ -124,10 +132,14 @@ void main() {
         isA<ReportsState>()
             .having((s) => s.selectedMonth, 'selectedMonth', '2026-10')
             .having((s) => s.report.days.length, 'days', 27)
-            .having((s) => r2(s.report.totalNet), 'totalNet', 777627)
-            .having((s) => r2(s.report.closedProfit), 'closedProfit', 471749.35)
+            .having((s) => r2(s.report.totalNet / 100), 'totalNet', 777627)
             .having(
-              (s) => r2(s.report.closedNetProfit),
+              (s) => r2(s.report.closedProfit / 100),
+              'closedProfit',
+              471749.35,
+            )
+            .having(
+              (s) => r2(s.report.closedNetProfit / 100),
               'closedNetProfit',
               423779.35,
             ),

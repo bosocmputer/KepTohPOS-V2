@@ -49,7 +49,7 @@ void main() {
 
     // Before closing 2026-11-04, latest closed day is 2026-11-03 (15,299 ฿)
     expect(authCubit.state.lastClosedDay?.date, '2026-11-03');
-    expect(r2(authCubit.state.heroProfitValue), 15298.97);
+    expect(r2(authCubit.state.heroProfitValue / 100), 15298.97);
 
     await tester.pumpWidget(
       KepTohApp(
@@ -96,7 +96,7 @@ void main() {
 
     // Dismiss toast timer and sign out to /login to inspect summary card
     await tester.pump(const Duration(seconds: 3));
-    authCubit.logout();
+    await authCubit.logout();
     await tester.pumpAndSettle();
 
     expect(
@@ -105,7 +105,7 @@ void main() {
     );
     expect(find.text('ตัวอย่างปิดยอดล่าสุด · 4 พ.ย.'), findsOneWidget);
     expect(authCubit.state.lastClosedDay?.date, '2026-11-04');
-    expect(authCubit.state.heroProfitValue, isNot(equals(15298.97)));
+    expect(r2(authCubit.state.heroProfitValue / 100), isNot(equals(15298.97)));
   });
 
   testWidgets(

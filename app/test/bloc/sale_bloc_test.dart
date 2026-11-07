@@ -35,7 +35,7 @@ PosState _loadFreshMockState(DateTime now) {
             .subtract(const Duration(hours: 2))
             .toUtc()
             .toIso8601String(),
-        floatAmount: 1000,
+        floatAmount: 100000,
       ),
     ],
   );
@@ -78,7 +78,7 @@ void main() {
         expect(s.a, 2);
         expect(s.c, 1);
         expect(s.ad.containsKey('ad1'), isFalse);
-        expect(s.cartOrder.total, 697);
+        expect(s.cartOrder.total, 69700);
       },
     );
 
@@ -104,8 +104,8 @@ void main() {
         final s = bloc.state;
         expect(s.openTable, isNotNull);
         expect(s.openTable!.rounds.length, 2);
-        expect(s.due, 1540);
-        expect(s.payOrder.total, 1540);
+        expect(s.due, 154000);
+        expect(s.payOrder.total, 154000);
 
         final ad5 = s.posState.addons.firstWhere((x) => x.id == 'ad5');
         expect(ad5.stock, 57);
@@ -129,7 +129,7 @@ void main() {
           ..add(const SaleRoundSent(staff: ownerStaff));
 
         await Future<void>.delayed(Duration.zero);
-        expect(bloc.state.due, 1540);
+        expect(bloc.state.due, 154000);
 
         // Cashier attempt must be rejected
         bloc.add(
@@ -143,7 +143,7 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
         expect(bloc.state.toastMessage, 'ผู้จัดการขึ้นไปเท่านั้น');
-        expect(bloc.state.due, 1540);
+        expect(bloc.state.due, 154000);
 
         // Owner adjusts 1 adult head + 1 beer (ad5) -> 1540 -> 1181
         bloc
@@ -167,8 +167,8 @@ void main() {
           );
         await Future<void>.delayed(Duration.zero);
 
-        expect(bloc.state.due, 1181);
-        expect(bloc.state.payOrder.total, 1181);
+        expect(bloc.state.due, 118100);
+        expect(bloc.state.payOrder.total, 118100);
         final ad5After = bloc.state.posState.addons.firstWhere(
           (x) => x.id == 'ad5',
         );
@@ -202,9 +202,9 @@ void main() {
         final bill = s.settledBill;
         expect(bill, isNotNull);
         expect(bill!.no, '261104-001');
-        expect(bill.total, 607);
-        expect(bill.received, 1000);
-        expect(bill.change, 393);
+        expect(bill.total, 60700);
+        expect(bill.received, 100000);
+        expect(bill.change, 39300);
         expect(s.openTable, isNotNull);
         expect(s.openTable!.billIds, contains('b1'));
 
@@ -261,8 +261,8 @@ void main() {
         final bill = s.settledBill;
         expect(bill, isNotNull);
         expect(bill!.no, '261104-001');
-        expect(bill.total, 1196);
-        expect(bill.received, 1196);
+        expect(bill.total, 119600);
+        expect(bill.received, 119600);
         expect(bill.change, 0);
         expect(s.openTable, isNotNull);
         expect(s.openTable!.rounds, isEmpty);

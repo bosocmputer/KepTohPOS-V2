@@ -18,17 +18,17 @@ class ShiftRecord {
     id: json['id'] as String,
     staffId: json['staffId'] as String,
     openedAt: json['openedAt'] as String,
-    floatAmount: ((json['floatAmount'] ?? json['float']) as num).toDouble(),
+    floatAmount: ((json['floatAmount'] ?? json['float']) as num).toInt(),
     closedAt: json['closedAt'] as String?,
-    counted: (json['counted'] as num?)?.toDouble(),
+    counted: (json['counted'] as num?)?.toInt(),
     closedBy: json['closedBy'] as String?,
   );
   final String id;
   final String staffId;
   final String openedAt;
-  final double floatAmount;
+  final int floatAmount;
   String? closedAt;
-  double? counted;
+  int? counted;
   String? closedBy;
   ShiftRecord copy() => ShiftRecord(
     id: id,
@@ -55,9 +55,9 @@ class StockLot {
   const new({required this.qty, required this.cost});
   factory fromJson(Map<String, dynamic> j) => StockLot(
     qty: (j['qty'] as num).toDouble(),
-    cost: (j['cost'] as num).toDouble(),
+    cost: (j['cost'] as num).toInt(),
   );
   final double qty;
-  final double cost;
+  final int cost;
   Map<String, dynamic> toJson() => <String, dynamic>{'qty': qty, 'cost': cost};
 }

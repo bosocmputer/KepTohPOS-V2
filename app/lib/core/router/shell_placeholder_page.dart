@@ -198,7 +198,7 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
               ? context.go('/shift')
               : setState(() => _manualOpenShiftModal = true),
           onLogout: () {
-            authCubit?.logout();
+            unawaited(authCubit?.logout());
             context.go('/login');
           },
           child: _buildBody(

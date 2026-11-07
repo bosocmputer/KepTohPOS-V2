@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app/domain/domain.dart';
+import 'package:app/domain/pos_command_exception.dart';
 import 'package:app/features/stock/presentation/cubit/stock_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -43,13 +44,21 @@ class StockCubit extends Cubit<StockState> {
       todayDate: today,
       selectedDate: today,
       activeTab: initialTab,
+      showCosts: repo.canReadCosts,
     );
   }
 
   void _onRepositoryUpdated(PosState s) {
     final today = businessDayKey(_clock(), s.shop.dayCutoffMinutes);
     final ledger = computeLedger(s, today: today);
-    emit(state.copyWith(posState: s, ledger: ledger, todayDate: today));
+    emit(
+      state.copyWith(
+        posState: s,
+        ledger: ledger,
+        todayDate: today,
+        showCosts: _repository.canReadCosts,
+      ),
+    );
   }
 
   /// Switches the active `/stock` tab (`'count'|'purchase'|'expense'|'balance'`).
@@ -113,30 +122,38 @@ class StockCubit extends Cubit<StockState> {
     emit(state.copyWith(balancePage: page));
   }
 
+  /// Runs [command], showing a failure as a toast instead of an error.
+  Future<bool> _attempt(Future<bool> Function() command) async {
+    try {
+      return await command();
+    } on PosCommandException catch (e) {
+      emit(state.copyWith(toastMessage: e.message));
+      return false;
+    }
+  }
+
   /// Saves a new or edited purchase bill. Editing requires
   /// `me.role != 'cashier'`.
-  bool submitPurchase({
+  Future<bool> submitPurchase({
     required String date,
     required String supplierId,
     required List<PurchaseLine> lines,
     required StaffMember staff,
     String note = '',
     String? editId,
-  }) {
+  }) async {
     final now = _clock();
-    var ok = false;
-    _repository.update((st) {
-      ok = savePurchase(
-        st,
+    final ok = await _attempt(
+      () => _repository.recordPurchase(
         date: date,
         supplierId: supplierId,
         lines: lines,
-        me: staff,
+        staff: staff,
         note: note,
         editId: editId,
         now: now,
-      );
-    });
+      ),
+    );
     if (!ok) return false;
     final s = _repository.state;
     final today = businessDayKey(now, s.shop.dayCutoffMinutes);
@@ -153,15 +170,14 @@ class StockCubit extends Cubit<StockState> {
   }
 
   /// Deletes a purchase bill. Restricted to `manager` / `owner`.
-  bool removePurchase({
+  Future<bool> removePurchase({
     required String purchaseId,
     required StaffMember staff,
-  }) {
+  }) async {
     if (staff.role == 'cashier') return false;
-    var ok = false;
-    _repository.update((st) {
-      ok = deletePurchase(st, purchaseId: purchaseId, me: staff);
-    });
+    final ok = await _attempt(
+      () => _repository.removePurchase(purchaseId: purchaseId, staff: staff),
+    );
     if (!ok) return false;
     final s = _repository.state;
     final today = businessDayKey(_clock(), s.shop.dayCutoffMinutes);
@@ -179,24 +195,22 @@ class StockCubit extends Cubit<StockState> {
 
   /// Saves new or edited daily expenses. Editing requires
   /// `me.role != 'cashier'`.
-  bool submitExpenses({
+  Future<bool> submitExpenses({
     required String date,
     required List<ExpenseDraftLine> lines,
     required StaffMember staff,
     String? editId,
-  }) {
+  }) async {
     final now = _clock();
-    var ok = false;
-    _repository.update((st) {
-      ok = saveExpenses(
-        st,
+    final ok = await _attempt(
+      () => _repository.recordExpenses(
         date: date,
         lines: lines,
-        me: staff,
+        staff: staff,
         editId: editId,
         now: now,
-      );
-    });
+      ),
+    );
     if (!ok) return false;
     final s = _repository.state;
     final today = businessDayKey(now, s.shop.dayCutoffMinutes);
@@ -213,12 +227,14 @@ class StockCubit extends Cubit<StockState> {
   }
 
   /// Deletes a daily expense. Restricted to `manager` / `owner`.
-  bool removeExpense({required String expenseId, required StaffMember staff}) {
+  Future<bool> removeExpense({
+    required String expenseId,
+    required StaffMember staff,
+  }) async {
     if (staff.role == 'cashier') return false;
-    var ok = false;
-    _repository.update((st) {
-      ok = deleteExpense(st, expenseId: expenseId, me: staff);
-    });
+    final ok = await _attempt(
+      () => _repository.removeExpense(expenseId: expenseId, staff: staff),
+    );
     if (!ok) return false;
     final s = _repository.state;
     final today = businessDayKey(_clock(), s.shop.dayCutoffMinutes);

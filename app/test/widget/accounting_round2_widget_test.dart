@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
-PosRepository _buildFullRepo({
+MockPosRepository _buildFullRepo({
   required DateTime fixedNow,
   String sessionStaffId = 'st1',
 }) {
@@ -59,7 +59,7 @@ void main() {
             timing: 'before',
             pkgId: pkg.id,
             method: pm,
-            received: 7 * 199.0,
+            received: 7 * 19900,
             billId: 'b1',
             now: openTime,
           );
@@ -71,7 +71,7 @@ void main() {
             timing: 'before',
             pkgId: pkg.id,
             method: pm,
-            received: 199,
+            received: 19900,
             billId: 'b2',
             now: addTime,
           );
@@ -162,7 +162,7 @@ void main() {
             timing: 'before',
             pkgId: pkg.id,
             method: s.payments.first,
-            received: 398,
+            received: 39800,
             billId: 'b1',
             now: openTime,
           );
@@ -237,7 +237,7 @@ void main() {
             timing: 'before',
             pkgId: pkg.id,
             method: s.payments.first,
-            received: 398,
+            received: 39800,
             billId: 'b1',
             now: openTime,
           );

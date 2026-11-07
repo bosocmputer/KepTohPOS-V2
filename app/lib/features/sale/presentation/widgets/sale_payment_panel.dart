@@ -39,7 +39,7 @@ Widget buildSaleMobileBottomBar(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('ดูออเดอร์โต๊ะ ${tb.name}', style: s),
-            Text('${baht(payTotal, payTotal % 1 != 0 ? 2 : 0)} ›', style: s),
+            Text('${baht(payTotal, payTotal % 100 != 0 ? 2 : 0)} ›', style: s),
           ],
         ),
       ),
@@ -61,10 +61,10 @@ class SalePaymentPanel extends StatelessWidget {
   final StaffMember staff;
   final bool fullHeight;
 
-  static List<double> quickCashAmounts(double total) {
-    final roundedHundred = (total / 100).ceil() * 100.0;
-    final candidates = <double>[total, roundedHundred, 500, 1000, 2000];
-    final unique = <double>[];
+  static List<int> quickCashAmounts(int total) {
+    final roundedHundred = (total / 10000).ceil() * 10000;
+    final candidates = <int>[total, roundedHundred, 50000, 100000, 200000];
+    final unique = <int>[];
     for (final v in candidates) {
       if (v >= total && !unique.contains(v)) unique.add(v);
     }

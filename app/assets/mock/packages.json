@@ -2,8 +2,8 @@
   {
     "id": "pk1",
     "name": "บุฟเฟต์หมูกระทะ",
-    "adultPrice": 199,
-    "childPrice": 99,
+    "adultPrice": 19900,
+    "childPrice": 9900,
     "childRule": "เด็กสูง 100–130 ซม.",
     "freeRule": "ต่ำกว่า 100 ซม. ทานฟรี",
     "timeLimit": 0,
@@ -12,8 +12,8 @@
   {
     "id": "pk2",
     "name": "หมูกระทะ + ทะเล",
-    "adultPrice": 279,
-    "childPrice": 139,
+    "adultPrice": 27900,
+    "childPrice": 13900,
     "childRule": "เด็กสูง 100–130 ซม.",
     "freeRule": "ต่ำกว่า 100 ซม. ทานฟรี",
     "timeLimit": 120,

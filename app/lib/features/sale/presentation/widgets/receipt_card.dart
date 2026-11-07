@@ -48,7 +48,7 @@ class ReceiptCard extends StatelessWidget {
     final eatTxt = hasLim
         ? 'ทานได้ถึงเวลา ${thTime(bill.eatUntil!)} น. (จำกัด $limTxt)'
         : 'ไม่จำกัดเวลา';
-    String fmtAmt(double v) => baht(v, v % 1 != 0 ? 2 : 0);
+    String fmtAmt(int v) => baht(v, v % 100 != 0 ? 2 : 0);
 
     return Container(
       key: const ValueKey('receipt-card'),
@@ -275,7 +275,7 @@ class ReceiptCard extends StatelessWidget {
         ),
         Text(
           'พร้อมเพย์ ${shop.promptpay} · ยอดโอน '
-          '${baht(bill.total, bill.total % 1 != 0 ? 2 : 0)}',
+          '${baht(bill.total, bill.total % 100 != 0 ? 2 : 0)}',
           style: tt.labelSmall?.copyWith(color: t.muted),
         ),
         const SizedBox(height: AppDimensions.space2),
