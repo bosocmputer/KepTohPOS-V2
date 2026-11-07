@@ -80,14 +80,14 @@ class MockPosRepository implements PosRepository {
         PackageItem(
           id: 'pk1',
           name: 'บุฟเฟต์หมู',
-          adultPrice: 199,
-          childPrice: 99,
+          adultPrice: 19900,
+          childPrice: 9900,
         ),
         PackageItem(
           id: 'pk2',
           name: 'หมู + ทะเล',
-          adultPrice: 279,
-          childPrice: 139,
+          adultPrice: 27900,
+          childPrice: 13900,
           timeLimit: 120,
         ),
       ],
@@ -96,8 +96,8 @@ class MockPosRepository implements PosRepository {
           id: 'ad1',
           name: 'น้ำเปล่า',
           category: 'เครื่องดื่ม',
-          price: 15,
-          cost: 6,
+          price: 1500,
+          cost: 600,
           stock: 96,
         ),
       ],
@@ -126,7 +126,7 @@ class MockPosRepository implements PosRepository {
               .subtract(const Duration(hours: 3))
               .toUtc()
               .toIso8601String(),
-          floatAmount: 1000,
+          floatAmount: 100000,
         ),
       ],
     );

@@ -192,7 +192,7 @@ class _BalanceGridCard extends StatelessWidget {
                     ),
                     Text(
                       '${kLocations[row.ing.location] ?? "-"} · '
-                      '$costLabel ${fmt(row.unitCost, 2)} ฿/${row.ing.unit}',
+                      '$costLabel ${fmtBaht(row.unitCost, 2)} ฿/${row.ing.unit}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: tt.labelSmall?.copyWith(color: t.muted),

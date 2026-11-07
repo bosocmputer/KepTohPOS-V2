@@ -85,11 +85,11 @@ void main() {
           AddonLineInput(addon: ad1, qty: 2),
           AddonLineInput(addon: ad5, qty: 1),
         ]);
-        expect(res.subtotal, 607);
+        expect(res.subtotal, 60700);
         expect(res.service, 0);
         expect(res.vat, 0);
         expect(res.rounding, 0);
-        expect(res.total, 607);
+        expect(res.total, 60700);
         expect(res.lines.length, 5);
       },
     );
@@ -107,21 +107,21 @@ void main() {
         final resDown = calcOrder(shopDown, pkg1, 2, 1, 0, <AddonLineInput>[
           AddonLineInput(addon: ad1, qty: 1),
         ]);
-        expect(resDown.subtotal, 512);
-        expect(resDown.service, 25.6);
-        expect(resDown.vat, 37.63);
-        expect(resDown.rounding, -0.23);
-        expect(resDown.total, 575);
+        expect(resDown.subtotal, 51200);
+        expect(resDown.service, 2560);
+        expect(resDown.vat, 3763);
+        expect(resDown.rounding, -23);
+        expect(resDown.total, 57500);
 
         final shopNone = shopDown.copyWith(rounding: 'none');
         final resNone = calcOrder(shopNone, pkg1, 2, 1, 0, <AddonLineInput>[
           AddonLineInput(addon: ad1, qty: 1),
         ]);
-        expect(resNone.subtotal, 512);
-        expect(resNone.service, 25.6);
-        expect(resNone.vat, 37.63);
+        expect(resNone.subtotal, 51200);
+        expect(resNone.service, 2560);
+        expect(resNone.vat, 3763);
         expect(resNone.rounding, 0);
-        expect(resNone.total, 575.23);
+        expect(resNone.total, 57523);
       },
     );
 
@@ -138,11 +138,11 @@ void main() {
         final res = calcOrder(shopInc, pkg2, 3, 2, 1, <AddonLineInput>[
           AddonLineInput(addon: ad5, qty: 2),
         ]);
-        expect(res.subtotal, 1275);
-        expect(res.service, 127.5);
-        expect(res.vat, 91.72);
-        expect(res.rounding, -0.5);
-        expect(res.total, 1402);
+        expect(res.subtotal, 127500);
+        expect(res.service, 12750);
+        expect(res.vat, 9172);
+        expect(res.rounding, -50);
+        expect(res.total, 140200);
       },
     );
   });
@@ -172,7 +172,7 @@ void main() {
         timing: 'before',
         pkgId: 'pk1',
         method: pmCash,
-        received: 1000,
+        received: 100000,
         billId: 'b1',
         notes: 'test before',
         now: fixedNow,
@@ -183,9 +183,9 @@ void main() {
       expect(s.sales.length, 1);
       final bill1 = s.sales.first;
       expect(bill1.no, '261104-001');
-      expect(bill1.total, 607);
-      expect(bill1.received, 1000);
-      expect(bill1.change, 393);
+      expect(bill1.total, 60700);
+      expect(bill1.received, 100000);
+      expect(bill1.change, 39300);
       expect(s.openTables['t1']?.billIds, contains('b1'));
 
       // 2. Eat-before-paying on t2 (sendRound deducts stock immediately)
@@ -220,7 +220,7 @@ void main() {
       expect(totBefore.a, 4);
       expect(totBefore.c, 1);
       expect(totBefore.ad, {'ad1': 3, 'ad5': 3});
-      expect(tableDue(s, ot), 1540);
+      expect(tableDue(s, ot), 154000);
 
       // adjustSent restores stock for addon (ad5 + 1 = 57)
       adjustSent(s, 't2', 'head', 'a', 1, 'ลดหัวผู้ใหญ่ 1', me, now: fixedNow);
@@ -232,7 +232,7 @@ void main() {
       expect(totAfter.a, 3);
       expect(totAfter.c, 1);
       expect(totAfter.ad, {'ad1': 3, 'ad5': 2});
-      expect(tableDue(s, ot), 1181);
+      expect(tableDue(s, ot), 118100);
 
       final lines = sentLines(s, pkg2, totAfter);
       expect(lines.length, 4);
@@ -260,8 +260,8 @@ void main() {
 
       final bill2 = s.sales.last;
       expect(bill2.no, '261104-002');
-      expect(bill2.total, 1196);
-      expect(bill2.received, 1196);
+      expect(bill2.total, 119600);
+      expect(bill2.received, 119600);
       expect(bill2.change, 0);
       expect(ot.rounds, isEmpty);
       expect(ot.adjusts, isEmpty);
@@ -307,7 +307,7 @@ void main() {
           timing: 'before',
           pkgId: 'pk1',
           method: pmCash,
-          received: 1000,
+          received: 100000,
           billId: 'b1',
           now: fixedNow,
         );
@@ -366,7 +366,7 @@ void main() {
         final dayBefore = ledgerBefore.days.firstWhere(
           (d) => d.date == '2026-11-04',
         );
-        expect(dayBefore.gross, 607 + 1196);
+        expect(dayBefore.gross, 60700 + 119600);
         expect(dayBefore.bills, 2);
 
         // Cashier cannot void
@@ -406,7 +406,7 @@ void main() {
         final dayAfterB1 = ledgerAfterB1.days.firstWhere(
           (d) => d.date == '2026-11-04',
         );
-        expect(dayAfterB1.gross, 1196);
+        expect(dayAfterB1.gross, 119600);
         expect(dayAfterB1.bills, 1);
         expect(dayBefore.profit! - dayAfterB1.profit!, greaterThan(0));
 
@@ -454,14 +454,14 @@ void main() {
         rounding: 'none',
       );
       final ex10 = calcOrder(shopEx10, pkg1, 2, 0, 0, const []);
-      expect(ex10.subtotal, 398);
-      expect(ex10.vat, closeTo(39.8, 1e-6));
-      expect(ex10.total, closeTo(437.8, 1e-6));
+      expect(ex10.subtotal, 39800);
+      expect(ex10.vat, closeTo(3980, 1e-4));
+      expect(ex10.total, closeTo(43780, 1e-4));
 
       final shopIn10 = s.shop.copyWith(vatMode: 'included', vatRate: 10);
       final in10 = calcOrder(shopIn10, pkg1, 2, 0, 0, const []);
-      expect(in10.total, 398);
-      expect(in10.vat, closeTo(36.18, 1e-6));
+      expect(in10.total, 39800);
+      expect(in10.vat, closeTo(3618, 1e-4));
 
       // 2. Settle transfer payment with selected bank account (ba2) & 10% VAT
       s.shop = shopEx10;
@@ -474,7 +474,7 @@ void main() {
         timing: 'before',
         pkgId: 'pk1',
         method: pmTransfer,
-        received: 500,
+        received: 50000,
         billId: 'b_trans_1',
         bankAccount: bank2,
         now: fixedNow,

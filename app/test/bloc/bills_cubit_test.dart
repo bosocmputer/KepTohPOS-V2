@@ -30,7 +30,7 @@ PosRepository _buildSeededBillsRepo(DateTime fixedNow) {
         packageId: pkg.id,
         order: order,
         method: method,
-        received: 500,
+        received: 50000,
       );
     }
     voidBill(s, billId: 'b12', me: owner, reason: 'ทดสอบยกเลิก', now: fixedNow);

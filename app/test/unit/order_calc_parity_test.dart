@@ -149,7 +149,7 @@ void main() {
               id: 'x',
               name: 'x',
               category: '',
-              price: c.subtotal / 100,
+              price: c.subtotal,
               cost: 0,
               stock: 0,
             ),
@@ -158,10 +158,10 @@ void main() {
         ],
       );
 
-      expect(order.service, closeTo(c.service / 100, 1e-9));
-      expect(order.vat, closeTo(c.vat / 100, 1e-9));
-      expect(order.rounding, closeTo(c.roundingAmount / 100, 1e-9));
-      expect(order.total, closeTo(c.total / 100, 1e-9));
+      expect(order.service, c.service);
+      expect(order.vat, c.vat);
+      expect(order.rounding, c.roundingAmount);
+      expect(order.total, c.total);
     });
   }
 }

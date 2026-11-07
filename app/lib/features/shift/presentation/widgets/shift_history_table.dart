@@ -17,7 +17,7 @@ class ShiftStatsGrid extends StatelessWidget {
     final tokens = context.tokens;
     ({String label, String value, String sub, bool highlight}) it(
       String l,
-      double v,
+      int v,
       String s, {
       bool h = false,
     }) => (label: l, value: baht(v), sub: s, highlight: h);
@@ -260,23 +260,29 @@ class ShiftHistoryTable extends StatelessWidget {
         _numCol(
           'float',
           'เงินทอน',
-          (h) =>
-              Text(fmt(h.floatAmount), style: TextStyle(color: tokens.muted)),
+          (h) => Text(
+            fmtBaht(h.floatAmount),
+            style: TextStyle(color: tokens.muted),
+          ),
         ),
-        _numCol('cash', 'ขายเงินสด', (h) => Text(fmt(state.statsOf(h).cash))),
+        _numCol(
+          'cash',
+          'ขายเงินสด',
+          (h) => Text(fmtBaht(state.statsOf(h).cash)),
+        ),
         _numCol('qr', 'QR/โอน', (h) {
           final st = state.statsOf(h);
-          return Text(fmt(st.qr + st.transfer));
+          return Text(fmtBaht(st.qr + st.transfer));
         }),
         _numCol(
           'exp',
           'ควรมี',
-          (h) => Text(fmt(state.statsOf(h).expected), style: bold),
+          (h) => Text(fmtBaht(state.statsOf(h).expected), style: bold),
         ),
-        _numCol('cnt', 'นับได้', (h) => Text(fmt(h.counted), style: bold)),
+        _numCol('cnt', 'นับได้', (h) => Text(fmtBaht(h.counted), style: bold)),
         _numCol('diff', 'ส่วนต่าง', (h) {
           final d = (h.counted ?? 0) - state.statsOf(h).expected;
-          final text = d == 0 ? 'ตรง' : '${d > 0 ? "+" : ""}${fmt(d)}';
+          final text = d == 0 ? 'ตรง' : '${d > 0 ? "+" : ""}${fmtBaht(d)}';
           return Align(
             alignment: Alignment.centerRight,
             child: Pill(

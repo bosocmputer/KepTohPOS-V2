@@ -17,8 +17,8 @@ class PackageItem {
   factory fromJson(Map<String, dynamic> json) => PackageItem(
     id: json['id'] as String,
     name: json['name'] as String,
-    adultPrice: (json['adultPrice'] as num).toDouble(),
-    childPrice: (json['childPrice'] as num).toDouble(),
+    adultPrice: (json['adultPrice'] as num).toInt(),
+    childPrice: (json['childPrice'] as num).toInt(),
     childRule: (json['childRule'] as String?) ?? '',
     freeRule: (json['freeRule'] as String?) ?? '',
     timeLimit: (json['timeLimit'] as num?)?.toInt() ?? 0,
@@ -27,8 +27,8 @@ class PackageItem {
 
   final String id;
   final String name;
-  final double adultPrice;
-  final double childPrice;
+  final int adultPrice;
+  final int childPrice;
   final String childRule;
   final String freeRule;
   final int timeLimit;
@@ -37,8 +37,8 @@ class PackageItem {
   PackageItem copyWith({
     String? id,
     String? name,
-    double? adultPrice,
-    double? childPrice,
+    int? adultPrice,
+    int? childPrice,
     String? childRule,
     String? freeRule,
     int? timeLimit,
@@ -82,8 +82,8 @@ class AddonItem {
     id: json['id'] as String,
     name: json['name'] as String,
     category: (json['category'] as String?) ?? '',
-    price: (json['price'] as num).toDouble(),
-    cost: (json['cost'] as num).toDouble(),
+    price: (json['price'] as num).toInt(),
+    cost: (json['cost'] as num).toInt(),
     stock: (json['stock'] as num).toInt(),
     active: (json['active'] as bool?) ?? true,
   );
@@ -91,8 +91,8 @@ class AddonItem {
   final String id;
   final String name;
   final String category;
-  final double price;
-  final double cost;
+  final int price;
+  final int cost;
   int stock;
   final bool active;
 
@@ -102,8 +102,8 @@ class AddonItem {
     String? id,
     String? name,
     String? category,
-    double? price,
-    double? cost,
+    int? price,
+    int? cost,
     int? stock,
     bool? active,
   }) => AddonItem(
@@ -187,7 +187,7 @@ class IngredientItem {
     id: json['id'] as String,
     name: json['name'] as String,
     unit: json['unit'] as String,
-    lastCost: (json['lastCost'] as num).toDouble(),
+    lastCost: (json['lastCost'] as num).toInt(),
     par: (json['par'] as num).toDouble(),
     supplierId: (json['supplierId'] as String?) ?? '',
     category: (json['category'] as String?) ?? '',
@@ -199,7 +199,7 @@ class IngredientItem {
   final String id;
   final String name;
   final String unit;
-  final double lastCost;
+  final int lastCost;
   final double par;
   final String supplierId;
   final String category;
@@ -211,7 +211,7 @@ class IngredientItem {
     String? id,
     String? name,
     String? unit,
-    double? lastCost,
+    int? lastCost,
     double? par,
     String? supplierId,
     String? category,

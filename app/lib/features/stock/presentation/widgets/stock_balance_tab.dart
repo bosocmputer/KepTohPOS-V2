@@ -194,7 +194,7 @@ class StockBalanceTab extends StatelessWidget {
                   label: state.costColumnLabel,
                   align: ColAlign.right,
                   cellBuilder: (context, r) => Text(
-                    fmt(r.unitCost, 2),
+                    fmtBaht(r.unitCost, 2),
                     key: ValueKey('balance-unit-cost-${r.ing.id}'),
                     textAlign: TextAlign.right,
                     style: tt.bodyMedium?.copyWith(color: t.ink),
@@ -205,7 +205,7 @@ class StockBalanceTab extends StatelessWidget {
                   label: 'มูลค่าคงเหลือ',
                   align: ColAlign.right,
                   cellBuilder: (context, r) => Text(
-                    fmt(r.val),
+                    fmtBaht(r.val),
                     key: ValueKey('balance-val-${r.ing.id}'),
                     textAlign: TextAlign.right,
                     style: tt.bodyMedium?.copyWith(

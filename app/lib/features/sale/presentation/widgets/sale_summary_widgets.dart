@@ -247,7 +247,7 @@ class OrderSummary extends StatelessWidget {
             _row(
               context,
               'ยอดชำระ',
-              baht(order.total, order.total % 1 != 0 ? 2 : 0),
+              baht(order.total, order.total % 100 != 0 ? 2 : 0),
               hi: true,
             ),
           ],

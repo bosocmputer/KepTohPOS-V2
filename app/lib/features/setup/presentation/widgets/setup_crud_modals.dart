@@ -209,14 +209,14 @@ class _SetupCrudEditorModalState extends State<SetupCrudEditorModal> {
       _row(
         _txt(
           'ราคาผู้ใหญ่ (บาท) *',
-          fmtQ(_pkg.adultPrice),
-          (v) => _pkg = _pkg.copyWith(adultPrice: double.tryParse(v) ?? 0),
+          bahtInputText(_pkg.adultPrice),
+          (v) => _pkg = _pkg.copyWith(adultPrice: parseBaht(v)),
           numKey: true,
         ),
         _txt(
           'ราคาเด็ก (บาท) *',
-          fmtQ(_pkg.childPrice),
-          (v) => _pkg = _pkg.copyWith(childPrice: double.tryParse(v) ?? 0),
+          bahtInputText(_pkg.childPrice),
+          (v) => _pkg = _pkg.copyWith(childPrice: parseBaht(v)),
           numKey: true,
         ),
       ),
@@ -262,14 +262,14 @@ class _SetupCrudEditorModalState extends State<SetupCrudEditorModal> {
       _row(
         _txt(
           'ราคาขาย (บาท) *',
-          fmtQ(_addon.price),
-          (v) => _addon = _addon.copyWith(price: double.tryParse(v) ?? 0),
+          bahtInputText(_addon.price),
+          (v) => _addon = _addon.copyWith(price: parseBaht(v)),
           numKey: true,
         ),
         _txt(
           'ต้นทุนต่อหน่วย (บาท)',
-          fmtQ(_addon.cost),
-          (v) => _addon = _addon.copyWith(cost: double.tryParse(v) ?? 0),
+          bahtInputText(_addon.cost),
+          (v) => _addon = _addon.copyWith(cost: parseBaht(v)),
           numKey: true,
         ),
       ),

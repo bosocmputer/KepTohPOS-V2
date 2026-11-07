@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:app/core/utils/formatters.dart';
 import 'package:app/domain/domain.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -30,7 +31,7 @@ final class ShiftFloatInputChanged extends ShiftEvent {
 final class ShiftOpened extends ShiftEvent {
   const new({required this.staffId, this.floatAmount, this.now});
   final String staffId;
-  final double? floatAmount;
+  final int? floatAmount;
   final DateTime? now;
 
   @override
@@ -59,7 +60,7 @@ final class ShiftConfirmCloseToggled extends ShiftEvent {
 final class ShiftClosed extends ShiftEvent {
   const new({required this.staffId, this.counted, this.now});
   final String staffId;
-  final double? counted;
+  final int? counted;
   final DateTime? now;
 
   @override
@@ -91,7 +92,7 @@ class ShiftState extends Equatable {
   final ShiftStats? activeStats;
   final List<ShiftRecord> history;
   final List<DiningTable> owingTables;
-  final double owedTotal;
+  final int owedTotal;
   final String floatInput;
   final String countedInput;
   final bool confirmClose;
@@ -99,13 +100,13 @@ class ShiftState extends Equatable {
 
   bool get isShiftOpen => activeShift != null;
 
-  double? get countedValue {
-    final cleaned = countedInput.replaceAll(',', '').trim();
-    return cleaned.isEmpty ? null : double.tryParse(cleaned);
+  int? get countedValue {
+    final parsed = double.tryParse(countedInput.replaceAll(',', '').trim());
+    return parsed == null ? null : satangFromBaht(parsed);
   }
 
   /// Difference between counted cash and expected cash (`+counted - expected`).
-  double? get diff => (activeStats != null && countedValue != null)
+  int? get diff => (activeStats != null && countedValue != null)
       ? countedValue! - activeStats!.expected
       : null;
 
@@ -200,7 +201,7 @@ class ShiftBloc extends Bloc<ShiftEvent, ShiftState> {
     final history = closedShifts.take(14).toList();
 
     final owing = <DiningTable>[];
-    var owed = 0.0;
+    var owed = 0;
     for (final tb in s.tables) {
       final ot = s.openTables[tb.id];
       if (ot != null) {
@@ -212,7 +213,7 @@ class ShiftBloc extends Bloc<ShiftEvent, ShiftState> {
       }
     }
 
-    final defFloat = s.shop.defaultFloat.toInt().toString();
+    final defFloat = bahtInputText(s.shop.defaultFloat);
     return ShiftState(
       posState: s,
       activeShift: active,
@@ -241,7 +242,7 @@ class ShiftBloc extends Bloc<ShiftEvent, ShiftState> {
 
   void _onOpened(ShiftOpened event, Emitter<ShiftState> emit) {
     final cleaned = state.floatInput.replaceAll(',', '').trim();
-    final amount = event.floatAmount ?? (double.tryParse(cleaned) ?? 0);
+    final amount = event.floatAmount ?? parseBaht(cleaned);
     final nextPos = _repository.update((s) {
       if (openShiftOf(s) == null) {
         openShift(

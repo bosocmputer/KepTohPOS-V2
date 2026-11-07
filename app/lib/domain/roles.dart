@@ -172,6 +172,12 @@ double r2(num n) {
   return v == 0 ? 0 : v;
 }
 
+/// Converts a baht amount (from user input or legacy data) to satang.
+int satangFromBaht(num baht) => (baht * 100).round();
+
+/// Parses baht typed by the user into satang; invalid input counts as `0`.
+int parseBaht(String input) => satangFromBaht(double.tryParse(input) ?? 0);
+
 /// Rounds [n] according to [unit] (`roundQty` in `prototype/index.html`).
 double roundQty(num n, String unit) {
   final d = n.toDouble();
@@ -196,7 +202,7 @@ String crc16(String s) {
 }
 
 /// Builds EMVCo PromptPay payload (`promptPayPayload` in `index.html`).
-String promptPayPayload(String id, [num? amount]) {
+String promptPayPayload(String id, [int? satang]) {
   String t(String tag, String v) => '$tag${padInt(v.length)}$v';
   final digits = id.replaceAll(RegExp(r'\D'), '');
   final String acc;
@@ -207,10 +213,8 @@ String promptPayPayload(String id, [num? amount]) {
         '0000000000000${digits.replaceFirst(RegExp('^0'), '66')}';
     acc = t('01', normalized.substring(normalized.length - 13));
   }
-  final hasAmount = amount != null && amount > 0;
-  final amtPart = hasAmount
-      ? t('54', amount.toDouble().toStringAsFixed(2))
-      : '';
+  final hasAmount = satang != null && satang > 0;
+  final amtPart = hasAmount ? t('54', (satang / 100).toStringAsFixed(2)) : '';
   final p =
       '${t('00', '01')}${t('01', hasAmount ? '12' : '11')}'
       '${t('29', '${t('00', 'A000000677010111')}$acc')}'

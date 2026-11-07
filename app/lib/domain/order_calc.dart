@@ -1,10 +1,14 @@
 import 'dart:math' as math;
 
 import 'package:app/domain/models.dart';
-import 'package:app/domain/roles.dart';
+
+/// Returns [percent] of [satang], rounding half up in integer arithmetic so the
+/// result is identical to `numeric` rounding in `private.calc_bill_amounts`.
+int _percentOf(int satang, double percent) =>
+    (satang * (percent * 100).round() + 5000) ~/ 10000;
 
 /// Calculates order lines, subtotal, service charge, VAT, rounding, and total
-/// (`calcOrder` in `prototype/index.html`).
+/// in satang (`calcOrder` in `prototype/index.html`).
 CalculatedOrder calcOrder(
   ShopConfig shop,
   PackageItem? pkg,
@@ -64,28 +68,28 @@ CalculatedOrder calcOrder(
       );
     }
   }
-  final rawSubtotal = lines.fold<double>(
+  final subtotal = lines.fold<int>(
     0,
     (sum, line) => sum + line.qty * line.price,
   );
-  final subtotal = r2(rawSubtotal);
-  final service = r2(subtotal * shop.servicePct / 100);
-  final base = r2(subtotal + service);
+  final service = _percentOf(subtotal, shop.servicePct);
+  final base = subtotal + service;
   final vatRate = shop.vatRate > 0 ? shop.vatRate : 0.0;
-  var vat = 0.0;
+  var vat = 0;
   var total = base;
-  var rounding = 0.0;
+  var rounding = 0;
   if (shop.vatMode == 'excluded' && vatRate > 0) {
-    vat = r2(base * (vatRate / 100));
-    total = r2(base + vat);
+    vat = _percentOf(base, vatRate);
+    total = base + vat;
   }
-  if (shop.rounding == 'down' && total % 1 != 0) {
-    final t = (total + 1e-9).floorToDouble();
-    rounding = r2(t - total);
-    total = t;
+  if (shop.rounding == 'down' && total % 100 != 0) {
+    rounding = -(total % 100);
+    total += rounding;
   }
   if (shop.vatMode == 'included' && vatRate > 0) {
-    vat = r2(total * vatRate / (100 + vatRate));
+    final basisPoints = (vatRate * 100).round();
+    final divisor = 10000 + basisPoints;
+    vat = (2 * total * basisPoints + divisor) ~/ (2 * divisor);
   }
   return CalculatedOrder(
     lines: lines,
@@ -162,7 +166,7 @@ CalculatedOrder orderOf(PosState s, PackageItem? pkg, TableTotals t) =>
     );
 
 /// Returns the unpaid balance for eat-before-paying table [o] (`tableDue`).
-double tableDue(PosState s, OpenTableState o) {
+int tableDue(PosState s, OpenTableState o) {
   if (o.timing != 'after') return 0;
   final t = tableTotals(o);
   if (totalsEmpty(t)) return 0;

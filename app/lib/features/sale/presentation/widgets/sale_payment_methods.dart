@@ -38,15 +38,12 @@ class CashPaymentSection extends StatelessWidget {
           children: [
             for (final v in quicks)
               Btn(
-                key: ValueKey('quick-cash-${v == total ? "exact" : v.toInt()}'),
+                key: ValueKey('quick-cash-${v == total ? "exact" : v ~/ 100}'),
                 size: BtnSize.sm,
                 kind: recv == v ? BtnKind.primary : BtnKind.normal,
                 label: v == total ? 'พอดี' : baht(v),
-                onPressed: () => bloc.add(
-                  SaleCashReceivedChanged(
-                    v % 1 == 0 ? v.toInt().toString() : v.toStringAsFixed(2),
-                  ),
-                ),
+                onPressed: () =>
+                    bloc.add(SaleCashReceivedChanged(bahtInputText(v))),
               ),
           ],
         ),
@@ -111,7 +108,7 @@ class CashPaymentSection extends StatelessWidget {
             Text(
               key: isChange ? const ValueKey('cash-change-amount') : null,
               isChange
-                  ? baht(amt, amt % 1 != 0 ? 2 : 0)
+                  ? baht(amt, amt % 100 != 0 ? 2 : 0)
                   : (state.cashReceived.isEmpty ? '฿0' : baht(recv)),
               style: tt.titleLarge?.copyWith(
                 color: isChange ? fg : t.ink,
@@ -130,7 +127,7 @@ class CashPaymentSection extends StatelessWidget {
 class PromptPayQR extends StatelessWidget {
   const new({required this.promptpayId, required this.amount, super.key});
   final String promptpayId;
-  final double amount;
+  final int amount;
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +173,7 @@ class PromptPayQR extends StatelessWidget {
           ),
           const SizedBox(height: AppDimensions.space2_5),
           Text(
-            baht(amount, amount % 1 != 0 ? 2 : 0),
+            baht(amount, amount % 100 != 0 ? 2 : 0),
             style: tt.headlineMedium?.copyWith(
               color: t.primary,
               fontWeight: FontWeight.w700,

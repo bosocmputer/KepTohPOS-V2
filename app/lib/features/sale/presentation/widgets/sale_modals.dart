@@ -221,7 +221,7 @@ class CloseTableConfirmModal extends StatelessWidget {
   });
 
   final String tableName;
-  final double due;
+  final int due;
   final VoidCallback onClose;
   final VoidCallback onConfirm;
 
@@ -244,7 +244,7 @@ class CloseTableConfirmModal extends StatelessWidget {
                 ],
                 child: Text(
                   'โต๊ะ $tableName ยังมียอดค้างชำระ '
-                  '${baht(due, due % 1 != 0 ? 2 : 0)} '
+                  '${baht(due, due % 100 != 0 ? 2 : 0)} '
                   'ต้องเช็กบิลให้ครบก่อนจึงเก็บโต๊ะได้',
                 ),
               )

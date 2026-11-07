@@ -33,7 +33,7 @@ void main() {
         timing: 'before',
         pkgId: 'pk1',
         method: pmCash,
-        received: 500,
+        received: 50000,
         billId: 'b_2350',
         now: DateTime(2026, 11, 6, 23, 50),
       );
@@ -48,7 +48,7 @@ void main() {
         timing: 'before',
         pkgId: 'pk1',
         method: pmCash,
-        received: 1000,
+        received: 100000,
         billId: 'b_0030',
         now: DateTime(2026, 11, 7, 0, 30),
       );
@@ -66,7 +66,7 @@ void main() {
       final day6 = ledger.byDate['2026-11-06']!;
       expect(day6.bills, 2);
       expect(day6.heads, 5);
-      expect(day6.gross, 5 * 199);
+      expect(day6.gross, 5 * 19900);
     });
   });
 
@@ -90,17 +90,17 @@ void main() {
             staffName: 'อัย',
             packageId: 'pk1',
             lines: const <OrderLineItem>[],
-            subtotal: 199,
+            subtotal: 19900,
             service: 0,
             vat: 0,
             rounding: 0,
-            total: 199,
+            total: 19900,
             heads: HeadsCount(a: 1),
             methodId: 'pm1',
             methodName: 'เงินสด',
             methodType: 'cash',
-            received: 200,
-            change: 1,
+            received: 20000,
+            change: 100,
             vatMode: 'none',
             vatRate: 0,
           );
@@ -110,7 +110,11 @@ void main() {
               openDaysPerMonth: 25,
             )
             ..fixedCosts.add(
-              const FixedCostItem(id: 'fc1', name: 'ค่าเช่า+ไฟ', amount: 46100),
+              const FixedCostItem(
+                id: 'fc1',
+                name: 'ค่าเช่า+ไฟ',
+                amount: 4610000,
+              ),
             )
             ..sales.addAll([
               saleOn('2026-02-01'),
@@ -124,7 +128,7 @@ void main() {
           final ledFeb26 = computeLedger(s, today: '2026-02-01');
           expect(
             ledFeb26.byDate['2026-02-01']!.fixed,
-            closeTo(46100 / 28, 1e-6),
+            closeTo(4610000 / 28, 1e-6),
           );
 
           // Feb 2028 (leap year = 29 days)
@@ -132,25 +136,31 @@ void main() {
           final ledFeb28 = computeLedger(s, today: '2028-02-01');
           expect(
             ledFeb28.byDate['2028-02-01']!.fixed,
-            closeTo(46100 / 29, 1e-6),
+            closeTo(4610000 / 29, 1e-6),
           );
 
           // Nov 2026 (30 days)
           s.startDate = '2026-11-01';
           final ledNov = computeLedger(s, today: '2026-11-01');
-          expect(ledNov.byDate['2026-11-01']!.fixed, closeTo(46100 / 30, 1e-6));
+          expect(
+            ledNov.byDate['2026-11-01']!.fixed,
+            closeTo(4610000 / 30, 1e-6),
+          );
 
           // Oct 2026 (31 days)
           s.startDate = '2026-10-01';
           final ledOct = computeLedger(s, today: '2026-10-01');
-          expect(ledOct.byDate['2026-10-01']!.fixed, closeTo(46100 / 31, 1e-6));
+          expect(
+            ledOct.byDate['2026-10-01']!.fixed,
+            closeTo(4610000 / 31, 1e-6),
+          );
 
           // Custom mode uses openDaysPerMonth (25)
           s.shop = s.shop.copyWith(fixedCostDivisor: 'custom');
           final ledCustom = computeLedger(s, today: '2026-10-01');
           expect(
             ledCustom.byDate['2026-10-01']!.fixed,
-            closeTo(46100 / 25, 1e-6),
+            closeTo(4610000 / 25, 1e-6),
           );
         },
       );
@@ -163,7 +173,7 @@ void main() {
           ..startDate = '2026-11-05'
           ..shop = repo.state.shop.copyWith(fixedCostDivisor: 'calendar')
           ..fixedCosts.add(
-            const FixedCostItem(id: 'fc1', name: 'ค่าคงที่', amount: 46100),
+            const FixedCostItem(id: 'fc1', name: 'ค่าคงที่', amount: 4610000),
           )
           ..sales.add(
             BillRecord(
@@ -177,17 +187,17 @@ void main() {
               staffName: 'อัย',
               packageId: 'pk1',
               lines: const <OrderLineItem>[],
-              subtotal: 199,
+              subtotal: 19900,
               service: 0,
               vat: 0,
               rounding: 0,
-              total: 199,
+              total: 19900,
               heads: HeadsCount(a: 1),
               methodId: 'pm1',
               methodName: 'เงินสด',
               methodType: 'cash',
-              received: 200,
-              change: 1,
+              received: 20000,
+              change: 100,
               vatMode: 'none',
               vatRate: 0,
             ),
@@ -198,8 +208,8 @@ void main() {
         final rep = computeMonthlyReport(s, led, month: '2026-11');
         expect(rep.closedDays.length, 1);
         expect(rep.salesDays, 1);
-        expect(rep.fixedFullMonth, 46100);
-        expect(rep.fixedDeducted, closeTo(46100 / 30, 1e-6));
+        expect(rep.fixedFullMonth, 4610000);
+        expect(rep.fixedDeducted, closeTo(4610000 / 30, 1e-6));
         expect(rep.fixedDeducted < rep.fixedFullMonth, isTrue);
       });
     },
@@ -227,7 +237,7 @@ void main() {
           timing: 'before',
           pkgId: 'pk2',
           method: pmCash,
-          received: 2000,
+          received: 200000,
           billId: 'b_open_1800',
           now: DateTime(2026, 11, 6, 18),
         );
@@ -241,7 +251,7 @@ void main() {
           timing: 'before',
           pkgId: 'pk2',
           method: pmCash,
-          received: 300,
+          received: 30000,
           billId: 'b_add_1845',
           now: DateTime(2026, 11, 6, 18, 45),
         );
@@ -285,7 +295,7 @@ void main() {
           timing: 'before',
           pkgId: 'pk1',
           method: pmCash,
-          received: 1500,
+          received: 150000,
           billId: 'b_sub_1',
           now: DateTime(2026, 11, 6, 18),
         );
@@ -299,7 +309,7 @@ void main() {
           timing: 'before',
           pkgId: 'pk1',
           method: pmCash,
-          received: 200,
+          received: 20000,
           billId: 'b_sub_2',
           now: DateTime(2026, 11, 6, 18, 25),
         );
@@ -313,7 +323,7 @@ void main() {
         expect(sum1.activeBillCount, 2);
         expect(sum1.voidedCount, 0);
         expect(sum1.heads.a, 8);
-        expect(sum1.total, 8 * 199);
+        expect(sum1.total, 8 * 19900);
         expect(sum1.mergedLines.single.qty, 8);
 
         // Void sub-bill #2 -> still in summary.bills with voided=true,
@@ -336,7 +346,7 @@ void main() {
         expect(sum2.voidedCount, 1);
         expect(sum2.bills[1].voided, isTrue);
         expect(sum2.heads.a, 7);
-        expect(sum2.total, 7 * 199);
+        expect(sum2.total, 7 * 19900);
         expect(sum2.mergedLines.single.qty, 7);
       });
     },

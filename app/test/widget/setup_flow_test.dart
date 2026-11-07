@@ -144,8 +144,8 @@ void main() {
         const PackageItem(
           id: 'p_neg',
           name: 'แพ็กเกจผิด',
-          adultPrice: -10,
-          childPrice: 99,
+          adultPrice: -1000,
+          childPrice: 9900,
         ),
       );
       expect(negPkg.ok, isFalse);
@@ -156,8 +156,8 @@ void main() {
           id: 'a_neg',
           name: 'น้ำอัดลม',
           category: 'เครื่องดื่ม',
-          price: 20,
-          cost: -5,
+          price: 2000,
+          cost: -500,
           stock: 10,
         ),
       );

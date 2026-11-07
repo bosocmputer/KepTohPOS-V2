@@ -155,7 +155,7 @@ class _ProfitChartPainter extends CustomPainter {
     const bottom = 28.0;
     const left = 8.0;
 
-    var maxVal = 1.0;
+    var maxVal = 100.0;
     var minVal = 0.0;
     for (final d in days) {
       final v = _valOf(d) ?? 0.0;
@@ -177,7 +177,7 @@ class _ProfitChartPainter extends CustomPainter {
       final y = yOf(v);
       _drawDashedLine(canvas, Offset(0, y), Offset(w, y), axisPaint);
       final tp = TextPainter(
-        text: TextSpan(text: fmt(v), style: labelStyle),
+        text: TextSpan(text: fmtBaht(v), style: labelStyle),
         textDirection: TextDirection.ltr,
       )..layout();
       tp.paint(canvas, Offset(w - 4 - tp.width, y - tp.height - 2));

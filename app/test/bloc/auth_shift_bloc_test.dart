@@ -30,7 +30,7 @@ MockPosRepository _createSeededRepo({
   final repo = MockPosRepository.fromJsonStrings(jsonByName, now: fixedNow);
   if (closeActiveShift) {
     repo.update((s) {
-      closeShift(s, staffId: 'st3', counted: 5446, now: fixedNow);
+      closeShift(s, staffId: 'st3', counted: 544600, now: fixedNow);
     });
   }
   return repo;
@@ -48,7 +48,7 @@ void main() {
       final shiftsBefore = before.shifts.length;
 
       final after = repo.update((s) {
-        openShift(s, staffId: 'st1', floatAmount: 1200);
+        openShift(s, staffId: 'st1', floatAmount: 120000);
       });
 
       expect(identical(before, after), isFalse);
@@ -56,7 +56,7 @@ void main() {
       expect(before.shifts.length, shiftsBefore);
       expect(openShiftOf(before), isNull);
       expect(after.shifts.length, shiftsBefore + 1);
-      expect(openShiftOf(after)?.floatAmount, 1200);
+      expect(openShiftOf(after)?.floatAmount, 120000);
     });
   });
 
@@ -70,11 +70,17 @@ void main() {
       expect(cubit.state.isAuthenticated, isFalse);
       expect(cubit.state.selectedStaffId, 'st1');
       expect(cubit.state.lastClosedDay?.date, '2026-11-03');
-      expect(cubit.state.lastClosedDay?.net, 28447);
-      expect(cubit.state.heroProfitValue, closeTo(15298.971781485305, 1e-9));
+      expect(cubit.state.lastClosedDay?.net, 2844700);
+      expect(
+        cubit.state.heroProfitValue / 100,
+        closeTo(15298.971781485305, 1e-9),
+      );
 
       repo.update((s) => s.shop = s.shop.copyWith(showNetProfit: false));
-      expect(cubit.state.heroProfitValue, closeTo(16935.63844815197, 1e-9));
+      expect(
+        cubit.state.heroProfitValue / 100,
+        closeTo(16935.63844815197, 1e-9),
+      );
     });
 
     blocTest<AuthCubit, AuthState>(
@@ -132,12 +138,12 @@ void main() {
 
       final st = bloc.state.activeStats!;
       expect(bloc.state.isShiftOpen, isTrue);
-      expect(bloc.state.activeShift?.floatAmount, 1000);
+      expect(bloc.state.activeShift?.floatAmount, 100000);
       expect(st.bills, 9);
-      expect(st.cash, 4446);
-      expect(st.qr, 4384);
+      expect(st.cash, 444600);
+      expect(st.qr, 438400);
       expect(st.transfer, 0);
-      expect(st.expected, 5446);
+      expect(st.expected, 544600);
     });
 
     blocTest<ShiftBloc, ShiftState>(
@@ -155,11 +161,11 @@ void main() {
       verify: (bloc) {
         expect(bloc.state.isShiftOpen, isTrue);
         expect(bloc.state.activeShift?.staffId, 'st1');
-        expect(bloc.state.activeShift?.floatAmount, 1500);
-        expect(bloc.state.activeStats?.expected, 1500);
+        expect(bloc.state.activeShift?.floatAmount, 150000);
+        expect(bloc.state.activeStats?.expected, 150000);
         expect(bloc.state.activeStats?.bills, 0);
         expect(bloc.state.toastMessage, 'เปิดกะแล้ว');
-        expect(bloc.state.history.first.counted, 5406);
+        expect(bloc.state.history.first.counted, 540600);
         expect(bloc.state.history.first.closedBy, 'st3');
       },
     );

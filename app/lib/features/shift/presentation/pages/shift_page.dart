@@ -144,9 +144,6 @@ class _ActiveShiftCard extends StatelessWidget {
   final ShiftStats stats;
   final ShiftState state;
 
-  static String _cleanNum(double v) =>
-      v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
-
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
@@ -261,7 +258,7 @@ class _ActiveShiftCard extends StatelessWidget {
                         key: const ValueKey('shift-fill-expected-btn'),
                         label: 'ตรงตามระบบ (${baht(stats.expected)})',
                         onPressed: () {
-                          final v = _cleanNum(stats.expected);
+                          final v = bahtInputText(stats.expected);
                           bloc.add(ShiftCountedInputChanged(v));
                         },
                       ),

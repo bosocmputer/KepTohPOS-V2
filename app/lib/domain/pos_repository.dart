@@ -30,18 +30,18 @@ class ShiftStats {
   });
 
   final int bills;
-  final double cash;
-  final double qr;
-  final double transfer;
-  final double expected;
+  final int cash;
+  final int qr;
+  final int transfer;
+  final int expected;
 }
 
 /// Computes [ShiftStats] for [sh] (`stats` in `ShiftView` of `index.html`).
 ShiftStats calcShiftStats(PosState s, ShiftRecord sh) {
   var bills = 0;
-  var cash = 0.0;
-  var qr = 0.0;
-  var transfer = 0.0;
+  var cash = 0;
+  var qr = 0;
+  var transfer = 0;
   for (final b in s.sales) {
     if (b.shiftId != sh.id || b.voided) continue;
     bills++;
@@ -67,7 +67,7 @@ ShiftStats calcShiftStats(PosState s, ShiftRecord sh) {
 ShiftRecord openShift(
   PosState s, {
   required String staffId,
-  required double floatAmount,
+  required int floatAmount,
   DateTime? now,
   String? id,
 }) {
@@ -86,7 +86,7 @@ ShiftRecord openShift(
 ShiftRecord? closeShift(
   PosState s, {
   required String staffId,
-  required double counted,
+  required int counted,
   DateTime? now,
 }) {
   final sh = openShiftOf(s);

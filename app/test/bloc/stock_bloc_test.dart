@@ -129,7 +129,7 @@ void main() {
         date: '2026-11-04',
         supplierId: 's1',
         lines: const <PurchaseLine>[
-          PurchaseLine(ingId: 'i1', qty: 5, total: 950),
+          PurchaseLine(ingId: 'i1', qty: 5, total: 95000),
         ],
         staff: cashier,
         note: 'รับช่วงเช้า',
@@ -143,7 +143,7 @@ void main() {
           date: '2026-11-04',
           supplierId: 's1',
           lines: const <PurchaseLine>[
-            PurchaseLine(ingId: 'i1', qty: 8, total: 1500),
+            PurchaseLine(ingId: 'i1', qty: 8, total: 150000),
           ],
           staff: cashier,
           editId: purId,
@@ -158,7 +158,7 @@ void main() {
           date: '2026-11-04',
           supplierId: 's1',
           lines: const <PurchaseLine>[
-            PurchaseLine(ingId: 'i1', qty: 8, total: 1500),
+            PurchaseLine(ingId: 'i1', qty: 8, total: 150000),
           ],
           staff: owner,
           editId: purId,
@@ -171,7 +171,7 @@ void main() {
       final addedExp = cubit.submitExpenses(
         date: '2026-11-04',
         lines: const <ExpenseDraftLine>[
-          ExpenseDraftLine(typeId: 'et1', amount: 250, note: 'น้ำแข็ง'),
+          ExpenseDraftLine(typeId: 'et1', amount: 25000, note: 'น้ำแข็ง'),
         ],
         staff: cashier,
       );
@@ -183,7 +183,7 @@ void main() {
         cubit.submitExpenses(
           date: '2026-11-04',
           lines: const <ExpenseDraftLine>[
-            ExpenseDraftLine(typeId: 'et1', amount: 300, note: 'แก้ยอด'),
+            ExpenseDraftLine(typeId: 'et1', amount: 30000, note: 'แก้ยอด'),
           ],
           staff: cashier,
           editId: expId,
@@ -197,7 +197,7 @@ void main() {
         cubit.submitExpenses(
           date: '2026-11-04',
           lines: const <ExpenseDraftLine>[
-            ExpenseDraftLine(typeId: 'et1', amount: 300, note: 'แก้ยอด'),
+            ExpenseDraftLine(typeId: 'et1', amount: 30000, note: 'แก้ยอด'),
           ],
           staff: owner,
           editId: expId,
@@ -206,7 +206,7 @@ void main() {
       );
       expect(
         cubit.state.dayExpenses.firstWhere((e) => e.id == expId).amount,
-        300,
+        30000,
       );
       expect(cubit.removeExpense(expenseId: expId, staff: owner), isTrue);
     });

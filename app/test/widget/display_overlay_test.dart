@@ -107,7 +107,7 @@ void main() {
               ProductCard(
                 name: 'สามชั้นสไลซ์',
                 category: 'หมู',
-                price: 59,
+                price: 5900,
                 stock: 10,
                 onTap: () => cardTapped = true,
               ),

@@ -4,6 +4,7 @@ import 'package:app/domain/models.dart';
 import 'package:app/domain/order_calc.dart';
 import 'package:app/domain/roles.dart';
 import 'package:app/domain/settle.dart';
+import 'package:app/domain/state_migration.dart';
 
 int _imul32(int a, int b) {
   final ah = (a >> 16) & 0xFFFF;
@@ -28,7 +29,7 @@ double Function() rng(int initialSeed) {
 
 /// Ensures open table defaults (`migrate` in `prototype/index.html`).
 PosState migrate(PosState o) {
-  o.version = 2;
+  o.version = kPosStateVersion;
   return o;
 }
 
@@ -106,7 +107,7 @@ PosState seed({
         PurchaseLine(
           ingId: ing.id,
           qty: r2(qty),
-          total: (qty * price + 0.5).floorToDouble(),
+          total: (qty * price / 100 + 0.5).floor() * 100,
         ),
       );
       sim[ing.id] = curSim + qty;
@@ -127,10 +128,10 @@ PosState seed({
     }
 
     // Daily operating expenses
-    final expItems = <(String, double)>[
-      ('et2', 60),
-      ('et3', 40),
-      if (i % 3 == 0) ('et1', 420),
+    final expItems = <(String, int)>[
+      ('et2', 6000),
+      ('et3', 4000),
+      if (i % 3 == 0) ('et1', 42000),
     ];
     for (var j = 0; j < expItems.length; j++) {
       s.expenses.add(
@@ -161,7 +162,7 @@ PosState seed({
       id: nextId('sh'),
       staffId: cashier,
       openedAt: shiftOpen.toUtc().toIso8601String(),
-      floatAmount: 1000,
+      floatAmount: 100000,
     );
     s.shifts.add(shift);
 
@@ -208,7 +209,7 @@ PosState seed({
         t = _atHours(day, 16.5 + rand() * 5);
       }
       final received =
-          (order.total / 100).ceil() * 100.0 + (rand() < 0.3 ? 500 : 0);
+          (order.total / 10000).ceil() * 10000 + (rand() < 0.3 ? 50000 : 0);
       final b = makeBill(
         s,
         id: nextId('b'),
@@ -253,10 +254,12 @@ PosState seed({
       s.counts[k] = cnt;
       final cash = s.sales
           .where((b) => b.shiftId == shift.id && b.methodType == 'cash')
-          .fold<double>(0, (acc, b) => acc + b.total);
+          .fold<int>(0, (acc, b) => acc + b.total);
       shift.closedAt = _atHours(day, 23).toUtc().toIso8601String();
-      final diff = rand() < 0.75 ? 0 : ((rand() - 0.5) * 40 + 0.5).floor();
-      shift.counted = 1000 + cash + diff;
+      final diff = rand() < 0.75
+          ? 0
+          : ((rand() - 0.5) * 40 + 0.5).floor() * 100;
+      shift.counted = 100000 + cash + diff;
     }
   }
 

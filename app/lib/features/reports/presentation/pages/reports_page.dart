@@ -49,7 +49,7 @@ class ReportColSpec {
 Widget _profitText(AppTokens t, double? v) => v == null
     ? const Text('–')
     : Text(
-        fmt(v),
+        fmtBaht(v),
         style: TextStyle(
           color: v >= 0 ? t.successInk : t.dangerInk,
           fontWeight: FontWeight.w700,
@@ -75,7 +75,7 @@ List<ReportColSpec> buildReportColumns(
     double w,
     double? Function(LedgerDaySummary) v,
     double tot,
-  ) => col(l, w, (d) => Text(fmt(v(d))), fmt(tot));
+  ) => col(l, w, (d) => Text(fmtBaht(v(d))), fmtBaht(tot));
 
   return <ReportColSpec>[
     col('บิล', 56, (d) => Text('${d.bills}'), '${report.totalBills}'),
@@ -99,7 +99,7 @@ List<ReportColSpec> buildReportColumns(
       'กำไรขั้นต้น',
       92,
       (d) => _profitText(t, d.profit),
-      fmt(report.closedProfit),
+      fmtBaht(report.closedProfit),
     ),
     if (showProfit && report.showNetProfit) ...[
       numCol('ค่าใช้จ่าย', 76, (d) => d.expenses + d.fixed, report.closedSpend),
@@ -107,16 +107,16 @@ List<ReportColSpec> buildReportColumns(
         'กำไรสุทธิ',
         82,
         (d) => _profitText(t, d.netProfit),
-        fmt(report.closedNetProfit),
+        fmtBaht(report.closedNetProfit),
       ),
     ],
     if (showProfit) ...[
       col(
         'ต้นทุน/หัว',
         76,
-        (d) => Text(fmt(d.costPerHead, 2)),
+        (d) => Text(fmtBaht(d.costPerHead, 2)),
         report.closedCostPerHead != null
-            ? fmt(report.closedCostPerHead, 2)
+            ? fmtBaht(report.closedCostPerHead, 2)
             : '–',
       ),
       col(

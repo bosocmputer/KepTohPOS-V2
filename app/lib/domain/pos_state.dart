@@ -1,5 +1,6 @@
 import 'package:app/domain/entities.dart';
 import 'package:app/domain/record_models.dart';
+import 'package:app/domain/state_migration.dart';
 import 'package:app/domain/state_models.dart';
 
 /// Active state of an occupied table (`openTables[tableId]`).
@@ -106,7 +107,7 @@ class PosState {
     required this.payments,
     required this.expenseTypes,
     required this.fixedCosts,
-    this.version = 2,
+    this.version = kPosStateVersion,
     this.currentStaffId = 'st1',
     Map<String, int>? seq,
     Map<String, Map<String, double>>? counts,
@@ -125,7 +126,8 @@ class PosState {
        initialStock = initialStock ?? <String, StockLot>{},
        expenses = expenses ?? <ExpenseRecord>[];
 
-  factory fromJson(Map<String, dynamic> json) {
+  factory fromJson(Map<String, dynamic> rawJson) {
+    final json = migrateStateJson(rawJson);
     List<T> parseList<T>(String key, T Function(Map<String, dynamic>) decode) =>
         ((json[key] as List<dynamic>?) ?? const <dynamic>[])
             .cast<Map<String, dynamic>>()
@@ -152,7 +154,7 @@ class PosState {
         (json['seq'] as Map<String, dynamic>?) ?? const <String, dynamic>{};
 
     return PosState(
-      version: (json['version'] as num?)?.toInt() ?? 2,
+      version: (json['version'] as num?)?.toInt() ?? kPosStateVersion,
       startDate: (json['startDate'] as String?) ?? '2026-10-05',
       currentStaffId: (json['currentStaffId'] as String?) ?? 'st1',
       shop: ShopConfig.fromJson(

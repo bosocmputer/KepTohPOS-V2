@@ -8,7 +8,7 @@
   "vatMode": "none",
   "vatRate": 7,
   "servicePct": 0,
-  "defaultFloat": 1000,
+  "defaultFloat": 100000,
   "receiptFooter": "ขอบคุณที่อุดหนุน ทานให้อร่อย ไม่เหลือทิ้งนะคะ",
   "useTimer": true,
   "payTiming": "before",

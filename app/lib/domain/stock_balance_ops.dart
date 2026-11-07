@@ -42,7 +42,7 @@ class ExpenseDraftLine {
   const new({required this.typeId, required this.amount, this.note = ''});
 
   final String typeId;
-  final double amount;
+  final int amount;
   final String note;
 }
 
@@ -150,8 +150,8 @@ List<StockBalanceRow> computeStockBalanceRows(PosState s, LedgerResult ledger) {
   return s.ingredients.map((ing) {
     final c = ledger.current[ing.id];
     final qty = c != null ? c.qty : 0.0;
-    final avg = c != null ? c.avg : ing.lastCost;
-    final last = c != null ? c.last : ing.lastCost;
+    final avg = c != null ? c.avg : ing.lastCost.toDouble();
+    final last = c != null ? c.last : ing.lastCost.toDouble();
     final unitCost = useLast ? last : avg;
     final val = qty * unitCost;
     final rawNeed = math.max<double>(0, ing.par - qty);

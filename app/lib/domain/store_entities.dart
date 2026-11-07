@@ -151,19 +151,19 @@ class FixedCostItem {
   factory fromJson(Map<String, dynamic> json) => FixedCostItem(
     id: json['id'] as String,
     name: json['name'] as String,
-    amount: (json['amount'] as num).toDouble(),
+    amount: (json['amount'] as num).toInt(),
     active: (json['active'] as bool?) ?? true,
   );
 
   final String id;
   final String name;
-  final double amount;
+  final int amount;
   final bool active;
 
   FixedCostItem copyWith({
     String? id,
     String? name,
-    double? amount,
+    int? amount,
     bool? active,
   }) => FixedCostItem(
     id: id ?? this.id,

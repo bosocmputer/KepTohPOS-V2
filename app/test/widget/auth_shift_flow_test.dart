@@ -27,7 +27,7 @@ MockPosRepository _buildTestRepo({bool closeInitialShift = true}) {
   final repo = MockPosRepository.fromJsonStrings(jsonByName, now: fixedNow);
   if (closeInitialShift) {
     repo.update((s) {
-      closeShift(s, staffId: 'st3', counted: 5446, now: fixedNow);
+      closeShift(s, staffId: 'st3', counted: 544600, now: fixedNow);
     });
   }
   return repo;

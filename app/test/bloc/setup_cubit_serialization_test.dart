@@ -81,8 +81,8 @@ void main() {
       const newPkg = PackageItem(
         id: 'pkg_test_99',
         name: 'ชุดพรีเมียมวากิว',
-        adultPrice: 499,
-        childPrice: 249,
+        adultPrice: 49900,
+        childPrice: 24900,
         timeLimit: 120,
       );
 

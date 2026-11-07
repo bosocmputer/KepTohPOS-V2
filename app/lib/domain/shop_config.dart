@@ -12,7 +12,7 @@ class ShopConfig {
     this.vatMode = 'none',
     this.vatRate = 7.0,
     this.servicePct = 0,
-    this.defaultFloat = 1000,
+    this.defaultFloat = 100000,
     this.receiptFooter = '',
     this.useTimer = true,
     this.payTiming = 'before',
@@ -39,7 +39,7 @@ class ShopConfig {
     vatMode: (json['vatMode'] as String?) ?? 'none',
     vatRate: (json['vatRate'] as num?)?.toDouble() ?? 7.0,
     servicePct: (json['servicePct'] as num?)?.toDouble() ?? 0,
-    defaultFloat: (json['defaultFloat'] as num?)?.toDouble() ?? 1000,
+    defaultFloat: (json['defaultFloat'] as num?)?.toInt() ?? 100000,
     receiptFooter: (json['receiptFooter'] as String?) ?? '',
     useTimer: (json['useTimer'] as bool?) ?? true,
     payTiming: (json['payTiming'] as String?) ?? 'before',
@@ -70,7 +70,7 @@ class ShopConfig {
   final String vatMode;
   final double vatRate;
   final double servicePct;
-  final double defaultFloat;
+  final int defaultFloat;
   final String receiptFooter;
   final bool useTimer;
   final String payTiming;
@@ -99,7 +99,7 @@ class ShopConfig {
     String? vatMode,
     double? vatRate,
     double? servicePct,
-    double? defaultFloat,
+    int? defaultFloat,
     String? receiptFooter,
     bool? useTimer,
     String? payTiming,

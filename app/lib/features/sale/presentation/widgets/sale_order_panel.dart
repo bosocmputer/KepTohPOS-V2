@@ -54,7 +54,7 @@ class _SaleOrderPanelState extends State<SaleOrderPanel> {
     final timing = state.effectiveTiming;
     final note = state.effectiveNotes;
     final payOrder = state.payOrder;
-    final totalTxt = baht(payOrder.total, payOrder.total % 1 != 0 ? 2 : 0);
+    final totalTxt = baht(payOrder.total, payOrder.total % 100 != 0 ? 2 : 0);
     final cartAddons = state.activeAddons
         .where((x) => (state.ad[x.id] ?? 0) > 0)
         .toList();

@@ -263,9 +263,8 @@ class _SetupSecondaryEditorModalState extends State<SetupSecondaryEditorModal> {
               }, placeholder: 'เช่น ค่าเช่าร้าน / ค่าไฟฟ้า'),
               _txt(
                 'ยอดต่อเดือน (บาท) *',
-                fmtQ(_fixed.amount),
-                (v) =>
-                    _fixed = _fixed.copyWith(amount: double.tryParse(v) ?? 0),
+                bahtInputText(_fixed.amount),
+                (v) => _fixed = _fixed.copyWith(amount: parseBaht(v)),
                 numKey: true,
               ),
             ),

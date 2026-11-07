@@ -1,6 +1,5 @@
 import 'package:app/domain/models.dart';
 import 'package:app/domain/order_calc.dart';
-import 'package:app/domain/roles.dart';
 
 /// Aggregated summary of an open table across all sub-bills in the current
 /// dining session (`ใบสรุปยอดโต๊ะ`).
@@ -32,11 +31,11 @@ class TableSummarySlip {
   final HeadsCount heads;
   final List<BillRecord> bills;
   final List<OrderLineItem> mergedLines;
-  final double subtotal;
-  final double service;
-  final double vat;
-  final double rounding;
-  final double total;
+  final int subtotal;
+  final int service;
+  final int vat;
+  final int rounding;
+  final int total;
   final int voidedCount;
 
   int get activeBillCount => bills.length - voidedCount;
@@ -68,11 +67,11 @@ TableSummarySlip? buildTableSummarySlip(
   var a = 0;
   var c = 0;
   var f = 0;
-  var subtotal = 0.0;
-  var service = 0.0;
-  var vat = 0.0;
-  var rounding = 0.0;
-  var total = 0.0;
+  var subtotal = 0;
+  var service = 0;
+  var vat = 0;
+  var rounding = 0;
+  var total = 0;
   var voidedCount = 0;
   final lineMap = <String, OrderLineItem>{};
 
@@ -84,11 +83,11 @@ TableSummarySlip? buildTableSummarySlip(
     a += b.heads.a;
     c += b.heads.c;
     f += b.heads.f;
-    subtotal = r2(subtotal + b.subtotal);
-    service = r2(service + b.service);
-    vat = r2(vat + b.vat);
-    rounding = r2(rounding + b.rounding);
-    total = r2(total + b.total);
+    subtotal += b.subtotal;
+    service += b.service;
+    vat += b.vat;
+    rounding += b.rounding;
+    total += b.total;
     for (final l in b.lines) {
       final key = '${l.type}|${l.id ?? ""}|${l.name}|${l.price}';
       final prev = lineMap[key];

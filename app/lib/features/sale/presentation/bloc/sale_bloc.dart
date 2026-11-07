@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:app/core/utils/formatters.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/sale/presentation/bloc/sale_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -181,9 +182,7 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
         return;
       }
       if (!state.canPay) return;
-      final totalStr = state.payOrder.total % 1 == 0
-          ? state.payOrder.total.toInt().toString()
-          : state.payOrder.total.toStringAsFixed(2);
+      final totalStr = bahtInputText(state.payOrder.total);
       emit(
         state.copyWith(
           step: 'pay',

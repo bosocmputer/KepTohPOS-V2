@@ -34,9 +34,7 @@ class _StockPurchaseTabState extends State<StockPurchaseTab> {
         (l) => PurchaseModalLineDraft(
           ingId: l.ingId,
           qty: fmtQ(l.qty),
-          total: l.total == l.total.roundToDouble()
-              ? l.total.toInt().toString()
-              : l.total.toString(),
+          total: bahtInputText(l.total),
         ),
       )
       .toList();

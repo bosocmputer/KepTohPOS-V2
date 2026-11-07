@@ -156,7 +156,7 @@ class TableSummaryCard extends StatelessWidget {
               ),
               Text(
                 key: const ValueKey('table-summary-total'),
-                baht(summary.total, summary.total % 1 != 0 ? 2 : 0),
+                baht(summary.total, summary.total % 100 != 0 ? 2 : 0),
                 style: tt.titleLarge?.copyWith(
                   color: t.primary,
                   fontWeight: FontWeight.w700,
@@ -193,7 +193,7 @@ class TableSummaryCard extends StatelessWidget {
             const SizedBox(width: AppDimensions.space1_5),
           ],
           Text(
-            baht(b.total, b.total % 1 != 0 ? 2 : 0),
+            baht(b.total, b.total % 100 != 0 ? 2 : 0),
             style: tt.bodySmall?.copyWith(
               color: col,
               fontWeight: FontWeight.w700,

@@ -129,7 +129,7 @@ class SetupCatalogPanel extends StatelessWidget {
           _col('name', 'ชื่อสินค้า', (a) => a.name, flex: 3),
           _col('cat', 'หมวด', (a) => a.category),
           _col('price', 'ราคาขาย', (a) => baht(a.price)),
-          _col('cost', 'ต้นทุน/หน่วย', (a) => '฿${fmtQ(a.cost)}'),
+          _col('cost', 'ต้นทุน/หน่วย', (a) => '฿${fmtQ(a.cost / 100)}'),
           _col('stock', 'คงเหลือ', (a) => fmt(a.stock)),
           DataTableCol(
             key: 'active',
@@ -171,7 +171,7 @@ class SetupCatalogPanel extends StatelessWidget {
             'รอบการตรวจนับ',
             (i) => kCountFreqs[i.countFreq] ?? i.countFreq,
           ),
-          _col('cost', 'ต้นทุนล่าสุด', (i) => '฿${fmtQ(i.lastCost)}'),
+          _col('cost', 'ต้นทุนล่าสุด', (i) => '฿${fmtQ(i.lastCost / 100)}'),
           _col('par', 'เกณฑ์คงเหลือขั้นต่ำ', (i) => '${fmtQ(i.par)} ${i.unit}'),
         ],
       ),

@@ -198,8 +198,8 @@ class _SetupIngredientSupplierModalState
             kCountFreqs,
             (v) => _ing = _ing.copyWith(countFreq: v),
           ),
-          _txt('ราคาซื้อล่าสุด (บาท/หน่วย)', fmtQ(_ing.lastCost), (v) {
-            _ing = _ing.copyWith(lastCost: double.tryParse(v) ?? 0);
+          _txt('ราคาซื้อล่าสุด (บาท/หน่วย)', bahtInputText(_ing.lastCost), (v) {
+            _ing = _ing.copyWith(lastCost: parseBaht(v));
           }, numKey: true),
         ),
         _row(

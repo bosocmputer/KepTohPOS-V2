@@ -153,7 +153,7 @@ class PurchaseBillsTable extends StatelessWidget {
                       '${state.ingredientOf(l.ingId)?.name ?? "?"} '
                       '${fmtQ(l.qty)} '
                       '${state.ingredientOf(l.ingId)?.unit ?? ""} · '
-                      '${fmt(l.total)}฿',
+                      '${fmtBaht(l.total)}฿',
                 ),
               if (p.lines.length > 4)
                 Pill(

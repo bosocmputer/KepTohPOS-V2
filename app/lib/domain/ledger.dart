@@ -44,7 +44,7 @@ LedgerResult computeLedger(PosState s, {String? today}) {
   final st = <String, IngredientLedgerState>{};
   for (final ing in s.ingredients) {
     final i0 = s.initialStock[ing.id];
-    final c0 = i0 != null ? i0.cost : ing.lastCost;
+    final c0 = (i0 != null ? i0.cost : ing.lastCost).toDouble();
     st[ing.id] = IngredientLedgerState(
       qty: i0 != null ? i0.qty : 0,
       avg: c0,
@@ -108,8 +108,8 @@ LedgerResult computeLedger(PosState s, {String? today}) {
           st[ing.id] ??
           IngredientLedgerState(
             qty: 0,
-            avg: ing.lastCost,
-            last: ing.lastCost,
+            avg: ing.lastCost.toDouble(),
+            last: ing.lastCost.toDouble(),
             rate: null,
             sinceUsed: 0,
             sinceHeads: 0,

@@ -224,7 +224,7 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
             child: ProductCard(
               name: 'น้ำเปล่า 600 มล.',
               category: 'เครื่องดื่ม',
-              price: 15,
+              price: 1500,
               stock: 96,
               selected: true,
               onTap: () {},
@@ -235,7 +235,7 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
             child: ProductCard(
               name: 'เบียร์ช้าง ขวดใหญ่',
               category: 'แอลกอฮอล์',
-              price: 80,
+              price: 8000,
               stock: 0,
             ),
           ),
