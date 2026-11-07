@@ -25,7 +25,6 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
   final PosRepository _repository;
   final DateTime? _fixedNow;
   StreamSubscription<PosState>? _sub;
-  static int _billSeq = 0;
 
   void _emitReset(
     Emitter<SaleState> emit,
@@ -217,10 +216,7 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
       return;
     }
     final currentNow = event.now ?? _fixedNow ?? DateTime.now();
-    _billSeq = (_billSeq + 1) & 0xFFFFF;
-    final billId =
-        event.billId ??
-        'b${currentNow.millisecondsSinceEpoch.toRadixString(36)}$_billSeq';
+    final billId = event.billId ?? _repository.newBillId(currentNow);
     final recv = method.type == 'cash'
         ? state.cashReceivedAmount
         : state.payOrder.total;

@@ -199,6 +199,7 @@ class MockPosRepository
     return repo;
   }
 
+  static int _billSeq = 0;
   PosState _state;
   String? _sessionStaffId;
   bool _persistWeb = false;
@@ -243,7 +244,7 @@ class MockPosRepository
     return _state;
   }
 
-  @override
+  /// Updates the active session staff ID (`null` to sign out).
   void setSessionStaffId(String? staffId) {
     _sessionStaffId = staffId;
     if (staffId != null) {
@@ -254,6 +255,23 @@ class MockPosRepository
         _controller.add(_state);
       }
     }
+  }
+
+  @override
+  Future<PinSignInResult> signInWithPin(String staffId, String pin) async {
+    final who = _state.staff.where((x) => x.id == staffId).firstOrNull;
+    if (who == null || who.pin != pin) return PinSignInResult.invalid;
+    setSessionStaffId(staffId);
+    return PinSignInResult.success;
+  }
+
+  @override
+  Future<void> signOutStaff() async => setSessionStaffId(null);
+
+  @override
+  String newBillId(DateTime now) {
+    _billSeq = (_billSeq + 1) & 0xFFFFF;
+    return 'b${now.millisecondsSinceEpoch.toRadixString(36)}$_billSeq';
   }
 
   @override

@@ -96,7 +96,7 @@ void main() {
 
     // Dismiss toast timer and sign out to /login to inspect summary card
     await tester.pump(const Duration(seconds: 3));
-    authCubit.logout();
+    await authCubit.logout();
     await tester.pumpAndSettle();
 
     expect(

@@ -36,6 +36,26 @@ MockPosRepository _createSeededRepo({
   return repo;
 }
 
+/// Repository whose PIN check always reports a lockout.
+class _LockedPinRepository extends Fake implements PosRepository {
+  new(this._inner);
+
+  final PosRepository _inner;
+
+  @override
+  PosState get state => _inner.state;
+
+  @override
+  Stream<PosState> get stream => _inner.stream;
+
+  @override
+  StaffMember? get currentStaff => _inner.currentStaff;
+
+  @override
+  Future<PinSignInResult> signInWithPin(String staffId, String pin) async =>
+      PinSignInResult.locked;
+}
+
 void main() {
   group('PosRepository immutability & PosState.copy()', () {
     test('state getter returns read-only snapshot without copying on read', () {
@@ -87,15 +107,35 @@ void main() {
       'wrong PIN clears input and emits error message',
       build: () =>
           AuthCubit(_createSeededRepo(), now: DateTime(2026, 11, 4, 12)),
-      act: (cubit) {
-        cubit
-          ..setPin('9999')
-          ..submitPin();
+      act: (cubit) async {
+        cubit.setPin('9999');
+        await cubit.submitPin();
       },
       verify: (cubit) {
         expect(cubit.state.isAuthenticated, isFalse);
         expect(cubit.state.pin, '');
         expect(cubit.state.error, 'PIN ไม่ถูกต้อง ลองใหม่อีกครั้ง');
+      },
+    );
+
+    test(
+      'locked PIN result shows a retry message and stays signed out',
+      () async {
+        // Arrange
+        final cubit = AuthCubit(
+          _LockedPinRepository(_createSeededRepo()),
+          now: DateTime(2026, 11, 4, 12),
+        )..setPin('1111');
+
+        // Act
+        final ok = await cubit.submitPin();
+
+        // Assert
+        expect(ok, isFalse);
+        expect(cubit.state.isAuthenticated, isFalse);
+        expect(cubit.state.pin, '');
+        expect(cubit.state.error, 'ใส่ PIN ผิดหลายครั้ง กรุณาลองใหม่ภายหลัง');
+        await cubit.close();
       },
     );
 
@@ -106,12 +146,12 @@ void main() {
         _createSeededRepo(closeActiveShift: true),
         now: DateTime(2026, 11, 4, 12),
       ),
-      act: (cubit) {
+      act: (cubit) async {
         cubit
           ..selectStaff('st3')
-          ..setPin('1111')
-          ..submitPin()
-          ..logout();
+          ..setPin('1111');
+        await cubit.submitPin();
+        await cubit.logout();
       },
       expect: () => [
         isA<AuthState>().having(

@@ -101,6 +101,18 @@ ShiftRecord? closeShift(
   return sh;
 }
 
+/// Outcome of checking a staff PIN.
+enum PinSignInResult {
+  /// The PIN was correct and the staff member is now signed in.
+  success,
+
+  /// The PIN was wrong.
+  invalid,
+
+  /// Too many wrong attempts; the staff member is temporarily locked.
+  locked,
+}
+
 /// Abstract repository contract for reading [PosState] and running commands.
 ///
 /// Commands return a [Future] because real implementations write to a local
@@ -228,8 +240,14 @@ abstract class PosRepository implements PosSetupCommands {
   /// Saves the theme mode and/or palette to the shop settings.
   Future<void> saveThemePreference({String? mode, String? palette});
 
-  /// Updates the active session staff ID (`null` to sign out).
-  void setSessionStaffId(String? staffId);
+  /// Checks [pin] for [staffId] and signs that staff member in when correct.
+  Future<PinSignInResult> signInWithPin(String staffId, String pin);
+
+  /// Signs out the current staff member.
+  Future<void> signOutStaff();
+
+  /// Creates the id for a new bill.
+  String newBillId(DateTime now);
 
   /// Exports the entire current [PosState] snapshot as formatted JSON.
   String exportStateJson();

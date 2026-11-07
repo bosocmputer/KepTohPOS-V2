@@ -169,7 +169,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   /// Validates the 4-digit PIN and logs in when valid (`submit` in `Login`).
-  bool submitPin([String? pinOverride]) {
+  Future<bool> submitPin([String? pinOverride]) async {
     final who = state.selectedStaff;
     if (who == null) return false;
     final v = pinOverride ?? state.pin;
@@ -177,13 +177,20 @@ class AuthCubit extends Cubit<AuthState> {
       emit(state.copyWith(error: 'ใส่ PIN ให้ครบ 4 หลัก'));
       return false;
     }
-    if (v != who.pin) {
-      emit(state.copyWith(pin: '', error: 'PIN ไม่ถูกต้อง ลองใหม่อีกครั้ง'));
+    _mutatingSession = true;
+    final PinSignInResult result;
+    try {
+      result = await _repository.signInWithPin(who.id, v);
+    } finally {
+      _mutatingSession = false;
+    }
+    if (result != PinSignInResult.success) {
+      final message = result == PinSignInResult.locked
+          ? 'ใส่ PIN ผิดหลายครั้ง กรุณาลองใหม่ภายหลัง'
+          : 'PIN ไม่ถูกต้อง ลองใหม่อีกครั้ง';
+      emit(state.copyWith(pin: '', error: message));
       return false;
     }
-    _mutatingSession = true;
-    _repository.setSessionStaffId(who.id);
-    _mutatingSession = false;
     final hasShift = openShiftOf(_repository.state) != null;
     _syncFromRepo(shouldPromptOpenShift: !hasShift);
     return true;
@@ -195,10 +202,13 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   /// Signs out the current staff member (`logout` in `prototype/index.html`).
-  void logout() {
+  Future<void> logout() async {
     _mutatingSession = true;
-    _repository.setSessionStaffId(null);
-    _mutatingSession = false;
+    try {
+      await _repository.signOutStaff();
+    } finally {
+      _mutatingSession = false;
+    }
     emit(
       _buildStateFromRepo(
         _repository,

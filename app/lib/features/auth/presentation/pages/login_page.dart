@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'dart:math' as math;
 
 import 'package:app/core/theme/tokens.dart';
@@ -216,7 +218,7 @@ class _LoginFormPanel extends StatelessWidget {
           colGap: compact ? AppDimensions.space2 : AppDimensions.space3,
           onChanged: (v) {
             cubit.setPin(v);
-            if (v.length == 4) cubit.submitPin(v);
+            if (v.length == 4) unawaited(cubit.submitPin(v));
           },
           onEnter: cubit.submitPin,
         ),
