@@ -1,16 +1,15 @@
 # Active Task Handoff State
-- **Objective:** ทำ Backend Supabase ตาม `docs/backend_plan.md` — F0 เสร็จแล้ว เฟสถัดไปคือ F1 (repository ออนไลน์ + RPC + session พนักงาน + เงินสตางค์)
-- **Completed & Verified:**
-  - `supabase/migrations/*`, `supabase/tests/rls_test.sql`: F0 → `supabase test db` ผ่าน 57/57 (local) · `supabase db push` ขึ้นโปรเจกต์ `pbujdexhdzglymgnbsuw` แล้ว · `supabase migration list --linked` ตรงครบ 5 ไฟล์
-  - LINE Login: `custom:line` แบบ Manual configuration ล็อกอินจริงสำเร็จ (Auto-discovery ใช้ไม่ได้ น่าจะเพราะ LINE web login เซ็น ID token ด้วย HS256) · เปิด anonymous sign-ins แล้ว
-- **Next Immediate Step:**
-  - F1 โค้ดครบบนกิ่ง `flutter/f1-supabase` ยังไม่ push/merge · migration 000600-001100 ยังไม่ขึ้นโปรเจกต์จริง · อย่า merge เข้า `main` จนกว่าผู้ใช้สั่ง
-  - ถัดไป: ผู้ใช้สั่ง `supabase db push`, ตั้ง Site URL/Redirect + env บน Vercel Preview (`POS_BACKEND=supabase`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`) แล้วทดสอบ LINE จริงบน Preview
-  - ยังเหลือ: แคชเชียร์เห็นต้นทุนเป็น ฿0 และไม่เห็นรายการซื้อ/ค่าใช้จ่ายของวัน (ต้องตัดสินใจ) · ยังไม่มีปุ่ม Google · การเชิญผู้จัดการ · captcha
-  - ปัญหาเดิมบน `main`: `test/bloc/bills_cubit_test.dart` ค้นชื่อ `คุณแอน` · golden ตก 50/54 ข้อ
+- **Objective:** ทำ KepToh POS ให้พร้อมขายเป็นสินค้า ตามแผน M0–M6 (M0 ฐานการทดสอบ → M1 งานค้าง F1 → M2 ออฟไลน์ → M3 หลายเครื่อง → M4 รายงาน SQL + backup → M5 VAT → M6 ทดสอบเต็ม + คุณอัยทดสอบบน staging)
+- **Completed & Verified (2026-11-07):**
+  - F1 merge แล้ว (PR #11) · migration 000100–001200 อยู่บนโปรเจกต์ `pbujdexhdzglymgnbsuw` ครบ · Production บน Vercel ยังเป็น mock (ตัวแปร Supabase ตั้งเฉพาะ Preview)
+  - M0 merge แล้ว (PR #12): `.github/workflows/ci.yml` · E2E `app/integration_test/{sale,setup,shift}_flow_test.dart` รันด้วย `scripts/e2e.sh` · `docs/test_matrix.md` → CI ผ่านทั้งหมด, unit/bloc/widget 136/136, pgTAP 197, integration 9
+- **Next Immediate Step:** M1 บนกิ่ง `m1/f1-leftovers` (แตกจาก `main` แล้ว)
+  - ซ่อน/เตือน QR เมื่อร้านยังไม่ตั้งพร้อมเพย์ (SA-04) · ให้ pgTAP นับเฉพาะร้านของตัวเอง (`supabase/tests/*.sql` ตกถ้า DB local มีข้อมูลค้าง) · เชิญผู้จัดการ · captcha · ปุ่ม Google · E2E ฝั่งแคชเชียร์
+  - ย้ายโดเมน staging `keptoh-staging.vercel.app` ไปผูกกับกิ่ง M1 (ตอนนี้ผูกกับ `qa/m0-test-foundation`)
 - **Known Constraints / Decisions:**
-  - เงินที่บันทึกเป็น `int` สตางค์ · ค่าคำนวณใน ledger/รายงานเป็น `double` หน่วยสตางค์ · แปลงข้อมูลเก่าที่ `PosState.fromJson` (`state_migration.dart`)
-  - Session พนักงาน 12 ชม. สลับคนได้ · แคชเชียร์ไม่เห็นต้นทุน · ยกเลิกบิลออฟไลน์ไม่ได้ · ตั้งค่าร้านต้องล็อกอินบัญชีจริง · ออฟไลน์ตรวจ PIN ในเครื่อง + ตรวจซ้ำตอน sync
-  - ก่อนเปิดร้านจริง: เปิด captcha (anonymous), เปลี่ยน LINE channel เป็น Published, ออกแบบการเชิญผู้จัดการ, ตั้ง Site URL
-  - ฟรีทั้ง DB/Backend · ออฟไลน์ต้องขายได้ (F2) · เงินเก็บเป็นสตางค์ · ห้ามอ่าน `.env*` · ไฟล์ `app/lib/**/*.dart` ≤ 300 บรรทัด
-  - CLI: `~/.local/bin/supabase` v2.121.0 (brew ใช้ไม่ได้) · Docker อยู่ที่ `/Applications/Docker.app/Contents/Resources/bin` · รูปแบบใบกำกับภาษีรอทีมบัญชีก่อน F5
+  - Staging = https://keptoh-staging.vercel.app (ผู้ใช้อนุญาตให้ใส่ PIN ทดสอบ 1234) · Supabase Site URL ชี้ staging · Redirect: staging, Preview เดิม, localhost
+  - merge เข้า `main` ผ่าน PR บน GitHub เท่านั้น (คำสั่ง `git merge`/`git checkout main` ถูกระบบสิทธิ์บล็อก) · ผู้ใช้เลือก Create a merge commit
+  - อนุมัติแพ็กเกจแล้ว: `integration_test`, `drift`, `drift_flutter`, `connectivity_plus` · ChromeDriver 156 อยู่ที่ `~/.local/bin`
+  - VAT (M5): ต้องพิมพ์ "เลขรหัสประจำเครื่อง" ที่สรรพากรให้บนใบกำกับอย่างย่อ (ประกาศฯ ฉบับ 46) → ช่องต่อเครื่อง + Serial · สาขา/สำนักงานใหญ่ (ฉบับ 196) · ยกเลิกออกใบใหม่ตาม ป.86/2542 ข้อ 25 · ยังต้องยืนยันเรื่อง DTJ กับฝ่ายบัญชี
+  - เงินเก็บเป็นสตางค์ · ไฟล์ `app/lib/**/*.dart` ≤ 300 บรรทัด · ห้ามอ่าน `.env*` · CLI `~/.local/bin/supabase` v2.121.0 · Docker ที่ `/Applications/Docker.app/Contents/Resources/bin`
+  - หน้าภาพรวมกำไรไม่คิดกำไรของวันที่ยังไม่นับของ (ตั้งใจไว้) · E2E หน้าสต็อกทำพร้อม M2
