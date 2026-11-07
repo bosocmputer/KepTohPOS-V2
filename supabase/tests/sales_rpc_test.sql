@@ -4,7 +4,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(88);
+select plan(89);
 
 create schema tests;
 create function tests.q(p_role text, p_uid uuid, p_anon boolean, p_sql text) returns text
@@ -151,10 +151,13 @@ select is(tests.device_a(format($$select 1 from send_round(%L, '80000000-0000-00
 select tests.device_a(format($$select 1 from send_round(%L, '80000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000001', 'after', 2, 0, 0, '{"40000000-0000-0000-0000-000000000001": 3}', now())$$, tests.val('cashier')));
 select is((select count(*)::int from table_rounds), 1, 'ส่งรอบซ้ำไม่บันทึกซ้ำ');
 select is(tests.addon_stock(), 7, 'ส่งรอบแล้วตัดสต็อกครั้งเดียว');
-select is(tests.device_a(format($$select adjust_sent(%L, '81000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000003', 'head', 'a', 1, 'คีย์ผิด', now())$$, tests.val('cashier'))), 'true', 'ลดจำนวนคนได้');
-select is(tests.device_a(format($$select adjust_sent(%L, '81000000-0000-0000-0000-000000000002', '70000000-0000-0000-0000-000000000003', 'addon', '40000000-0000-0000-0000-000000000001', 5, 'คีย์ผิด', now())$$, tests.val('cashier'))), 'true', 'ลดน้ำเกินจำนวน ระบบลดเท่าที่มี');
+select is(tests.device_a(format($$select adjust_sent(%L, '81000000-0000-0000-0000-000000000009', '70000000-0000-0000-0000-000000000003', 'head', 'a', 1, 'ไม่ควรผ่าน', now())$$, tests.val('cashier'))), 'ERR:42501', 'แคชเชียร์ลดรายการที่ส่งแล้วไม่ได้');
+select tests.set_val('manager', tests.device_a($$select verify_staff_pin('10000000-0000-0000-0000-000000000002', '2222') ->> 'session_token'$$));
+select is(tests.device_a(format($$select adjust_sent(%L, '81000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000003', 'head', 'a', 1, 'คีย์ผิด', now())$$, tests.val('manager'))), 'true', 'ลดจำนวนคนได้');
+select is(tests.device_a(format($$select adjust_sent(%L, '81000000-0000-0000-0000-000000000002', '70000000-0000-0000-0000-000000000003', 'addon', '40000000-0000-0000-0000-000000000001', 5, 'คีย์ผิด', now())$$, tests.val('manager'))), 'true', 'ลดน้ำเกินจำนวน ระบบลดเท่าที่มี');
 select is(tests.addon_stock(), 10, 'ลดรายการแล้วคืนสต็อกเท่าที่ลดจริง');
-select is(tests.device_a(format($$select adjust_sent(%L, '81000000-0000-0000-0000-000000000003', '70000000-0000-0000-0000-000000000003', 'addon', '40000000-0000-0000-0000-000000000001', 1, 'x', now())$$, tests.val('cashier'))), 'false', 'ไม่มีให้ลดแล้วคืน false');
+select is(tests.device_a(format($$select adjust_sent(%L, '81000000-0000-0000-0000-000000000003', '70000000-0000-0000-0000-000000000003', 'addon', '40000000-0000-0000-0000-000000000001', 1, 'x', now())$$, tests.val('manager'))), 'false', 'ไม่มีให้ลดแล้วคืน false');
+select tests.set_val('cashier', tests.device_a($$select verify_staff_pin('10000000-0000-0000-0000-000000000001', '1111') ->> 'session_token'$$));
 select is(tests.device_a(format($$select 1 from close_table(%L, '70000000-0000-0000-0000-000000000003', now())$$, tests.val('cashier'))), 'ERR:22023', 'เก็บโต๊ะที่ยังมียอดค้างไม่ได้');
 create function tests.settle_after(p_bill text, p_expected bigint) returns text language sql as $$
   select format(
