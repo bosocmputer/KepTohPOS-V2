@@ -1,5 +1,7 @@
+import 'package:app/core/data/supabase/network_activity.dart';
 import 'package:app/core/data/supabase/supabase_pos_repository.dart';
 import 'package:app/features/onboarding/data/device_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 const String _kUrl = String.fromEnvironment('SUPABASE_URL');
@@ -36,9 +38,13 @@ class _LocalDeviceStorage implements DeviceAuthStorage {
 /// The device client gets its token from [DeviceAuth], not `GoTrueClient`, so
 /// an owner login never replaces the device's identity; see [DeviceAuth].
 class DeviceSession {
-  new _(this._deviceAuth, this.device);
+  new _(this._deviceAuth, this.device, this._activity);
 
   final DeviceAuth _deviceAuth;
+  final NetworkActivity _activity;
+
+  /// `true` while any request to the server is still in flight.
+  ValueListenable<bool> get busy => _activity.busy;
 
   /// The paired device's client. Sales run through this one.
   final SupabaseClient device;
@@ -54,7 +60,12 @@ class DeviceSession {
 
   /// Initializes Supabase and restores this device's saved session.
   static Future<DeviceSession> start() async {
-    await Supabase.initialize(url: _kUrl, publishableKey: _kAnonKey);
+    final activity = NetworkActivity();
+    await Supabase.initialize(
+      url: _kUrl,
+      publishableKey: _kAnonKey,
+      httpClient: activity,
+    );
     final storage = SharedPreferencesLocalStorage(
       persistSessionKey: _kDeviceSessionKey,
     );
@@ -63,11 +74,18 @@ class DeviceSession {
       url: _kUrl,
       anonKey: _kAnonKey,
       storage: _LocalDeviceStorage(storage),
+      client: activity,
     );
     await auth.restore();
     return DeviceSession._(
       auth,
-      SupabaseClient(_kUrl, _kAnonKey, accessToken: auth.accessToken),
+      SupabaseClient(
+        _kUrl,
+        _kAnonKey,
+        accessToken: auth.accessToken,
+        httpClient: activity,
+      ),
+      activity,
     );
   }
 

@@ -28,6 +28,17 @@ class _OwnerPinSetupState extends State<OwnerPinSetup> {
   bool _confirming = false;
   bool _mismatch = false;
 
+  @override
+  void didUpdateWidget(covariant OwnerPinSetup oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Still here after the request ended means it failed: start over.
+    if (oldWidget.busy && !widget.busy) {
+      _first = '';
+      _value = '';
+      _confirming = false;
+    }
+  }
+
   void _onChanged(String v) {
     if (widget.busy) return;
     setState(() {
@@ -82,6 +93,7 @@ class _OwnerPinSetupState extends State<OwnerPinSetup> {
         const SizedBox(height: AppDimensions.space3),
         PinDots(value: _value, hasError: _mismatch),
         const SizedBox(height: AppDimensions.space4),
+        if (widget.busy) const PinCheckingHint(label: 'กำลังสร้างร้าน…'),
         NumPad(
           key: const ValueKey('owner-pin-pad'),
           value: _value,

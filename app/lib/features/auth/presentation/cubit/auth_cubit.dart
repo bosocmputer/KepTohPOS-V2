@@ -12,6 +12,7 @@ class AuthState extends Equatable {
     required this.selectedStaffId,
     this.pin = '',
     this.error = '',
+    this.checking = false,
     this.isDemoData = true,
     this.currentStaff,
     this.hasOpenShift = false,
@@ -25,6 +26,9 @@ class AuthState extends Equatable {
   final String selectedStaffId;
   final String pin;
   final String error;
+
+  /// Whether the entered PIN is being checked by the server.
+  final bool checking;
   final StaffMember? currentStaff;
   final bool hasOpenShift;
   final bool shouldPromptOpenShift;
@@ -49,6 +53,7 @@ class AuthState extends Equatable {
     String? selectedStaffId,
     String? pin,
     String? error,
+    bool? checking,
     StaffMember? Function()? currentStaff,
     bool? hasOpenShift,
     bool? shouldPromptOpenShift,
@@ -60,6 +65,7 @@ class AuthState extends Equatable {
     selectedStaffId: selectedStaffId ?? this.selectedStaffId,
     pin: pin ?? this.pin,
     error: error ?? this.error,
+    checking: checking ?? this.checking,
     currentStaff: currentStaff != null ? currentStaff() : this.currentStaff,
     hasOpenShift: hasOpenShift ?? this.hasOpenShift,
     shouldPromptOpenShift: shouldPromptOpenShift ?? this.shouldPromptOpenShift,
@@ -75,6 +81,7 @@ class AuthState extends Equatable {
     selectedStaffId,
     pin,
     error,
+    checking,
     currentStaff?.id,
     hasOpenShift,
     shouldPromptOpenShift,
@@ -186,20 +193,25 @@ class AuthCubit extends Cubit<AuthState> {
       return false;
     }
     _mutatingSession = true;
+    // Only a slow reply shows "checking", so a fast one does not flicker.
+    final slow = Timer(const Duration(milliseconds: 150), () {
+      if (!isClosed) emit(state.copyWith(checking: true));
+    });
     final PinSignInResult result;
     try {
       result = await _repository.signInWithPin(who.id, v);
     } on PosCommandException catch (e) {
-      emit(state.copyWith(pin: '', error: e.message));
+      emit(state.copyWith(pin: '', error: e.message, checking: false));
       return false;
     } finally {
+      slow.cancel();
       _mutatingSession = false;
     }
     if (result != PinSignInResult.success) {
       final message = result == PinSignInResult.locked
           ? 'ใส่ PIN ผิดหลายครั้ง กรุณาลองใหม่ภายหลัง'
           : 'PIN ไม่ถูกต้อง ลองใหม่อีกครั้ง';
-      emit(state.copyWith(pin: '', error: message));
+      emit(state.copyWith(pin: '', error: message, checking: false));
       return false;
     }
     final hasShift = openShiftOf(_repository.state) != null;

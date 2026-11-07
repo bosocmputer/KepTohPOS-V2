@@ -176,6 +176,7 @@ class _LoginFormPanel extends StatelessWidget {
           boxSize: compact ? 48 : 54,
           gap: compact ? AppDimensions.space3 : AppDimensions.space4,
         ),
+        if (state.checking) const PinCheckingHint(label: 'กำลังตรวจสอบ PIN…'),
         if (state.error.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: AppDimensions.space3),

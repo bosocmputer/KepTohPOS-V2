@@ -4,11 +4,13 @@ import 'package:app/core/data/mock_pos_repository.dart';
 import 'package:app/core/di/injection.dart';
 import 'package:app/core/router/app_router.dart';
 import 'package:app/core/theme/app_theme.dart';
+import 'package:app/core/widgets/busy_overlay.dart';
 import 'package:app/domain/pos_repository.dart';
 import 'package:app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:app/features/bills/presentation/cubit/bills_cubit.dart';
 import 'package:app/features/shift/presentation/bloc/shift_bloc.dart';
 import 'package:app/features/tables/presentation/cubit/tables_cubit.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -25,6 +27,7 @@ class KepTohApp extends StatefulWidget {
     this.billsCubit,
     this.now,
     this.initialLocation = '/tables',
+    this.busy,
   });
 
   final ThemeCubit? themeCubit;
@@ -35,6 +38,9 @@ class KepTohApp extends StatefulWidget {
   final BillsCubit? billsCubit;
   final DateTime? now;
   final String initialLocation;
+
+  /// `true` while the server is handling a request; `null` in mock mode.
+  final ValueListenable<bool>? busy;
 
   @override
   State<KepTohApp> createState() => _KepTohAppState();
@@ -118,6 +124,13 @@ class _KepTohAppState extends State<KepTohApp> {
               ),
               themeMode: state.mode.themeMode,
               routerConfig: _router,
+              builder: (context, child) {
+                final busy = widget.busy;
+                final page = child ?? const SizedBox.shrink();
+                return busy == null
+                    ? page
+                    : BusyOverlay(busy: busy, child: page);
+              },
             );
           },
         ),

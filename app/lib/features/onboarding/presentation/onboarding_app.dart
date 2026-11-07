@@ -57,7 +57,7 @@ class _OnboardingAppState extends State<OnboardingApp> {
     final session = _session!;
     final repo = await session.openRepository(shopId);
     await configureDependencies(repository: repo, deviceSession: session);
-    runApp(const KepTohApp());
+    runApp(KepTohApp(busy: session.busy));
   }
 
   Future<void> _claim() async {
@@ -171,6 +171,11 @@ class _OnboardingAppState extends State<OnboardingApp> {
     title: 'KepToh POS',
     debugShowCheckedModeBanner: false,
     theme: AppTheme.build(brightness: Brightness.light),
+    builder: (context, child) {
+      final busy = _session?.busy;
+      final page = child ?? const SizedBox.shrink();
+      return busy == null ? page : BusyOverlay(busy: busy, child: page);
+    },
     home: Builder(
       builder: (context) => Scaffold(
         backgroundColor: context.tokens.surface,
