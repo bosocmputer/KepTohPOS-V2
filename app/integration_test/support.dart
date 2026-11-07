@@ -154,12 +154,23 @@ Future<void> signInAndOpenShift(WidgetTester tester, String pin) async {
   await typeOnPad(tester, pin);
   await waitForServer(tester);
   final openShift = find.byKey(const ValueKey('open-shift-submit-btn'));
-  await waitFor(tester, find.textContaining('กะ'));
+  final shiftOpen = find.text('กะเปิด');
+  // Either the open-shift dialog or an already open shift, whichever the
+  // app shows; deciding earlier could skip the dialog while it animates in.
+  final end = DateTime.now().add(const Duration(seconds: 20));
+  while (openShift.evaluate().isEmpty && shiftOpen.evaluate().isEmpty) {
+    if (DateTime.now().isAfter(end)) {
+      throw TestFailure(
+        'No shift prompt after PIN\nOn screen: ${_screenText()}',
+      );
+    }
+    await tester.pump(const Duration(milliseconds: 100));
+  }
   if (openShift.evaluate().isNotEmpty) {
     await tapKey(tester, 'open-shift-submit-btn');
     await waitForServer(tester);
   }
-  await waitFor(tester, find.text('กะเปิด'));
+  await waitFor(tester, shiftOpen);
 }
 
 /// The shop's id, read with the owner's own login.
