@@ -59,6 +59,9 @@ class SupabasePosRepository extends SupabasePosBase
   bool get isDemoData => false;
 
   @override
+  bool get canEditSetup => hasOwnerSession;
+
+  @override
   bool get canReadCosts => costsLoaded;
 
   @override

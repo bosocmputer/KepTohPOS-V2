@@ -4,6 +4,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 const int _kPageSize = 1000;
 
+/// Payment methods keep the order staff expect: cash first.
+int _typeRank(String type) =>
+    const <String>['cash', 'qr', 'transfer', 'card'].indexOf(type);
+
 /// A loaded snapshot and the open table sessions behind it.
 class SupabaseSnapshot {
   const new({
@@ -66,9 +70,9 @@ class SupabaseStateLoader {
 
     final results = await Future.wait(<Future<List<Row>>>[
       _all('bank_accounts', '*', 'id'),
-      _all('packages', '*', 'id'),
-      _all('addons', 'id, name, category, price, stock, active', 'id'),
-      _all('suppliers', '*', 'id'),
+      _all('packages', '*', 'name'),
+      _all('addons', 'id, name, category, price, stock, active', 'name'),
+      _all('suppliers', '*', 'name'),
       _all(
         'ingredients',
         'id, name, unit, par, supplier_id, category, use_per_head, location, '
@@ -78,7 +82,7 @@ class SupabaseStateLoader {
       _all('dining_tables', '*', 'name'),
       _all('staff', '*', 'name'),
       _all('payment_methods', '*', 'id'),
-      _all('expense_types', '*', 'id'),
+      _all('expense_types', '*', 'name'),
       _all('bills', '*', 'at'),
       _all(
         'bill_lines',
@@ -170,7 +174,8 @@ class SupabaseStateLoader {
           .toList(),
       tables: results[5].map(tableFromRow).toList(),
       staff: results[6].map(staffFromRow).toList(),
-      payments: results[7].map(paymentFromRow).toList(),
+      payments: results[7].map(paymentFromRow).toList()
+        ..sort((x, y) => _typeRank(x.type).compareTo(_typeRank(y.type))),
       expenseTypes: results[8].map(expenseTypeFromRow).toList(),
       fixedCosts: listOf('fixed_costs').map(fixedCostFromRow).toList(),
       sales: bills,

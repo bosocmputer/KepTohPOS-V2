@@ -12,6 +12,7 @@ class AuthState extends Equatable {
     required this.selectedStaffId,
     this.pin = '',
     this.error = '',
+    this.isDemoData = true,
     this.currentStaff,
     this.hasOpenShift = false,
     this.shouldPromptOpenShift = false,
@@ -30,6 +31,9 @@ class AuthState extends Equatable {
   final LedgerDaySummary? lastClosedDay;
   final double heroProfitValue;
   final bool showNetProfit;
+
+  /// Whether sample wording and demo PIN hints may be shown.
+  final bool isDemoData;
 
   bool get isAuthenticated => currentStaff != null;
 
@@ -62,6 +66,7 @@ class AuthState extends Equatable {
     lastClosedDay: lastClosedDay != null ? lastClosedDay() : this.lastClosedDay,
     heroProfitValue: heroProfitValue ?? this.heroProfitValue,
     showNetProfit: showNetProfit ?? this.showNetProfit,
+    isDemoData: isDemoData,
   );
 
   @override
@@ -132,6 +137,7 @@ class AuthCubit extends Cubit<AuthState> {
         : 0.0;
 
     return AuthState(
+      isDemoData: repo.isDemoData,
       staff: activeStaff,
       selectedStaffId: selId,
       pin: pin,

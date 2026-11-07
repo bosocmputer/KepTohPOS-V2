@@ -56,12 +56,21 @@ const List<SetupTabSpec> kSetupTabs = [
 
 /// Full-width grouped top navigation bar for `/setup`.
 class SetupNavSidebar extends StatelessWidget {
-  const new({required this.state, required this.onSelectTab, super.key});
+  const new({
+    required this.state,
+    required this.onSelectTab,
+    this.showDemoTab = true,
+    super.key,
+  });
   final SetupState state;
   final ValueChanged<String> onSelectTab;
 
-  List<SetupTabSpec> _byGroup(String g) =>
-      kSetupTabs.where((x) => x.group == g).toList();
+  /// The demo tab can overwrite data, so real shops do not get it.
+  final bool showDemoTab;
+
+  List<SetupTabSpec> _byGroup(String g) => kSetupTabs
+      .where((x) => x.group == g && (showDemoTab || x.id != 'demo'))
+      .toList();
 
   @override
   Widget build(BuildContext context) {

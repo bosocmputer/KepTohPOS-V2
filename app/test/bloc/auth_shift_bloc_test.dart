@@ -55,6 +55,9 @@ class _LockedPinRepository extends Fake implements PosRepository {
   bool get canReadCosts => _inner.canReadCosts;
 
   @override
+  bool get isDemoData => _inner.isDemoData;
+
+  @override
   Future<PinSignInResult> signInWithPin(String staffId, String pin) async =>
       PinSignInResult.locked;
 }

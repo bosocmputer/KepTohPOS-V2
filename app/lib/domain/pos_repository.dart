@@ -131,6 +131,9 @@ abstract class PosRepository implements PosSetupCommands {
   /// tools are safe. They would overwrite or shift real records otherwise.
   bool get isDemoData;
 
+  /// Whether setup data can be changed now. Real shops need the owner's login.
+  bool get canEditSetup;
+
   /// Whether cost and expense data is loaded. It is withheld from cashiers on
   /// the server, so figures derived from it would be wrong when this is false.
   bool get canReadCosts;

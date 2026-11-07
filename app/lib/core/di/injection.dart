@@ -4,6 +4,7 @@ import 'package:app/domain/pos_repository.dart';
 import 'package:app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:app/features/bills/presentation/cubit/bills_cubit.dart';
 import 'package:app/features/dashboard/presentation/cubit/dashboard_cubit.dart';
+import 'package:app/features/onboarding/data/device_session.dart';
 import 'package:app/features/reports/presentation/cubit/reports_cubit.dart';
 import 'package:app/features/sale/presentation/bloc/sale_bloc.dart';
 import 'package:app/features/setup/presentation/cubit/setup_cubit.dart';
@@ -17,9 +18,15 @@ import 'package:get_it/get_it.dart';
 final GetIt sl = GetIt.instance;
 
 /// Initializes app-level dependencies.
-Future<void> configureDependencies() async {
+Future<void> configureDependencies({
+  PosRepository? repository,
+  DeviceSession? deviceSession,
+}) async {
+  if (deviceSession != null && !sl.isRegistered<DeviceSession>()) {
+    sl.registerSingleton<DeviceSession>(deviceSession);
+  }
   if (!sl.isRegistered<PosRepository>()) {
-    final repo = await MockPosRepository.loadFromAssets();
+    final repo = repository ?? await MockPosRepository.loadFromAssets();
     sl.registerSingleton<PosRepository>(repo);
   }
   if (!sl.isRegistered<ThemeCubit>()) {

@@ -214,6 +214,12 @@ class SetupCubit extends Cubit<SetupState> {
   Future<SetupCrudResult> advanceSimulationDay() =>
       _run(_repository.advanceSimulationDay());
 
+  /// Whether setup changes can be saved right now.
+  bool get canEditSetup => _repository.canEditSetup;
+
+  /// Whether export, import and the simulation tools are available.
+  bool get isDemoData => _repository.isDemoData;
+
   /// Exports the entire [PosState] as formatted JSON.
   String exportJson() => _repository.exportStateJson();
 

@@ -55,6 +55,7 @@ class AppTextInput extends StatefulWidget {
     this.maxLines = 1,
     this.keyboardType,
     this.readOnly = false,
+    this.obscureText = false,
   });
 
   final String value;
@@ -64,6 +65,7 @@ class AppTextInput extends StatefulWidget {
   final int maxLines;
   final TextInputType? keyboardType;
   final bool readOnly;
+  final bool obscureText;
 
   @override
   State<AppTextInput> createState() => _AppTextInputState();
@@ -136,6 +138,7 @@ class _AppTextInputState extends State<AppTextInput> {
                 child: TextField(
                   controller: _controller,
                   focusNode: _focusNode,
+                  obscureText: widget.obscureText,
                   onChanged: widget.onChanged,
                   maxLines: widget.maxLines,
                   keyboardType: widget.keyboardType,

@@ -7,6 +7,7 @@ import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:app/features/auth/presentation/widgets/login_demo_pin_hint.dart';
 import 'package:app/features/auth/presentation/widgets/login_hero_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -233,9 +234,6 @@ class _LoginFooter extends StatelessWidget {
   final AuthState state;
   final bool showCompactLedger;
 
-  String _pinHintForRole(String role) =>
-      state.staff.where((s) => s.role == role).firstOrNull?.pin ?? '-';
-
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
@@ -282,20 +280,7 @@ class _LoginFooter extends StatelessWidget {
           ),
           const SizedBox(height: AppDimensions.space2),
         ],
-        Container(
-          padding: const EdgeInsets.all(AppDimensions.space3),
-          decoration: BoxDecoration(
-            color: tokens.surface2,
-            borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-          ),
-          child: Text(
-            'PIN ตัวอย่าง: เจ้าของ ${_pinHintForRole("owner")} · '
-            'ผู้จัดการ ${_pinHintForRole("manager")} · '
-            'แคชเชียร์ ${_pinHintForRole("cashier")}',
-            textAlign: TextAlign.center,
-            style: textTheme.labelSmall?.copyWith(color: tokens.muted),
-          ),
-        ),
+        if (state.isDemoData) LoginDemoPinHint(state: state),
       ],
     );
   }
