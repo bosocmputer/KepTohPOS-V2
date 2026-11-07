@@ -4,8 +4,9 @@
   - `supabase/migrations/*`, `supabase/tests/rls_test.sql`: F0 → `supabase test db` ผ่าน 57/57 (local) · `supabase db push` ขึ้นโปรเจกต์ `pbujdexhdzglymgnbsuw` แล้ว · `supabase migration list --linked` ตรงครบ 5 ไฟล์
   - LINE Login: `custom:line` แบบ Manual configuration ล็อกอินจริงสำเร็จ (Auto-discovery ใช้ไม่ได้ น่าจะเพราะ LINE web login เซ็น ID token ด้วย HS256) · เปิด anonymous sign-ins แล้ว
 - **Next Immediate Step:**
-  - รอผู้ใช้ยืนยันแผน F1 และการเพิ่มแพ็กเกจ `supabase_flutter` ก่อนแก้โค้ด
-  - migration ใหม่ `supabase/migrations/`: session พนักงาน (เก็บ hash) + `settle_bill`/`void_bill`/`close_shift` + ถอนสิทธิ์เครื่องอ่านข้อมูลต้นทุนตรง
+  - F1 ขั้น 1 เสร็จบนกิ่ง `backend/f1-rpc` (`supabase test db` ผ่าน 145 ข้อ) แต่ migration 000600-000700 ยังไม่ขึ้นโปรเจกต์จริง
+  - ถัดไป F1 ขั้น 2: เปลี่ยนเงินใน `app/lib/domain` เป็นสตางค์ (`int`) พร้อมแปลง JSON/localStorage เดิมจากบาท · ขั้น 3: เปลี่ยน `PosRepository.update(mutator)` (19 จุด) เป็น method แยกตามงาน · ขั้น 4: `SupabasePosRepository` + login/จับคู่เครื่อง
+  - ขั้น 4 ต้องเพิ่ม RPC ที่เหลือ: ค่าใช้จ่าย, การซื้อ, การนับสต็อก · แอป Production ต้องอยู่บน mock จนกว่าผู้ใช้สั่งเปลี่ยน (คุณอัยทดสอบบน Vercel)
 - **Known Constraints / Decisions:**
   - Session พนักงาน 12 ชม. สลับคนได้ · แคชเชียร์ไม่เห็นต้นทุน · ยกเลิกบิลออฟไลน์ไม่ได้ · ตั้งค่าร้านต้องล็อกอินบัญชีจริง · ออฟไลน์ตรวจ PIN ในเครื่อง + ตรวจซ้ำตอน sync
   - ก่อนเปิดร้านจริง: เปิด captcha (anonymous), เปลี่ยน LINE channel เป็น Published, ออกแบบการเชิญผู้จัดการ, ตั้ง Site URL
