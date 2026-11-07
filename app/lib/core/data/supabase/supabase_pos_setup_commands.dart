@@ -34,6 +34,30 @@ mixin SupabasePosSetupCommands on SupabasePosBase implements PosRepository {
       .from(table)
       .upsert(<String, dynamic>{...row, 'shop_id': shopId}, onConflict: 'id');
 
+  /// Inserts a new row or updates an existing one, never an upsert: for
+  /// `ON CONFLICT DO UPDATE` Postgres needs read access to every updated
+  /// column, and cost columns are unreadable so devices never see them.
+  Future<void> _insertOrUpdate(
+    String table, {
+    required String id,
+    required bool exists,
+    required Map<String, dynamic> row,
+  }) async {
+    if (exists) {
+      await ownerClient!
+          .from(table)
+          .update(row)
+          .eq('id', id)
+          .eq('shop_id', shopId);
+    } else {
+      await ownerClient!.from(table).insert(<String, dynamic>{
+        ...row,
+        'id': id,
+        'shop_id': shopId,
+      });
+    }
+  }
+
   Map<String, dynamic> _shopRow(ShopConfig s) => <String, dynamic>{
     'name': s.name,
     'branch_name': s.branch,
@@ -94,32 +118,40 @@ mixin SupabasePosSetupCommands on SupabasePosBase implements PosRepository {
   @override
   Future<SetupCrudResult> saveAddon(AddonItem i) => _save(
     (s) => upsertAddonInState(s, i),
-    () => _upsert('addons', <String, dynamic>{
-      'id': serverId(i.id),
-      'name': i.name,
-      'category': i.category,
-      'price': i.price,
-      'cost': i.cost,
-      'stock': i.stock,
-      'active': i.active,
-    }),
+    () => _insertOrUpdate(
+      'addons',
+      id: serverId(i.id),
+      exists: posState.addons.any((x) => x.id == i.id),
+      row: <String, dynamic>{
+        'name': i.name,
+        'category': i.category,
+        'price': i.price,
+        'cost': i.cost,
+        'stock': i.stock,
+        'active': i.active,
+      },
+    ),
   );
 
   @override
   Future<SetupCrudResult> saveIngredient(IngredientItem i) => _save(
     (s) => upsertIngredientInState(s, i),
-    () => _upsert('ingredients', <String, dynamic>{
-      'id': serverId(i.id),
-      'name': i.name,
-      'unit': i.unit,
-      'last_cost': i.lastCost,
-      'par': i.par,
-      'supplier_id': i.supplierId.isEmpty ? null : i.supplierId,
-      'category': i.category,
-      'use_per_head': i.use,
-      'location': i.location,
-      'count_freq': i.countFreq,
-    }),
+    () => _insertOrUpdate(
+      'ingredients',
+      id: serverId(i.id),
+      exists: posState.ingredients.any((x) => x.id == i.id),
+      row: <String, dynamic>{
+        'name': i.name,
+        'unit': i.unit,
+        'last_cost': i.lastCost,
+        'par': i.par,
+        'supplier_id': i.supplierId.isEmpty ? null : i.supplierId,
+        'category': i.category,
+        'use_per_head': i.use,
+        'location': i.location,
+        'count_freq': i.countFreq,
+      },
+    ),
   );
 
   @override

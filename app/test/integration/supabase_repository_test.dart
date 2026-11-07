@@ -376,6 +376,65 @@ void main() {
       );
     });
 
+    test(
+      'the owner adds and edits add-ons and ingredients with costs',
+      () async {
+        // Arrange: a manager session can read costs back.
+        await repo.signOutStaff();
+        expect(
+          await repo.signInWithPin(managerId, '2222'),
+          PinSignInResult.success,
+        );
+        final addon = AddonItem(
+          id: 'ad-new',
+          name: 'โค้ก 1.25 ลิตร',
+          category: 'เครื่องดื่ม',
+          price: 4500,
+          cost: 3000,
+          stock: 24,
+        );
+        const ingredient = IngredientItem(
+          id: 'ing-new',
+          name: 'หมูสามชั้น',
+          unit: 'กก.',
+          lastCost: 18000,
+          par: 5,
+          supplierId: '',
+          category: 'เนื้อสัตว์',
+          use: 0.2,
+        );
+
+        // Act
+        final addedAddon = await repo.saveAddon(addon);
+        final addedIngredient = await repo.saveIngredient(ingredient);
+        final savedAddon = repo.state.addons.firstWhere(
+          (x) => x.name == 'โค้ก 1.25 ลิตร',
+        );
+        final savedIngredient = repo.state.ingredients.firstWhere(
+          (x) => x.name == 'หมูสามชั้น',
+        );
+        final editedAddon = await repo.saveAddon(
+          savedAddon.copyWith(price: 5000, cost: 3200),
+        );
+        final editedIngredient = await repo.saveIngredient(
+          savedIngredient.copyWith(lastCost: 19000),
+        );
+
+        // Assert
+        expect(addedAddon.ok, isTrue, reason: addedAddon.message);
+        expect(addedIngredient.ok, isTrue, reason: addedIngredient.message);
+        expect(editedAddon.ok, isTrue, reason: editedAddon.message);
+        expect(editedIngredient.ok, isTrue, reason: editedIngredient.message);
+        final addonNow = repo.state.addons.where((x) => x.id == savedAddon.id);
+        expect(addonNow.single.price, 5000);
+        expect(addonNow.single.cost, 3200);
+        final ingredientNow = repo.state.ingredients.where(
+          (x) => x.id == savedIngredient.id,
+        );
+        expect(ingredientNow.single.lastCost, 19000);
+      },
+    );
+
     test('demo tools and JSON transfer are refused on real data', () async {
       // Act & Assert
       expect((await repo.resetDemoData(DateTime.now())).ok, isFalse);
