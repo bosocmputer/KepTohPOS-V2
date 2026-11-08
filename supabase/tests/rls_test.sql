@@ -4,7 +4,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(59);
+select plan(60);
 
 -- รัน SQL ในบทบาท + ผู้ใช้ที่กำหนด แล้วคืนผลเป็น text หรือ ERR:<sqlstate>
 -- กลับมาเป็น postgres ก่อนคืนค่า เพราะตารางภายในของ pgTAP ใช้ไม่ได้จากบทบาทอื่น
@@ -82,6 +82,11 @@ create function tests.val(p_key text) returns text language sql as $$ select val
 
 -- จับคู่เครื่อง
 select is(tests.owner_b(format($$select pairing_code from create_device_pairing(%L, 'x')$$, tests.shop_a())), 'ERR:42501', 'ออกรหัสจับคู่ให้ร้านอื่นไม่ได้');
+select ok(
+  (select max(p.expires_at) - now() > interval '23 hours'
+   from private.device_pairings p join public.devices d on d.id = p.device_id
+   where d.shop_id = tests.shop_a()),
+  'รหัสจับคู่ใช้ได้ 24 ชั่วโมง เพื่อส่งเป็นลิงก์ทาง LINE');
 select is(tests.owner_a(format($$select device_id from claim_device(%L)$$, tests.val('pair_a'))), 'ERR:42501', 'บัญชีเจ้าของใช้ claim_device ไม่ได้');
 select is(tests.device_a($$select device_id from claim_device('WRONGCODE')$$), 'ERR:P0002', 'รหัสจับคู่ผิดใช้ไม่ได้');
 select is(tests.device_a('select count(*) from shops'), '0', 'บัญชีเครื่องที่ยังไม่จับคู่ไม่เห็นร้าน');

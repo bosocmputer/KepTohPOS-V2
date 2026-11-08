@@ -18,6 +18,25 @@ class OwnedShop {
   final String name;
 }
 
+/// A POS device of the shop, as the owner sees it in setup.
+class ShopDevice {
+  const new({
+    required this.id,
+    required this.code,
+    required this.name,
+    required this.paired,
+    required this.revoked,
+    required this.isThisDevice,
+  });
+
+  final String id;
+  final String code;
+  final String name;
+  final bool paired;
+  final bool revoked;
+  final bool isThisDevice;
+}
+
 /// [DeviceAuthStorage] backed by the app's persistent local storage.
 class _LocalDeviceStorage implements DeviceAuthStorage {
   const new(this._storage);
@@ -188,6 +207,48 @@ class DeviceSession {
       params: <String, dynamic>{'p_staff_id': staff['id'], 'p_pin': pin},
     );
     return shopId;
+  }
+
+  /// The shop's devices, oldest first, read with the owner's login.
+  Future<List<ShopDevice>> shopDevices(String shopId) async {
+    final me = _deviceAuth.userId;
+    final rows = await owner
+        .from('devices')
+        .select('id, code, name, auth_user_id, paired_at, revoked_at')
+        .eq('shop_id', shopId)
+        .order('code');
+    return rows
+        .map(
+          (r) => ShopDevice(
+            id: r['id'] as String,
+            code: r['code'] as String,
+            name: r['name'] as String,
+            paired: r['paired_at'] != null,
+            revoked: r['revoked_at'] != null,
+            isThisDevice: me != null && r['auth_user_id'] == me,
+          ),
+        )
+        .toList();
+  }
+
+  /// Creates a one-time code, valid for 24 hours, that pairs a new device
+  /// named [deviceName] with [shopId].
+  Future<String> createDeviceCode(String shopId, String deviceName) async {
+    final rows = await owner.rpc<List<dynamic>>(
+      'create_device_pairing',
+      params: <String, dynamic>{'p_shop_id': shopId, 'p_name': deviceName},
+    );
+    return (rows.first as Map<String, dynamic>)['pairing_code'] as String;
+  }
+
+  /// Stops [deviceId] from reading or writing the shop's data.
+  Future<void> revokeDevice(String deviceId) async {
+    await owner
+        .from('devices')
+        .update(<String, dynamic>{
+          'revoked_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('id', deviceId);
   }
 
   /// Registers this device with [shopId] using the owner's permission.

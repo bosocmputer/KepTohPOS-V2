@@ -44,8 +44,20 @@ class _OnboardingAppState extends State<OnboardingApp> {
         return;
       }
       if (mounted) {
+        // A link sent from setup (?pair=CODE) goes straight to pairing; a
+        // failed LINE or Google sign-in comes back with ?error=...
+        final query = Uri.base.queryParameters;
+        final pair = query['pair']?.trim() ?? '';
         setState(() {
-          _step = session.isOwnerSignedIn ? _Step.ownerShop : _Step.choose;
+          if (pair.isNotEmpty) {
+            _code = pair;
+            _step = _Step.code;
+          } else {
+            _step = session.isOwnerSignedIn ? _Step.ownerShop : _Step.choose;
+          }
+          if (query.containsKey('error')) {
+            _error = 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่';
+          }
         });
       }
     } on Object {
@@ -111,15 +123,29 @@ class _OnboardingAppState extends State<OnboardingApp> {
             label: 'ฉันเป็นเจ้าของร้าน',
             kind: BtnKind.primary,
             block: true,
-            onPressed: () => setState(() => _step = _Step.ownerLogin),
+            onPressed: () => setState(() {
+              _error = '';
+              _step = _Step.ownerLogin;
+            }),
           ),
           const SizedBox(height: AppDimensions.space2),
           Btn(
             key: const ValueKey('choose-code-btn'),
             label: 'มีรหัสจับคู่เครื่องแล้ว',
             block: true,
-            onPressed: () => setState(() => _step = _Step.code),
+            onPressed: () => setState(() {
+              _error = '';
+              _step = _Step.code;
+            }),
           ),
+          if (_error.isNotEmpty) ...[
+            const SizedBox(height: AppDimensions.space3),
+            Text(
+              _error,
+              key: const ValueKey('onboarding-error'),
+              style: TextStyle(color: t.dangerInk),
+            ),
+          ],
         ],
       ),
       _Step.code => Column(
