@@ -91,7 +91,8 @@ select is(tests.device_b(format($$select shop_id from claim_device(%L)$$, tests.
 
 insert into bills (id, shop_id, device_id, no, business_date, at, subtotal, total, method_type, received)
 select gen_random_uuid(), d.shop_id, d.id, '00000-' || d.code || '-000001', current_date, now(), 29900, 29900, 'cash', 29900
-from devices d;
+from devices d
+where d.shop_id in (tests.shop_a(), tests.shop_b());
 
 -- แยกข้อมูลรายร้าน
 select is(tests.owner_a('select count(*) from shops'), '1', 'เจ้าของ A เห็นร้านเดียว');

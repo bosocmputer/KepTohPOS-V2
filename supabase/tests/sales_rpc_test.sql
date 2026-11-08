@@ -116,7 +116,7 @@ select is(tests.device_a(format($$select 1 from open_shift(%L, '90000000-0000-00
 
 -- คิดเงินแบบจ่ายก่อนกิน: 2 ผู้ใหญ่ + 1 เด็ก + น้ำ 2 ขวด = 86,700 สตางค์
 select is(tests.device_a(tests.settle(tests.val('cashier'), '60000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000001', 2, 1, 0, '{"40000000-0000-0000-0000-000000000001": 2}', '50000000-0000-0000-0000-000000000001', 100000, 1)), 'ERR:P0001', 'ยอดไม่ตรงกับเซิร์ฟเวอร์ถูกปฏิเสธ');
-select is((select count(*)::int from bills), 0, 'ยอดไม่ตรงแล้วไม่มีบิล');
+select is((select count(*)::int from bills where shop_id = tests.val('shop')::uuid), 0, 'ยอดไม่ตรงแล้วไม่มีบิล');
 select is(tests.addon_stock(), 10, 'ยอดไม่ตรงแล้วไม่ตัดสต็อก');
 select is(tests.device_a(tests.settle(tests.val('cashier'), '60000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000001', 2, 1, 0, '{"40000000-0000-0000-0000-000000000001": 2}', '50000000-0000-0000-0000-000000000001', 1000, 86700)), 'ERR:22023', 'รับเงินสดน้อยกว่ายอดไม่ได้');
 select is(tests.device_a(tests.settle(tests.val('cashier'), '60000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000001', 1, 0, 0, '{"40000000-0000-0000-0000-000000000009": 1}', '50000000-0000-0000-0000-000000000001', 100000, 29900)), 'ERR:22023', 'ใช้ addon ของร้านอื่นไม่ได้');
@@ -131,7 +131,7 @@ select is((select count(*)::int from bill_lines where bill_id = '60000000-0000-0
 select is((select cost from bill_lines where bill_id = '60000000-0000-0000-0000-000000000001' and type = 'addon'), 2500::bigint, 'สแนปช็อตต้นทุนลงรายการ');
 select is(tests.addon_stock(), 8, 'ตัดสต็อก 2 ขวด');
 select is(tests.device_a(tests.settle(tests.val('cashier'), '60000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000001', 2, 1, 0, '{"40000000-0000-0000-0000-000000000001": 2}', '50000000-0000-0000-0000-000000000001', 100000, 86700)), '86700', 'ส่งซ้ำ id เดิมคืนบิลเดิม');
-select is((select count(*)::int from bills), 1, 'ส่งซ้ำแล้วไม่เกิดบิลใหม่');
+select is((select count(*)::int from bills where shop_id = tests.val('shop')::uuid), 1, 'ส่งซ้ำแล้วไม่เกิดบิลใหม่');
 select is(tests.addon_stock(), 8, 'ส่งซ้ำแล้วไม่ตัดสต็อกซ้ำ');
 select is(tests.device_b(tests.settle(tests.val('token_b'), '60000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000098', 1, 0, 0, '{}', '50000000-0000-0000-0000-000000000001', 100, 100)), 'ERR:42501', 'ร้านอื่นส่ง id บิลนี้ไม่ได้');
 select is(tests.device_a(format($$select settle_bill(%L, '60000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 'before', 2, 1, 0, '{"40000000-0000-0000-0000-000000000001": 2}', '50000000-0000-0000-0000-000000000001', 100000, 86700, now()) -> 'lines' -> 2 ? 'cost'$$, tests.val('cashier'))), 'false', 'ผลลัพธ์ที่ส่งกลับเครื่องไม่มีต้นทุน');
@@ -149,7 +149,7 @@ select is(tests.device_a(format($$select void_bill(%L, '60000000-0000-0000-0000-
 -- กินก่อนจ่าย: ส่ง 2 ผู้ใหญ่ + น้ำ 3 แล้วลด 1 ผู้ใหญ่ + น้ำ 1 = 41,900
 select is(tests.device_a(format($$select 1 from send_round(%L, '80000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000001', 'after', 2, 0, 0, '{"40000000-0000-0000-0000-000000000001": 3}', now())$$, tests.val('cashier'))), '1', 'ส่งรอบสั่งได้');
 select tests.device_a(format($$select 1 from send_round(%L, '80000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000001', 'after', 2, 0, 0, '{"40000000-0000-0000-0000-000000000001": 3}', now())$$, tests.val('cashier')));
-select is((select count(*)::int from table_rounds), 1, 'ส่งรอบซ้ำไม่บันทึกซ้ำ');
+select is((select count(*)::int from table_rounds where shop_id = tests.val('shop')::uuid), 1, 'ส่งรอบซ้ำไม่บันทึกซ้ำ');
 select is(tests.addon_stock(), 7, 'ส่งรอบแล้วตัดสต็อกครั้งเดียว');
 select is(tests.device_a(format($$select adjust_sent(%L, '81000000-0000-0000-0000-000000000009', '70000000-0000-0000-0000-000000000003', 'head', 'a', 1, 'ไม่ควรผ่าน', now())$$, tests.val('cashier'))), 'ERR:42501', 'แคชเชียร์ลดรายการที่ส่งแล้วไม่ได้');
 select tests.set_val('manager', tests.device_a($$select verify_staff_pin('10000000-0000-0000-0000-000000000002', '2222') ->> 'session_token'$$));
@@ -167,7 +167,7 @@ create function tests.settle_after(p_bill text, p_expected bigint) returns text 
 $$;
 select is(tests.device_a(tests.settle_after('60000000-0000-0000-0000-000000000003', 29900)), '29900', 'คิดเงินจากรอบหลังหักรายการ และ QR รับเท่ายอด');
 select is(tests.device_a(tests.settle_after('60000000-0000-0000-0000-000000000004', 29900)), 'ERR:22023', 'รอบที่คิดเงินแล้วคิดซ้ำไม่ได้');
-select is((select count(*)::int from settled_table_events), 3, 'บันทึกเหตุการณ์ที่คิดเงินแล้วครบ');
+select is((select count(*)::int from settled_table_events where shop_id = tests.val('shop')::uuid), 3, 'บันทึกเหตุการณ์ที่คิดเงินแล้วครบ');
 select is((select no from bills where id = '60000000-0000-0000-0000-000000000003'), '00000-POS01-000002', 'เลขใบเสร็จเดินต่อ');
 select is(tests.device_a(format($$select 1 from close_table(%L, '70000000-0000-0000-0000-000000000003', now())$$, tests.val('cashier'))), '1', 'เก็บโต๊ะได้');
 select is(tests.device_a(format($$select void_bill(%L, '60000000-0000-0000-0000-000000000003', 'x', now())$$, tests.val('cashier'))), 'ERR:42501', 'แคชเชียร์ยกเลิกบิลของโต๊ะที่ปิดแล้วไม่ได้');
@@ -215,7 +215,7 @@ select is(tests.device_a(format($$select void_bill(%L, '60000000-0000-0000-0000-
 select is(tests.device_a(format($$select 1 from close_shift(%L, '90000000-0000-0000-0000-000000000000', 100000, now())$$, tests.val('manager'))), '1', 'ปิดกะแรกได้');
 select is(tests.device_a(format($$select 1 from open_shift(%L, '90000000-0000-0000-0000-000000000001', 100000, now())$$, tests.val('manager'))), '1', 'เปิดกะได้');
 select tests.device_a(format($$select 1 from open_shift(%L, '90000000-0000-0000-0000-000000000001', 100000, now())$$, tests.val('manager')));
-select is((select count(*)::int from shifts), 2, 'เปิดกะซ้ำ id เดิมไม่บันทึกซ้ำ');
+select is((select count(*)::int from shifts where shop_id = tests.val('shop')::uuid), 2, 'เปิดกะซ้ำ id เดิมไม่บันทึกซ้ำ');
 select is(tests.device_a(format($$select 1 from open_shift(%L, '90000000-0000-0000-0000-000000000002', 100000, now())$$, tests.val('manager'))), 'ERR:23505', 'เปิดสองกะพร้อมกันไม่ได้');
 select is(tests.device_a(format($$select settle_bill(%L, '60000000-0000-0000-0000-000000000006', '70000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 'before', 1, 0, 0, '{}', '50000000-0000-0000-0000-000000000001', 29900, 29900, now()) ->> 'shift_id'$$, tests.val('manager'))), '90000000-0000-0000-0000-000000000001', 'บิลผูกกับกะที่เปิดอยู่');
 select is(tests.device_a(format($$select 1 from close_shift(%L, '90000000-0000-0000-0000-000000000001', 129900, now())$$, tests.val('manager'))), '1', 'ปิดกะได้');
