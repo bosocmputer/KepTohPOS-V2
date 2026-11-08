@@ -7,7 +7,7 @@ import 'package:app/features/sale/presentation/bloc/sale_bloc.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-PosState _loadFreshMockState(DateTime now) {
+PosState _loadFreshMockState(DateTime now, {String? promptpay}) {
   Map<String, dynamic> readObj(String name) =>
       jsonDecode(File('assets/mock/$name.json').readAsStringSync())
           as Map<String, dynamic>;
@@ -17,7 +17,7 @@ PosState _loadFreshMockState(DateTime now) {
 
   return PosState(
     startDate: dkey(now),
-    shop: ShopConfig.fromJson(readObj('shop')),
+    shop: ShopConfig.fromJson(readObj('shop')).copyWith(promptpay: promptpay),
     packages: readList('packages').map(PackageItem.fromJson).toList(),
     addons: readList('addons').map(AddonItem.fromJson).toList(),
     suppliers: readList('suppliers').map(SupplierItem.fromJson).toList(),
@@ -304,6 +304,52 @@ void main() {
         expect(s.posState.sales, isEmpty);
         expect(s.toastMessage, 'จำนวนเงินที่รับยังไม่ครบ');
       },
+    );
+
+    blocTest<SaleBloc, SaleState>(
+      'QR payment is blocked when the shop has no PromptPay number',
+      build: () => SaleBloc(
+        MockPosRepository.fromState(
+          _loadFreshMockState(fixedNow, promptpay: ''),
+        ),
+        initialTableId: 't1',
+        now: fixedNow,
+      ),
+      act: (bloc) => bloc
+        ..add(const SaleTimingChanged('before'))
+        ..add(const SalePackageSelected('pk1'))
+        ..add(const SaleHeadsChanged(a: 2, c: 0, f: 0))
+        ..add(const SalePaymentStepChanged('pay'))
+        ..add(const SalePaymentMethodSelected('pm2'))
+        ..add(
+          SalePaymentSubmitted(
+            staff: ownerStaff,
+            billId: 'b_noqr',
+            now: fixedNow,
+          ),
+        ),
+      verify: (bloc) {
+        final s = bloc.state;
+        expect(s.canConfirmPayment, isFalse);
+        expect(s.posState.sales, isEmpty);
+        expect(s.toastMessage, 'ร้านยังไม่ได้ตั้งเบอร์พร้อมเพย์');
+      },
+    );
+
+    blocTest<SaleBloc, SaleState>(
+      'QR payment is allowed when the shop has a PromptPay number',
+      build: () => SaleBloc(
+        MockPosRepository.fromState(_loadFreshMockState(fixedNow)),
+        initialTableId: 't1',
+        now: fixedNow,
+      ),
+      act: (bloc) => bloc
+        ..add(const SaleTimingChanged('before'))
+        ..add(const SalePackageSelected('pk1'))
+        ..add(const SaleHeadsChanged(a: 2, c: 0, f: 0))
+        ..add(const SalePaymentStepChanged('pay'))
+        ..add(const SalePaymentMethodSelected('pm2')),
+      verify: (bloc) => expect(bloc.state.canConfirmPayment, isTrue),
     );
   });
 }

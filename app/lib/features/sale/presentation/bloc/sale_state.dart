@@ -172,10 +172,14 @@ class SaleState extends Equatable {
 
   int get cashShortage => math.max(0, payOrder.total - cashReceivedAmount);
 
+  /// QR needs the shop's PromptPay number, or there is nothing to scan.
+  bool get hasPromptPay => posState.shop.promptpay.trim().isNotEmpty;
+
   bool get canConfirmPayment {
     final m = activePaymentMethod;
     if (m == null || !canPay || openShiftOf(posState) == null) return false;
     if (m.type == 'cash') return cashReceivedAmount >= payOrder.total;
+    if (m.type == 'qr') return hasPromptPay;
     return true;
   }
 

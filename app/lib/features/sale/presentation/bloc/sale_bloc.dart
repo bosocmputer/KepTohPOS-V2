@@ -219,7 +219,13 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
     final method = state.activePaymentMethod;
     if (tb == null || pkg == null || method == null) return;
     if (!state.canConfirmPayment) {
-      emit(state.copyWith(toastMessage: 'จำนวนเงินที่รับยังไม่ครบ'));
+      emit(
+        state.copyWith(
+          toastMessage: method.type == 'qr' && !state.hasPromptPay
+              ? 'ร้านยังไม่ได้ตั้งเบอร์พร้อมเพย์'
+              : 'จำนวนเงินที่รับยังไม่ครบ',
+        ),
+      );
       return;
     }
     final currentNow = event.now ?? _fixedNow ?? DateTime.now();
