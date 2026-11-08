@@ -78,6 +78,14 @@ class DeviceSession {
     return user != null && !user.isAnonymous;
   }
 
+  /// The signed-in owner's email, or `null` when there is none (LINE may not
+  /// share one).
+  String? get ownerEmail =>
+      isOwnerSignedIn ? owner.auth.currentUser!.email : null;
+
+  /// Signs the owner out of this browser. The device pairing is not touched.
+  Future<void> signOutOwner() => owner.auth.signOut();
+
   /// Initializes Supabase and restores this device's saved session.
   static Future<DeviceSession> start() async {
     final activity = NetworkActivity();

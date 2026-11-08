@@ -72,6 +72,21 @@ class _OnboardingAppState extends State<OnboardingApp> {
     runApp(KepTohApp(busy: session.busy));
   }
 
+  Future<void> _signOutOwner() async {
+    setState(() {
+      _busy = true;
+      _error = '';
+    });
+    try {
+      await _session!.signOutOwner();
+      if (mounted) setState(() => _step = _Step.choose);
+    } on Object {
+      if (mounted) setState(() => _error = 'ออกจากระบบไม่สำเร็จ กรุณาลองใหม่');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _claim() async {
     setState(() {
       _busy = true;
@@ -185,9 +200,33 @@ class _OnboardingAppState extends State<OnboardingApp> {
         session: session!,
         onSignedIn: () => setState(() => _step = _Step.ownerShop),
       ),
-      _Step.ownerShop => OwnerShopStep(
-        session: session!,
-        onPaired: (shopId) => unawaited(_enter(shopId)),
+      _Step.ownerShop => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          OwnerShopStep(
+            session: session!,
+            onPaired: (shopId) => unawaited(_enter(shopId)),
+          ),
+          const SizedBox(height: AppDimensions.space4),
+          if (session.ownerEmail case final email?)
+            Text(
+              'เข้าสู่ระบบอยู่: $email',
+              key: const ValueKey('onboarding-owner-email'),
+              style: tt.bodySmall?.copyWith(color: t.muted),
+              textAlign: TextAlign.center,
+            ),
+          Btn(
+            key: const ValueKey('onboarding-signout-btn'),
+            label: 'ออกจากระบบ / เปลี่ยนบัญชี',
+            kind: BtnKind.ghost,
+            block: true,
+            disabled: _busy,
+            onPressed: _signOutOwner,
+          ),
+          if (_error.isNotEmpty)
+            Text(_error, style: TextStyle(color: t.dangerInk)),
+        ],
       ),
     };
   }
