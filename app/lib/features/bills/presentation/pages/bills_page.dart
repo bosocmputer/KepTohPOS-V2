@@ -1,3 +1,4 @@
+import 'package:app/core/sync/sync_widgets.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
@@ -160,6 +161,7 @@ class BillsPage extends StatelessWidget {
                             const SizedBox(width: AppDimensions.space1_5),
                             const Pill(label: 'ยกเลิก', tone: PillTone.red),
                           ],
+                          BillSyncBadge(billId: b.id),
                         ],
                       ),
                     ),

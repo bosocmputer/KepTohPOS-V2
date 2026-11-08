@@ -92,7 +92,7 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(find.text('✓ ส่งครบแล้ว 5 รายการ · บิล 2 ใบ'), findsOneWidget);
+    expect(find.text('ส่งครบแล้ว 5 รายการ · บิล 2 ใบ'), findsOneWidget);
     expect(SyncStatusBanner.toneFor(status.value).name, 'good');
   });
 

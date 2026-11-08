@@ -7,6 +7,7 @@ import 'package:app/core/data/local/outbox_queue.dart';
 import 'package:app/core/data/local/shop_snapshot_store.dart';
 import 'package:app/core/data/supabase/supabase_pos_repository.dart';
 import 'package:app/core/di/injection.dart';
+import 'package:app/core/sync/sync_center.dart';
 import 'package:app/features/onboarding/data/device_session.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -102,6 +103,15 @@ ConnectionMonitor startSync(
     ..registerSingleton<SyncEngine>(
       SyncEngine(repo, monitor, ShopSnapshotStore(localDb)),
       dispose: (e) => e.dispose(),
+    )
+    ..registerSingleton<SyncCenter>(
+      SyncCenter(
+        queue: queue,
+        monitor: monitor,
+        sendNow: repo.flushOutbox,
+        shop: () => repo.state,
+      ),
+      dispose: (c) => c.dispose(),
     );
   return monitor;
 }

@@ -97,6 +97,27 @@ class OutboxQueue {
   /// The send in progress or just finished; `null` when nothing was sent.
   ValueListenable<OutboxProgress?> get progress => _progress;
 
+  final ValueNotifier<DateTime?> _lastSynced = ValueNotifier<DateTime?>(null);
+
+  /// When a send last finished with the server reachable.
+  ValueListenable<DateTime?> get lastSynced => _lastSynced;
+
+  /// Every command of this shop not yet accepted (waiting or refused), oldest
+  /// first, for the sync status screen and the bill badges.
+  Stream<List<OutboxEntry>> watchAll() =>
+      (_db.select(_db.outboxEntries)
+            ..where((t) => t.shopId.equals(shopId))
+            ..orderBy(<OrderClauseGenerator<OutboxEntries>>[
+              (t) => OrderingTerm.asc(t.seq),
+            ]))
+          .watch();
+
+  /// Puts refused commands back in the queue to be sent again.
+  Future<void> retryRejected() =>
+      (_db.update(_db.outboxEntries)
+            ..where((t) => t.shopId.equals(shopId) & t.rejected.equals(true)))
+          .write(const OutboxEntriesCompanion(rejected: Value(false)));
+
   Expression<bool> _pending(OutboxEntries t) =>
       t.shopId.equals(shopId) & t.rejected.equals(false);
 
@@ -178,6 +199,7 @@ class OutboxQueue {
               ]))
             .get();
     if (entries.isEmpty) {
+      _lastSynced.value = DateTime.now();
       return const OutboxFlushResult(sent: 0, rejected: 0, offline: false);
     }
     var progress = OutboxProgress(
@@ -218,6 +240,7 @@ class OutboxQueue {
       progress = progress._next(bill: isBill, ok: true);
       _progress.value = progress;
     }
+    _lastSynced.value = DateTime.now();
     _progress.value = OutboxProgress(
       total: progress.total,
       bills: progress.bills,

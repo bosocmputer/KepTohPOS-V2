@@ -7,10 +7,13 @@ import 'package:flutter/material.dart';
 /// Floating note that the device is offline or still sending data made
 /// offline; hidden when everything is sent.
 class SyncStatusBanner extends StatelessWidget {
-  const new({required this.status, required this.child, super.key});
+  const new({required this.status, required this.child, super.key, this.onTap});
 
   final ValueListenable<SyncStatus> status;
   final Widget child;
+
+  /// Opens the sync status sheet.
+  final VoidCallback? onTap;
 
   static String _bills(int n) => n > 0 ? ' (บิล $n ใบ)' : '';
 
@@ -30,7 +33,7 @@ class SyncStatusBanner extends StatelessWidget {
       return p.rejected > 0
           ? 'ส่งแล้ว ${p.sent} รายการ · ไม่ผ่าน ${p.rejected} รายการ '
                 'ให้ผู้จัดการตรวจสอบ'
-          : '✓ ส่งครบแล้ว ${p.sent} รายการ'
+          : 'ส่งครบแล้ว ${p.sent} รายการ'
                 '${p.sentBills > 0 ? ' · บิล ${p.sentBills} ใบ' : ''}';
     }
     if (s.pending > 0) {
@@ -76,22 +79,29 @@ class SyncStatusBanner extends StatelessWidget {
                 color: bg,
                 elevation: 2,
                 borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppDimensions.space3,
-                    vertical: AppDimensions.space2,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AppIcon(icon, color: fg),
-                      const SizedBox(width: AppDimensions.space2),
-                      Text(
-                        text,
-                        style: Theme.of(context).textTheme.bodyMedium
-                            ?.copyWith(color: fg, fontWeight: FontWeight.w700),
-                      ),
-                    ],
+                child: InkWell(
+                  onTap: onTap,
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppDimensions.space3,
+                      vertical: AppDimensions.space2,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AppIcon(icon, color: fg),
+                        const SizedBox(width: AppDimensions.space2),
+                        Text(
+                          text,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: fg,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

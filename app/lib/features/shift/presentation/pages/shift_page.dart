@@ -1,3 +1,4 @@
+import 'package:app/core/sync/sync_widgets.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
@@ -235,8 +236,14 @@ class _ActiveShiftCard extends StatelessWidget {
                       label: 'ปิดกะ',
                       kind: BtnKind.dark,
                       disabled: state.countedValue == null,
-                      onPressed: () =>
-                          bloc.add(const ShiftConfirmCloseToggled(show: true)),
+                      onPressed: () async {
+                        if (await confirmWithPendingSync(
+                          context,
+                          action: 'ปิดกะ',
+                        )) {
+                          bloc.add(const ShiftConfirmCloseToggled(show: true));
+                        }
+                      },
                     );
                     final controls = <Widget>[
                       SizedBox(

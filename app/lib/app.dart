@@ -4,6 +4,8 @@ import 'package:app/core/data/local/connection_monitor.dart';
 import 'package:app/core/data/mock_pos_repository.dart';
 import 'package:app/core/di/injection.dart';
 import 'package:app/core/router/app_router.dart';
+import 'package:app/core/sync/sync_center.dart';
+import 'package:app/core/sync/sync_status_sheet.dart';
 import 'package:app/core/theme/app_theme.dart';
 import 'package:app/core/widgets/busy_overlay.dart';
 import 'package:app/core/widgets/sync_status_banner.dart';
@@ -76,6 +78,16 @@ class _KepTohAppState extends State<KepTohApp> {
   late final BillsCubit _billsCubit =
       widget.billsCubit ?? BillsCubit(_repo, now: widget.now);
 
+  /// The banner sits above the navigator, so the sheet opens on the
+  /// router's navigator.
+  void _openSyncSheet() {
+    final nav = _router.routerDelegate.navigatorKey.currentContext;
+    final center = SyncCenter.maybe;
+    if (nav != null && center != null) {
+      unawaited(showSyncStatusSheet(nav, center));
+    }
+  }
+
   late final GoRouter _router = createAppRouter(
     initialLocation: widget.initialLocation,
     authCubit: _authCubit,
@@ -135,7 +147,11 @@ class _KepTohAppState extends State<KepTohApp> {
                 final sync = widget.sync;
                 var page = child ?? const SizedBox.shrink();
                 if (sync != null) {
-                  page = SyncStatusBanner(status: sync, child: page);
+                  page = SyncStatusBanner(
+                    status: sync,
+                    onTap: _openSyncSheet,
+                    child: page,
+                  );
                 }
                 return busy == null
                     ? page

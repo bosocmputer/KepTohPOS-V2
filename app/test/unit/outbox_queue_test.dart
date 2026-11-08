@@ -131,4 +131,36 @@ void main() {
     // Assert
     expect(queue.progress.value, isNull);
   });
+
+  test(
+    'lists waiting and refused commands; refused ones can be retried',
+    () async {
+      // Arrange
+      await addThree();
+      await queue.flush((fn, params) async {
+        if (params['k'] == 'b') throw StateError('no');
+        throw const OutboxOfflineException();
+      });
+
+      // Assert: still all three listed, none refused yet (stopped at 'a').
+      expect((await queue.watchAll().first).map((e) => e.id), ['a', 'b', 'c']);
+
+      // Act: online again, 'b' is refused, the rest go through.
+      await queue.flush((fn, params) async {
+        if (params['k'] == 'b') throw StateError('no');
+      });
+      final left = await queue.watchAll().first;
+
+      // Assert
+      expect(left.single.id, 'b');
+      expect(left.single.rejected, isTrue);
+      expect(queue.lastSynced.value, isNotNull);
+
+      // Act: retry the refused one, and this time the server accepts it.
+      await queue.retryRejected();
+      expect(await queue.pendingCount(), 1);
+      await queue.flush((fn, params) async {});
+      expect(await queue.watchAll().first, isEmpty);
+    },
+  );
 }
