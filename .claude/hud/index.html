@@ -1,0 +1,4123 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Guard Studio — 3D Voxel AI Office</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg-void: #0e1015;
+      --bg-surface: rgba(18, 21, 28, 0.88);
+      --bg-elevated: rgba(27, 31, 42, 0.92);
+      --bg-row-hover: rgba(255, 255, 255, 0.04);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.15);
+      --text-primary: #f3f4f6;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --accent-opus: #a855f7;
+      --accent-haiku: #14b8a6;
+      --accent-sonnet: #3b82f6;
+      --accent-debug: #f59e0b;
+      --accent-review: #22c55e;
+      --accent-danger: #ef4444;
+      --font-sans: 'IBM Plex Sans Thai', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--bg-void);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+    }
+
+    .lucide {
+      width: 14px;
+      height: 14px;
+      stroke-width: 2;
+      flex-shrink: 0;
+    }
+
+    /* ==================== 1. FULL-VIEWPORT 3D STAGE ==================== */
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      outline: none;
+    }
+
+    /* ==================== 2. CLEAN MINIMAL TOPBAR (48px) ==================== */
+    .studio-topbar {
+      position: fixed;
+      top: 12px;
+      left: 16px;
+      right: 16px;
+      height: 46px;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 14px;
+      background: var(--bg-surface);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    }
+
+    .brand-cluster {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: rgba(168, 85, 247, 0.16);
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      color: #d8b4fe;
+      display: grid;
+      place-items: center;
+    }
+
+    .brand-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+
+    .brand-proj {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-secondary);
+      padding: 2px 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    /* แถบเลือกแผนก 5 โต๊ะแบบคลีน (ไร้ Emoji รกตา) */
+    .dept-nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 3px;
+      border-radius: 9px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .dept-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .dept-pill:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .dept-pill.active {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.1);
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 7px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .action-btn:hover {
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .action-btn.primary-tour {
+      background: rgba(168, 85, 247, 0.14);
+      border-color: rgba(168, 85, 247, 0.4);
+      color: #e9d5ff;
+    }
+
+    .action-btn.primary-tour:hover {
+      background: rgba(168, 85, 247, 0.24);
+    }
+
+    .fps-badge {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--text-muted);
+      padding: 0 6px;
+    }
+
+    /* ==================== 3. DYNAMIC ISLAND STATUS BAR (1 บรรทัด ไม่บังฉาก 3D) ==================== */
+    .dynamic-island {
+      position: fixed;
+      top: 68px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 25;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 14px;
+      background: var(--bg-surface);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 999px;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+      font-size: 12px;
+      color: var(--text-secondary);
+      max-width: 92vw;
+      white-space: nowrap;
+    }
+
+    .dynamic-island.danger {
+      border-color: rgba(239, 68, 68, 0.55);
+      background: rgba(40, 14, 18, 0.92);
+      color: #fecaca;
+    }
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+    }
+
+    .dynamic-island.danger .pulse-dot {
+      background: #ef4444;
+      box-shadow: 0 0 10px #ef4444;
+    }
+
+    .di-role {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .di-sep {
+      color: var(--text-muted);
+    }
+
+    .di-action {
+      color: var(--text-secondary);
+      max-width: 340px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .di-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .di-chip:hover {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    /* ==================== 4. IN-SCENE 3D MICRO TAGS & SPEECH BUBBLE ==================== */
+    #labels-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 15;
+    }
+
+    .desk-tag {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      pointer-events: auto;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(15, 17, 23, 0.78);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-secondary);
+      font-size: 11.5px;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
+    }
+
+    .desk-tag:hover,
+    .desk-tag.hovered {
+      color: var(--text-primary);
+      border-color: rgba(255, 255, 255, 0.35);
+      background: rgba(24, 28, 38, 0.92);
+    }
+
+    .desk-tag.active {
+      color: var(--text-primary);
+      font-weight: 600;
+      border-color: rgba(255, 255, 255, 0.32);
+      background: rgba(24, 28, 38, 0.92);
+    }
+
+    .desk-tag.danger {
+      border-color: #ef4444;
+      background: rgba(69, 10, 10, 0.92);
+      color: #fecaca;
+    }
+
+    .dt-model {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .dt-hint {
+      display: none;
+      font-size: 10px;
+      color: #d8b4fe;
+      margin-left: 2px;
+    }
+
+    .desk-tag.hovered .dt-hint {
+      display: inline;
+    }
+
+    /* ลูกโป่งความคิด (Thought Bubble) บนหัวตัวละคร — ล็อกความกว้างและตัดคำอัตโนมัติ ไม่ล้นกรอบ 100% */
+    .desk-speech-bubble {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%) scale(0.92);
+      background: #f8fafc;
+      color: #0f172a;
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.38;
+      width: max-content;
+      min-width: 190px;
+      max-width: 265px;
+      box-sizing: border-box;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      text-align: left;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42);
+      border: 1.5px solid #cbd5e1;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .desk-speech-bubble::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 5px;
+      border-style: solid;
+      border-color: #f8fafc transparent transparent transparent;
+    }
+
+    .desk-speech-bubble.visible {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+    }
+
+    .desk-speech-bubble.danger-speech {
+      background: #fef2f2;
+      color: #991b1b;
+      border-color: #ef4444;
+    }
+
+    .folder-badge-3d {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      background: rgba(245, 158, 11, 0.95);
+      color: #090d16;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    /* ==================== 5. SLIDE-OVER CONTEXT DRAWER (Progressive Disclosure Level 2) ==================== */
+    .context-drawer {
+      position: fixed;
+      top: 68px;
+      right: 16px;
+      bottom: 76px;
+      width: 380px;
+      z-index: 35;
+      background: var(--bg-surface);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: translateX(calc(100% + 28px));
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+    }
+
+    .context-drawer.open {
+      transform: translateX(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .drawer-header {
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .dh-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .dh-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .drawer-close {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-secondary);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+    }
+
+    .drawer-close:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .dh-desc {
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--text-secondary);
+    }
+
+    .dh-meta-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-top: 2px;
+    }
+
+    .dh-specs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .spec-pill {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--text-secondary);
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+    }
+
+    /* Segmented Tabs (Linear Style) */
+    .drawer-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      padding: 6px 14px;
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .tab-btn {
+      padding: 5px 8px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn.active {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .tab-pane {
+      display: none;
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 14px 16px;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .tab-pane.active {
+      display: flex;
+    }
+
+    /* Flat Divider List (No Card-Inside-Card Nesting!) */
+    .section-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sg-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--text-muted);
+    }
+
+    .flat-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .flat-row {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding: 9px 4px;
+      border-bottom: 1px solid var(--border-subtle);
+      transition: background 0.15s ease;
+    }
+
+    .flat-row:hover {
+      background: var(--bg-row-hover);
+    }
+
+    .flat-row.active-live {
+      background: rgba(168, 85, 247, 0.08);
+      border-left: 2px solid #c084fc;
+      padding-left: 8px;
+    }
+
+    .fr-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .fr-title {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.35;
+    }
+
+    .fr-badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-secondary);
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.06);
+      white-space: nowrap;
+    }
+
+    .fr-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .fr-path {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .fr-actions {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .mini-btn {
+      padding: 3px 8px;
+      border-radius: 5px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .mini-btn:hover {
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+      background: rgba(255, 255, 255, 0.09);
+    }
+
+    .mini-btn.primary {
+      background: var(--text-primary);
+      color: #090d16;
+      border-color: transparent;
+      font-weight: 600;
+    }
+
+    .mini-btn.primary:hover {
+      background: #ffffff;
+    }
+
+    /* Tab 2: Compact Metrics & Quota */
+    .stat-strip {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .stat-item {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .stat-lbl {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .stat-val {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-top: 2px;
+    }
+
+    .strike-bars {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .strike-cell {
+      padding: 6px;
+      border-radius: 7px;
+      border: 1px solid var(--border-subtle);
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .strike-cell.warn {
+      border-color: rgba(245, 158, 11, 0.5);
+      background: rgba(245, 158, 11, 0.12);
+      color: #fde68a;
+    }
+
+    .strike-cell.danger {
+      border-color: rgba(239, 68, 68, 0.6);
+      background: rgba(239, 68, 68, 0.16);
+      color: #fecaca;
+    }
+
+    .q-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 6px 0;
+    }
+
+    .q-lbl-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11.5px;
+      color: var(--text-secondary);
+    }
+
+    .q-bar-bg {
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+
+    .q-bar-fill {
+      height: 100%;
+      width: 15%;
+      background: #a855f7;
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+
+    /* ==================== 6. SINGLE-ROW BOTTOM COMMAND BAR (Raycast Style) ==================== */
+    .bottom-command-bar {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+      width: min(740px, calc(100vw - 32px));
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* ถาดปุ่มจำลองเหตุการณ์ (ซ่อนไว้เป็นค่าเริ่มต้น เปิดเมื่อกดปุ่ม 'จำลองเหตุการณ์' ไม่ให้รกหน้าจอ!) */
+    .sim-popover {
+      display: none;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: var(--bg-surface);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 11px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    }
+
+    .sim-popover.open {
+      display: flex;
+    }
+
+    .sim-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 9px;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .sim-chip:hover {
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .dock-form {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 46px;
+      padding: 0 7px;
+      background: var(--bg-surface);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+    }
+
+    /* Custom Select Popover Component (shadcn/ui & Linear Style — แทน native <select> ของเบราว์เซอร์) */
+    .ui-select {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .ui-select-trigger {
+      height: 32px;
+      padding: 0 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.045);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+      transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .ui-select-trigger:hover {
+      background: rgba(255, 255, 255, 0.085);
+      border-color: var(--border-strong);
+    }
+
+    .ui-select.open .ui-select-trigger {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.24);
+      box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+    }
+
+    .ui-select-value {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ui-select-value svg {
+      width: 13px;
+      height: 13px;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+
+    .ui-select-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .ui-select-chevron {
+      width: 13px;
+      height: 13px;
+      color: var(--text-muted);
+      transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), color 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .ui-select.open .ui-select-chevron {
+      transform: rotate(180deg);
+      color: var(--text-primary);
+    }
+
+    .ui-select-content {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 0;
+      min-width: 276px;
+      width: max-content;
+      padding: 6px;
+      background: rgba(14, 17, 25, 0.96);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 10px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.45);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      opacity: 0;
+      transform: translateY(6px) scale(0.97);
+      pointer-events: none;
+      transition: opacity 0.16s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 80;
+    }
+
+    .ui-select.open .ui-select-content {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .ui-select-label {
+      padding: 5px 8px 4px;
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      margin-bottom: 2px;
+    }
+
+    .ui-select-item {
+      width: 100%;
+      padding: 7px 9px;
+      border-radius: 7px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+
+    .ui-select-item:hover {
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text-primary);
+    }
+
+    .ui-select-item.selected {
+      background: rgba(168, 85, 247, 0.12);
+      color: var(--text-primary);
+    }
+
+    .ui-item-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ui-item-left svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    .ui-item-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .ui-item-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .ui-item-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .ui-item-check {
+      width: 14px;
+      height: 14px;
+      color: #c084fc;
+      opacity: 0;
+      flex-shrink: 0;
+    }
+
+    .ui-select-item.selected .ui-item-check {
+      opacity: 1;
+    }
+
+    .dock-input {
+      flex: 1;
+      height: 32px;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 12.5px;
+      padding: 0 8px;
+      outline: none;
+    }
+
+    .dock-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .dock-submit {
+      height: 30px;
+      padding: 0 12px;
+      border-radius: 7px;
+      border: none;
+      background: var(--text-primary);
+      color: #090d16;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+
+    .dock-submit:hover {
+      background: #ffffff;
+    }
+
+    /* ==================== 7. WORKSPACE FILE EXPLORER MODAL (Level 3) ==================== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      background: rgba(6, 8, 12, 0.76);
+      backdrop-filter: blur(8px);
+      display: none;
+       place-items: center;
+      padding: 24px;
+    }
+
+    .modal-backdrop.open {
+      display: grid;
+    }
+
+    .template-modal {
+      width: min(1040px, 94vw);
+      height: min(680px, 86vh);
+      background: #12151c;
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65);
+      display: grid;
+      grid-template-columns: 270px 1fr;
+      grid-template-rows: 48px 1fr;
+      overflow: hidden;
+    }
+
+    .tm-header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .tm-title {
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tm-sidebar {
+      border-right: 1px solid var(--border-subtle);
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .tm-group-title {
+      font-size: 10.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 8px 6px 4px;
+    }
+
+    .tm-file-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .tm-file-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+    }
+
+    .tm-file-btn.active {
+      background: rgba(168, 85, 247, 0.16);
+      color: #e9d5ff;
+      font-weight: 600;
+    }
+
+    .tm-tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .tm-content-area {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .tm-meta-bar {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .tm-file-path {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .tm-file-explain {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .tm-code-box {
+      flex: 1;
+      overflow: auto;
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.55;
+      color: #d1d5db;
+      white-space: pre-wrap;
+      user-select: text;
+    }
+  </style>
+</head>
+<body>
+  <!-- ==================== 1. FULL-SCREEN 3D VOXEL CANVAS ==================== -->
+  <div id="canvas-container"></div>
+
+  <!-- ==================== 2. CLEAN MINIMAL TOPBAR ==================== -->
+  <header class="studio-topbar">
+    <div class="brand-cluster">
+      <div class="brand-icon"><i data-lucide="box"></i></div>
+      <span class="brand-title">Agent Guard Studio</span>
+      <span class="brand-proj" id="proj-name-badge">agent-guard-template</span>
+    </div>
+
+    <nav class="dept-nav" aria-label="เลือกแผนกในสตูดิโอ">
+      <button class="dept-pill active" id="cam-overview" onclick="window.setCameraShot('overview')">
+        <i data-lucide="layout-grid"></i> มุมมองรวม
+      </button>
+      <button class="dept-pill" id="step-core" onclick="window.focusDesk('core', true)">
+        <span class="dot" style="background:var(--accent-opus)"></span> หัวหน้า Opus
+      </button>
+      <button class="dept-pill" id="step-explorer" onclick="window.focusDesk('explorer', true)">
+        <span class="dot" style="background:var(--accent-haiku)"></span> สำรวจ Haiku
+      </button>
+      <button class="dept-pill" id="step-implementer" onclick="window.focusDesk('implementer', true)">
+        <span class="dot" style="background:var(--accent-sonnet)"></span> เขียนโค้ด Sonnet
+      </button>
+      <button class="dept-pill" id="step-debugger" onclick="window.focusDesk('debugger', true)">
+        <span class="dot" style="background:var(--accent-debug)"></span> ซ่อมบั๊ก 2-Strike
+      </button>
+      <button class="dept-pill" id="step-reviewer" onclick="window.focusDesk('reviewer', true)">
+        <span class="dot" style="background:var(--accent-review)"></span> ตรวจงาน QA
+      </button>
+    </nav>
+
+    <div class="topbar-actions">
+      <button class="action-btn primary-tour" id="btn-story-tour" onclick="window.runLiveStoryTour()">
+        <i data-lucide="play"></i> <span>ชมทีมทำงาน</span>
+      </button>
+      <button class="action-btn" onclick="window.openTemplateModal('CLAUDE.md')">
+        <i data-lucide="folder-tree"></i> <span>ผังไฟล์จริง (<span id="top-files-count">35</span>)</span>
+      </button>
+      <button class="action-btn" onclick="window.openDrawerTab('tab-overview')">
+        <i data-lucide="activity"></i> <span>โควต้า & สถิติ</span>
+      </button>
+      <button class="action-btn" id="btn-ambience" onclick="window.toggleStudioAmbience()">
+        <i data-lucide="sun"></i> <span>กลางวัน</span>
+      </button>
+      <span class="fps-badge" id="fps-badge">60 FPS</span>
+    </div>
+  </header>
+
+  <!-- ==================== 3. DYNAMIC ISLAND STATUS BAR (1 บรรทัด ไม่บังฉาก) ==================== -->
+  <div class="dynamic-island" id="overall-status-pill">
+    <span class="pulse-dot"></span>
+    <span class="di-role" id="hud-active-badge">โต๊ะหัวหน้า (Opus)</span>
+    <span class="di-sep">•</span>
+    <span class="di-action" id="hud-action-text">พร้อมรับคำสั่งจริง</span>
+    <button type="button" class="di-chip" onclick="window.openCurrentLiveFile('skill')" title="คลิกเพื่อเปิดดูไฟล์ SKILL.md ที่กำลังใช้งานจริง">
+      <i data-lucide="layers" style="width:12px;height:12px;"></i>
+      <span id="live-skill-code">common-ground</span>
+    </button>
+    <button type="button" class="di-chip" onclick="window.openCurrentLiveFile('cmd')" title="คลิกเพื่อเปิดดูไฟล์คำสั่ง/กฎที่กำลังบังคับใช้">
+      <i data-lucide="file-code" style="width:12px;height:12px;"></i>
+      <span id="live-cmd-code">CLAUDE.md</span>
+    </button>
+  </div>
+
+  <!-- ==================== 4. IN-SCENE 1-LINE MICRO TAGS & SPEECH BUBBLE ==================== -->
+  <div id="labels-layer">
+    <div id="label-core" class="desk-tag active" onclick="window.focusDesk('core', true)">
+      <div class="desk-speech-bubble" id="speech-core">พร้อมรับคำสั่งจริงครับ</div>
+      <span class="dot" style="background:var(--accent-opus)"></span>
+      <span>หัวหน้าวางแผน</span>
+      <span class="dt-model">OPUS</span>
+      <span class="dt-hint">• คลิกดูการ์ด</span>
+    </div>
+
+    <div id="label-explorer" class="desk-tag" onclick="window.focusDesk('explorer', true)">
+      <div class="desk-speech-bubble" id="speech-explorer">สแกนหาพิกัดไฟล์ความเร็วสูงค่ะ</div>
+      <span class="dot" style="background:var(--accent-haiku)"></span>
+      <span>สำรวจไฟล์</span>
+      <span class="dt-model">HAIKU</span>
+      <span class="dt-hint">• คลิกดูการ์ด</span>
+    </div>
+
+    <div id="label-implementer" class="desk-tag" onclick="window.focusDesk('implementer', true)">
+      <div class="desk-speech-bubble" id="speech-implementer">กำลังเขียนโค้ดเฉพาะจุดครับ</div>
+      <span class="dot" style="background:var(--accent-sonnet)"></span>
+      <span>เขียนโค้ด</span>
+      <span class="dt-model">SONNET</span>
+      <span class="dt-hint">• คลิกดูการ์ด</span>
+    </div>
+
+    <div id="label-debugger" class="desk-tag" onclick="window.focusDesk('debugger', true)">
+      <div class="desk-speech-bubble" id="speech-debugger">วิเคราะห์ต้นตอบั๊ก (2-Strike)</div>
+      <span class="dot" style="background:var(--accent-debug)"></span>
+      <span>ซ่อมบั๊ก</span>
+      <span class="dt-model">2-STRIKE</span>
+      <span class="dt-hint">• คลิกดูการ์ด</span>
+    </div>
+
+    <div id="label-reviewer" class="desk-tag" onclick="window.focusDesk('reviewer', true)">
+      <div class="desk-speech-bubble" id="speech-reviewer">รันเทสต์พิสูจน์ผลจริงก่อนส่งงาน</div>
+      <span class="dot" style="background:var(--accent-review)"></span>
+      <span>ตรวจรับงาน</span>
+      <span class="dt-model">QA</span>
+      <span class="dt-hint">• คลิกดูการ์ด</span>
+    </div>
+
+    <div id="folder-tag" class="folder-badge-3d">ส่งแฟ้มงานจริง</div>
+  </div>
+
+  <!-- ==================== 5. SLIDE-OVER CONTEXT DRAWER (เปิดเฉพาะเมื่อคลิกเลือกโต๊ะ) ==================== -->
+  <aside class="context-drawer" id="studio-inspector" aria-label="แผงข้อมูลประจำโต๊ะ">
+    <div class="drawer-header">
+      <div class="dh-top">
+        <div class="dh-title">
+          <span class="dot" id="insp-dot" style="background:var(--accent-opus);width:8px;height:8px;"></span>
+          <span id="insp-title">หัวหน้าสถาปนิก & ผู้คุมกฎ (Opus)</span>
+        </div>
+        <button class="drawer-close" onclick="window.closeDrawer()" title="ปิดแผงข้อมูลเพื่อดูฉาก 3D เต็มจอ">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="dh-desc" id="insp-desc">
+        วิเคราะห์ภาพรวม วางแผนแบ่งงานให้ลูกทีม และคุมกฎความปลอดภัย
+      </div>
+      <div class="dh-meta-bar">
+        <div class="dh-specs" id="insp-spec-tags"></div>
+        <button class="mini-btn primary" id="insp-try-btn">ทดลองเรียกใช้งาน</button>
+      </div>
+    </div>
+
+    <div class="drawer-tabs">
+      <button class="tab-btn active" data-tab="tab-desk" onclick="window.switchTab('tab-desk')">
+        ความสามารถประจำโต๊ะ
+      </button>
+      <button class="tab-btn" data-tab="tab-overview" onclick="window.switchTab('tab-overview')">
+        งานจริง & โควต้า
+      </button>
+      <button class="tab-btn" data-tab="tab-logs" onclick="window.switchTab('tab-logs')">
+        ความคิด AI & ประวัติ
+      </button>
+    </div>
+
+    <!-- แท็บ 1: รายการความสามารถภาษาไทยแบบคลีน (Flat Divider Rows) -->
+    <div class="tab-pane active" id="tab-desk">
+      <div class="section-group">
+        <div class="sg-header">
+          <span>💭 ความคิดล่าสุดของบทบาทนี้ (Live Thought)</span>
+          <span id="desk-thought-time">สด</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-primary);padding:9px 11px;line-height:1.5;background:rgba(255,255,255,0.03);border:1px solid var(--border-subtle);border-radius:8px;overflow-wrap:anywhere;word-break:break-word;" id="desk-thought-box">
+          กำลังรอจังหวะคิดวิเคราะห์ของตัวละครในตำแหน่งนี้...
+        </div>
+      </div>
+
+      <div class="section-group">
+        <div class="sg-header">
+          <span>การ์ดความสามารถ (Skills)</span>
+          <span id="arch-skill-count">0 รายการ</span>
+        </div>
+        <div class="flat-list" id="arch-skills-list"></div>
+      </div>
+
+      <div class="section-group">
+        <div class="sg-header">
+          <span>คำสั่งลัดประจำโต๊ะ (Commands)</span>
+          <span id="arch-cmd-count">0 รายการ</span>
+        </div>
+        <div class="flat-list" id="arch-commands-list"></div>
+      </div>
+
+      <div class="section-group">
+        <div class="sg-header">
+          <span>โปรไฟล์พนักงาน & กฎบังคับใช้ (Agent / Rules)</span>
+        </div>
+        <div class="flat-list" id="arch-rules-list"></div>
+      </div>
+    </div>
+
+    <!-- แท็บ 2: งานที่กำลังทำจริง + มิเตอร์ความคุ้มค่า + กฎ 2-Strike + โควต้า -->
+    <div class="tab-pane" id="tab-overview">
+      <div class="section-group">
+        <div class="sg-header">
+          <span>สถานะการทำงานจริงตอนนี้</span>
+          <span id="calls-counter-txt">0 ครั้ง</span>
+        </div>
+        <div class="flat-row">
+          <div class="fr-top">
+            <span class="fr-title" id="current-action-txt">พร้อมรับงาน</span>
+            <span class="fr-badge" id="active-model-txt">OPUS</span>
+          </div>
+          <div class="fr-bottom">
+            <span class="fr-path" id="live-card-skill-path">.claude/skills/common-ground/SKILL.md</span>
+            <div class="fr-actions">
+              <button class="mini-btn" onclick="window.openCurrentLiveFile('skill')">ดู SKILL.md</button>
+              <button class="mini-btn" onclick="window.openCurrentLiveFile('rule')">ดูกฎเหล็ก</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-group">
+        <div class="sg-header">
+          <span>สถิติการทำงานจริงในรอบนี้</span>
+          <span id="real-diff-badge">git status สด</span>
+        </div>
+        <div class="stat-strip" style="margin-top:8px;">
+          <div class="stat-item">
+            <div class="stat-lbl">สำรวจไฟล์ด้วย Haiku</div>
+            <div class="stat-val" id="stat-explorer-reads">0 ครั้ง</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-lbl">แก้ไขไฟล์โค้ดจริง</div>
+            <div class="stat-val" id="stat-files-edited">0 ครั้ง</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-lbl">รันตรวจเทสต์จริง</div>
+            <div class="stat-val" id="stat-verifier-runs">0 ครั้ง</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-lbl">บล็อกคำสั่งอันตราย/ลูป</div>
+            <div class="stat-val" id="stat-blocked-count">0 ครั้ง</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-group">
+        <div class="sg-header">
+          <span>เบรกเกอร์กันวนลูป (กฎ 2-Strike)</span>
+          <span id="strike-badge-txt">ปกติ 0/3</span>
+        </div>
+        <div class="strike-bars">
+          <div class="strike-cell" id="strike-box-1">พังครั้งที่ 1<br/><small>หาต้นตอ</small></div>
+          <div class="strike-cell" id="strike-box-2">พังครั้งที่ 2<br/><small>ซ่อมรอบท้าย</small></div>
+          <div class="strike-cell" id="strike-box-3">ครบ 3 ครั้ง<br/><small>ตัดเบรกเกอร์</small></div>
+        </div>
+      </div>
+
+      <div class="section-group">
+        <div class="sg-header">
+          <span>ไฟล์จริงในโปรเจกต์ที่แก้ไขล่าสุด</span>
+          <span id="files-count-label">0 ไฟล์</span>
+        </div>
+        <div class="flat-list" id="touched-files-list"></div>
+      </div>
+
+      <div class="section-group">
+        <div class="sg-header">
+          <span>โควต้าคงเหลือจริงจาก CLI</span>
+          <button class="mini-btn" id="btn-refresh-quota">เช็คสด</button>
+        </div>
+        <div class="q-row">
+          <div class="q-lbl-line">
+            <span>Claude Code (รอบ 5 ชม.)</span>
+            <span id="q-claude-5h-pct">--%</span>
+          </div>
+          <div class="q-bar-bg"><div class="q-bar-fill" id="q-claude-5h-bar"></div></div>
+        </div>
+        <div class="q-row">
+          <div class="q-lbl-line">
+            <span>Antigravity IDE (Gemini / Claude)</span>
+            <span id="q-agy-gemini-pct">--%</span>
+          </div>
+          <div class="q-bar-bg"><div class="q-bar-fill" id="q-agy-gemini-bar" style="background:#3b82f6;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- แท็บ 3: ความคิดสดตามบทบาท & ประวัติการดึงใช้ไฟล์ -->
+    <div class="tab-pane" id="tab-logs">
+      <div class="section-group">
+        <div class="sg-header">
+          <span>🧠 ความคิดและการตัดสินใจสดตามบทบาท</span>
+          <span id="reply-status-txt">พร้อมรับงาน</span>
+        </div>
+        <div class="flat-list" id="ai-reply-box" style="font-size:12px;color:var(--text-secondary);line-height:1.5;overflow-wrap:anywhere;word-break:break-word;">
+          คลิกที่ตัวละคร 3D Voxel เพื่อดูความสามารถประจำตำแหน่ง หรือพิมพ์สั่งงานจากช่องด้านล่างได้เลยครับ
+        </div>
+      </div>
+
+      <div class="section-group">
+        <div class="sg-header">
+          <span>ประวัติการดึงใช้ Skill & ไฟล์จริง (สด)</span>
+        </div>
+        <div class="flat-list" id="used-items-history-list"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==================== 6. SINGLE-ROW BOTTOM COMMAND BAR ==================== -->
+  <section class="bottom-command-bar" aria-label="แถบสั่งงานทีม AI">
+    <div class="sim-popover" id="sim-popover">
+      <button type="button" class="sim-chip" onclick="window.runSim('opus_plan')">
+        <span class="dot" style="background:var(--accent-opus)"></span> Opus วางแผน (/plan)
+      </button>
+      <button type="button" class="sim-chip" onclick="window.runSim('haiku_explore')">
+        <span class="dot" style="background:var(--accent-haiku)"></span> Haiku สแกนไฟล์
+      </button>
+      <button type="button" class="sim-chip" onclick="window.runSim('sonnet_code')">
+        <span class="dot" style="background:var(--accent-sonnet)"></span> Sonnet เขียนโค้ด
+      </button>
+      <button type="button" class="sim-chip" onclick="window.runSim('strike_1')">
+        <span class="dot" style="background:var(--accent-debug)"></span> เทสต์พัง 1/3 (/fix)
+      </button>
+      <button type="button" class="sim-chip" onclick="window.runSim('strike_3')">
+        <span class="dot" style="background:var(--accent-danger)"></span> ติดเบรกเกอร์ 3/3
+      </button>
+      <button type="button" class="sim-chip" onclick="window.runSim('os_shield')">
+        <span class="dot" style="background:var(--accent-danger)"></span> บล็อกคำสั่งอันตราย
+      </button>
+      <button type="button" class="sim-chip" onclick="window.runSim('anti_tamper')">
+        <span class="dot" style="background:var(--accent-danger)"></span> บล็อกแอบแก้เทสต์ (Stage 4)
+      </button>
+      <button type="button" class="sim-chip" onclick="window.runSim('prod_gate')">
+        <span class="dot" style="background:var(--accent-danger)"></span> กั้น Deploy Prod (Stage 5)
+      </button>
+      <button type="button" class="sim-chip" onclick="window.runSim('agy_takeover')">
+        <span class="dot" style="background:var(--accent-sonnet)"></span> สลับค่าย AGY
+      </button>
+      <button type="button" class="sim-chip" onclick="window.runSim('review_done')">
+        <span class="dot" style="background:var(--accent-review)"></span> ตรวจรับงานผ่าน
+      </button>
+    </div>
+
+    <form class="dock-form" id="prompt-form">
+      <input type="hidden" id="select-engine" value="claude" />
+      <input type="hidden" id="select-model" value="sonnet" />
+
+      <!-- Custom Component 1: Engine Selector Popover -->
+      <div class="ui-select" id="dropdown-engine">
+        <button
+          type="button"
+          class="ui-select-trigger"
+          onclick="window.toggleCustomSelect('dropdown-engine', event)"
+          aria-haspopup="listbox"
+          aria-label="เลือกค่าย AI"
+        >
+          <span class="ui-select-value" id="trigger-engine-val">
+            <i data-lucide="terminal" style="color:#c084fc"></i>
+            <span>Claude Code</span>
+          </span>
+          <i data-lucide="chevron-down" class="ui-select-chevron"></i>
+        </button>
+
+        <div class="ui-select-content" role="listbox">
+          <div class="ui-select-label">เลือก CLI Engine</div>
+          <button
+            type="button"
+            class="ui-select-item selected"
+            data-val="claude"
+            onclick="window.selectEngineOption('claude', 'Claude Code', 'terminal', '#c084fc')"
+          >
+            <div class="ui-item-left">
+              <i data-lucide="terminal" style="color:#c084fc"></i>
+              <div class="ui-item-text">
+                <span class="ui-item-title">Claude Code</span>
+                <span class="ui-item-desc">รันผ่าน `.claude/` Hooks & Subagents</span>
+              </div>
+            </div>
+            <i data-lucide="check" class="ui-item-check"></i>
+          </button>
+
+          <button
+            type="button"
+            class="ui-select-item"
+            data-val="antigravity"
+            onclick="window.selectEngineOption('antigravity', 'Antigravity', 'sparkles', '#38bdf8')"
+          >
+            <div class="ui-item-left">
+              <i data-lucide="sparkles" style="color:#38bdf8"></i>
+              <div class="ui-item-text">
+                <span class="ui-item-title">Antigravity</span>
+                <span class="ui-item-desc">สลับค่ายรับช่วงงานต่อผ่าน `.agents/`</span>
+              </div>
+            </div>
+            <i data-lucide="check" class="ui-item-check"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Custom Component 2: Model Selector Popover -->
+      <div class="ui-select" id="dropdown-model">
+        <button
+          type="button"
+          class="ui-select-trigger"
+          onclick="window.toggleCustomSelect('dropdown-model', event)"
+          aria-haspopup="listbox"
+          aria-label="เลือกโมเดล"
+        >
+          <span class="ui-select-value" id="trigger-model-val">
+            <span class="dot" style="background:var(--accent-sonnet)"></span>
+            <span>Sonnet</span>
+            <span class="ui-select-sub">เขียนโค้ด</span>
+          </span>
+          <i data-lucide="chevron-down" class="ui-select-chevron"></i>
+        </button>
+
+        <div class="ui-select-content" role="listbox">
+          <div class="ui-select-label">เลือกโมเดลตามหน้าที่ (Model Routing)</div>
+          <button
+            type="button"
+            class="ui-select-item"
+            data-val="opus"
+            onclick="window.selectModelOption('opus', 'Opus', 'วางแผน', 'var(--accent-opus)')"
+          >
+            <div class="ui-item-left">
+              <span class="dot" style="background:var(--accent-opus);width:8px;height:8px;"></span>
+              <div class="ui-item-text">
+                <span class="ui-item-title">Opus (หัวหน้าวางแผน)</span>
+                <span class="ui-item-desc">วิเคราะห์สถาปัตยกรรม & คุมกฎ 2-Strike</span>
+              </div>
+            </div>
+            <i data-lucide="check" class="ui-item-check"></i>
+          </button>
+
+          <button
+            type="button"
+            class="ui-select-item selected"
+            data-val="sonnet"
+            onclick="window.selectModelOption('sonnet', 'Sonnet', 'เขียนโค้ด', 'var(--accent-sonnet)')"
+          >
+            <div class="ui-item-left">
+              <span class="dot" style="background:var(--accent-sonnet);width:8px;height:8px;"></span>
+              <div class="ui-item-text">
+                <span class="ui-item-title">Sonnet (ลงมือเขียนโค้ด)</span>
+                <span class="ui-item-desc">แก้ไขโค้ดเฉพาะจุด & ตรวจรับเทสต์จริง</span>
+              </div>
+            </div>
+            <i data-lucide="check" class="ui-item-check"></i>
+          </button>
+
+          <button
+            type="button"
+            class="ui-select-item"
+            data-val="haiku"
+            onclick="window.selectModelOption('haiku', 'Haiku', 'สำรวจไว 15x', 'var(--accent-haiku)')"
+          >
+            <div class="ui-item-left">
+              <span class="dot" style="background:var(--accent-haiku);width:8px;height:8px;"></span>
+              <div class="ui-item-text">
+                <span class="ui-item-title">Haiku (ฝ่ายสำรวจไฟล์)</span>
+                <span class="ui-item-desc">ค้นหาพิกัดไฟล์เร็วสูง ประหยัดโควต้า 15 เท่า</span>
+              </div>
+            </div>
+            <i data-lucide="check" class="ui-item-check"></i>
+          </button>
+        </div>
+      </div>
+
+      <input
+        type="text"
+        class="dock-input"
+        id="prompt-input"
+        placeholder="สั่งงานทีม AI เป็นภาษาไทย หรือคลิกที่ตัวละคร 3D เพื่อดูการ์ดความสามารถ..."
+      />
+
+      <button type="button" class="action-btn" onclick="window.toggleSimPopover(event)" title="เปิด/ปิดถาดจำลองสถานการณ์">
+        <i data-lucide="sliders-horizontal"></i> <span>จำลองเหตุการณ์</span>
+      </button>
+
+      <button type="submit" class="dock-submit" id="btn-send-prompt">
+        <i data-lucide="corner-down-left"></i> <span>ส่งคำสั่ง</span>
+      </button>
+    </form>
+  </section>
+
+  <!-- ==================== 7. LIVE WORKSPACE FILE EXPLORER MODAL ==================== -->
+  <div class="modal-backdrop" id="template-modal-backdrop" onclick="if(event.target===this)window.closeTemplateModal()">
+    <div class="template-modal" role="dialog" aria-modal="true" aria-label="ผังโครงสร้างไฟล์จริงในโปรเจกต์">
+      <header class="tm-header">
+        <div class="tm-title">
+          <i data-lucide="folder-tree"></i>
+          <span>ผังโครงสร้างไฟล์จริงที่สแกนสดจากดิสก์ (`.claude/` & `.agents/`)</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="mini-btn primary" id="tm-use-prompt-btn">นำความสามารถนี้ไปใช้งาน</button>
+          <button class="mini-btn" onclick="window.closeTemplateModal()">ปิดหน้าต่าง (ESC)</button>
+        </div>
+      </header>
+
+      <aside class="tm-sidebar" id="tm-file-tree"></aside>
+
+      <section class="tm-content-area">
+        <div class="tm-meta-bar">
+          <div>
+            <div class="tm-file-path" id="tm-current-path">-</div>
+            <div class="tm-file-explain" id="tm-current-explain">-</div>
+          </div>
+          <div class="dh-specs" id="tm-current-badges"></div>
+        </div>
+        <pre class="tm-code-box" id="tm-current-code">กำลังอ่านไฟล์สดจากดิสก์...</pre>
+      </section>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+
+    // =========================================================================
+    // 1. ข้อมูลตำแหน่งโต๊ะ 3D ทั้ง 5 แผนก (ไม่ Hardcode รายการไฟล์ — สแกนสดจากดิสก์ 100%)
+    // =========================================================================
+    const DESK_INFO = {
+      core: {
+        title: 'หัวหน้าสถาปนิก & ผู้คุมกฎ (Opus)',
+        shortName: 'โต๊ะหัวหน้า (Opus)',
+        desc: 'วิเคราะห์ภาพรวม วางแผนแบ่งงานให้ลูกทีม คุมด่านอนุมัติ Production Deploy/Migration (Stage 5) และจดจำจุดพลาดซ้ำด้วย 2-Repeat Pitfall Memory (Stage 3)',
+        simKey: 'opus_plan',
+        modelCode: 'opus',
+        pos: new THREE.Vector3(0, 0, 0),
+        camPos: new THREE.Vector3(0, 4.9, 5.8),
+        camTarget: new THREE.Vector3(0, 1.15, -0.15),
+        accent: 0xa855f7,
+        accentCss: '#a855f7',
+        suitColor: 0x581c87,
+        shirtColor: 0xf8fafc,
+        tieColor: 0xfacc15,
+        hairColor: 0x1e1b4b,
+        skinColor: 0xffdbb5,
+        screenTitle: 'OPUS // ARCHITECT',
+      },
+      explorer: {
+        title: 'ฝ่ายสำรวจหาพิกัดไฟล์ความเร็วสูง (Haiku)',
+        shortName: 'โต๊ะสำรวจไฟล์ (Haiku)',
+        desc: 'ค้นหาไฟล์ (Read / Grep / Glob) และดึง Official Skills 19 ตัวจาก anthropics/skills + 67 ตัวจาก jeffallan/claude-skills ประหยัดโควต้ากว่า Opus 15 เท่า',
+        simKey: 'haiku_explore',
+        modelCode: 'haiku',
+        pos: new THREE.Vector3(-4.6, 0, -3.1),
+        camPos: new THREE.Vector3(-4.6, 4.3, 1.6),
+        camTarget: new THREE.Vector3(-4.6, 1.05, -3.25),
+        accent: 0x14b8a6,
+        accentCss: '#14b8a6',
+        suitColor: 0x0f766e,
+        shirtColor: 0xccfbf1,
+        tieColor: 0x2dd4bf,
+        hairColor: 0x134e4a,
+        skinColor: 0xffe0bd,
+        screenTitle: 'HAIKU // FILE RADAR',
+      },
+      implementer: {
+        title: 'ฝ่ายลงมือเขียนและแก้ไขโค้ด (Sonnet)',
+        shortName: 'โต๊ะเขียนโค้ด (Sonnet)',
+        desc: 'รับพิกัดไฟล์มาเขียนโค้ดเฉพาะจุด (Surgical Edit) จัดฟอร์แมตอัตโนมัติ และบันทึกจุดค้างงานลงดิสก์จริง',
+        simKey: 'sonnet_code',
+        modelCode: 'sonnet',
+        pos: new THREE.Vector3(-4.6, 0, 3.2),
+        camPos: new THREE.Vector3(-4.6, 4.3, 7.9),
+        camTarget: new THREE.Vector3(-4.6, 1.05, 3.05),
+        accent: 0x3b82f6,
+        accentCss: '#3b82f6',
+        suitColor: 0x1d4ed8,
+        shirtColor: 0x1e293b,
+        tieColor: 0x38bdf8,
+        hairColor: 0x27272a,
+        skinColor: 0xffd6a5,
+        screenTitle: 'SONNET // CODER',
+      },
+      debugger: {
+        title: 'ช่างซ่อมบั๊ก ภายใต้กฎเหล็ก 2-Strike (Sonnet)',
+        shortName: 'โต๊ะซ่อมบั๊ก (2-Strike)',
+        desc: 'วิเคราะห์ต้นตอเมื่อเทสต์พัง ห้ามเดาสุ่มซ้ำเกิน 2 ครั้ง และบล็อกการแอบแก้ไฟล์เทสต์เดิมเพื่อให้ผ่านหลอกๆ (Stage 4 Anti-Test-Tampering Guard)',
+        simKey: 'strike_1',
+        modelCode: 'sonnet',
+        pos: new THREE.Vector3(4.6, 0, -3.1),
+        camPos: new THREE.Vector3(4.6, 4.3, 1.6),
+        camTarget: new THREE.Vector3(4.6, 1.05, -3.25),
+        accent: 0xf59e0b,
+        accentCss: '#f59e0b',
+        suitColor: 0xb45309,
+        shirtColor: 0xfef3c7,
+        tieColor: 0xf97316,
+        hairColor: 0x451a03,
+        skinColor: 0xffdbb5,
+        screenTitle: 'DEBUG // 2-STRIKE',
+      },
+      reviewer: {
+        title: 'ฝ่ายตรวจรับงานและรันเทสต์จริง (Sonnet)',
+        shortName: 'โต๊ะตรวจรับงาน (QA)',
+        desc: 'รันคำสั่งเทสต์จริงเพื่อพิสูจน์ว่างานผ่านจริง (ไม่ติดกับดัก 0 tests ran) และตรวจจุดสำคัญก่อนส่งมอบงาน',
+        simKey: 'review_done',
+        modelCode: 'sonnet',
+        pos: new THREE.Vector3(4.6, 0, 3.2),
+        camPos: new THREE.Vector3(4.6, 4.3, 7.9),
+        camTarget: new THREE.Vector3(4.6, 1.05, 3.05),
+        accent: 0x22c55e,
+        accentCss: '#22c55e',
+        suitColor: 0x15803d,
+        shirtColor: 0xf0fdf4,
+        tieColor: 0x4ade80,
+        hairColor: 0x18181b,
+        skinColor: 0xffe0bd,
+        screenTitle: 'QA // VERIFIER',
+      },
+    };
+
+    // =========================================================================
+    // 2. ตั้งค่า Renderer, AgX Tone Mapping & Studio Lighting
+    // =========================================================================
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x11131a);
+    scene.fog = new THREE.FogExp2(0x11131a, 0.014);
+
+    const camera = new THREE.PerspectiveCamera(
+      35,
+      container.clientWidth / container.clientHeight,
+      0.1,
+      120
+    );
+    const OVERVIEW_CAM_POS = new THREE.Vector3(0, 8.6, 14.2);
+    const OVERVIEW_CAM_TARGET = new THREE.Vector3(0, 0.85, -0.4);
+    camera.position.copy(OVERVIEW_CAM_POS);
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      powerPreference: 'high-performance',
+    });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.AgXToneMapping;
+    renderer.toneMappingExposure = 1.12;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
+    container.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.maxPolarAngle = Math.PI / 2.12;
+    controls.minDistance = 3.5;
+    controls.maxDistance = 26;
+    controls.target.copy(OVERVIEW_CAM_TARGET);
+
+    function buildStudioSoftboxEnvironment() {
+      const width = 256;
+      const height = 128;
+      const data = new Float32Array(width * height * 4);
+      const softboxes = [
+        { dir: new THREE.Vector3(0.45, 0.85, 0.35).normalize(), intensity: 4.6, exp: 16, col: [1.0, 0.97, 0.92] },
+        { dir: new THREE.Vector3(-0.85, 0.25, 0.15).normalize(), intensity: 1.5, exp: 7, col: [0.8, 0.88, 1.0] },
+        { dir: new THREE.Vector3(0.15, 0.35, -0.95).normalize(), intensity: 2.2, exp: 12, col: [1.0, 0.84, 0.64] },
+      ];
+      const ray = new THREE.Vector3();
+
+      for (let y = 0; y < height; y++) {
+        const v = (y + 0.5) / height;
+        const theta = (1.0 - v) * Math.PI;
+        const sinTheta = Math.sin(theta);
+        const cosTheta = Math.cos(theta);
+        const up01 = Math.max(0, Math.min(1, cosTheta * 0.5 + 0.5));
+        const baseAmb = 0.24 + 0.68 * (up01 * up01 * (3 - 2 * up01));
+        for (let x = 0; x < width; x++) {
+          const u = (x + 0.5) / width;
+          const phi = u * Math.PI * 2.0;
+          ray.set(-sinTheta * Math.sin(phi), cosTheta, -sinTheta * Math.cos(phi));
+          let r = baseAmb * 0.92;
+          let g = baseAmb * 0.93;
+          let b = baseAmb * 0.97;
+          for (const sb of softboxes) {
+            const dot = Math.max(0, ray.dot(sb.dir));
+            if (dot > 0) {
+              const contrib = Math.pow(dot, sb.exp) * sb.intensity;
+              r += contrib * sb.col[0];
+              g += contrib * sb.col[1];
+              b += contrib * sb.col[2];
+            }
+          }
+          const idx = (y * width + x) * 4;
+          data[idx] = r;
+          data[idx + 1] = g;
+          data[idx + 2] = b;
+          data[idx + 3] = 1.0;
+        }
+      }
+      const tex = new THREE.DataTexture(data, width, height, THREE.RGBAFormat, THREE.FloatType);
+      tex.mapping = THREE.EquirectangularReflectionMapping;
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    scene.environment = buildStudioSoftboxEnvironment();
+    scene.environmentIntensity = 0.42;
+
+    const hemiLight = new THREE.HemisphereLight(0xfff7ed, 0x1e293b, 0.55);
+    scene.add(hemiLight);
+
+    const keyLight = new THREE.DirectionalLight(0xffe8d1, 1.95);
+    keyLight.position.set(10, 18, 11);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(2048, 2048);
+    keyLight.shadow.camera.near = 2;
+    keyLight.shadow.camera.far = 42;
+    const shadowBound = 12.2;
+    keyLight.shadow.camera.left = -shadowBound;
+    keyLight.shadow.camera.right = shadowBound;
+    keyLight.shadow.camera.top = shadowBound;
+    keyLight.shadow.camera.bottom = -shadowBound;
+    keyLight.shadow.bias = -0.00025;
+    keyLight.shadow.normalBias = 0.02;
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.48);
+    fillLight.position.set(-12, 9, 8);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.DirectionalLight(0xfdba74, 0.65);
+    rimLight.position.set(-5, 8, -13);
+    scene.add(rimLight);
+
+    // =========================================================================
+    // 3. ระบบสร้างโมเดล 3D Voxel Art (Beveled Voxel Engine)
+    // =========================================================================
+    const UNIT_VOXEL_GEO = new RoundedBoxGeometry(1, 1, 1, 2, 0.11);
+    const voxelMatCache = new Map();
+
+    function getVoxelMat(hexColor, opts = {}) {
+      const key = `${hexColor}_${opts.roughness ?? 0.38}_${opts.metalness ?? 0.04}_${opts.emissive ?? 0}_${opts.opacity ?? 1}`;
+      if (voxelMatCache.has(key)) return voxelMatCache.get(key);
+      const mat = new THREE.MeshPhysicalMaterial({
+        color: hexColor,
+        roughness: opts.roughness ?? 0.38,
+        metalness: opts.metalness ?? 0.04,
+        clearcoat: opts.clearcoat ?? 0.3,
+        clearcoatRoughness: 0.28,
+        emissive: opts.emissive ?? 0x000000,
+        emissiveIntensity: opts.emissiveIntensity ?? 0.0,
+        transparent: (opts.opacity ?? 1) < 1,
+        opacity: opts.opacity ?? 1,
+      });
+      voxelMatCache.set(key, mat);
+      return mat;
+    }
+
+    const clickableMeshes = [];
+
+    function addVoxelBox(parent, sx, sy, sz, x, y, z, hexColor, opts = {}, deskKey = null) {
+      const mesh = new THREE.Mesh(UNIT_VOXEL_GEO, getVoxelMat(hexColor, opts));
+      mesh.scale.set(sx, sy, sz);
+      mesh.position.set(x, y, z);
+      mesh.castShadow = opts.castShadow ?? true;
+      mesh.receiveShadow = opts.receiveShadow ?? true;
+      if (deskKey) {
+        mesh.userData = { deskKey };
+        clickableMeshes.push(mesh);
+      }
+      parent.add(mesh);
+      return mesh;
+    }
+
+    // =========================================================================
+    // 4. สร้างห้องสตูดิโอ 3D Voxel Diorama (พื้นไม้โอ๊คอบอุ่น + หน้าต่าง Loft + ป้ายคมชัดไม่ล้น)
+    // =========================================================================
+    const officeGroup = new THREE.Group();
+    scene.add(officeGroup);
+
+    // พื้นสำนักงานโมเดิร์นไร้รอยต่อ (Seamless Architectural Satin Micro-Cement — เนียนกริบ ไม่มีลายอิฐและไม่มีเส้นร่องกระเบื้อง 100%)
+    function createVoxelFloorTexture() {
+      const c = document.createElement('canvas');
+      c.width = 1024;
+      c.height = 1024;
+      const ctx = c.getContext('2d');
+
+      // ไล่แสงนุ่มนวลแบบสตูดิโอสถาปัตยกรรมสมัยใหม่ (Warm Alabaster ➔ Soft Greige Stone)
+      const grad = ctx.createRadialGradient(512, 490, 60, 512, 512, 720);
+      grad.addColorStop(0.0, '#e5e0d6');
+      grad.addColorStop(0.55, '#dad4c8');
+      grad.addColorStop(1.0, '#c8c1b4');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      // เติมเนื้อสัมผัส Satin Micro-Grain ละเอียดพิเศษระดับ ±1.5 RGB เพื่อให้ผิวพื้นดูเนียนสมจริงและไม่มีรอยต่อ
+      const imgData = ctx.getImageData(0, 0, 1024, 1024);
+      const d = imgData.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const p = (i >> 2);
+        const grain = (((p * 1103515245 + 12345) >>> 16) & 3) - 1.5;
+        d[i] = Math.min(255, Math.max(0, d[i] + grain));
+        d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + grain));
+        d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + grain));
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.wrapS = THREE.ClampToEdgeWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+      return tex;
+    }
+
+    // เงา Ambient Occlusion นุ่มนวลใต้พรมแต่ละโต๊ะ (แทนเส้นขอบแข็งบนพื้น)
+    function createSoftFloorShadowTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 256;
+      const ctx = c.getContext('2d');
+      const g = ctx.createRadialGradient(128, 128, 24, 128, 128, 124);
+      g.addColorStop(0.0, 'rgba(15, 19, 28, 0.22)');
+      g.addColorStop(0.65, 'rgba(15, 19, 28, 0.08)');
+      g.addColorStop(1.0, 'rgba(15, 19, 28, 0.0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 256, 256);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+    const softFloorShadowTex = createSoftFloorShadowTexture();
+
+    // ฐานสถาปัตยกรรมโมเดิร์นสีเทาเข้ม + พื้นสตูดิโอไร้รอยต่อ
+    const plinthMesh = new THREE.Mesh(
+      new RoundedBoxGeometry(16.5, 0.38, 12.3, 4, 0.08),
+      getVoxelMat(0x161922, { roughness: 0.6, metalness: 0.15 })
+    );
+    plinthMesh.position.set(0, -0.26, 0);
+    officeGroup.add(plinthMesh);
+
+    const studioFloorMat = new THREE.MeshPhysicalMaterial({
+      map: createVoxelFloorTexture(),
+      roughness: 0.58,
+      metalness: 0.02,
+      clearcoat: 0.1,
+      clearcoatRoughness: 0.45,
+    });
+    const studioFloor = new THREE.Mesh(
+      new RoundedBoxGeometry(16.0, 0.14, 11.8, 4, 0.05),
+      studioFloorMat
+    );
+    studioFloor.position.y = -0.06;
+    studioFloor.receiveShadow = true;
+    officeGroup.add(studioFloor);
+
+    // บัวเชิงผนังด้านหลังและผนังหลักทรงเรขาคณิตคมชัด (ไม่ใช้ addVoxelBox ยืดสัดส่วนจนขอบโค้งเบี้ยว)
+    const baseboardMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(16.0, 0.1, 0.12),
+      getVoxelMat(0x1b1f2a, { roughness: 0.6 })
+    );
+    baseboardMesh.position.set(0, 0.05, -5.74);
+    officeGroup.add(baseboardMesh);
+
+    const backWallMat = getVoxelMat(0x252a37, { roughness: 0.78 });
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(16.0, 4.2, 0.28), backWallMat);
+    backWall.position.set(0, 2.1, -5.9);
+    backWall.receiveShadow = true;
+    officeGroup.add(backWall);
+
+    // คิ้วขอบบนผนังสถาปัตยกรรมโมเดิร์นสีเทาเข้ม
+    const topCornice = new THREE.Mesh(
+      new THREE.BoxGeometry(16.04, 0.12, 0.34),
+      getVoxelMat(0x181c26, { roughness: 0.5 })
+    );
+    topCornice.position.set(0, 4.22, -5.88);
+    officeGroup.add(topCornice);
+
+    // ผนังระแนงไม้ Acoustic ตรงกลางแบบสถาปัตยกรรมสมัยใหม่ (มีแผ่นหลังสีเข้มและกรอบบน-ล่างคมกริบ ไม่โผล่หัวมนเหมือนรั้ว)
+    const slatPanelBack = new THREE.Mesh(
+      new THREE.BoxGeometry(4.76, 4.06, 0.04),
+      getVoxelMat(0x141821, { roughness: 0.85 })
+    );
+    slatPanelBack.position.set(0, 2.12, -5.75);
+    officeGroup.add(slatPanelBack);
+
+    const slatWoodMat = getVoxelMat(0x6e4726, { roughness: 0.48 });
+    const slatGeo = new THREE.BoxGeometry(0.075, 4.02, 0.06);
+    for (let i = -14; i <= 14; i++) {
+      const slat = new THREE.Mesh(slatGeo, slatWoodMat);
+      slat.position.set(i * 0.16, 2.12, -5.72);
+      slat.castShadow = true;
+      slat.receiveShadow = true;
+      officeGroup.add(slat);
+    }
+
+    // หน้าต่างกระจก Loft ซ้าย-ขวา (กรอบเหลี่ยมคมชัด ไม่บิดโค้ง)
+    const windowSkyMat = new THREE.MeshStandardMaterial({
+      color: 0x7dd3fc,
+      emissive: 0x38bdf8,
+      emissiveIntensity: 0.42,
+      roughness: 0.15,
+    });
+
+    function createLoftWindow(wx) {
+      const wg = new THREE.Group();
+      wg.position.set(wx, 2.25, -5.73);
+      const frameMat = getVoxelMat(0x171a24, { roughness: 0.4 });
+      const blindMat = getVoxelMat(0xe2e8f0, { roughness: 0.6 });
+
+      const outerFrame = new THREE.Mesh(new THREE.BoxGeometry(3.1, 2.2, 0.09), frameMat);
+      wg.add(outerFrame);
+
+      const glass = new THREE.Mesh(new THREE.PlaneGeometry(2.88, 1.98), windowSkyMat);
+      glass.position.set(0, 0, 0.05);
+      wg.add(glass);
+
+      const mullionV1 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.98, 0.11), frameMat);
+      mullionV1.position.set(-0.95, 0, 0.01);
+      wg.add(mullionV1);
+      const mullionV2 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.98, 0.11), frameMat);
+      mullionV2.position.set(0.95, 0, 0.01);
+      wg.add(mullionV2);
+      const mullionH = new THREE.Mesh(new THREE.BoxGeometry(2.88, 0.05, 0.11), frameMat);
+      mullionH.position.set(0, 0.18, 0.01);
+      wg.add(mullionH);
+
+      for (let b = 0; b < 4; b++) {
+        const blind = new THREE.Mesh(new THREE.BoxGeometry(2.84, 0.035, 0.07), blindMat);
+        blind.position.set(0, 0.86 - b * 0.12, 0.03);
+        wg.add(blind);
+      }
+      officeGroup.add(wg);
+    }
+    createLoftWindow(-4.85);
+    createLoftWindow(4.85);
+
+    // ป้ายสตูดิโอสไตล์โมเดิร์นมินิมอล (ไร้กรอบทองซ้อนหลายชั้น และไม่ถูกยืดมุมโค้งเบี้ยว)
+    function createWallSignTexture() {
+      const c = document.createElement('canvas');
+      c.width = 1024;
+      c.height = 200;
+      const ctx = c.getContext('2d');
+
+      // พื้นหลังสีเดียวกับตัวป้าย 3D (#151924) เพื่อให้กลืนเป็นชิ้นเดียวกันไร้รอยต่อ
+      ctx.fillStyle = '#151924';
+      ctx.fillRect(0, 0, 1024, 200);
+
+      // เส้นคาดด้านบนบางเฉียบสไตล์โมเดิร์น
+      const grad = ctx.createLinearGradient(180, 0, 844, 0);
+      grad.addColorStop(0, 'rgba(168, 85, 247, 0)');
+      grad.addColorStop(0.25, 'rgba(168, 85, 247, 0.65)');
+      grad.addColorStop(0.5, 'rgba(56, 189, 248, 0.75)');
+      grad.addColorStop(0.75, 'rgba(34, 197, 94, 0.65)');
+      grad.addColorStop(1, 'rgba(34, 197, 94, 0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(140, 22, 744, 3);
+
+      // ชื่อสตูดิโอหลัก คมชัด สะอาดตา
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = '700 44px Inter, -apple-system, sans-serif';
+      ctx.fillText('AGENT GUARD STUDIO', 512, 96);
+
+      // บรรทัดรองแสดงทีมโมเดลแบบมินิมอลพร้อมจุดสีประจำแผนก
+      const roles = [
+        { label: 'OPUS ARCHITECT', color: '#a855f7', x: 205 },
+        { label: 'HAIKU SCOUT', color: '#14b8a6', x: 415 },
+        { label: 'SONNET CODER', color: '#3b82f6', x: 620 },
+        { label: '2-STRIKE QA', color: '#22c55e', x: 825 },
+      ];
+      ctx.font = '600 19px "JetBrains Mono", monospace';
+      roles.forEach((r) => {
+        ctx.fillStyle = r.color;
+        ctx.beginPath();
+        ctx.arc(r.x - ( ctx.measureText(r.label).width / 2 ) - 12, 146, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillText(r.label, r.x, 153);
+      });
+
+      const t = new THREE.CanvasTexture(c);
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.anisotropy = 4;
+      return t;
+    }
+
+    const wallSignGroup = new THREE.Group();
+    wallSignGroup.position.set(0, 3.3, -5.65);
+
+    // แผ่นฐาน Backlit ซ่อนไฟนุ่มนวลด้านหลังป้าย (ใช้ RoundedBoxGeometry สัดส่วนจริง ไม่ยืดเบี้ยว)
+    const signBackplate = new THREE.Mesh(
+      new RoundedBoxGeometry(4.24, 0.86, 0.04, 4, 0.03),
+      new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        emissive: 0x38bdf8,
+        emissiveIntensity: 0.18,
+        roughness: 0.35,
+      })
+    );
+    signBackplate.position.set(0, 0, -0.02);
+    wallSignGroup.add(signBackplate);
+
+    // ตัวบอดี้ป้ายสีเข้ม Matte Obsidian สีเดียวกับแผ่น Canvas ด้านหน้า (#151924)
+    const signBody = new THREE.Mesh(
+      new RoundedBoxGeometry(4.18, 0.8, 0.08, 4, 0.025),
+      new THREE.MeshBasicMaterial({ color: 0x151924 })
+    );
+    wallSignGroup.add(signBody);
+
+    const wallSignFace = new THREE.Mesh(
+      new THREE.PlaneGeometry(4.06, 0.74),
+      new THREE.MeshBasicMaterial({ map: createWallSignTexture() })
+    );
+    wallSignFace.position.set(0, 0, 0.042);
+    wallSignGroup.add(wallSignFace);
+    officeGroup.add(wallSignGroup);
+
+    // ตู้ Server Voxel & ต้นไม้ Voxel มุมห้อง
+    function createVoxelServerRack(x, z) {
+      const g = new THREE.Group();
+      g.position.set(x, 0, z);
+      addVoxelBox(g, 1.1, 2.3, 0.84, 0, 1.15, 0, 0x1e222d, { roughness: 0.35, metalness: 0.75 });
+      for (let i = 0; i < 6; i++) {
+        const col = i % 2 === 0 ? 0x38bdf8 : 0xa855f7;
+        addVoxelBox(g, 0.76, 0.06, 0.04, 0, 0.45 + i * 0.31, 0.42, col, {
+          emissive: col,
+          emissiveIntensity: 0.85,
+        });
+      }
+      officeGroup.add(g);
+    }
+    createVoxelServerRack(-6.9, -4.9);
+    createVoxelServerRack(6.9, -4.9);
+
+    function createVoxelTree(x, z) {
+      const g = new THREE.Group();
+      g.position.set(x, 0, z);
+      addVoxelBox(g, 0.66, 0.5, 0.66, 0, 0.25, 0, 0xe7e5e4, { roughness: 0.85 });
+      addVoxelBox(g, 0.74, 0.09, 0.74, 0, 0.5, 0, 0xd6d3d1, { roughness: 0.85 });
+      addVoxelBox(g, 0.18, 0.52, 0.18, 0, 0.75, 0, 0x78350f, { roughness: 0.7 });
+      addVoxelBox(g, 0.88, 0.34, 0.88, 0, 1.08, 0, 0x15803d, { roughness: 0.55 });
+      addVoxelBox(g, 0.68, 0.32, 0.68, 0, 1.38, 0, 0x16a34a, { roughness: 0.55 });
+      addVoxelBox(g, 0.44, 0.26, 0.44, 0, 1.64, 0, 0x22c55e, { roughness: 0.55 });
+      officeGroup.add(g);
+    }
+    createVoxelTree(-6.9, 4.7);
+    createVoxelTree(6.9, 4.7);
+
+    // =========================================================================
+    // 5. ปั้นตัวละครพนักงาน 3D Voxel Art (แก้จุดนั่งทับโต๊ะ 100% — มือวางบนคีย์บอร์ด ขาแตะพื้น)
+    // =========================================================================
+    function createVoxelCharacter(key, cfg) {
+      const root = new THREE.Group();
+      const dk = key;
+
+      // 1. สะโพกและขาทั้ง 2 ข้าง (ปรับความสูงให้รองเท้าแตะพื้นพอดีที่ y = 0.05)
+      const pelvis = new THREE.Group();
+      pelvis.position.set(0, 0.48, 0);
+      root.add(pelvis);
+      addVoxelBox(pelvis, 0.42, 0.14, 0.3, 0, 0, 0, 0x1e293b, {}, dk);
+
+      const leftLeg = new THREE.Group();
+      leftLeg.position.set(-0.12, -0.04, 0.16);
+      pelvis.add(leftLeg);
+      addVoxelBox(leftLeg, 0.15, 0.13, 0.24, 0, 0, 0, 0x1e293b, {}, dk);
+      addVoxelBox(leftLeg, 0.14, 0.24, 0.14, 0, -0.18, 0.06, 0x1e293b, {}, dk);
+      addVoxelBox(leftLeg, 0.16, 0.09, 0.22, 0, -0.33, 0.1, 0xf8fafc, {}, dk);
+      addVoxelBox(leftLeg, 0.165, 0.04, 0.23, 0, -0.38, 0.1, cfg.accent, {}, dk);
+
+      const rightLeg = new THREE.Group();
+      rightLeg.position.set(0.12, -0.04, 0.16);
+      pelvis.add(rightLeg);
+      addVoxelBox(rightLeg, 0.15, 0.13, 0.24, 0, 0, 0, 0x1e293b, {}, dk);
+      addVoxelBox(rightLeg, 0.14, 0.24, 0.14, 0, -0.18, 0.06, 0x1e293b, {}, dk);
+      addVoxelBox(rightLeg, 0.16, 0.09, 0.22, 0, -0.33, 0.1, 0xf8fafc, {}, dk);
+      addVoxelBox(rightLeg, 0.165, 0.04, 0.23, 0, -0.38, 0.1, cfg.accent, {}, dk);
+
+      // 2. ลำตัว เสื้อสูท/ฮู้ดดี้ คอปก เนกไท/บัตรพนักงาน
+      const torsoGroup = new THREE.Group();
+      torsoGroup.position.set(0, 0.56, 0);
+      root.add(torsoGroup);
+
+      addVoxelBox(torsoGroup, 0.46, 0.44, 0.28, 0, 0.22, 0, cfg.suitColor, {}, dk);
+      addVoxelBox(torsoGroup, 0.2, 0.36, 0.29, 0, 0.24, 0.01, cfg.shirtColor, {}, dk);
+      addVoxelBox(torsoGroup, 0.1, 0.08, 0.3, -0.09, 0.41, 0.01, 0xffffff, {}, dk);
+      addVoxelBox(torsoGroup, 0.1, 0.08, 0.3, 0.09, 0.41, 0.01, 0xffffff, {}, dk);
+
+      if (key === 'core' || key === 'reviewer') {
+        addVoxelBox(torsoGroup, 0.07, 0.26, 0.31, 0, 0.26, 0.015, cfg.tieColor, {}, dk);
+      } else {
+        addVoxelBox(torsoGroup, 0.11, 0.14, 0.31, 0, 0.24, 0.015, 0xf8fafc, {}, dk);
+        addVoxelBox(torsoGroup, 0.09, 0.04, 0.315, 0, 0.28, 0.018, cfg.accent, {
+          emissive: cfg.accent,
+          emissiveIntensity: 0.6,
+        }, dk);
+      }
+      addVoxelBox(torsoGroup, 0.18, 0.1, 0.18, 0, 0.47, 0, cfg.skinColor, {}, dk);
+
+      // 3. แขนซ้าย-ขวา (ยกระดับปลายแขนและมือให้อยู่ที่ world y = 0.96 เหนือปุ่มคีย์บอร์ด ไม่จมโต๊ะ!)
+      const leftArm = new THREE.Group();
+      leftArm.position.set(-0.28, 0.42, 0);
+      torsoGroup.add(leftArm);
+      addVoxelBox(leftArm, 0.12, 0.16, 0.13, 0, -0.02, 0.04, cfg.suitColor, {}, dk);
+      addVoxelBox(leftArm, 0.11, 0.11, 0.36, 0.03, -0.02, 0.24, cfg.suitColor, {}, dk);
+      addVoxelBox(leftArm, 0.11, 0.09, 0.13, 0.05, -0.02, 0.46, cfg.skinColor, {}, dk);
+
+      const rightArm = new THREE.Group();
+      rightArm.position.set(0.28, 0.42, 0);
+      torsoGroup.add(rightArm);
+      addVoxelBox(rightArm, 0.12, 0.16, 0.13, 0, -0.02, 0.04, cfg.suitColor, {}, dk);
+      addVoxelBox(rightArm, 0.11, 0.11, 0.36, -0.03, -0.02, 0.24, cfg.suitColor, {}, dk);
+      addVoxelBox(rightArm, 0.11, 0.09, 0.13, -0.05, -0.02, 0.46, cfg.skinColor, {}, dk);
+
+      // 4. ศีรษะ Voxel สไตล์ Designer Chibi Voxel
+      const headGroup = new THREE.Group();
+      headGroup.position.set(0, 0.52, 0);
+      torsoGroup.add(headGroup);
+
+      addVoxelBox(headGroup, 0.54, 0.48, 0.46, 0, 0.24, 0, cfg.skinColor, {}, dk);
+      addVoxelBox(headGroup, 0.08, 0.14, 0.1, -0.29, 0.22, 0, cfg.skinColor, {}, dk);
+      addVoxelBox(headGroup, 0.08, 0.14, 0.1, 0.29, 0.22, 0, cfg.skinColor, {}, dk);
+      addVoxelBox(headGroup, 0.07, 0.07, 0.06, 0, 0.2, 0.24, 0xf5cba7, {}, dk);
+
+      const eyesGroup = new THREE.Group();
+      eyesGroup.position.set(0, 0.23, 0.232);
+      headGroup.add(eyesGroup);
+
+      addVoxelBox(eyesGroup, 0.13, 0.12, 0.02, -0.12, 0, 0, 0xffffff, {}, dk);
+      addVoxelBox(eyesGroup, 0.13, 0.12, 0.02, 0.12, 0, 0, 0xffffff, {}, dk);
+
+      const pupilMat = getVoxelMat(0x090d16, { roughness: 0.15, clearcoat: 0.9 });
+      const pupilL = new THREE.Mesh(UNIT_VOXEL_GEO, pupilMat);
+      pupilL.scale.set(0.085, 0.095, 0.028);
+      pupilL.position.set(-0.115, 0, 0.006);
+      eyesGroup.add(pupilL);
+
+      const pupilR = new THREE.Mesh(UNIT_VOXEL_GEO, pupilMat);
+      pupilR.scale.set(0.085, 0.095, 0.028);
+      pupilR.position.set(0.115, 0, 0.006);
+      eyesGroup.add(pupilR);
+
+      addVoxelBox(eyesGroup, 0.032, 0.032, 0.034, -0.135, 0.025, 0.01, 0xffffff, { emissive: 0xffffff, emissiveIntensity: 0.5 }, dk);
+      addVoxelBox(eyesGroup, 0.032, 0.032, 0.034, 0.095, 0.025, 0.01, 0xffffff, { emissive: 0xffffff, emissiveIntensity: 0.5 }, dk);
+
+      const browL = addVoxelBox(headGroup, 0.14, 0.038, 0.035, -0.12, 0.33, 0.235, cfg.hairColor, {}, dk);
+      const browR = addVoxelBox(headGroup, 0.14, 0.038, 0.035, 0.12, 0.33, 0.235, cfg.hairColor, {}, dk);
+      const mouthMesh = addVoxelBox(headGroup, 0.12, 0.04, 0.03, 0, 0.11, 0.235, 0x991b1b, {}, dk);
+
+      // 5. ทรงผมและเครื่องประดับหัวเฉพาะตำแหน่ง
+      addVoxelBox(headGroup, 0.58, 0.14, 0.5, 0, 0.49, -0.01, cfg.hairColor, {}, dk);
+      addVoxelBox(headGroup, 0.56, 0.38, 0.12, 0, 0.28, -0.21, cfg.hairColor, {}, dk);
+      addVoxelBox(headGroup, 0.08, 0.24, 0.44, -0.27, 0.36, -0.02, cfg.hairColor, {}, dk);
+      addVoxelBox(headGroup, 0.08, 0.24, 0.44, 0.27, 0.36, -0.02, cfg.hairColor, {}, dk);
+
+      if (key === 'core') {
+        addVoxelBox(headGroup, 0.38, 0.09, 0.34, 0, 0.59, 0.02, 0xfacc15, { metalness: 0.78, roughness: 0.22 }, dk);
+        [-0.14, 0, 0.14].forEach((cx) => {
+          addVoxelBox(headGroup, 0.07, 0.1, 0.07, cx, 0.67, 0.15, 0xfacc15, { metalness: 0.78, roughness: 0.22 }, dk);
+        });
+        addVoxelBox(headGroup, 0.06, 0.06, 0.06, 0, 0.6, 0.19, 0xa855f7, { emissive: 0xa855f7, emissiveIntensity: 0.9 }, dk);
+        addVoxelBox(headGroup, 0.46, 0.03, 0.04, 0, 0.26, 0.25, 0xd4af37, { metalness: 0.8 }, dk);
+      } else if (key === 'explorer') {
+        addVoxelBox(headGroup, 0.2, 0.15, 0.04, 0.12, 0.23, 0.255, 0x2dd4bf, {
+          emissive: 0x14b8a6,
+          emissiveIntensity: 0.65,
+          opacity: 0.72,
+        }, dk);
+        addVoxelBox(headGroup, 0.06, 0.26, 0.06, 0.31, 0.42, 0, 0x14b8a6, { emissive: 0x14b8a6, emissiveIntensity: 0.8 }, dk);
+        addVoxelBox(headGroup, 0.22, 0.1, 0.08, -0.14, 0.42, 0.23, cfg.hairColor, {}, dk);
+      } else if (key === 'implementer') {
+        addVoxelBox(headGroup, 0.64, 0.07, 0.14, 0, 0.56, 0, 0x1d4ed8, {}, dk);
+        addVoxelBox(headGroup, 0.11, 0.22, 0.2, -0.32, 0.24, 0, 0x2563eb, {}, dk);
+        addVoxelBox(headGroup, 0.11, 0.22, 0.2, 0.32, 0.24, 0, 0x2563eb, {}, dk);
+        addVoxelBox(headGroup, 0.04, 0.14, 0.12, -0.37, 0.24, 0, 0x38bdf8, { emissive: 0x38bdf8, emissiveIntensity: 0.85 }, dk);
+        addVoxelBox(headGroup, 0.04, 0.14, 0.12, 0.37, 0.24, 0, 0x38bdf8, { emissive: 0x38bdf8, emissiveIntensity: 0.85 }, dk);
+      } else if (key === 'debugger') {
+        addVoxelBox(headGroup, 0.62, 0.18, 0.56, 0, 0.54, 0.02, 0xf59e0b, { roughness: 0.28 }, dk);
+        addVoxelBox(headGroup, 0.48, 0.08, 0.62, 0, 0.47, 0.07, 0xd97706, { roughness: 0.3 }, dk);
+        addVoxelBox(headGroup, 0.14, 0.1, 0.06, 0, 0.55, 0.31, 0xfef08a, { emissive: 0xfef08a, emissiveIntensity: 0.95 }, dk);
+      } else if (key === 'reviewer') {
+        addVoxelBox(headGroup, 0.6, 0.14, 0.52, 0, 0.55, 0.02, 0x15803d, {}, dk);
+        addVoxelBox(headGroup, 0.1, 0.1, 0.05, 0, 0.55, 0.28, 0xfacc15, { metalness: 0.8 }, dk);
+        addVoxelBox(headGroup, 0.46, 0.03, 0.04, 0, 0.26, 0.25, 0xe2e8f0, { metalness: 0.85 }, dk);
+      }
+
+      return {
+        root,
+        torsoGroup,
+        headGroup,
+        eyesGroup,
+        pupilL,
+        pupilR,
+        browL,
+        browR,
+        mouthMesh,
+        leftArm,
+        rightArm,
+      };
+    }
+
+    // =========================================================================
+    // 6. สร้างชุดโต๊ะทำงาน Voxel (เก้าอี้ถอยหลังพ้นขอบโต๊ะ 100%, พรมสีเข้มตัดขอบไฟ, จอ 3D สด)
+    // =========================================================================
+    const workstations = {};
+    const deskPointLights = [];
+
+    function createDynamicMonitorCanvas(title, hexAccent, skillText = 'READY', statusText = 'ACTIVE') {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 128;
+      const ctx = c.getContext('2d');
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+
+      function redraw(sk, st) {
+        ctx.fillStyle = '#0b0f17';
+        ctx.fillRect(0, 0, 256, 128);
+
+        const accentCss = '#' + hexAccent.toString(16).padStart(6, '0');
+        ctx.fillStyle = accentCss;
+        ctx.fillRect(0, 0, 256, 24);
+
+        ctx.fillStyle = '#090d16';
+        ctx.font = 'bold 13px "JetBrains Mono", monospace';
+        ctx.fillText(title, 8, 17);
+
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = 'bold 15px "JetBrains Mono", monospace';
+        ctx.fillText(`SKILL: ${String(sk || 'common-ground').slice(0, 18)}`, 10, 52);
+
+        ctx.fillStyle = accentCss;
+        ctx.font = '12px "JetBrains Mono", monospace';
+        ctx.fillText(`STATUS: ${String(st || 'READY').slice(0, 20)}`, 10, 76);
+
+        // กราฟแท่งสถานะด้านล่างจอ
+        const bars = [180, 120, 210, 150];
+        bars.forEach((w, i) => {
+          ctx.fillStyle = i % 2 === 0 ? accentCss : '#475569';
+          ctx.fillRect(10, 90 + i * 8, w, 4);
+        });
+        tex.needsUpdate = true;
+      }
+
+      redraw(skillText, statusText);
+      return { tex, redraw };
+    }
+
+    function createWorkstation(key, cfg) {
+      const group = new THREE.Group();
+      group.position.copy(cfg.pos);
+      group.userData = { deskKey: key };
+      officeGroup.add(group);
+
+      const isBoss = key === 'core';
+      const dk = key;
+
+      // 1. สถานะไฟ LED หน้าโต๊ะ (พื้นห้องไร้แผ่นพรมสี่เหลี่ยมทึบ เพื่อให้พื้นสำนักงานเรียบเนียนไร้รอยต่อ 100%)
+      const borderMat = new THREE.MeshStandardMaterial({
+        color: cfg.accent,
+        emissive: cfg.accent,
+        emissiveIntensity: 0.45,
+        roughness: 0.25,
+      });
+
+      // 2. โต๊ะทำงาน Voxel (ศูนย์กลางที่ z = +0.26, ขอบหลังอยู่ที่ z = -0.20..-0.24 ไม่ชนตัวละครที่ z = -0.64!)
+      const deskW = isBoss ? 2.45 : 2.1;
+      const deskD = isBoss ? 0.98 : 0.88;
+      const deskZ = 0.26;
+      const woodHex = isBoss ? 0x5c3a21 : 0xdcc7aa;
+      addVoxelBox(group, deskW, 0.09, deskD, 0, 0.84, deskZ, woodHex, { roughness: 0.4 }, dk);
+
+      if (isBoss) {
+        addVoxelBox(group, deskW + 0.04, 0.03, deskD + 0.04, 0, 0.82, deskZ, 0xd4af37, { metalness: 0.78, roughness: 0.24 }, dk);
+      }
+
+      // ขาโต๊ะ Voxel 4 มุม
+      const legCol = isBoss ? 0xd4af37 : 0x27272a;
+      [
+        [-deskW / 2 + 0.13, deskZ - deskD / 2 + 0.12],
+        [deskW / 2 - 0.13, deskZ - deskD / 2 + 0.12],
+        [-deskW / 2 + 0.13, deskZ + deskD / 2 - 0.12],
+        [deskW / 2 - 0.13, deskZ + deskD / 2 - 0.12],
+      ].forEach(([lx, lz]) => {
+        addVoxelBox(group, 0.085, 0.8, 0.085, lx, 0.4, lz, legCol, { metalness: 0.72 }, dk);
+      });
+
+      // แผ่นรองโต๊ะสีเทาดำ + คีย์บอร์ด Voxel RGB + เมาส์ (วางที่ z = +0.06 เพื่อให้มือตัวละครวางทับพอดี)
+      addVoxelBox(group, 0.92, 0.014, 0.38, 0, 0.892, 0.08, 0x18181b, { roughness: 0.8 }, dk);
+      addVoxelBox(group, 0.5, 0.032, 0.17, -0.04, 0.91, 0.06, 0x27272a, {}, dk);
+      for (let kx = -0.21; kx <= 0.11; kx += 0.065) {
+        addVoxelBox(group, 0.048, 0.02, 0.045, kx, 0.93, 0.03, cfg.accent, {
+          emissive: cfg.accent,
+          emissiveIntensity: 0.6,
+        }, dk);
+        addVoxelBox(group, 0.048, 0.02, 0.045, kx, 0.93, 0.085, 0xf8fafc, {}, dk);
+      }
+      addVoxelBox(group, 0.085, 0.03, 0.12, 0.31, 0.91, 0.07, 0xe2e8f0, {}, dk);
+
+      // 3. จอมอนิเตอร์ 3D แบบ Dynamic Canvas (วางเฉียงด้านซ้าย หันหน้าเข้าหาตัวละครและกล้องชัดเจน)
+      const dynMon = createDynamicMonitorCanvas(cfg.screenTitle, cfg.accent, 'common-ground', 'READY');
+      const screenMat = new THREE.MeshStandardMaterial({
+        map: dynMon.tex,
+        emissive: 0xffffff,
+        emissiveMap: dynMon.tex,
+        emissiveIntensity: 0.65,
+        roughness: 0.2,
+      });
+
+      const leftMonGroup = new THREE.Group();
+      leftMonGroup.position.set(-deskW / 2 + 0.44, 0.89, 0.36);
+      leftMonGroup.rotation.y = Math.PI * 0.84;
+      group.add(leftMonGroup);
+      addVoxelBox(leftMonGroup, 0.12, 0.2, 0.1, 0, 0.1, 0, 0x27272a, {}, dk);
+      addVoxelBox(leftMonGroup, 0.74, 0.44, 0.055, 0, 0.34, 0, 0x18181b, {}, dk);
+      // หันแผ่นภาพหน้าจอเข้าหาตัวละครและกล้อง (-z ของกลุ่มที่หมุนแล้ว)
+      const screenMeshFront = new THREE.Mesh(new THREE.PlaneGeometry(0.68, 0.38), screenMat);
+      screenMeshFront.position.set(0, 0.34, 0.03);
+      leftMonGroup.add(screenMeshFront);
+      const screenMeshBack = new THREE.Mesh(new THREE.PlaneGeometry(0.68, 0.38), screenMat);
+      screenMeshBack.position.set(0, 0.34, -0.03);
+      screenMeshBack.rotation.y = Math.PI;
+      leftMonGroup.add(screenMeshBack);
+
+      // แถบไฟสถานะทรงต่ำด้านหน้าโต๊ะ (ไม่บังคางตัวละครเหมือนจอโฮโลแกรมเดิม!)
+      const holoMat = borderMat;
+      const frontBar = new THREE.Mesh(new RoundedBoxGeometry(0.84, 0.04, 0.04, 2, 0.01), holoMat);
+      frontBar.position.set(0, 0.905, deskZ + deskD / 2 - 0.08);
+      group.add(frontBar);
+
+      // 4. โคมไฟตั้งโต๊ะทองเหลืองมุมขวาหน้า + PointLight จริงสำหรับโหมดกลางคืน Lo-Fi
+      const lampBulbMat = new THREE.MeshStandardMaterial({
+        color: 0xfef08a,
+        emissive: 0xfde047,
+        emissiveIntensity: 0.45,
+      });
+      const lampX = deskW / 2 - 0.24;
+      const lampZ = deskZ + deskD / 2 - 0.16;
+      addVoxelBox(group, 0.14, 0.03, 0.14, lampX, 0.9, lampZ, 0xd4af37, { metalness: 0.8 }, dk);
+      addVoxelBox(group, 0.06, 0.28, 0.06, lampX, 1.04, lampZ, 0xd4af37, { metalness: 0.8 }, dk);
+      const lampBulb = new THREE.Mesh(new RoundedBoxGeometry(0.2, 0.13, 0.2, 2, 0.03), lampBulbMat);
+      lampBulb.position.set(lampX, 1.21, lampZ);
+      group.add(lampBulb);
+
+      const deskLight = new THREE.PointLight(0xffedd5, 0.25, 3.6, 1.6);
+      deskLight.position.set(lampX, 1.15, lampZ);
+      group.add(deskLight);
+      deskPointLights.push(deskLight);
+
+      // 5. อุปกรณ์เฉพาะตำแหน่ง (แยกพิกัดชัดเจน ไม่ชนโคมไฟและไม่ชนแฟ้มสีทอง!)
+      let specialProp = null;
+      let sirenMesh = null;
+      const strikeBulbs = [];
+
+      if (isBoss) {
+        // พีระมิดโฮโลแกรมวางฝั่งขวาหน้า (ไม่บังหน้าจอมอนิเตอร์ฝั่งซ้าย และไม่ชนแฟ้มทองด้านขวาหลัง)
+        specialProp = new THREE.Mesh(
+          new THREE.OctahedronGeometry(0.15, 0),
+          new THREE.MeshPhysicalMaterial({
+            color: 0xc084fc,
+            emissive: 0xa855f7,
+            emissiveIntensity: 0.85,
+            wireframe: true,
+          })
+        );
+        specialProp.position.set(0.54, 1.08, 0.46);
+        group.add(specialProp);
+
+        // ไฟไซเรนมีฐาน Voxel วางติดผิวโต๊ะด้านซ้ายหลัง (ไม่ลอยในอากาศ)
+        addVoxelBox(group, 0.2, 0.05, 0.2, -deskW / 2 + 0.24, 0.91, 0.0, 0x27272a, { metalness: 0.7 }, dk);
+        const sirenMat = new THREE.MeshStandardMaterial({
+          color: 0xef4444,
+          emissive: 0xef4444,
+          emissiveIntensity: 0.25,
+        });
+        sirenMesh = new THREE.Mesh(new RoundedBoxGeometry(0.15, 0.18, 0.15, 2, 0.04), sirenMat);
+        sirenMesh.position.set(-deskW / 2 + 0.24, 1.01, 0.0);
+        group.add(sirenMesh);
+      } else if (key === 'explorer') {
+        specialProp = new THREE.Group();
+        specialProp.position.set(0.48, 0.9, 0.42);
+        addVoxelBox(specialProp, 0.24, 0.05, 0.24, 0, 0.04, 0, 0x14b8a6, { emissive: 0x14b8a6, emissiveIntensity: 0.6 }, dk);
+        addVoxelBox(specialProp, 0.05, 0.18, 0.05, 0, 0.14, 0, 0x99f6e4, {}, dk);
+        group.add(specialProp);
+      } else if (key === 'debugger') {
+        // เสาไฟนับ Strike 1 / 2 / 3
+        const tower = new THREE.Group();
+        tower.position.set(0.48, 0.89, 0.42);
+        addVoxelBox(tower, 0.18, 0.05, 0.18, 0, 0.025, 0, 0x27272a, {}, dk);
+        [0x22c55e, 0xf59e0b, 0xef4444].forEach((bCol, idx) => {
+          const bMat = new THREE.MeshStandardMaterial({
+            color: bCol,
+            emissive: bCol,
+            emissiveIntensity: 0.15,
+          });
+          const bulb = new THREE.Mesh(new RoundedBoxGeometry(0.13, 0.11, 0.13, 2, 0.02), bMat);
+          bulb.position.set(0, 0.12 + idx * 0.13, 0);
+          tower.add(bulb);
+          strikeBulbs.push(bMat);
+        });
+        group.add(tower);
+      } else if (key === 'reviewer') {
+        specialProp = new THREE.Group();
+        specialProp.position.set(0.48, 0.9, 0.42);
+        addVoxelBox(specialProp, 0.2, 0.07, 0.2, 0, 0.035, 0, 0xd4af37, { metalness: 0.8 }, dk);
+        addVoxelBox(specialProp, 0.09, 0.16, 0.09, 0, 0.14, 0, 0x15803d, {}, dk);
+        group.add(specialProp);
+      }
+
+      // กองแฟ้มเอกสาร Voxel บนโต๊ะเขียนโค้ด (วางฝั่งขวาหน้า ไม่บังจอมอนิเตอร์ฝั่งซ้าย)
+      const fileStackGroup = new THREE.Group();
+      fileStackGroup.position.set(0.48, 0.9, 0.42);
+      group.add(fileStackGroup);
+
+      // 6. เก้าอี้สำนักงานล้อเลื่อน 5 แฉก + ตัวละคร 3D Voxel (วางที่ z = -0.62 พ้นขอบหลังโต๊ะ 100%!)
+      const charStation = new THREE.Group();
+      charStation.position.set(0, 0, -0.62);
+      group.add(charStation);
+
+      addVoxelBox(charStation, 0.54, 0.045, 0.11, 0, 0.04, 0, 0x27272a, { metalness: 0.8 }, dk);
+      addVoxelBox(charStation, 0.11, 0.045, 0.54, 0, 0.04, 0, 0x27272a, { metalness: 0.8 }, dk);
+      addVoxelBox(charStation, 0.09, 0.36, 0.09, 0, 0.22, 0, 0x3f3f46, { metalness: 0.8 }, dk);
+      addVoxelBox(charStation, 0.56, 0.08, 0.5, 0, 0.42, 0.02, 0x18181b, {}, dk);
+      addVoxelBox(charStation, 0.54, 0.68, 0.09, 0, 0.8, -0.22, cfg.suitColor, {}, dk);
+      addVoxelBox(charStation, 0.07, 0.2, 0.3, -0.29, 0.56, 0.0, 0x27272a, {}, dk);
+      addVoxelBox(charStation, 0.07, 0.2, 0.3, 0.29, 0.56, 0.0, 0x27272a, {}, dk);
+
+      const voxelChar = createVoxelCharacter(key, cfg);
+      charStation.add(voxelChar.root);
+
+      workstations[key] = {
+        group,
+        borderMat,
+        screenMat,
+        dynMon,
+        holoMat,
+        lampBulbMat,
+        deskLight,
+        voxelChar,
+        specialProp,
+        sirenMesh,
+        strikeBulbs,
+        fileStackGroup,
+        // ลดระดับความสูงป้ายชื่อเป็น +1.76 เพื่อไม่ให้บังป้ายผนังหลังห้อง!
+        labelAnchor: new THREE.Vector3(cfg.pos.x, cfg.pos.y + 1.76, cfg.pos.z - 0.55),
+      };
+    }
+
+    Object.entries(DESK_INFO).forEach(([key, cfg]) => createWorkstation(key, cfg));
+
+    // สลับโหมดแสงบรรยากาศ (☀️ กลางวัน / 🌙 กลางคืน Cozy Lo-Fi จริง)
+    let isNightMode = false;
+    window.toggleStudioAmbience = function () {
+      isNightMode = !isNightMode;
+      const btn = document.getElementById('btn-ambience');
+      if (isNightMode) {
+        scene.background.setHex(0x07090e);
+        scene.fog.color.setHex(0x07090e);
+        hemiLight.intensity = 0.16;
+        keyLight.intensity = 0.28;
+        keyLight.color.setHex(0x818cf8);
+        fillLight.intensity = 0.18;
+        rimLight.intensity = 0.85;
+        scene.environmentIntensity = 0.15;
+        windowSkyMat.color.setHex(0x1e1b4b);
+        windowSkyMat.emissive.setHex(0x312e81);
+        windowSkyMat.emissiveIntensity = 0.7;
+        deskPointLights.forEach((pl) => {
+          pl.intensity = 2.2;
+        });
+        if (btn) {
+          btn.innerHTML = '<i data-lucide="moon"></i> <span>กลางคืน (Lo-Fi)</span>';
+          if (window.lucide) window.lucide.createIcons();
+        }
+      } else {
+        scene.background.setHex(0x11131a);
+        scene.fog.color.setHex(0x11131a);
+        hemiLight.intensity = 0.55;
+        keyLight.intensity = 1.95;
+        keyLight.color.setHex(0xffe8d1);
+        fillLight.intensity = 0.48;
+        rimLight.intensity = 0.65;
+        scene.environmentIntensity = 0.42;
+        windowSkyMat.color.setHex(0x7dd3fc);
+        windowSkyMat.emissive.setHex(0x38bdf8);
+        windowSkyMat.emissiveIntensity = 0.45;
+        deskPointLights.forEach((pl) => {
+          pl.intensity = 0.25;
+        });
+        if (btn) {
+          btn.innerHTML = '<i data-lucide="sun"></i> <span>กลางวัน</span>';
+          if (window.lucide) window.lucide.createIcons();
+        }
+      }
+    };
+
+    // แฟ้มงาน Voxel สีทอง (วางพักบนมุมขวาของแต่ละโต๊ะ ไม่ชนโคมไฟและไม่ชนพีระมิด)
+    const workFolderGroup = new THREE.Group();
+    addVoxelBox(workFolderGroup, 0.4, 0.05, 0.3, 0, 0, 0, 0xd4af37, { metalness: 0.78, roughness: 0.22 });
+    addVoxelBox(workFolderGroup, 0.33, 0.055, 0.23, 0, 0.012, 0, 0xfefce8, { roughness: 0.85 });
+    officeGroup.add(workFolderGroup);
+
+    const DESK_REST_POS = {
+      core: new THREE.Vector3(0.76, 0.91, 0.08),
+      explorer: new THREE.Vector3(-4.6 + 0.64, 0.91, -3.1 + 0.08),
+      implementer: new THREE.Vector3(-4.6 + 0.64, 0.91, 3.2 + 0.08),
+      debugger: new THREE.Vector3(4.6 + 0.64, 0.91, -3.1 + 0.08),
+      reviewer: new THREE.Vector3(4.6 + 0.64, 0.91, 3.2 + 0.08),
+    };
+    workFolderGroup.position.copy(DESK_REST_POS.core);
+    workFolderGroup.rotation.set(0, -0.15, 0);
+
+    const handoffState = {
+      active: false,
+      progress: 1.0,
+      fromPos: DESK_REST_POS.core.clone(),
+      toPos: DESK_REST_POS.core.clone(),
+    };
+
+    function triggerFolderHandoff(fromKey, toKey, customLabel = '') {
+      const fKey = DESK_REST_POS[fromKey] ? fromKey : 'core';
+      const tKey = DESK_REST_POS[toKey] ? toKey : 'core';
+      if (fKey === tKey) {
+        workFolderGroup.position.copy(DESK_REST_POS[tKey]);
+        workFolderGroup.rotation.set(0, -0.15, 0);
+        handoffState.active = false;
+        handoffState.progress = 1.0;
+        const fTag = document.getElementById('folder-tag');
+        if (fTag) fTag.style.opacity = '0';
+        return;
+      }
+      handoffState.active = true;
+      handoffState.progress = 0.0;
+      handoffState.fromPos.copy(DESK_REST_POS[fKey]);
+      handoffState.toPos.copy(DESK_REST_POS[tKey]);
+      const fTag = document.getElementById('folder-tag');
+      if (fTag) {
+        fTag.textContent = customLabel || `ส่งแฟ้มงาน ➔ ${DESK_INFO[tKey].shortName}`;
+        fTag.style.opacity = '1';
+      }
+    }
+
+    let lastRenderedFilesCount = -1;
+    function syncDeskFileStack(filesList) {
+      const count = Math.min((filesList || []).length, 5);
+      if (count === lastRenderedFilesCount) return;
+      lastRenderedFilesCount = count;
+
+      const stack = workstations.implementer.fileStackGroup;
+      while (stack.children.length > 0) stack.remove(stack.children[0]);
+      for (let i = 0; i < count; i++) {
+        addVoxelBox(
+          stack,
+          0.3,
+          0.045,
+          0.22,
+          0,
+          i * 0.052,
+          0,
+          i % 2 === 0 ? 0x3b82f6 : 0x38bdf8,
+          { roughness: 0.3 },
+          'implementer'
+        );
+      }
+    }
+
+    // =========================================================================
+    // 7. ระบบเชื่อมโยงข้อมูลจริง 100% Zero-Hardcode + Progressive Disclosure Drawer
+    // =========================================================================
+    let liveCatalog = { items: [], files: {}, scannedAt: '' };
+    let currentSelectedDesk = 'core';
+    let currentActiveNode = 'core';
+    let hoveredDeskKey = null;
+    let currentStrikeCount = 0;
+    let currentPhase = 'IDLE';
+    let currentActionText = '';
+    let currentEmotion = 'calm';
+    let liveActiveAgentPath = 'CLAUDE.md';
+    let liveActivePromptPath = '.claude/commands/plan.md';
+    let liveActiveSkillName = 'common-ground';
+    let liveActiveSkillPath = '.claude/skills/common-ground/SKILL.md';
+    let liveActiveRulePath = '.claude/rules/model-routing.md';
+    let liveActiveHookName = 'telemetry-tracker.sh';
+    let currentModalFilePath = 'CLAUDE.md';
+
+    const CATEGORY_LABELS = {
+      governance: 'กฎแม่บทสูงสุด (Governance)',
+      agent: 'โปรไฟล์พนักงาน AI (.claude/agents)',
+      skill: 'การ์ดความสามารถ (.claude/skills)',
+      command: 'คำสั่งลัดสั่งงานด่วน (.claude/commands)',
+      rule: 'กฎเหล็กบังคับใช้ (.claude/rules)',
+      hook: 'สคริปต์ตรวจจับอัตโนมัติ (.claude/hooks)',
+    };
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function itemKind(it) {
+      return it?.kind || it?.category || 'governance';
+    }
+
+    function itemDesc(it) {
+      return it?.description || it?.desc || '';
+    }
+
+    // ควบคุมการเปิด/ปิด Slide-Over Context Drawer (Progressive Disclosure Level 2)
+    window.openDrawer = function () {
+      document.getElementById('studio-inspector')?.classList.add('open');
+    };
+
+    window.closeDrawer = function () {
+      document.getElementById('studio-inspector')?.classList.remove('open');
+    };
+
+    window.openDrawerTab = function (tabId) {
+      window.openDrawer();
+      window.switchTab(tabId);
+    };
+
+    window.switchTab = function (tabId) {
+      document.querySelectorAll('.tab-btn').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.tab === tabId);
+      });
+      document.querySelectorAll('.tab-pane').forEach((pane) => {
+        pane.classList.toggle('active', pane.id === tabId);
+      });
+    };
+
+    window.closeAllCustomSelects = function () {
+      document.querySelectorAll('.ui-select.open').forEach((el) => el.classList.remove('open'));
+    };
+
+    window.toggleCustomSelect = function (dropdownId, e) {
+      if (e) e.stopPropagation();
+      const target = document.getElementById(dropdownId);
+      if (!target) return;
+      const wasOpen = target.classList.contains('open');
+      window.closeAllCustomSelects();
+      document.getElementById('sim-popover')?.classList.remove('open');
+      if (!wasOpen) {
+        target.classList.add('open');
+      }
+    };
+
+    window.selectEngineOption = function (val, title, iconName, colorHex) {
+      const hiddenEl = document.getElementById('select-engine');
+      if (hiddenEl) hiddenEl.value = val;
+
+      const trigEl = document.getElementById('trigger-engine-val');
+      if (trigEl) {
+        trigEl.innerHTML = `<i data-lucide="${iconName}" style="color:${colorHex}"></i><span>${escapeHtml(title)}</span>`;
+        if (window.lucide) window.lucide.createIcons();
+      }
+
+      document.querySelectorAll('#dropdown-engine .ui-select-item').forEach((btn) => {
+        btn.classList.toggle('selected', btn.dataset.val === val);
+      });
+      window.closeAllCustomSelects();
+    };
+
+    window.selectModelOption = function (val, title, subText, dotColor) {
+      const hiddenEl = document.getElementById('select-model');
+      if (hiddenEl) hiddenEl.value = val;
+
+      const trigEl = document.getElementById('trigger-model-val');
+      if (trigEl) {
+        trigEl.innerHTML = `
+          <span class="dot" style="background:${dotColor}"></span>
+          <span>${escapeHtml(title)}</span>
+          <span class="ui-select-sub">${escapeHtml(subText)}</span>
+        `;
+      }
+
+      document.querySelectorAll('#dropdown-model .ui-select-item').forEach((btn) => {
+        btn.classList.toggle('selected', btn.dataset.val === val);
+      });
+      window.closeAllCustomSelects();
+    };
+
+    window.toggleSimPopover = function (e) {
+      if (e) e.stopPropagation();
+      window.closeAllCustomSelects();
+      document.getElementById('sim-popover')?.classList.toggle('open');
+    };
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.ui-select')) {
+        window.closeAllCustomSelects();
+      }
+      if (!e.target.closest('.sim-popover') && !e.target.closest('[onclick*="toggleSimPopover"]')) {
+        document.getElementById('sim-popover')?.classList.remove('open');
+      }
+    });
+
+    // วาดรายการความสามารถแบบ Flat Divider Rows (แสดงเฉพาะชื่อภาษาไทยสั้นๆ ไม่เทภาษาอังกฤษยาวๆ!)
+    function renderRoleArchitecture(deskKey) {
+      const cfg = DESK_INFO[deskKey] || DESK_INFO.core;
+      const items = (liveCatalog.items || []).filter((item) => item.desk === deskKey);
+
+      const skillsListEl = document.getElementById('arch-skills-list');
+      const cmdsListEl = document.getElementById('arch-commands-list');
+      const rulesListEl = document.getElementById('arch-rules-list');
+      const skillCountEl = document.getElementById('arch-skill-count');
+      const cmdCountEl = document.getElementById('arch-cmd-count');
+      const specTagsEl = document.getElementById('insp-spec-tags');
+
+      const skills = items.filter((i) => itemKind(i) === 'skill');
+      const commands = items.filter((i) => itemKind(i) === 'command');
+      const rulesAndAgents = items.filter((i) =>
+        ['agent', 'rule', 'hook', 'governance'].includes(itemKind(i))
+      );
+
+      if (skillCountEl) skillCountEl.textContent = `${skills.length} รายการ`;
+      if (cmdCountEl) cmdCountEl.textContent = `${commands.length} รายการ`;
+
+      const agentItem = items.find((i) => itemKind(i) === 'agent');
+      if (specTagsEl) {
+        specTagsEl.innerHTML = `
+          <span class="spec-pill">โมเดล ${(agentItem?.model || cfg.modelCode).toUpperCase()}</span>
+          ${agentItem?.maxTurns ? `<span class="spec-pill">สูงสุด ${escapeHtml(agentItem.maxTurns)} รอบ</span>` : ''}
+          <span class="spec-pill">${items.length} ไฟล์จริง</span>
+        `;
+      }
+
+      if (skillsListEl) {
+        if (skills.length === 0) {
+          skillsListEl.innerHTML = `<div class="flat-row"><div class="fr-title" style="color:var(--text-muted)">กำลังสแกนไฟล์จากดิสก์...</div></div>`;
+        } else {
+          skillsListEl.innerHTML = skills
+            .map((sk) => {
+              const isLive =
+                (liveActiveSkillName && sk.id === liveActiveSkillName) ||
+                (liveActiveSkillPath && sk.path === liveActiveSkillPath);
+              return `
+                <div class="flat-row ${isLive ? 'active-live' : ''}">
+                  <div class="fr-top">
+                    <span class="fr-title">${escapeHtml(sk.powerLabel || sk.title)}</span>
+                    <span class="fr-badge">${isLive ? 'กำลังใช้จริง' : escapeHtml(sk.id)}</span>
+                  </div>
+                  <div class="fr-bottom">
+                    <span class="fr-path" title="${escapeHtml(sk.path)}">${escapeHtml(sk.path)}</span>
+                    <div class="fr-actions">
+                      <button class="mini-btn" onclick="window.openTemplateModal('${sk.path}')">อ่านไฟล์</button>
+                      <button class="mini-btn primary" onclick="window.useCardInRealWork('${deskKey}', '${sk.path}', '${sk.id}')">ดึงใช้</button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            })
+            .join('');
+        }
+      }
+
+      if (cmdsListEl) {
+        if (commands.length === 0) {
+          cmdsListEl.innerHTML = `<div class="flat-row"><div class="fr-path">ทำงานอัตโนมัติผ่านสคริปต์ Hook โดยไม่ต้องพิมพ์คำสั่งลัด</div></div>`;
+        } else {
+          cmdsListEl.innerHTML = commands
+            .map((cmd) => {
+              const cmdLabel = cmd.id.startsWith('/') ? cmd.id : `/${cmd.id}`;
+              const isLive =
+                liveActivePromptPath === cmd.path || liveActivePromptPath === cmdLabel;
+              return `
+                <div class="flat-row ${isLive ? 'active-live' : ''}">
+                  <div class="fr-top">
+                    <span class="fr-title">${escapeHtml(cmd.powerLabel || cmd.title)}</span>
+                    <span class="fr-badge">${escapeHtml(cmdLabel)}</span>
+                  </div>
+                  <div class="fr-bottom">
+                    <span class="fr-path">${escapeHtml(cmd.path)}</span>
+                    <div class="fr-actions">
+                      <button class="mini-btn" onclick="window.openTemplateModal('${cmd.path}')">อ่านไฟล์</button>
+                      <button class="mini-btn primary" onclick="window.useCardInRealWork('${deskKey}', '${cmd.path}', '${skills[0] ? skills[0].id : 'common-ground'}')">รันคำสั่ง</button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            })
+            .join('');
+        }
+      }
+
+      if (rulesListEl) {
+        if (rulesAndAgents.length === 0) {
+          rulesListEl.innerHTML = `<div class="flat-row"><div class="fr-path">กำลังโหลดข้อมูล...</div></div>`;
+        } else {
+          rulesListEl.innerHTML = rulesAndAgents
+            .map((pr) => {
+              const k = itemKind(pr);
+              const isLive =
+                liveActiveAgentPath === pr.path || liveActiveRulePath === pr.path;
+              return `
+                <div class="flat-row ${isLive ? 'active-live' : ''}">
+                  <div class="fr-top">
+                    <span class="fr-title">${escapeHtml(pr.powerLabel || pr.title)}</span>
+                    <span class="fr-badge">${escapeHtml(k.toUpperCase())}</span>
+                  </div>
+                  <div class="fr-bottom">
+                    <span class="fr-path">${escapeHtml(pr.path)}</span>
+                    <div class="fr-actions">
+                      <button class="mini-btn" onclick="window.openTemplateModal('${pr.path}')">อ่านไฟล์</button>
+                      <button class="mini-btn primary" onclick="window.useCardInRealWork('${deskKey}', '${pr.path}', '${skills[0] ? skills[0].id : 'common-ground'}')">เรียกใช้</button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            })
+            .join('');
+        }
+      }
+    }
+
+    // กดปุ่ม "ดึงใช้" จากการ์ดความสามารถเพื่อยิงสัญญาณเข้า Telemetry จริง
+    window.useCardInRealWork = async function (deskKey, filePath, skillId) {
+      const cfg = DESK_INFO[deskKey] || DESK_INFO.core;
+      window.focusDesk(deskKey, true);
+      try {
+        await fetch('/api/simulate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            engine: 'claude',
+            node: deskKey,
+            status: 'working',
+            model: cfg.modelCode,
+            detail: `ดึงความสามารถ [${skillId}] จากไฟล์จริง ${filePath} มาใช้งาน`,
+            skill: skillId,
+            command: filePath,
+            rule: liveActiveRulePath || '.claude/rules/execution-discipline.md',
+            hook: '.claude/hooks/telemetry-tracker.sh',
+            strike: 0,
+          }),
+        });
+        await pollTelemetry();
+      } catch (err) {
+        console.warn('useCardInRealWork error:', err);
+      }
+    };
+
+    window.openCurrentLiveFile = function (kind) {
+      if (kind === 'skill') {
+        const path =
+          liveActiveSkillPath ||
+          `.claude/skills/${liveActiveSkillName || 'common-ground'}/SKILL.md`;
+        window.openTemplateModal(path);
+      } else if (kind === 'agent') {
+        const fallbackMap = {
+          core: 'CLAUDE.md',
+          explorer: '.claude/agents/explorer.md',
+          implementer: '.claude/agents/implementer.md',
+          debugger: '.claude/agents/debugger.md',
+          reviewer: '.claude/agents/reviewer.md',
+        };
+        window.openTemplateModal(
+          liveActiveAgentPath || fallbackMap[currentActiveNode] || 'CLAUDE.md'
+        );
+      } else if (kind === 'cmd') {
+        let p = liveActivePromptPath || 'CLAUDE.md';
+        if (p.startsWith('/')) {
+          p = `.claude/commands/${p.replace(/^\/+/, '')}.md`;
+        } else if (p.includes('CLAUDE.md')) {
+          p = 'CLAUDE.md';
+        }
+        window.openTemplateModal(p);
+      } else if (kind === 'rule') {
+        window.openTemplateModal(liveActiveRulePath || '.claude/rules/model-routing.md');
+      } else if (kind === 'hook') {
+        const hk = liveActiveHookName.includes('/')
+          ? liveActiveHookName
+          : `.claude/hooks/${liveActiveHookName}`;
+        window.openTemplateModal(hk);
+      }
+    };
+
+    // =========================================================================
+    // 8. หน้าต่างสำรวจโครงสร้างไฟล์จริงในโปรเจกต์ (Level 3 Code Inspector Modal)
+    // =========================================================================
+    function renderModalTree() {
+      const treeEl = document.getElementById('tm-file-tree');
+      if (!treeEl) return;
+      const items = liveCatalog.items || [];
+      if (items.length === 0) {
+        treeEl.innerHTML = `<div style="padding:12px;color:#9ca3af;font-size:12px;">กำลังสแกนผังไฟล์จริงจากดิสก์...</div>`;
+        return;
+      }
+
+      const groups = {};
+      items.forEach((it) => {
+        const g = CATEGORY_LABELS[itemKind(it)] || 'ไฟล์อื่นๆ';
+        if (!groups[g]) groups[g] = [];
+        groups[g].push(it);
+      });
+
+      treeEl.innerHTML = Object.entries(groups)
+        .map(
+          ([groupTitle, list]) => `
+          <div class="tm-group-title">${escapeHtml(groupTitle)} (${list.length})</div>
+          ${list
+            .map((it) => {
+              const active = it.path === currentModalFilePath ? 'active' : '';
+              return `
+                <button class="tm-file-btn ${active}" onclick="window.openTemplateModal('${it.path}')">
+                  <span>${escapeHtml(it.id || it.title)}</span>
+                  <span class="tm-tag">${it.sizeBytes || 0}B</span>
+                </button>
+              `;
+            })
+            .join('')}
+        `
+        )
+        .join('');
+    }
+
+    window.openTemplateModal = async function (targetPath) {
+      const cleanPath = (targetPath || 'CLAUDE.md').replace(/^\/+/, '');
+      currentModalFilePath = cleanPath;
+      const backdrop = document.getElementById('template-modal-backdrop');
+      if (backdrop) backdrop.classList.add('open');
+
+      renderModalTree();
+
+      const itemMeta =
+        (liveCatalog.items || []).find(
+          (i) => i.path === cleanPath || i.agPath === cleanPath
+        ) || {
+          path: cleanPath,
+          title: cleanPath,
+          powerLabel: 'ไฟล์จริงที่สแกนสดจากดิสก์ในโปรเจกต์',
+          description: 'อ่านตรงจากระบบไฟล์จริง (Zero-Hardcode)',
+          desk: 'core',
+          kind: 'governance',
+        };
+
+      const deskCfg = DESK_INFO[itemMeta.desk] || DESK_INFO.core;
+      const pathEl = document.getElementById('tm-current-path');
+      const explainEl = document.getElementById('tm-current-explain');
+      const badgesEl = document.getElementById('tm-current-badges');
+      const useBtn = document.getElementById('tm-use-prompt-btn');
+
+      if (pathEl) pathEl.textContent = cleanPath;
+      if (explainEl) {
+        explainEl.textContent = itemMeta.powerLabel || itemMeta.title;
+      }
+      if (badgesEl) {
+        badgesEl.innerHTML = `
+          <span class="spec-pill">${escapeHtml(deskCfg.shortName)}</span>
+          <span class="spec-pill">${escapeHtml(itemKind(itemMeta))}</span>
+          ${itemMeta.mtime ? `<span class="spec-pill">${escapeHtml(itemMeta.mtime)}</span>` : ''}
+        `;
+      }
+      if (useBtn) {
+        useBtn.onclick = () => {
+          window.closeTemplateModal();
+          window.useCardInRealWork(
+            itemMeta.desk || 'core',
+            cleanPath,
+            itemMeta.id?.replace(/^\/+/, '') || 'common-ground'
+          );
+        };
+      }
+
+      const codeBox = document.getElementById('tm-current-code');
+      if (!codeBox) return;
+
+      let rawText = (liveCatalog.files || {})[cleanPath];
+      if (!rawText) {
+        codeBox.textContent = 'กำลังอ่านไฟล์สดจากดิสก์...';
+        try {
+          const res = await fetch(`/api/file?path=${encodeURIComponent(cleanPath)}`, {
+            cache: 'no-store',
+          });
+          if (res.ok) {
+            const data = await res.json();
+            rawText = data.content;
+          }
+        } catch (err) {
+          console.warn('File fetch error:', err);
+        }
+      }
+      codeBox.textContent = rawText || `ไม่พบไฟล์ ${cleanPath} บนดิสก์`;
+    };
+
+    window.closeTemplateModal = function () {
+      document.getElementById('template-modal-backdrop')?.classList.remove('open');
+    };
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        window.closeTemplateModal();
+        window.closeAllCustomSelects();
+        document.getElementById('sim-popover')?.classList.remove('open');
+      }
+    });
+
+    // =========================================================================
+    // 9. การควบคุมมุมกล้อง 3D + 3D Hover Response + คลิกเลือกตัวละคร Voxel
+    // =========================================================================
+    const desiredCamPos = OVERVIEW_CAM_POS.clone();
+    const desiredCamTarget = OVERVIEW_CAM_TARGET.clone();
+    let isCameraTransitioning = false;
+
+    window.focusDesk = function (deskKey, shouldOpenDrawer = true) {
+      const cfg = DESK_INFO[deskKey] || DESK_INFO.core;
+      currentSelectedDesk = deskKey;
+
+      desiredCamPos.copy(cfg.camPos);
+      desiredCamTarget.copy(cfg.camTarget);
+      isCameraTransitioning = true;
+
+      document.getElementById('cam-overview')?.classList.remove('active');
+      ['core', 'explorer', 'implementer', 'debugger', 'reviewer'].forEach((k) => {
+        document.getElementById(`step-${k}`)?.classList.toggle('active', k === deskKey);
+      });
+
+      const titleEl = document.getElementById('insp-title');
+      const descEl = document.getElementById('insp-desc');
+      const dotEl = document.getElementById('insp-dot');
+      const tryBtn = document.getElementById('insp-try-btn');
+
+      if (titleEl) titleEl.textContent = cfg.title;
+      if (descEl) descEl.textContent = cfg.desc;
+      if (dotEl) dotEl.style.background = cfg.accentCss;
+      if (tryBtn) {
+        tryBtn.onclick = () => window.runSim(cfg.simKey);
+      }
+
+      // ซิงค์ Custom Model Dropdown ให้ตรงกับโต๊ะตัวละครที่คลิกเลือกอัตโนมัติ
+      if (cfg.modelCode === 'opus') {
+        window.selectModelOption('opus', 'Opus', 'วางแผน', 'var(--accent-opus)');
+      } else if (cfg.modelCode === 'haiku') {
+        window.selectModelOption('haiku', 'Haiku', 'สำรวจไว 15x', 'var(--accent-haiku)');
+      } else {
+        window.selectModelOption('sonnet', 'Sonnet', 'เขียนโค้ด', 'var(--accent-sonnet)');
+      }
+
+      renderRoleArchitecture(deskKey);
+      if (typeof renderDeskThought === 'function') {
+        renderDeskThought(deskKey);
+      }
+      if (shouldOpenDrawer) {
+        window.openDrawer();
+        window.switchTab('tab-desk');
+      }
+    };
+
+    window.setCameraShot = function (mode) {
+      if (mode === 'overview') {
+        desiredCamPos.copy(OVERVIEW_CAM_POS);
+        desiredCamTarget.copy(OVERVIEW_CAM_TARGET);
+        isCameraTransitioning = true;
+        document.getElementById('cam-overview')?.classList.add('active');
+        ['core', 'explorer', 'implementer', 'debugger', 'reviewer'].forEach((k) => {
+          document.getElementById(`step-${k}`)?.classList.remove('active');
+        });
+        window.closeDrawer();
+      } else if (DESK_INFO[mode]) {
+        window.focusDesk(mode, true);
+      }
+    };
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let pointerDownPos = { x: 0, y: 0 };
+
+    // 3D Hover Response: เลื่อนเมาส์ชี้ที่ตัวละครแล้วมีปฏิกิริยาตอบสนองทันที
+    renderer.domElement.addEventListener('pointermove', (e) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(clickableMeshes, false);
+      const hitKey = hits.length > 0 ? hits[0].object.userData?.deskKey : null;
+
+      if ( hitKey !== hoveredDeskKey ) {
+        hoveredDeskKey = hitKey;
+        renderer.domElement.style.cursor = hitKey ? 'pointer' : 'grab';
+        ['core', 'explorer', 'implementer', 'debugger', 'reviewer'].forEach((k) => {
+          document.getElementById(`label-${k}`)?.classList.toggle('hovered', k === hitKey);
+        });
+        updateSpeechBubbles(
+          currentActiveNode,
+          lastBubbleSpeechText,
+          currentPhase,
+          currentStrikeCount
+        );
+      }
+    });
+
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+      pointerDownPos = { x: e.clientX, y: e.clientY };
+    });
+
+    renderer.domElement.addEventListener('pointerup', (e) => {
+      const dx = Math.abs(e.clientX - pointerDownPos.x);
+      const dy = Math.abs(e.clientY - pointerDownPos.y);
+      if (dx > 6 || dy > 6) return;
+
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(clickableMeshes, false);
+      if (hits.length > 0) {
+        const deskKey = hits[0].object.userData?.deskKey;
+        if (deskKey && DESK_INFO[deskKey]) {
+          window.focusDesk(deskKey, true);
+        }
+      }
+    });
+
+    controls.addEventListener('start', () => {
+      isCameraTransitioning = false;
+    });
+
+    // =========================================================================
+    // 10. ระบบจำลองเหตุการณ์ครบทั้ง 8 รูปแบบ (SCENARIO_MAP ภาษาไทย + ไฟล์จริงบนดิสก์ 100%)
+    // =========================================================================
+    const SCENARIO_MAP = {
+      opus_plan: {
+        engine: 'claude',
+        node: 'core',
+        model: 'opus',
+        status: 'working',
+        strike: 0,
+        skill: 'common-ground',
+        command: '/plan',
+        rule: '.claude/rules/model-routing.md',
+        hook: '.claude/hooks/telemetry-tracker.sh',
+        detail: 'หัวหน้า Opus วิเคราะห์โจทย์ ตั้งสมมติฐานด้วย [common-ground] และวางแผนแจกงานให้ทีม',
+      },
+      haiku_explore: {
+        engine: 'claude',
+        node: 'explorer',
+        model: 'haiku',
+        status: 'working',
+        strike: 0,
+        skill: 'tech-stack-skills',
+        command: '.claude/agents/explorer.md',
+        rule: '.claude/rules/model-routing.md',
+        hook: '.claude/hooks/telemetry-tracker.sh',
+        detail: 'ฝ่ายสำรวจ Haiku สแกนโครงสร้างโปรเจกต์ด้วยความเร็วสูง (ประหยัดโควต้า 15 เท่า)',
+      },
+      sonnet_code: {
+        engine: 'claude',
+        node: 'implementer',
+        model: 'sonnet',
+        status: 'working',
+        strike: 0,
+        skill: 'threejs-expert',
+        command: '.claude/agents/implementer.md',
+        rule: '.claude/rules/ui-anti-slop.md',
+        hook: '.claude/hooks/post-edit-format.sh',
+        file: '.claude/hud/index.html',
+        detail: 'ฝ่ายเขียนโค้ด Sonnet แก้ไขไฟล์จริง [.claude/hud/index.html] และจัดฟอร์แมตอัตโนมัติ',
+      },
+      strike_1: {
+        engine: 'claude',
+        node: 'debugger',
+        model: 'sonnet',
+        status: 'warning',
+        strike: 1,
+        skill: 'root-cause-debug',
+        command: '/fix',
+        rule: '.claude/rules/execution-discipline.md',
+        hook: '.claude/hooks/loop-circuit-breaker.sh',
+        detail: 'ซ่อมบั๊กครั้งที่ 1/3: วิเคราะห์ต้นตอด้วย [root-cause-debug] ห้ามเดาสุ่มซ้ำ',
+      },
+      strike_3: {
+        engine: 'claude',
+        node: 'debugger',
+        model: 'opus',
+        status: 'blocked',
+        strike: 3,
+        skill: 'root-cause-debug',
+        command: '/fix',
+        rule: '.claude/rules/execution-discipline.md',
+        hook: '.claude/hooks/loop-circuit-breaker.sh',
+        detail: 'ติดเบรกเกอร์ 3/3! หยุดการเดาแก้บั๊กวนลูปทันทีเพื่อรักษาโควต้า และส่งกลับให้หัวหน้า Opus',
+      },
+      os_shield: {
+        engine: 'claude',
+        node: 'core',
+        model: 'opus',
+        status: 'blocked',
+        strike: 2,
+        skill: 'common-ground',
+        command: 'CLAUDE.md',
+        rule: '.claude/rules/security-and-shell.md',
+        hook: '.claude/hooks/validate-bash.sh',
+        detail: 'เกราะความปลอดภัย [validate-bash.sh] บล็อกคำสั่งอันตรายก่อนรันจริงสำเร็จ!',
+      },
+      anti_tamper: {
+        engine: 'claude',
+        node: 'debugger',
+        model: 'sonnet',
+        status: 'blocked',
+        strike: 2,
+        skill: 'root-cause-debug',
+        command: '/fix',
+        rule: '.claude/rules/testing-and-api.md',
+        hook: '.claude/hooks/protect-sensitive-files.sh',
+        file: 'src/cart.test.ts',
+        detail: '🛡️ Stage 4 Anti-Test-Tampering: บล็อกการแอบแก้ไฟล์เทสต์เดิม [src/cart.test.ts] ให้แก้ที่โค้ดต้นเหตุเท่านั้น!',
+      },
+      prod_gate: {
+        engine: 'claude',
+        node: 'core',
+        model: 'opus',
+        status: 'blocked',
+        strike: 2,
+        skill: 'db-migration',
+        command: 'CLAUDE.md',
+        rule: '.claude/rules/execution-discipline.md',
+        hook: '.claude/hooks/validate-bash.sh',
+        detail: '🛡️ Stage 5 Gate: ระงับคำสั่ง Deploy Production / Migrate DB จริง ต้องให้ผู้ใช้ยืนยันก่อนเสมอ!',
+      },
+      agy_takeover: {
+        engine: 'antigravity',
+        node: 'implementer',
+        model: 'gemini-4-argon',
+        status: 'working',
+        strike: 0,
+        skill: 'auto-resume-handoff',
+        command: '/handoff',
+        rule: '.claude/rules/execution-discipline.md',
+        hook: '.claude/hooks/auto-checkpoint.sh',
+        file: 'CLAUDE.md',
+        detail: 'สลับค่ายไป Antigravity IDE และรับงานต่อจากจุดค้างด้วย [auto-resume-handoff] ทันที',
+      },
+      review_done: {
+        engine: 'claude',
+        node: 'reviewer',
+        model: 'sonnet',
+        status: 'verified',
+        strike: 0,
+        skill: 'verification-before-completion',
+        command: '/verify',
+        rule: '.claude/rules/testing-and-api.md',
+        hook: '.claude/hooks/verify-before-stop.sh',
+        detail: 'ฝ่ายตรวจรับงาน QA รันเทสต์จริงผ่านครบถ้วน พร้อมส่งมอบงาน!',
+      },
+    };
+
+    window.runSim = async function (scenario) {
+      const payload = SCENARIO_MAP[scenario] || SCENARIO_MAP.opus_plan;
+      document.getElementById('sim-popover')?.classList.remove('open');
+      try {
+        await fetch('/api/simulate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        await pollTelemetry();
+      } catch (err) {
+        console.warn('Simulation error:', err);
+      }
+    };
+
+    let isTourRunning = false;
+    window.runLiveStoryTour = async function () {
+      if (isTourRunning) return;
+      isTourRunning = true;
+      const tourBtn = document.getElementById('btn-story-tour');
+      if (tourBtn) {
+        tourBtn.innerHTML = '<i data-lucide="loader"></i> <span>กำลังพาทัวร์...</span>';
+        if (window.lucide) window.lucide.createIcons();
+      }
+
+      const tourSteps = [
+        { sim: 'opus_plan', desk: 'core', delay: 2300 },
+        { sim: 'haiku_explore', desk: 'explorer', delay: 2300 },
+        { sim: 'sonnet_code', desk: 'implementer', delay: 2300 },
+        { sim: 'strike_1', desk: 'debugger', delay: 2300 },
+        { sim: 'review_done', desk: 'reviewer', delay: 2300 },
+      ];
+      for (const step of tourSteps) {
+        window.focusDesk(step.desk, false);
+        await window.runSim(step.sim);
+        await new Promise((r) => setTimeout(r, step.delay));
+      }
+      window.setCameraShot('overview');
+      if (tourBtn) {
+        tourBtn.innerHTML = '<i data-lucide="play"></i> <span>ชมทีมทำงาน</span>';
+        if (window.lucide) window.lucide.createIcons();
+      }
+      isTourRunning = false;
+    };
+
+    const promptForm = document.getElementById('prompt-form');
+    if (promptForm) {
+      promptForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const inputEl = document.getElementById('prompt-input');
+        const engineEl = document.getElementById('select-engine');
+        const modelEl = document.getElementById('select-model');
+        const btnEl = document.getElementById('btn-send-prompt');
+        const promptText = (inputEl?.value || '').trim();
+        if (!promptText) return;
+
+        if (btnEl) btnEl.disabled = true;
+        try {
+          await fetch('/api/prompt', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prompt: promptText,
+              engine: engineEl?.value || 'claude',
+              model: modelEl?.value || 'sonnet',
+              continueSession: true,
+            }),
+          });
+          if (inputEl) inputEl.value = '';
+          await pollTelemetry();
+        } catch (err) {
+          console.warn('Prompt submit error:', err);
+        } finally {
+          if (btnEl) btnEl.disabled = false;
+        }
+      });
+    }
+
+    // =========================================================================
+    // 11. ซิงค์ข้อมูลสดจาก `.claude/.telemetry.json` และ `/api/quota`
+    // =========================================================================
+    let liveDeskThoughts = {};
+    let liveAgentThoughts = [];
+    let lastBubbleSpeechText = 'พร้อมรับคำสั่งจริง';
+
+    function compactOneLine(rawStr, maxLen = 92) {
+      if (!rawStr) return '';
+      let s = String(rawStr)
+        .replace(/\\n/g, '\n')
+        .replace(/<ide_opened_file>[\s\S]*?<\/ide_opened_file>/g, ' ')
+        .replace(/<ide_selection>[\s\S]*?<\/ide_selection>/g, ' ')
+        .replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, ' ')
+        .trim();
+      const wMatch = s.match(/open\(['"]([^'"]+)['"]\s*,\s*['"]w/);
+      if (wMatch) {
+        return `✍️ แก้ไขไฟล์จริง: ${wMatch[1]}`;
+      }
+      const catMatch = s.match(/cat\s*>\s*([A-Za-z0-9_./-]+)/);
+      if (catMatch) {
+        return `✍️ เขียนไฟล์จริง: ${catMatch[1]}`;
+      }
+      if (s.includes('<<') || s.includes('\n')) {
+        const fMatches = s.match(/[A-Za-z0-9_./-]+\.(?:dart|sql|ts|tsx|js|py|go|rs|sh|md|json)/g) || [];
+        const uniq = [...new Set(fMatches.map((f) => f.split('/').pop()))].slice(0, 3);
+        if (uniq.length > 0 && !s.startsWith('💭') && !s.startsWith('💬')) {
+          if (s.startsWith('🧪')) return `🧪 รันตรวจผลจริง (${uniq.join(', ')})`;
+          if (s.startsWith('🔍')) return `🔍 สแกนโค้ด (${uniq.join(', ')})`;
+          return `⚡ รันสคริปต์จัดการไฟล์ (${uniq.join(', ')})`;
+        }
+        s = s.split('\n')[0];
+      }
+      s = s
+        .replace(/(🔍 Inspecting:\s*|🧪 Verifying:\s*|⚡ Bash:\s*)cd\s+[^;&|]+[;&]+\s*/g, '$1')
+        .replace(/\s+/g, ' ')
+        .trim();
+      return s.length > maxLen ? s.slice(0, maxLen - 1) + '…' : s;
+    }
+
+    function renderDeskThought(deskKey) {
+      const boxEl = document.getElementById('desk-thought-box');
+      const timeEl = document.getElementById('desk-thought-time');
+      if (!boxEl) return;
+      const th = liveDeskThoughts[deskKey];
+      if (th && th.text) {
+        boxEl.textContent = th.text;
+        if (timeEl) {
+          const ku = String(th.kind || '').toUpperCase();
+          const kindLbl = ku === 'SUBAGENT' ? '🤖 Subagent จริง' : (ku === 'THOUGHT' || th.kind === 'thinking' ? '💭 ความคิด' : '💬 สรุปผล');
+          timeEl.textContent = `${kindLbl} • ${th.time || 'ล่าสุด'}`;
+        }
+      } else {
+        boxEl.textContent = 'ยังไม่มีข้อความความคิดในบทบาทนี้ระหว่างเซสชันปัจจุบัน';
+        if (timeEl) timeEl.textContent = 'สดจาก Session';
+      }
+    }
+
+    function updateSpeechBubbles(activeNode, speechText, phase, strikeCount) {
+      lastBubbleSpeechText = speechText || lastBubbleSpeechText;
+      const keys = ['core', 'explorer', 'implementer', 'debugger', 'reviewer'];
+      const isDanger =
+        phase === 'blocked' ||
+        phase === 'CIRCUIT_BREAKER_TRIPPED' ||
+        phase === 'BLOCKED_BY_SHIELD' ||
+        strikeCount >= 2;
+      keys.forEach((k) => {
+        const el = document.getElementById(`speech-${k}`);
+        if (!el) return;
+        const thObj = liveDeskThoughts[k];
+        const thText = thObj?.text || '';
+        const thKind = String(thObj?.kind || '').toUpperCase();
+        const thIcon = thKind === 'REPLY' ? '💬' : (thKind === 'SUBAGENT' ? '🤖' : '💭');
+        if (k === activeNode) {
+          let msg = '';
+          if (!isDanger && thText) {
+            msg = thText.startsWith('🤖') ? compactOneLine(thText, 128) : `${thIcon} ${compactOneLine(thText, 128)}`;
+          } else {
+            msg = compactOneLine(speechText, 110);
+          }
+          if (msg) {
+            el.textContent = msg;
+            el.classList.add('visible');
+            el.classList.toggle('danger-speech', isDanger);
+          } else {
+            el.classList.remove('visible', 'danger-speech');
+          }
+        } else if (k === hoveredDeskKey && thText) {
+          el.textContent = thText.startsWith('🤖') ? compactOneLine(thText, 128) : `${thIcon} ${compactOneLine(thText, 128)}`;
+          el.classList.add('visible');
+          el.classList.remove('danger-speech');
+        } else {
+          el.classList.remove('visible', 'danger-speech');
+        }
+      });
+    }
+
+    function updateStrikeTower3D(strikeCount) {
+      const bulbs = workstations.debugger?.strikeBulbs || [];
+      if (bulbs.length >= 3) {
+        bulbs[0].emissiveIntensity = strikeCount === 0 ? 0.95 : 0.15;
+        bulbs[1].emissiveIntensity = strikeCount >= 1 ? 1.2 : 0.12;
+        bulbs[2].emissiveIntensity = strikeCount >= 2 ? 1.5 : 0.12;
+      }
+      const b1 = document.getElementById('strike-box-1');
+      const b2 = document.getElementById('strike-box-2');
+      const b3 = document.getElementById('strike-box-3');
+      const txt = document.getElementById('strike-badge-txt');
+      if (b1) b1.className = 'strike-cell' + (strikeCount >= 1 ? ' warn' : '');
+      if (b2) b2.className = 'strike-cell' + (strikeCount >= 2 ? ' warn' : '');
+      if (b3) b3.className = 'strike-cell' + (strikeCount >= 3 ? ' danger' : '');
+      if (txt) {
+        txt.textContent =
+          strikeCount >= 2
+            ? `เบรกเกอร์ตัด (${strikeCount}/3)`
+            : `ปกติ ${strikeCount}/3`;
+      }
+    }
+
+    async function pollTelemetry() {
+      try {
+        const res = await fetch('/api/telemetry?t=' + Date.now(), { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (data.workspaceCatalog && Array.isArray(data.workspaceCatalog.items)) {
+          const prevCount = liveCatalog.items.length;
+          liveCatalog = data.workspaceCatalog;
+
+          const topCountEl = document.getElementById('top-files-count');
+          if (topCountEl) topCountEl.textContent = liveCatalog.items.length;
+
+          const projBadge = document.getElementById('proj-name-badge');
+          const projName = data.projectName || data.project;
+          if (projBadge && projName) projBadge.textContent = projName;
+
+          const nextSkillName = data.activeSkill || 'common-ground';
+          const nextCmd = data.activeCommand || data.activePromptFile || '.claude/commands/plan.md';
+
+          if (
+            prevCount !== liveCatalog.items.length ||
+            liveActiveSkillName !== nextSkillName ||
+            liveActivePromptPath !== nextCmd
+          ) {
+            liveActiveAgentPath = data.activeAgentFile || 'CLAUDE.md';
+            liveActivePromptPath = nextCmd;
+            liveActiveSkillName = nextSkillName;
+            liveActiveSkillPath =
+              data.activeSkillFile || `.claude/skills/${nextSkillName}/SKILL.md`;
+            liveActiveRulePath = data.activeRuleFile || '.claude/rules/model-routing.md';
+            liveActiveHookName = data.activeHook || 'telemetry-tracker.sh';
+            renderRoleArchitecture(currentSelectedDesk);
+          }
+        }
+
+        const nextNode = data.activeNode || 'core';
+        const nextAction =
+          data.currentAction || data.lastAction || 'พร้อมรับคำสั่งจริง';
+        if (nextNode !== currentActiveNode || nextAction !== currentActionText) {
+          if (nextNode !== currentActiveNode) {
+            triggerFolderHandoff(
+              currentActiveNode,
+              nextNode,
+              `ส่งแฟ้มงาน ➔ ${DESK_INFO[nextNode]?.shortName || nextNode}`
+            );
+            const mCode = String(data.activeModel || DESK_INFO[nextNode]?.modelCode || 'opus').toLowerCase();
+            if (mCode.includes('opus')) {
+              window.selectModelOption('opus', 'Opus', 'วางแผน', 'var(--accent-opus)');
+            } else if (mCode.includes('haiku') || mCode.includes('flash')) {
+              window.selectModelOption('haiku', 'Haiku', 'สำรวจไว 15x', 'var(--accent-haiku)');
+            } else {
+              window.selectModelOption('sonnet', 'Sonnet', 'เขียนโค้ด', 'var(--accent-sonnet)');
+            }
+          }
+          currentActiveNode = nextNode;
+          currentActionText = nextAction;
+        }
+
+        currentPhase = data.systemStatus || data.phase || 'IDLE';
+        currentStrikeCount = Number(data.strikeCount || 0);
+        currentEmotion = data.liveEmotion || 'calm';
+
+        // อัปเดตหน้าจอคอมพิวเตอร์ 3D บนโต๊ะด้วยชื่อ Skill และสถานะจริง!
+        if (workstations[currentActiveNode]?.dynMon) {
+          workstations[currentActiveNode].dynMon.redraw(
+            data.activeSkill || 'common-ground',
+            String(currentPhase).toUpperCase()
+          );
+        }
+
+        const modFiles = data.touchedFiles || data.filesModified || [];
+        liveDeskThoughts = data.deskThoughts || {};
+        liveAgentThoughts = Array.isArray(data.agentThoughts) ? data.agentThoughts : [];
+        renderDeskThought(currentSelectedDesk);
+        updateSpeechBubbles(
+          currentActiveNode,
+          data.liveSpeech || nextAction,
+          currentPhase,
+          currentStrikeCount
+        );
+        updateStrikeTower3D(currentStrikeCount);
+        syncDeskFileStack(modFiles);
+
+        // อัปเดต Dynamic Island Bar 1 บรรทัด
+        const hudBadge = document.getElementById('hud-active-badge');
+        const hudAction = document.getElementById('hud-action-text');
+        const skCode = document.getElementById('live-skill-code');
+        const cmCode = document.getElementById('live-cmd-code');
+        const statusPill = document.getElementById('overall-status-pill');
+
+        const isDanger =
+          currentPhase === 'blocked' ||
+          currentPhase === 'CIRCUIT_BREAKER_TRIPPED' ||
+          currentPhase === 'BLOCKED_BY_SHIELD' ||
+          currentStrikeCount >= 2;
+        if (statusPill) statusPill.classList.toggle('danger', isDanger);
+        if (hudBadge) {
+          hudBadge.textContent =
+            DESK_INFO[currentActiveNode]?.shortName || 'โต๊ะหัวหน้า (Opus)';
+        }
+        if (hudAction) hudAction.textContent = compactOneLine(nextAction, 86);
+        if (skCode) skCode.textContent = data.activeSkill || 'common-ground';
+        if (cmCode) {
+          const rawCmd = data.activeCommand || data.activePromptFile || 'CLAUDE.md';
+          cmCode.textContent = rawCmd.split('/').pop() || rawCmd;
+        }
+
+        // อัปเดตแท็บที่ 2 (งานจริง & โควต้า)
+        const setTxt = (id, val) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = val;
+        };
+        const stats = data.stats || {};
+        const totalCalls =
+          (stats.claudeCalls || 0) + (stats.antigravityCalls || 0);
+        setTxt('calls-counter-txt', `${totalCalls} ครั้ง`);
+        setTxt('active-model-txt', (data.activeModel || 'opus').toUpperCase());
+        setTxt('current-action-txt', compactOneLine(nextAction, 110));
+        setTxt(
+          'live-card-skill-path',
+          data.activeSkillFile ||
+            `.claude/skills/${data.activeSkill || 'common-ground'}/SKILL.md`
+        );
+        setTxt('real-diff-badge', data.lastDiffStat || 'git status สด');
+
+        setTxt('stat-explorer-reads', `${stats.explorerReads ?? 0} ครั้ง`);
+        setTxt(
+          'stat-files-edited',
+          `${stats.implementerEdits || stats.filesEdited || modFiles.length} ครั้ง`
+        );
+        setTxt('stat-verifier-runs', `${stats.verifierRuns ?? 0} ครั้ง`);
+        setTxt('stat-blocked-count', `${stats.blockedCount ?? 0} ครั้ง`);
+
+        const touchedList = document.getElementById('touched-files-list');
+        const filesCountLbl = document.getElementById('files-count-label');
+        if (filesCountLbl) filesCountLbl.textContent = `${modFiles.length} ไฟล์`;
+        if (touchedList) {
+          if (modFiles.length === 0) {
+            touchedList.innerHTML = `<div class="flat-row"><div class="fr-path">ยังไม่มีไฟล์ที่แก้ไขในรอบนี้</div></div>`;
+          } else {
+            touchedList.innerHTML = modFiles
+              .slice(0, 6)
+              .map(
+                (f) => `
+                <div class="flat-row">
+                  <div class="fr-bottom">
+                    <span class="fr-path">${escapeHtml(f)}</span>
+                    <button class="mini-btn" onclick="window.openTemplateModal('${escapeHtml(f)}')">เปิดดูไฟล์</button>
+                  </div>
+                </div>
+              `
+              )
+              .join('');
+          }
+        }
+
+        const usedHistEl = document.getElementById('used-items-history-list');
+        const usedHist = data.usedItemsHistory || [];
+        if (usedHistEl && usedHist.length > 0) {
+          // กรองรายการซ้ำติดกันและตัดบรรทัดคำสั่งยาวให้กระชับอ่านง่าย
+          const dedupedHist = [];
+          for (const uh of usedHist) {
+            if (uh.kind === 'HOOK' && String(uh.name || '').includes('loop-circuit-breaker') && data.systemStatus === 'working') {
+              continue;
+            }
+            const prev = dedupedHist[dedupedHist.length - 1];
+            if (prev && prev.name === uh.name && prev.path === uh.path) continue;
+            dedupedHist.push(uh);
+            if (dedupedHist.length >= 8) break;
+          }
+          usedHistEl.innerHTML = dedupedHist
+            .map((uh) => {
+              const path = uh.path || 'CLAUDE.md';
+              const cleanDet = compactOneLine(uh.detail || path, 92);
+              return `
+                <div class="flat-row">
+                  <div class="fr-top">
+                    <span class="fr-title">${escapeHtml(uh.name || path)}</span>
+                    <span class="fr-badge">${escapeHtml(uh.time || '')}</span>
+                  </div>
+                  <div class="fr-bottom">
+                    <span class="fr-path">${escapeHtml(cleanDet)}</span>
+                    <button class="mini-btn" onclick="window.openTemplateModal('${escapeHtml(path)}')">ดูไฟล์</button>
+                  </div>
+                </div>
+              `;
+            })
+            .join('');
+        }
+
+        const replyBoxEl = document.getElementById('ai-reply-box');
+        if (replyBoxEl && liveAgentThoughts.length > 0) {
+          setTxt('reply-status-txt', `${liveAgentThoughts.length} ความคิดสด`);
+          replyBoxEl.innerHTML = liveAgentThoughts
+            .slice(0, 6)
+            .map((th) => {
+              const deskCfg = DESK_INFO[th.desk] || DESK_INFO.core;
+              const ku = String(th.kind || '').toUpperCase();
+              const kindBadge = ku === 'SUBAGENT' ? '🤖 Subagent จริง' : (ku === 'THOUGHT' || th.kind === 'thinking' ? '💭 ความคิด' : '💬 สรุปผล');
+              return `
+                <div class="flat-row" style="cursor:pointer;" onclick="window.focusDesk('${escapeHtml(th.desk || 'core')}', true)">
+                  <div class="fr-top">
+                    <span class="fr-title" style="color:${deskCfg.accentCss || '#c4b5fd'}">${escapeHtml(deskCfg.shortName || th.desk)}</span>
+                    <span class="fr-badge">${kindBadge} • ${escapeHtml(th.time || '')}</span>
+                  </div>
+                  <div class="fr-path" style="white-space:normal;line-height:1.45;color:var(--text-primary);margin-top:3px;">${escapeHtml(th.text || '')}</div>
+                </div>
+              `;
+            })
+            .join('');
+        } else if (data.lastAssistantReply) {
+          setTxt('ai-reply-box', data.lastAssistantReply);
+          setTxt('reply-status-txt', data.commandStatus || 'เสร็จสิ้น');
+        } else if (Array.isArray(data.events) && data.events.length > 0) {
+          const evLines = data.events
+            .slice(0, 4)
+            .map((ev) => `[${ev.time || ''}] ${compactOneLine(ev.detail || '', 88)}`)
+            .join('\n');
+          setTxt('ai-reply-box', evLines);
+          setTxt('reply-status-txt', `${(data.activeEngine || 'claude').toUpperCase()} สด`);
+        }
+      } catch (err) {
+        console.warn('Telemetry poll error:', err);
+      }
+    }
+
+    async function pollQuota(forceRefresh = false) {
+      try {
+        const qs = forceRefresh ? 'refresh=1&t=' + Date.now() : 't=' + Date.now();
+        const res = await fetch('/api/quota?' + qs, { cache: 'no-store' });
+        if (!res.ok) return;
+        const q = await res.json();
+        const claude = q.claudeCode || q.claude || {};
+        const agy = q.antigravity || q.agy || {};
+
+        const cEl = document.getElementById('q-claude-5h-pct');
+        const cBar = document.getElementById('q-claude-5h-bar');
+        const cRemRaw = claude.rem5h !== undefined && claude.rem5h !== '-' ? Number(claude.rem5h) : null;
+        if (cRemRaw !== null && !isNaN(cRemRaw)) {
+          const rem = Math.min(100, Math.max(0, cRemRaw));
+          const resetTxt = claude.reset5h && claude.reset5h !== '-' ? `รีเซ็ต ${claude.reset5h}` : '';
+          const rem7Txt = claude.rem7d && claude.rem7d !== '-' ? ` • 7d ${claude.rem7d}%` : '';
+          if (rem <= 0) {
+            if (cEl) {
+              cEl.textContent = `ติด Limit 0% (${resetTxt}${rem7Txt})`;
+              cEl.style.color = '#f87171';
+            }
+            if (cBar) {
+              cBar.style.width = '100%';
+              cBar.style.background = '#ef4444';
+            }
+          } else {
+            if (cEl) {
+              cEl.textContent = `เหลือ ${rem}% (${resetTxt}${rem7Txt})`;
+              cEl.style.color = rem <= 20 ? '#fbbf24' : '';
+            }
+            if (cBar) {
+              cBar.style.width = `${rem}%`;
+              cBar.style.background = rem <= 20 ? '#f59e0b' : 'var(--accent-opus)';
+            }
+          }
+        } else {
+          if (cEl) cEl.textContent = 'พร้อมใช้งาน';
+          if (cBar) cBar.style.width = '50%';
+        }
+
+        const aEl = document.getElementById('q-agy-gemini-pct');
+        const aBar = document.getElementById('q-agy-gemini-bar');
+        const gRemRaw = agy.gemini5h !== undefined && agy.gemini5h !== '-' ? Number(agy.gemini5h) : null;
+        if (gRemRaw !== null && !isNaN(gRemRaw)) {
+          const gRem = Math.min(100, Math.max(0, gRemRaw));
+          const cAgyTxt = agy.claude5h && agy.claude5h !== '-' ? ` • Claude ${agy.claude5h}%` : '';
+          const gResetTxt = agy.gemini5hReset && agy.gemini5hReset !== '-' ? ` (รีเซ็ต ${agy.gemini5hReset})` : '';
+          if (aEl) {
+            aEl.textContent = `Gemini เหลือ ${gRem}%${cAgyTxt}${gResetTxt}`;
+            aEl.style.color = gRem <= 15 ? '#fbbf24' : '';
+          }
+          if (aBar) {
+            aBar.style.width = `${gRem}%`;
+            aBar.style.background = gRem <= 15 ? '#f59e0b' : '#3b82f6';
+          }
+        } else {
+          if (aEl) aEl.textContent = 'พร้อมใช้งาน';
+          if (aBar) aBar.style.width = '50%';
+        }
+      } catch (_) {}
+    }
+
+    document
+      .getElementById('btn-refresh-quota')
+      ?.addEventListener('click', () => pollQuota(true));
+
+    // =========================================================================
+    // 12. อัปเดตตำแหน่งป้ายชื่อ 3D และลูกโป่งคำพูดให้เกาะติดตัวละคร Voxel
+    // =========================================================================
+    const projVec = new THREE.Vector3();
+
+    function projectToScreen(worldVec, el, yOffsetPx = 0) {
+      if (!el) return;
+      projVec.copy(worldVec);
+      projVec.project(camera);
+      if (projVec.z > 1) {
+        el.style.opacity = '0';
+        return;
+      }
+      el.style.opacity = '';
+      const x = (projVec.x * 0.5 + 0.5) * container.clientWidth;
+      const y = (-(projVec.y * 0.5) + 0.5) * container.clientHeight + yOffsetPx;
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+    }
+
+    function updateFloatingLabels() {
+      Object.entries(workstations).forEach(([key, ws]) => {
+        const labelEl = document.getElementById(`label-${key}`);
+        if (labelEl) {
+          projectToScreen(ws.labelAnchor, labelEl, 0);
+          labelEl.classList.toggle('active', key === currentActiveNode);
+          labelEl.classList.toggle(
+            'danger',
+            key === currentActiveNode &&
+              (currentPhase === 'blocked' ||
+                currentPhase === 'CIRCUIT_BREAKER_TRIPPED' ||
+                currentPhase === 'BLOCKED_BY_SHIELD' ||
+                currentStrikeCount >= 2)
+          );
+        }
+      });
+
+      const fTag = document.getElementById('folder-tag');
+      if (fTag && handoffState.active) {
+        projectToScreen(workFolderGroup.position, fTag, -24);
+      }
+    }
+
+    // =========================================================================
+    // 13. ลูปแอนิเมชัน 60 FPS (มือวางเหนือคีย์บอร์ด ไม่จมโต๊ะ, ตากะพริบ, รางไฟวิ่ง)
+    // =========================================================================
+    const clock = new THREE.Clock();
+    let frameCounter = 0;
+    let lastFpsTime = performance.now();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.1);
+      const elapsed = clock.getElapsedTime();
+
+      frameCounter++;
+      const now = performance.now();
+      if (now - lastFpsTime >= 1000) {
+        const fpsEl = document.getElementById('fps-badge');
+        if (fpsEl) fpsEl.textContent = `${frameCounter} FPS`;
+        frameCounter = 0;
+        lastFpsTime = now;
+      }
+
+      if (isCameraTransitioning) {
+        camera.position.lerp(desiredCamPos, 0.085);
+        controls.target.lerp(desiredCamTarget, 0.085);
+        if (
+          camera.position.distanceTo(desiredCamPos) < 0.04 &&
+          controls.target.distanceTo(desiredCamTarget) < 0.04
+        ) {
+          isCameraTransitioning = false;
+        }
+      }
+      controls.update();
+
+      const isGlobalDanger =
+        currentPhase === 'blocked' ||
+        currentPhase === 'CIRCUIT_BREAKER_TRIPPED' ||
+        currentPhase === 'BLOCKED_BY_SHIELD' ||
+        currentStrikeCount >= 2;
+
+      Object.entries(workstations).forEach(([key, ws], idx) => {
+        const isActive = key === currentActiveNode;
+        const isHovered = key === hoveredDeskKey;
+        const vc = ws.voxelChar;
+        const phaseOffset = idx * 1.7;
+
+        // แถบไฟสถานะหน้าโต๊ะเรืองแสงตามสถานะ (หากติดเบรกเกอร์ให้กะพริบสีแดงที่โต๊ะนั้น)
+        if (isActive && isGlobalDanger) {
+          ws.borderMat.color.setHex(0xef4444);
+          ws.borderMat.emissive.setHex(0xef4444);
+          ws.borderMat.emissiveIntensity = 1.1 + Math.sin(elapsed * 12) * 0.5;
+        } else {
+          ws.borderMat.color.setHex(DESK_INFO[key].accent);
+          ws.borderMat.emissive.setHex(DESK_INFO[key].accent);
+          ws.borderMat.emissiveIntensity = isActive
+            ? 0.9 + Math.sin(elapsed * 5) * 0.25
+            : isHovered
+            ? 0.75
+            : 0.28;
+        }
+
+        ws.screenMat.emissiveIntensity = isActive ? 0.92 : 0.52;
+        ws.lampBulbMat.emissiveIntensity = isActive || isNightMode ? 1.15 : 0.4;
+
+        vc.torsoGroup.position.y =
+          0.56 + Math.sin(elapsed * (isActive ? 5.2 : 2.2) + phaseOffset) * 0.012;
+
+        if (isActive) {
+          // พิมพ์คีย์บอร์ดโดยขยับมือขึ้นเหนือปุ่มเท่านั้น (ไม่มุดลงใต้โต๊ะ!)
+          vc.leftArm.rotation.x = Math.abs(Math.sin(elapsed * 14)) * 0.12;
+          vc.rightArm.rotation.x = Math.abs(Math.cos(elapsed * 14)) * 0.12;
+          vc.headGroup.rotation.y = Math.sin(elapsed * 2.2) * 0.12;
+          vc.headGroup.rotation.x = isHovered ? -0.14 : 0.04;
+
+          vc.pupilL.position.x = -0.115 + Math.sin(elapsed * 4.0) * 0.016;
+          vc.pupilR.position.x = 0.115 + Math.sin(elapsed * 4.0) * 0.016;
+          vc.mouthMesh.scale.y = 0.04 + Math.abs(Math.sin(elapsed * 8.5)) * 0.04;
+
+          if (isGlobalDanger || currentEmotion === 'warning') {
+            vc.browL.rotation.z = -0.2;
+            vc.browR.rotation.z = 0.2;
+          } else {
+            vc.browL.rotation.z = -0.06;
+            vc.browR.rotation.z = 0.06;
+          }
+        } else {
+          vc.leftArm.rotation.x = 0.02;
+          vc.rightArm.rotation.x = 0.02;
+          vc.headGroup.rotation.y = isHovered
+            ? 0
+            : Math.sin(elapsed * 0.8 + phaseOffset) * 0.07;
+          // เมื่อเมาส์ชี้ ตัวละครเงยหน้าขึ้นมองกล้อง!
+          vc.headGroup.rotation.x = isHovered ? -0.16 : 0;
+          vc.pupilL.position.x = -0.115;
+          vc.pupilR.position.x = 0.115;
+          vc.mouthMesh.scale.y = 0.038;
+          vc.browL.rotation.z = 0;
+          vc.browR.rotation.z = 0;
+        }
+
+        const blinkCycle = (elapsed + phaseOffset) % 3.8;
+        vc.eyesGroup.scale.y = blinkCycle > 3.66 ? 0.1 : 1.0;
+
+        if (ws.specialProp) {
+          if (key === 'core' || key === 'explorer') {
+            ws.specialProp.rotation.y += dt * (isActive ? 2.4 : 0.65);
+          } else if (key === 'reviewer') {
+            ws.specialProp.position.y =
+              0.9 + (isActive ? Math.abs(Math.sin(elapsed * 6)) * 0.1 : 0);
+          }
+        }
+
+        if (key === 'core' && ws.sirenMesh) {
+          ws.sirenMesh.material.emissiveIntensity = isGlobalDanger
+            ? 1.6 + Math.sin(elapsed * 16) * 0.8
+            : 0.2;
+        }
+      });
+
+      // แอนิเมชันส่งแฟ้มงานสีทองข้ามโต๊ะแบบครั้งเดียวจบ (0.9 วินาที)
+      if (handoffState.active) {
+        handoffState.progress += dt / 0.9;
+        if (handoffState.progress >= 1.0) {
+          handoffState.progress = 1.0;
+          handoffState.active = false;
+          workFolderGroup.position.copy(handoffState.toPos);
+          workFolderGroup.rotation.set(0, -0.15, 0);
+          const fTag = document.getElementById('folder-tag');
+          if (fTag) fTag.style.opacity = '0';
+        } else {
+          const t = handoffState.progress;
+          const ease = 1 - Math.pow(1 - t, 3);
+          workFolderGroup.position.lerpVectors(handoffState.fromPos, handoffState.toPos, ease);
+          workFolderGroup.position.y += Math.sin(t * Math.PI) * 1.1;
+          workFolderGroup.rotation.y = -0.15 + t * Math.PI * 2;
+        }
+      }
+
+      updateFloatingLabels();
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+    // เริ่มต้นในมุมมองภาพรวม 100% Full-Screen 3D Studio (ซ่อนแผงด้านขวาไว้จนกว่าผู้ใช้จะคลิก)
+    renderRoleArchitecture('core');
+    window.setCameraShot('overview');
+    pollTelemetry();
+    pollQuota();
+    setInterval(pollTelemetry, 1400);
+    setInterval(pollQuota, 15000);
+    animate();
+  </script>
+</body>
+</html>

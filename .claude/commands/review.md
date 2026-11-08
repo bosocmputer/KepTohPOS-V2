@@ -1,11 +1,11 @@
 ---
-description: Run a pragmatic Blocker-Only code and security review capped at 2 convergence rounds
+description: Run a pragmatic Blocker-Only code and security review capped at 2 convergence rounds (สั่งตรวจรีวิวโค้ดและความปลอดภัยเฉพาะจุดสำคัญไม่เกิน 2 รอบ)
 argument-hint: [optional-file-or-diff-scope]
-allowed-tools: Read, Edit, Grep, Glob, Bash
+allowed-tools: Agent, Read, Edit, Grep, Glob, Bash
 ---
 # /review — Convergent Code & Security Review (Max 2 Rounds)
 
-Delegate to the `reviewer` sub-agent (or apply the `pragmatic-review` skill) to inspect recent changes (`git diff` $ARGUMENTS):
+Invoke `Agent(subagent_type="reviewer", model="sonnet")` to inspect recent changes (`git diff` $ARGUMENTS):
 
 ## Convergence Protocol
 1. **Round 1 (Blocker-Only Scan):**

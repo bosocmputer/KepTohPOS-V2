@@ -1,5 +1,5 @@
 ---
-description: Surface hidden assumptions, business rules, and scope boundaries before coding a new feature
+description: Surface hidden assumptions, business rules, and scope boundaries before coding a new feature (สั่งถามยืนยันสมมติฐานและกฎธุรกิจให้ตรงกันก่อนเริ่มสร้างงาน)
 argument-hint: [feature-request]
 allowed-tools: Read, Grep, Glob
 ---

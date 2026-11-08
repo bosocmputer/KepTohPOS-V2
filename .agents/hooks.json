@@ -5,6 +5,18 @@
         "type": "command",
         "command": "bash ../.claude/hooks/auto-resume.sh"
       }
+    ],
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "bash ../.claude/hooks/telemetry-tracker.sh --hook-stdin prompt"
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "bash ../.claude/hooks/telemetry-tracker.sh --hook-stdin stop"
+      }
     ]
   },
   "command-and-loop-guards": {
@@ -28,6 +40,24 @@
           {
             "type": "command",
             "command": "bash ../.claude/hooks/protect-sensitive-files.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "read_file|grep_search|find_by_name",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ../.claude/hooks/telemetry-tracker.sh --hook-stdin read"
+          }
+        ]
+      },
+      {
+        "matcher": "invoke_subagent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ../.claude/hooks/telemetry-tracker.sh --hook-stdin agent"
           }
         ]
       }

@@ -1,5 +1,5 @@
 ---
-description: Save compact task state to TASK_STATE.md before running /clear or switching between Claude Code and Antigravity
+description: Save compact task state to TASK_STATE.md before running /clear or switching between Claude Code and Antigravity (สั่งบันทึกจุดค้างงานลงไฟล์เพื่อสลับค่าย AI ทำต่อได้ทันที)
 argument-hint: [optional-notes]
 allowed-tools: Read, Write, Edit, Bash
 ---

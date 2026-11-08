@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Use this agent when reviewing code diffs for logic errors, security vulnerabilities, and regressions. Enforces a Blocker-Only policy and a 2-round convergence cap.
+description: Use this agent when reviewing code diffs for logic errors, security vulnerabilities, and regressions. Enforces a Blocker-Only policy and a 2-round convergence cap. (ผู้ตรวจรับงานและรันเทสต์จริง ตรวจเฉพาะจุดตายสำคัญและกันการโกงเทสต์)
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit
 model: sonnet
@@ -15,9 +15,10 @@ You are a senior staff engineer conducting a high-signal, non-bikeshedding code 
 ## 1. Blocker-Only Filtering Rule
 
 ### 🔴 Flag ONLY True Blockers (`[BLOCKER]`):
-- **Broken Core Logic:** Incorrect calculations, unhandled `null`/`undefined`/`NaN` crashes, off-by-one errors, or broken idempotency (e.g., double refunds/deductions).
-- **Security Vulnerabilities (OWASP Top 10):** Missing authentication/authorization checks (IDOR), SQL/Command/XSS injection, or exposed secrets/tokens/PII.
-- **Data Integrity & Concurrency:** Missing transactions on multi-step state mutations, race conditions, or unbounded queries (`SELECT *` without limits).
+- **Broken Core Logic & Enum Completeness (`gstack`):** Incorrect calculations, unhandled `null`/`undefined`/`NaN` crashes, broken idempotency, or new enum/status values missing in `switch`/`case` consumers outside the diff.
+- **Security & LLM Trust Boundary (OWASP Top 10 + `gstack`):** Missing authentication/authorization checks (IDOR/BOLA), SQL/Command/XSS injection, exposed secrets/PII, or unvalidated LLM output persisted/fetched without SSRF checks.
+- **Data Integrity & TOCTOU Concurrency:** Missing transactions on multi-step state mutations, check-then-act (TOCTOU) status updates without atomic `WHERE old_status = ?`, or unbounded queries (`SELECT *`).
+- **Gate Integrity & Anti-Reward-Hacking (`gstack RH-1..RH-16`):** Deleted/skipped tests (`RH-1`), environment sniffing in product code (`NODE_ENV === 'test'`, `RH-12`), relaxed test thresholds (`RH-15`), or swallowed exceptions (`catch {}`, `RH-16`).
 
 ### ⚪ Strictly Ignore Stylistic Nitpicks:
 - Formatting, indentation, import ordering, or semicolon preferences (handled by Prettier/Linters).

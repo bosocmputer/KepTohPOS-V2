@@ -2,27 +2,36 @@
 name: pragmatic-review
 description: Use when reviewing code changes or diffs for logic bugs and security vulnerabilities using a Blocker-Only policy capped at 2 rounds (ใช้เมื่อต้องการตรวจรีวิวโค้ดเฉพาะจุดที่เป็น Blocker ไม่เกิน 2 รอบ)
 ---
-# Pragmatic Code Review & Convergence Gate (`obra/superpowers` Review Protocol)
+# Pragmatic Code Review & Convergence Gate (`obra/superpowers` + `garrytan/gstack` Protocol)
 
-> **Reference Architecture:** [`obra/superpowers`](https://github.com/obra/superpowers) (`requesting-code-review/SKILL.md` & `receiving-code-review/SKILL.md`)
+> **Reference Architecture:** [`obra/superpowers`](https://github.com/obra/superpowers) (`requesting-code-review` & `receiving-code-review`) & [`garrytan/gstack`](https://github.com/garrytan/gstack) (`review/checklist.md` & `review/gate-integrity.md`)
 
 ## 1. The Iron Law
 > **TECHNICAL CORRECTNESS OVER SOCIAL COMFORT — REPORT BLOCKERS ONLY, CONVERGE IN AT MOST 2 ROUNDS.**
 
 ## 2. Core Workflow
 
-### Step 1: Diff Inspection (`requesting-code-review` Protocol)
+### Step 1: Diff & Cross-Consumer Inspection
 1. Inspect exact changes using `git status --short` and `git diff` (or `git diff BASE_SHA..HEAD_SHA`).
-2. Read the surrounding context of modified functions to verify data contracts, input validation, and error handling.
+2. **Enum & Value Completeness (`gstack` Pass 1 Rule):** If the diff adds or modifies an enum value, status string, role, or validator shape, `Grep` for sibling values across the codebase **outside the diff** and read every consumer (`switch`/`case`, filter array, DB model) to ensure no unhandled fallthroughs exist.
 
 ### Step 2: Severity Triage (`Blocker-Only Policy`)
 Categorize findings strictly and **report only `[BLOCKER]` items**:
 
 #### 🔴 Report Immediately (`[BLOCKER]`):
-1. **Broken Logic & Edge Cases:** Incorrect calculations, unhandled `null`/`undefined`/`NaN`, off-by-one errors, or broken idempotency (double-submit bug).
-2. **Security Vulnerabilities:** Missing authentication/authorization (IDOR), SQL/Command Injection, XSS, or leaked secrets/PII in logs or responses.
-3. **Data Corruption & Race Conditions:** Missing database transactions, check-then-act race conditions (e.g., double booking or negative stock).
-4. **Severe Performance Defects:** N+1 queries inside loops, unbounded `SELECT *`, or memory leaks.
+1. **Broken Logic & Edge Cases:** Incorrect calculations, unhandled `null`/`undefined`/`NaN`, off-by-one errors, unhandled enum values in consumers outside the diff, or broken idempotency (double-submit bug).
+2. **Security & LLM Trust Boundaries (`gstack` Pass 1 Rule):**
+   - Missing authentication/authorization (IDOR/BOLA), SQL/Command Injection, XSS, or leaked secrets/PII.
+   - Unvalidated LLM outputs written directly to the database or fetched via URL without SSRF/format validation.
+3. **Data Corruption & TOCTOU Race Conditions:**
+   - Missing database transactions on multi-table writes.
+   - Read-then-write (TOCTOU) status transitions that do not use atomic `UPDATE ... WHERE status = expected_old_status` or unique constraints.
+4. **Gate Integrity & Anti-Reward-Hacking (`gstack RH-1..RH-16`):**
+   - `RH-1`: Deleted, `.skip`-ed, or `.only`-ed tests.
+   - `RH-3 / RH-5`: Unowned `.snap` regeneration or tautological tests that only assert their own mock setup.
+   - `RH-12`: Environment sniffing in production code (`if (process.env.NODE_ENV === 'test')` or `if (process.env.CI)`).
+   - `RH-13 / RH-15 / RH-16`: Added `@ts-ignore`/`eslint-disable`, relaxed numeric thresholds/timeouts to hide failures, or empty `catch {}` blocks.
+5. **Severe Performance Defects:** N+1 queries inside loops, unbounded `SELECT *`, or memory leaks.
 
 #### ⚪ Suppress Completely (Ignore Nitpicks):
 - Formatting, indentation, or semicolon style (handled by Prettier/Linters).

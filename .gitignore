@@ -15,3 +15,8 @@ node_modules/
 
 .serena/
 .vscode/
+
+# Agent Guard Telemetry Cache
+.claude/.telemetry.json*
+.claude/.quota_cache.json*
+.playwright-mcp/

@@ -2,12 +2,12 @@
 name: verification-before-completion
 description: Use when about to claim a task is complete, fixed, or passing, or before committing/opening a PR. Enforces the Iron Law of Verification and the 5-step Gate Function (ใช้ตรวจยืนยันผลจริงก่อนแจ้งจบงานทุกครั้ง)
 ---
-# Verification Before Completion (`obra/superpowers` Protocol)
+# Verification Before Completion (`obra/superpowers` + `garrytan/gstack` Gate Integrity)
 
-> **Reference Architecture:** [`obra/superpowers`](https://github.com/obra/superpowers) (`skills/verification-before-completion/SKILL.md`)
+> **Reference Architecture:** [`obra/superpowers`](https://github.com/obra/superpowers) (`skills/verification-before-completion/SKILL.md`), [`garrytan/gstack`](https://github.com/garrytan/gstack) (`review/gate-integrity.md` — `PL-1/PL-2 Zero-Run Green` & `RH-2 Proof-Class Inflation`), & [`anthropics/skills`](https://github.com/anthropics/skills) (`skills/webapp-testing/SKILL.md` — Reconnaissance-Then-Action)
 
 ## 1. The Iron Law
-> **NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE.**
+> **NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE (`tests_ran >= 1`).**
 
 If you have not run the verification command in the current turn, you cannot claim it passes.
 
@@ -27,11 +27,15 @@ Before making any claim of success ("Done", "Fixed", "Tests pass"):
      - **Flutter / Dart:** `flutter analyze`
      - **Python:** `ruff check .` or `mypy .`
      - **Rust:** `cargo check`
-   - **Tier 3 (Non-Blocking Smoke Check):** Check active ports via `lsof -i :<port>` and test via `curl -s -i` (never run `npm run dev`, `go run`, or `flutter run` in the foreground where it hangs).
-3. **READ:** Read the full terminal output, check the exit code, and count failures.
+   - **Tier 3 (Non-Blocking Smoke & Web UI Reconnaissance — `anthropics/skills/webapp-testing`):**
+     - Check active ports via `lsof -i :<port>` and test endpoints via `curl -s -i` (never run `npm run dev`, `go run`, or `flutter run` in the foreground where it hangs).
+     - For dynamic web UIs tested via browser/Playwright: always wait for `networkidle` before inspecting DOM, verify zero uncaught `console.error` / `pageerror` exceptions, and inspect rendered DOM/screenshots before claiming visual or interactive changes work.
+3. **READ & CHECK FOR ZERO-RUN GREEN (`gstack PL-1 / PL-2`):**
+   - Read the full terminal output, check the exit code, and verify the actual test count (`tests_ran >= 1`).
+   - **Zero-Run Green Trap (`PL-2`):** If a test command exits with code `0` but ran **`0 tests`** (e.g., `0 passing, 0 failing`, `No tests found`, `no tests ran`, or `go test` `[no test files]` due to a wrong filter/path), **treat it as a FAILED verification (`ZERO-RUN`)**. Fix the test path/filter and re-run until at least 1 real test executes.
 4. **VERIFY:** Does the output confirm the claim?
    - **If NO:** State the actual status with the actual error output.
-   - **If YES:** State the claim WITH the evidence.
+   - **If YES:** State the claim WITH the evidence (including exact count of tests run).
 5. **ONLY THEN:** Conclude the task.
 
 ## 3. Red Flags & Rationalization Prevention Table
@@ -40,6 +44,8 @@ Before making any claim of success ("Done", "Fixed", "Tests pass"):
 | :--- | :--- |
 | *"Should work now"* / *"Probably fixed"* | **STOP.** Run the verification command first. |
 | *"I'm confident"* / *"It's a 1-line change"* | Confidence ≠ evidence. 1-line changes break builds constantly. |
+| *"Exit code 0 (0 tests ran)"* (`PL-2 Zero-Run`) | **STOP.** `0 tests ran` proves nothing. Fix the test filter and run real tests. |
+| *"Mock/grep passed, so runtime works"* (`RH-2`) | **Proof-Class Inflation.** A static grep or mock never proves live runtime behavior. |
 | *"Linter passed, so it compiles"* | Linters do not check types or runtime behavior. Run the test/build. |
 | *"Tests passed earlier in the session"* | Any edit after the last test run invalidates that run. Run it fresh. |
 | *"No test server is running"* | Explicitly state: `"ยังไม่ได้รันทดสอบในส่วน Runtime Server เนื่องจาก..."` |

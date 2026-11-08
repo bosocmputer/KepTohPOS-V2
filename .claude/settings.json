@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Agent",
       "Bash(node --test*)",
       "Bash(npm test*)",
       "Bash(npm run build*)",
@@ -72,6 +73,16 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/telemetry-tracker.sh\" --hook-stdin prompt"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
@@ -94,6 +105,24 @@
             "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/protect-sensitive-files.sh\""
           }
         ]
+      },
+      {
+        "matcher": "Read|Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/telemetry-tracker.sh\" --hook-stdin read"
+          }
+        ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/telemetry-tracker.sh\" --hook-stdin agent"
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -103,6 +132,16 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/post-edit-format.sh\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/telemetry-tracker.sh\" --hook-stdin stop"
           }
         ]
       }

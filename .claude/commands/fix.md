@@ -1,11 +1,11 @@
 ---
-description: Diagnose and fix bugs systematically using 0-Strike missing-spec detection and a 2-Strike circuit breaker
+description: Diagnose and fix bugs systematically using 0-Strike missing-spec detection and a 2-Strike circuit breaker (สั่งสืบหาต้นตอของบั๊กและซ่อมอย่างปลอดภัยไม่เกิน 2 ครั้ง)
 argument-hint: [bug-description-or-failing-test]
-allowed-tools: Read, Edit, Grep, Glob, Bash
+allowed-tools: Agent, Read, Edit, Grep, Glob, Bash
 ---
 # /fix — Systematic Root-Cause Repair (Max 2 Attempts)
 
-Delegate to the `debugger` sub-agent (or apply the `root-cause-debug` skill) to resolve:
+Invoke `Agent(subagent_type="debugger", model="sonnet")` (or execute directly only if it is an obvious 1-line typo) to resolve:
 $ARGUMENTS
 
 ## Mandatory Guardrails

@@ -6,14 +6,19 @@ INPUT=$(cat)
 
 if echo "$INPUT" | grep -q '"toolCall"'; then
   MODE="antigravity"
-  FILE_PATH=$(echo "$INPUT" | grep -o '"Path"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"Path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+  FILE_PATH=$(echo "$INPUT" | grep -oE '"Path"[[:space:]]*:[[:space:]]*"(\\.|[^"\\])*"' | head -1 | sed -E 's/^"Path"[[:space:]]*:[[:space:]]*"//;s/"$//;s/\\"/"/g')
 else
   MODE="claude"
-  FILE_PATH=$(echo "$INPUT" | grep -o '"file_path"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"file_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+  FILE_PATH=$(echo "$INPUT" | grep -oE '"file_path"[[:space:]]*:[[:space:]]*"(\\.|[^"\\])*"' | head -1 | sed -E 's/^"file_path"[[:space:]]*:[[:space:]]*"//;s/"$//;s/\\"/"/g')
 fi
 
 if [ -n "$FILE_PATH" ]; then
-  echo "last_agent=$MODE | last_edited_file=$FILE_PATH | updated_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" > .agent-last-state.log
+  DIFF_STAT=""
+  if command -v git >/dev/null 2>&1; then
+    DIFF_STAT=$(git --no-optional-locks diff --numstat -- "$FILE_PATH" 2>/dev/null | awk '{printf "+%s/-%s บรรทัด", $1, $2}')
+  fi
+  echo "last_agent=$MODE | last_edited_file=$FILE_PATH | diff=${DIFF_STAT:-modified} | updated_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" > .agent-last-state.log
+  bash "$PROJECT_ROOT/.claude/hooks/telemetry-tracker.sh" --engine "$MODE" --node "implementer" --status "working" --detail "✂️ แก้ไขไฟล์จริง: $FILE_PATH ${DIFF_STAT:+($DIFF_STAT)}" --file "$FILE_PATH" --diff "$DIFF_STAT" --hook ".claude/hooks/post-edit-format.sh" >/dev/null 2>&1 || true
 fi
 
 if [ -f "$FILE_PATH" ]; then

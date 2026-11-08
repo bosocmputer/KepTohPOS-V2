@@ -1,11 +1,11 @@
 ---
-description: Execute the 5-step Gate Function and 3-tier verification (Unit Test, Typecheck/Build, Runtime Smoke Check)
+description: Execute the 5-step Gate Function and 3-tier verification (Unit Test, Typecheck/Build, Runtime Smoke Check) (สั่งรันเทสต์พิสูจน์ผลลัพธ์จริง 3 ระดับก่อนจบงาน)
 argument-hint: [target-test-or-module]
-allowed-tools: Read, Grep, Glob, Bash
+allowed-tools: Agent, Read, Grep, Glob, Bash
 ---
 # /verify — Evidence-Based Verification Gate (`obra/superpowers`)
 
-Run the mandatory **Verification Gate Function** for: $ARGUMENTS
+Run the mandatory **Verification Gate Function** (for multi-suite or E2E verification, offload to `Agent(subagent_type="reviewer", model="sonnet")` to save primary `Opus` quota) for: $ARGUMENTS
 
 ## The 5-Step Gate Function
 1. **IDENTIFY:** Determine the exact commands that prove the recent changes work.

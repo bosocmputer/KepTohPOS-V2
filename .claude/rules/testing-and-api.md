@@ -1,4 +1,5 @@
 ---
+description: "(กฎบังคับใช้เทสต์จริง ห้ามสร้างข้อมูลหลอก และตรวจความปลอดภัย API)"
 paths:
   - "**/*.{test,spec}.{js,ts,tsx,py}"
   - "**/*_test.{go,dart,py}"
