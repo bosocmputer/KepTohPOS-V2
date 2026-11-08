@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:app/core/data/local/connection_monitor.dart';
 import 'package:app/core/data/mock_pos_repository.dart';
 import 'package:app/core/di/injection.dart';
 import 'package:app/core/router/app_router.dart';
 import 'package:app/core/theme/app_theme.dart';
 import 'package:app/core/widgets/busy_overlay.dart';
+import 'package:app/core/widgets/sync_status_banner.dart';
 import 'package:app/domain/pos_repository.dart';
 import 'package:app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:app/features/bills/presentation/cubit/bills_cubit.dart';
@@ -28,6 +30,7 @@ class KepTohApp extends StatefulWidget {
     this.now,
     this.initialLocation = '/tables',
     this.busy,
+    this.sync,
   });
 
   final ThemeCubit? themeCubit;
@@ -41,6 +44,9 @@ class KepTohApp extends StatefulWidget {
 
   /// `true` while the server is handling a request; `null` in mock mode.
   final ValueListenable<bool>? busy;
+
+  /// Online state and the number of commands waiting; `null` in mock mode.
+  final ValueListenable<SyncStatus>? sync;
 
   @override
   State<KepTohApp> createState() => _KepTohAppState();
@@ -126,7 +132,11 @@ class _KepTohAppState extends State<KepTohApp> {
               routerConfig: _router,
               builder: (context, child) {
                 final busy = widget.busy;
-                final page = child ?? const SizedBox.shrink();
+                final sync = widget.sync;
+                var page = child ?? const SizedBox.shrink();
+                if (sync != null) {
+                  page = SyncStatusBanner(status: sync, child: page);
+                }
                 return busy == null
                     ? page
                     : BusyOverlay(busy: busy, child: page);

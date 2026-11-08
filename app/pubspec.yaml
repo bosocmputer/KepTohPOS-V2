@@ -18,9 +18,14 @@ dependencies:
   qr_flutter: ^4.1.0
   supabase_flutter: ^2.18.3
   uuid: ^4.6.0
+  drift: ^2.35.3
+  drift_flutter: ^0.3.1
+  connectivity_plus: ^7.3.2
 
 dev_dependencies:
   bloc_test: ^10.0.0
+  build_runner: ^2.16.1
+  drift_dev: ^2.35.2
   flutter_test:
     sdk: flutter
   integration_test:

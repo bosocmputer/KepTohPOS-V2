@@ -49,4 +49,33 @@ void main() {
     // Assert
     expect(activity.busy.value, isFalse);
   });
+
+  test(
+    'reachable goes off when a request cannot connect, on with any reply',
+    () async {
+      // Arrange
+      var down = true;
+      final activity = NetworkActivity(
+        MockClient((req) async {
+          if (down) throw http.ClientException('Failed to fetch', req.url);
+          return http.Response('no', 401);
+        }),
+      );
+      final start = activity.reachable.value;
+
+      // Act
+      await expectLater(
+        activity.get(Uri.parse('https://x.test/a')),
+        throwsA(isA<http.ClientException>()),
+      );
+      final whileDown = activity.reachable.value;
+      down = false;
+      await activity.get(Uri.parse('https://x.test/a'));
+
+      // Assert: a 401 still proves the server is reachable.
+      expect(start, isTrue);
+      expect(whileDown, isFalse);
+      expect(activity.reachable.value, isTrue);
+    },
+  );
 }

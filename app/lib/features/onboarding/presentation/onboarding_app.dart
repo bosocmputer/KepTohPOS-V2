@@ -6,6 +6,7 @@ import 'package:app/core/theme/app_theme.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/features/onboarding/data/device_session.dart';
+import 'package:app/features/onboarding/data/sync_setup.dart';
 import 'package:app/features/onboarding/presentation/onboarding_shell.dart';
 import 'package:app/features/onboarding/presentation/owner_login_form.dart';
 import 'package:app/features/onboarding/presentation/owner_shop_step.dart';
@@ -76,7 +77,8 @@ class _OnboardingAppState extends State<OnboardingApp> {
     final session = _session!;
     final repo = await session.openRepository(shopId);
     await configureDependencies(repository: repo, deviceSession: session);
-    runApp(KepTohApp(busy: session.busy));
+    final sync = startSync(session, shopId);
+    runApp(KepTohApp(busy: session.busy, sync: sync.status));
   }
 
   Future<void> _signOutOwner() async {

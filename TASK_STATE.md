@@ -8,7 +8,7 @@
   - Staging domain now follows `m1/f1-leftovers` · Google provider enabled in Supabase (GCP project `keptoh-pos`, account bosnontawat.ai@gmail.com, consent screen in Testing) · Turnstile widget "KepToh POS" (Cloudflare Bos_catdog@hotmail.com) · Vercel Preview env `CAPTCHA_SITE_KEY` added
 - **Done later on 2026-11-08:** Google + captcha live on staging (Turnstile secret verified: no token → 400, real token → 200) · owner sign-out / leave device / redesigned first screens (`ffa0c54`) · build script fix (`32458cf`) · manager cost switch `staff.can_view_costs` (migration `20261108000300`, needs `db push`)
 - **Next Immediate Step:**
-  - User runs `supabase db push` for `20261108000300_staff_can_view_costs.sql`, then merge PR #13 (M1 done) → start M2 offline
+  - M1 merged (PR #13, `0bbda67`). M2 on branch `m2/offline`: part 1 = Drift `LocalDb` + `OutboxQueue` + `ConnectionMonitor` + `SyncStatusBanner` (done); part 2 = queue sale commands offline + compute state locally (reuse mock domain ops) + device-side bill numbers; part 3 = offline PIN (7 days) + manager void offline; part 4 = E2E offline sale + sync
   - Decided: no online manager accounts; managers join via device link + PIN
 - **Known Constraints / Decisions:**
   - Staging = https://keptoh-staging.vercel.app (ผู้ใช้อนุญาตให้ใส่ PIN ทดสอบ 1234) · Supabase Site URL ชี้ staging · Redirect: staging, Preview เดิม, localhost

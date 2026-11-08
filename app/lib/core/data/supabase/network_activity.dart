@@ -12,10 +12,16 @@ class NetworkActivity extends http.BaseClient {
 
   final http.Client _inner;
   final ValueNotifier<bool> _busy = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _reachable = ValueNotifier<bool>(true);
   int _pending = 0;
 
   /// `true` while a request has not finished, including reading its body.
   ValueListenable<bool> get busy => _busy;
+
+  /// `false` after a request failed to connect, `true` again as soon as any
+  /// reply arrives (even an error status proves the server is reachable).
+  /// Wi-Fi without internet is common in shops, so this beats the OS status.
+  ValueListenable<bool> get reachable => _reachable;
 
   void _start() => _busy.value = ++_pending > 0;
 
@@ -36,8 +42,10 @@ class NetworkActivity extends http.BaseClient {
       res = await _inner.send(request);
     } on Object {
       end();
+      _reachable.value = false;
       rethrow;
     }
+    _reachable.value = true;
     final body = res.stream.transform(
       StreamTransformer<List<int>, List<int>>.fromHandlers(
         handleError: (error, stack, sink) {
@@ -66,5 +74,6 @@ class NetworkActivity extends http.BaseClient {
   void close() {
     _inner.close();
     _busy.dispose();
+    _reachable.dispose();
   }
 }
