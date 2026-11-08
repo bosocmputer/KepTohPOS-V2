@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app/core/data/local/connection_monitor.dart';
 import 'package:app/core/data/local/local_db.dart';
+import 'package:app/core/data/local/offline_credentials.dart';
 import 'package:app/core/data/local/outbox_queue.dart';
 import 'package:app/core/data/supabase/supabase_pos_repository.dart';
 import 'package:app/core/di/injection.dart';
@@ -64,7 +65,9 @@ ConnectionMonitor startSync(DeviceSession session, SupabasePosRepository repo) {
     ),
     pendingCount: queue.watchPendingCount(),
   );
-  repo.outbox = queue;
+  repo
+    ..outbox = queue
+    ..credentials = OfflineCredentials(db, shopId: repo.shopId);
   sl
     ..registerSingleton<LocalDb>(db, dispose: (d) => d.close())
     ..registerSingleton<OutboxQueue>(queue)

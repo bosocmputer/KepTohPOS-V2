@@ -39,7 +39,7 @@ mixin SupabasePosOffline on SupabasePosBase {
     Map<String, dynamic> params,
     void Function(PosState s) local,
   ) async {
-    final token = staffToken;
+    final token = offlineToken ?? staffToken;
     if (token == null) {
       throw const PosCommandException('กรุณาเข้าสู่ระบบด้วย PIN ก่อน');
     }

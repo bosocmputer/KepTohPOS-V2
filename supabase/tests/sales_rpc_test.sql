@@ -4,7 +4,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(96);
+select plan(101);
 
 create schema tests;
 create function tests.q(p_role text, p_uid uuid, p_anon boolean, p_sql text) returns text
@@ -235,6 +235,16 @@ select is(tests.device_a(tests.settle_seq('60000000-0000-0000-0000-000000000009'
   (select branch_code from shops where id = tests.val('shop')::uuid) || '-POS01-' || lpad((tests.val('seq')::int + 1)::text, 6, '0'), 'ไม่ส่งเลขมา server ออกต่อจากเลขล่าสุด');
 select is(tests.device_a(format($$select 1 from close_shift(%L, '90000000-0000-0000-0000-000000000001', 129900, now())$$, tests.val('manager'))), '1', 'ปิดกะได้');
 select is((select counted from shifts where id = '90000000-0000-0000-0000-000000000001'), 129900::bigint, 'บันทึกยอดนับเงิน');
+
+-- token ออฟไลน์ (คำสั่งที่เข้าคิวตอนเน็ตหลุด)
+select tests.set_val('offline', tests.device_a($$select verify_staff_pin('10000000-0000-0000-0000-000000000001', '1111') ->> 'offline_token'$$));
+select isnt(tests.val('offline'), null, 'เข้าด้วย PIN แล้วได้ token ออฟไลน์');
+select is((select count(*)::int from private.staff_offline_tokens where token_hash = tests.val('offline')), 0, 'ไม่เก็บ token ออฟไลน์ดิบ');
+select tests.set_val('manager', tests.device_a($$select verify_staff_pin('10000000-0000-0000-0000-000000000002', '2222') ->> 'session_token'$$));
+select is(tests.device_a(format($$select (get_day_entries(%L) ->> 'expenses') is not null$$, tests.val('offline'))), 'true', 'คนอื่นเข้าเครื่องแล้ว token ออฟไลน์ของแคชเชียร์ยังใช้ส่งคำสั่งได้');
+select is(tests.owner_a('select count(*) from private.staff_offline_tokens'), 'ERR:42501', 'อ่านตาราง token ออฟไลน์ตรงไม่ได้');
+update private.staff_offline_tokens set expires_at = now() - interval '1 second' where staff_id = '10000000-0000-0000-0000-000000000001';
+select is(tests.device_a(format($$select (get_day_entries(%L) ->> 'expenses') is not null$$, tests.val('offline'))), 'ERR:42501', 'token ออฟไลน์หมดอายุ 7 วันแล้วใช้ไม่ได้');
 
 -- หมดอายุ / เพิกถอน
 select is(tests.device_a(format($$select 1 from end_staff_session(%L)$$, tests.val('manager'))), '1', 'ออกจาก session ได้');

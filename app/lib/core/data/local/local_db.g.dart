@@ -808,11 +808,546 @@ class ShopSnapshotsCompanion extends UpdateCompanion<ShopSnapshot> {
   }
 }
 
+class $OfflineStaffCredentialsTable extends OfflineStaffCredentials
+    with TableInfo<$OfflineStaffCredentialsTable, OfflineStaffCredential> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OfflineStaffCredentialsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _staffIdMeta = const VerificationMeta(
+    'staffId',
+  );
+  @override
+  late final GeneratedColumn<String> staffId = GeneratedColumn<String>(
+    'staff_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _shopIdMeta = const VerificationMeta('shopId');
+  @override
+  late final GeneratedColumn<String> shopId = GeneratedColumn<String>(
+    'shop_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _saltMeta = const VerificationMeta('salt');
+  @override
+  late final GeneratedColumn<String> salt = GeneratedColumn<String>(
+    'salt',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pinHashMeta = const VerificationMeta(
+    'pinHash',
+  );
+  @override
+  late final GeneratedColumn<String> pinHash = GeneratedColumn<String>(
+    'pin_hash',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _offlineTokenMeta = const VerificationMeta(
+    'offlineToken',
+  );
+  @override
+  late final GeneratedColumn<String> offlineToken = GeneratedColumn<String>(
+    'offline_token',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _expiresAtMeta = const VerificationMeta(
+    'expiresAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> expiresAt = GeneratedColumn<DateTime>(
+    'expires_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _failedAttemptsMeta = const VerificationMeta(
+    'failedAttempts',
+  );
+  @override
+  late final GeneratedColumn<int> failedAttempts = GeneratedColumn<int>(
+    'failed_attempts',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lockedUntilMeta = const VerificationMeta(
+    'lockedUntil',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lockedUntil = GeneratedColumn<DateTime>(
+    'locked_until',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    staffId,
+    shopId,
+    salt,
+    pinHash,
+    offlineToken,
+    expiresAt,
+    failedAttempts,
+    lockedUntil,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'offline_staff_credentials';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<OfflineStaffCredential> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('staff_id')) {
+      context.handle(
+        _staffIdMeta,
+        staffId.isAcceptableOrUnknown(data['staff_id']!, _staffIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_staffIdMeta);
+    }
+    if (data.containsKey('shop_id')) {
+      context.handle(
+        _shopIdMeta,
+        shopId.isAcceptableOrUnknown(data['shop_id']!, _shopIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_shopIdMeta);
+    }
+    if (data.containsKey('salt')) {
+      context.handle(
+        _saltMeta,
+        salt.isAcceptableOrUnknown(data['salt']!, _saltMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_saltMeta);
+    }
+    if (data.containsKey('pin_hash')) {
+      context.handle(
+        _pinHashMeta,
+        pinHash.isAcceptableOrUnknown(data['pin_hash']!, _pinHashMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pinHashMeta);
+    }
+    if (data.containsKey('offline_token')) {
+      context.handle(
+        _offlineTokenMeta,
+        offlineToken.isAcceptableOrUnknown(
+          data['offline_token']!,
+          _offlineTokenMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_offlineTokenMeta);
+    }
+    if (data.containsKey('expires_at')) {
+      context.handle(
+        _expiresAtMeta,
+        expiresAt.isAcceptableOrUnknown(data['expires_at']!, _expiresAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_expiresAtMeta);
+    }
+    if (data.containsKey('failed_attempts')) {
+      context.handle(
+        _failedAttemptsMeta,
+        failedAttempts.isAcceptableOrUnknown(
+          data['failed_attempts']!,
+          _failedAttemptsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('locked_until')) {
+      context.handle(
+        _lockedUntilMeta,
+        lockedUntil.isAcceptableOrUnknown(
+          data['locked_until']!,
+          _lockedUntilMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {staffId};
+  @override
+  OfflineStaffCredential map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return OfflineStaffCredential(
+      staffId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}staff_id'],
+      )!,
+      shopId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}shop_id'],
+      )!,
+      salt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}salt'],
+      )!,
+      pinHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pin_hash'],
+      )!,
+      offlineToken: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}offline_token'],
+      )!,
+      expiresAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}expires_at'],
+      )!,
+      failedAttempts: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}failed_attempts'],
+      )!,
+      lockedUntil: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}locked_until'],
+      ),
+    );
+  }
+
+  @override
+  $OfflineStaffCredentialsTable createAlias(String alias) {
+    return $OfflineStaffCredentialsTable(attachedDatabase, alias);
+  }
+}
+
+class OfflineStaffCredential extends DataClass
+    implements Insertable<OfflineStaffCredential> {
+  final String staffId;
+  final String shopId;
+  final String salt;
+  final String pinHash;
+
+  /// Server-issued token for commands queued by this person (7 days).
+  final String offlineToken;
+  final DateTime expiresAt;
+  final int failedAttempts;
+  final DateTime? lockedUntil;
+  const OfflineStaffCredential({
+    required this.staffId,
+    required this.shopId,
+    required this.salt,
+    required this.pinHash,
+    required this.offlineToken,
+    required this.expiresAt,
+    required this.failedAttempts,
+    this.lockedUntil,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['staff_id'] = Variable<String>(staffId);
+    map['shop_id'] = Variable<String>(shopId);
+    map['salt'] = Variable<String>(salt);
+    map['pin_hash'] = Variable<String>(pinHash);
+    map['offline_token'] = Variable<String>(offlineToken);
+    map['expires_at'] = Variable<DateTime>(expiresAt);
+    map['failed_attempts'] = Variable<int>(failedAttempts);
+    if (!nullToAbsent || lockedUntil != null) {
+      map['locked_until'] = Variable<DateTime>(lockedUntil);
+    }
+    return map;
+  }
+
+  OfflineStaffCredentialsCompanion toCompanion(bool nullToAbsent) {
+    return OfflineStaffCredentialsCompanion(
+      staffId: Value(staffId),
+      shopId: Value(shopId),
+      salt: Value(salt),
+      pinHash: Value(pinHash),
+      offlineToken: Value(offlineToken),
+      expiresAt: Value(expiresAt),
+      failedAttempts: Value(failedAttempts),
+      lockedUntil: lockedUntil == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lockedUntil),
+    );
+  }
+
+  factory OfflineStaffCredential.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return OfflineStaffCredential(
+      staffId: serializer.fromJson<String>(json['staffId']),
+      shopId: serializer.fromJson<String>(json['shopId']),
+      salt: serializer.fromJson<String>(json['salt']),
+      pinHash: serializer.fromJson<String>(json['pinHash']),
+      offlineToken: serializer.fromJson<String>(json['offlineToken']),
+      expiresAt: serializer.fromJson<DateTime>(json['expiresAt']),
+      failedAttempts: serializer.fromJson<int>(json['failedAttempts']),
+      lockedUntil: serializer.fromJson<DateTime?>(json['lockedUntil']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'staffId': serializer.toJson<String>(staffId),
+      'shopId': serializer.toJson<String>(shopId),
+      'salt': serializer.toJson<String>(salt),
+      'pinHash': serializer.toJson<String>(pinHash),
+      'offlineToken': serializer.toJson<String>(offlineToken),
+      'expiresAt': serializer.toJson<DateTime>(expiresAt),
+      'failedAttempts': serializer.toJson<int>(failedAttempts),
+      'lockedUntil': serializer.toJson<DateTime?>(lockedUntil),
+    };
+  }
+
+  OfflineStaffCredential copyWith({
+    String? staffId,
+    String? shopId,
+    String? salt,
+    String? pinHash,
+    String? offlineToken,
+    DateTime? expiresAt,
+    int? failedAttempts,
+    Value<DateTime?> lockedUntil = const Value.absent(),
+  }) => OfflineStaffCredential(
+    staffId: staffId ?? this.staffId,
+    shopId: shopId ?? this.shopId,
+    salt: salt ?? this.salt,
+    pinHash: pinHash ?? this.pinHash,
+    offlineToken: offlineToken ?? this.offlineToken,
+    expiresAt: expiresAt ?? this.expiresAt,
+    failedAttempts: failedAttempts ?? this.failedAttempts,
+    lockedUntil: lockedUntil.present ? lockedUntil.value : this.lockedUntil,
+  );
+  OfflineStaffCredential copyWithCompanion(
+    OfflineStaffCredentialsCompanion data,
+  ) {
+    return OfflineStaffCredential(
+      staffId: data.staffId.present ? data.staffId.value : this.staffId,
+      shopId: data.shopId.present ? data.shopId.value : this.shopId,
+      salt: data.salt.present ? data.salt.value : this.salt,
+      pinHash: data.pinHash.present ? data.pinHash.value : this.pinHash,
+      offlineToken: data.offlineToken.present
+          ? data.offlineToken.value
+          : this.offlineToken,
+      expiresAt: data.expiresAt.present ? data.expiresAt.value : this.expiresAt,
+      failedAttempts: data.failedAttempts.present
+          ? data.failedAttempts.value
+          : this.failedAttempts,
+      lockedUntil: data.lockedUntil.present
+          ? data.lockedUntil.value
+          : this.lockedUntil,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OfflineStaffCredential(')
+          ..write('staffId: $staffId, ')
+          ..write('shopId: $shopId, ')
+          ..write('salt: $salt, ')
+          ..write('pinHash: $pinHash, ')
+          ..write('offlineToken: $offlineToken, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('failedAttempts: $failedAttempts, ')
+          ..write('lockedUntil: $lockedUntil')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    staffId,
+    shopId,
+    salt,
+    pinHash,
+    offlineToken,
+    expiresAt,
+    failedAttempts,
+    lockedUntil,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is OfflineStaffCredential &&
+          other.staffId == this.staffId &&
+          other.shopId == this.shopId &&
+          other.salt == this.salt &&
+          other.pinHash == this.pinHash &&
+          other.offlineToken == this.offlineToken &&
+          other.expiresAt == this.expiresAt &&
+          other.failedAttempts == this.failedAttempts &&
+          other.lockedUntil == this.lockedUntil);
+}
+
+class OfflineStaffCredentialsCompanion
+    extends UpdateCompanion<OfflineStaffCredential> {
+  final Value<String> staffId;
+  final Value<String> shopId;
+  final Value<String> salt;
+  final Value<String> pinHash;
+  final Value<String> offlineToken;
+  final Value<DateTime> expiresAt;
+  final Value<int> failedAttempts;
+  final Value<DateTime?> lockedUntil;
+  final Value<int> rowid;
+  const OfflineStaffCredentialsCompanion({
+    this.staffId = const Value.absent(),
+    this.shopId = const Value.absent(),
+    this.salt = const Value.absent(),
+    this.pinHash = const Value.absent(),
+    this.offlineToken = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+    this.failedAttempts = const Value.absent(),
+    this.lockedUntil = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  OfflineStaffCredentialsCompanion.insert({
+    required String staffId,
+    required String shopId,
+    required String salt,
+    required String pinHash,
+    required String offlineToken,
+    required DateTime expiresAt,
+    this.failedAttempts = const Value.absent(),
+    this.lockedUntil = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : staffId = Value(staffId),
+       shopId = Value(shopId),
+       salt = Value(salt),
+       pinHash = Value(pinHash),
+       offlineToken = Value(offlineToken),
+       expiresAt = Value(expiresAt);
+  static Insertable<OfflineStaffCredential> custom({
+    Expression<String>? staffId,
+    Expression<String>? shopId,
+    Expression<String>? salt,
+    Expression<String>? pinHash,
+    Expression<String>? offlineToken,
+    Expression<DateTime>? expiresAt,
+    Expression<int>? failedAttempts,
+    Expression<DateTime>? lockedUntil,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (staffId != null) 'staff_id': staffId,
+      if (shopId != null) 'shop_id': shopId,
+      if (salt != null) 'salt': salt,
+      if (pinHash != null) 'pin_hash': pinHash,
+      if (offlineToken != null) 'offline_token': offlineToken,
+      if (expiresAt != null) 'expires_at': expiresAt,
+      if (failedAttempts != null) 'failed_attempts': failedAttempts,
+      if (lockedUntil != null) 'locked_until': lockedUntil,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  OfflineStaffCredentialsCompanion copyWith({
+    Value<String>? staffId,
+    Value<String>? shopId,
+    Value<String>? salt,
+    Value<String>? pinHash,
+    Value<String>? offlineToken,
+    Value<DateTime>? expiresAt,
+    Value<int>? failedAttempts,
+    Value<DateTime?>? lockedUntil,
+    Value<int>? rowid,
+  }) {
+    return OfflineStaffCredentialsCompanion(
+      staffId: staffId ?? this.staffId,
+      shopId: shopId ?? this.shopId,
+      salt: salt ?? this.salt,
+      pinHash: pinHash ?? this.pinHash,
+      offlineToken: offlineToken ?? this.offlineToken,
+      expiresAt: expiresAt ?? this.expiresAt,
+      failedAttempts: failedAttempts ?? this.failedAttempts,
+      lockedUntil: lockedUntil ?? this.lockedUntil,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (staffId.present) {
+      map['staff_id'] = Variable<String>(staffId.value);
+    }
+    if (shopId.present) {
+      map['shop_id'] = Variable<String>(shopId.value);
+    }
+    if (salt.present) {
+      map['salt'] = Variable<String>(salt.value);
+    }
+    if (pinHash.present) {
+      map['pin_hash'] = Variable<String>(pinHash.value);
+    }
+    if (offlineToken.present) {
+      map['offline_token'] = Variable<String>(offlineToken.value);
+    }
+    if (expiresAt.present) {
+      map['expires_at'] = Variable<DateTime>(expiresAt.value);
+    }
+    if (failedAttempts.present) {
+      map['failed_attempts'] = Variable<int>(failedAttempts.value);
+    }
+    if (lockedUntil.present) {
+      map['locked_until'] = Variable<DateTime>(lockedUntil.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OfflineStaffCredentialsCompanion(')
+          ..write('staffId: $staffId, ')
+          ..write('shopId: $shopId, ')
+          ..write('salt: $salt, ')
+          ..write('pinHash: $pinHash, ')
+          ..write('offlineToken: $offlineToken, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('failedAttempts: $failedAttempts, ')
+          ..write('lockedUntil: $lockedUntil, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$LocalDb extends GeneratedDatabase {
   _$LocalDb(QueryExecutor e) : super(e);
   $LocalDbManager get managers => $LocalDbManager(this);
   late final $OutboxEntriesTable outboxEntries = $OutboxEntriesTable(this);
   late final $ShopSnapshotsTable shopSnapshots = $ShopSnapshotsTable(this);
+  late final $OfflineStaffCredentialsTable offlineStaffCredentials =
+      $OfflineStaffCredentialsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -820,6 +1355,7 @@ abstract class _$LocalDb extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     outboxEntries,
     shopSnapshots,
+    offlineStaffCredentials,
   ];
 }
 
@@ -1273,6 +1809,300 @@ typedef $$ShopSnapshotsTableProcessedTableManager =
       ShopSnapshot,
       PrefetchHooks Function()
     >;
+typedef $$OfflineStaffCredentialsTableCreateCompanionBuilder =
+    OfflineStaffCredentialsCompanion Function({
+      required String staffId,
+      required String shopId,
+      required String salt,
+      required String pinHash,
+      required String offlineToken,
+      required DateTime expiresAt,
+      Value<int> failedAttempts,
+      Value<DateTime?> lockedUntil,
+      Value<int> rowid,
+    });
+typedef $$OfflineStaffCredentialsTableUpdateCompanionBuilder =
+    OfflineStaffCredentialsCompanion Function({
+      Value<String> staffId,
+      Value<String> shopId,
+      Value<String> salt,
+      Value<String> pinHash,
+      Value<String> offlineToken,
+      Value<DateTime> expiresAt,
+      Value<int> failedAttempts,
+      Value<DateTime?> lockedUntil,
+      Value<int> rowid,
+    });
+
+class $$OfflineStaffCredentialsTableFilterComposer
+    extends Composer<_$LocalDb, $OfflineStaffCredentialsTable> {
+  $$OfflineStaffCredentialsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get staffId => $composableBuilder(
+    column: $table.staffId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get shopId => $composableBuilder(
+    column: $table.shopId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get salt => $composableBuilder(
+    column: $table.salt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pinHash => $composableBuilder(
+    column: $table.pinHash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get offlineToken => $composableBuilder(
+    column: $table.offlineToken,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get failedAttempts => $composableBuilder(
+    column: $table.failedAttempts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lockedUntil => $composableBuilder(
+    column: $table.lockedUntil,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$OfflineStaffCredentialsTableOrderingComposer
+    extends Composer<_$LocalDb, $OfflineStaffCredentialsTable> {
+  $$OfflineStaffCredentialsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get staffId => $composableBuilder(
+    column: $table.staffId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get shopId => $composableBuilder(
+    column: $table.shopId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get salt => $composableBuilder(
+    column: $table.salt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pinHash => $composableBuilder(
+    column: $table.pinHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get offlineToken => $composableBuilder(
+    column: $table.offlineToken,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get failedAttempts => $composableBuilder(
+    column: $table.failedAttempts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lockedUntil => $composableBuilder(
+    column: $table.lockedUntil,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$OfflineStaffCredentialsTableAnnotationComposer
+    extends Composer<_$LocalDb, $OfflineStaffCredentialsTable> {
+  $$OfflineStaffCredentialsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get staffId =>
+      $composableBuilder(column: $table.staffId, builder: (column) => column);
+
+  GeneratedColumn<String> get shopId =>
+      $composableBuilder(column: $table.shopId, builder: (column) => column);
+
+  GeneratedColumn<String> get salt =>
+      $composableBuilder(column: $table.salt, builder: (column) => column);
+
+  GeneratedColumn<String> get pinHash =>
+      $composableBuilder(column: $table.pinHash, builder: (column) => column);
+
+  GeneratedColumn<String> get offlineToken => $composableBuilder(
+    column: $table.offlineToken,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get expiresAt =>
+      $composableBuilder(column: $table.expiresAt, builder: (column) => column);
+
+  GeneratedColumn<int> get failedAttempts => $composableBuilder(
+    column: $table.failedAttempts,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lockedUntil => $composableBuilder(
+    column: $table.lockedUntil,
+    builder: (column) => column,
+  );
+}
+
+class $$OfflineStaffCredentialsTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDb,
+          $OfflineStaffCredentialsTable,
+          OfflineStaffCredential,
+          $$OfflineStaffCredentialsTableFilterComposer,
+          $$OfflineStaffCredentialsTableOrderingComposer,
+          $$OfflineStaffCredentialsTableAnnotationComposer,
+          $$OfflineStaffCredentialsTableCreateCompanionBuilder,
+          $$OfflineStaffCredentialsTableUpdateCompanionBuilder,
+          (
+            OfflineStaffCredential,
+            BaseReferences<
+              _$LocalDb,
+              $OfflineStaffCredentialsTable,
+              OfflineStaffCredential
+            >,
+          ),
+          OfflineStaffCredential,
+          PrefetchHooks Function()
+        > {
+  $$OfflineStaffCredentialsTableTableManager(
+    _$LocalDb db,
+    $OfflineStaffCredentialsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OfflineStaffCredentialsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$OfflineStaffCredentialsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$OfflineStaffCredentialsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> staffId = const Value.absent(),
+                Value<String> shopId = const Value.absent(),
+                Value<String> salt = const Value.absent(),
+                Value<String> pinHash = const Value.absent(),
+                Value<String> offlineToken = const Value.absent(),
+                Value<DateTime> expiresAt = const Value.absent(),
+                Value<int> failedAttempts = const Value.absent(),
+                Value<DateTime?> lockedUntil = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OfflineStaffCredentialsCompanion(
+                staffId: staffId,
+                shopId: shopId,
+                salt: salt,
+                pinHash: pinHash,
+                offlineToken: offlineToken,
+                expiresAt: expiresAt,
+                failedAttempts: failedAttempts,
+                lockedUntil: lockedUntil,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String staffId,
+                required String shopId,
+                required String salt,
+                required String pinHash,
+                required String offlineToken,
+                required DateTime expiresAt,
+                Value<int> failedAttempts = const Value.absent(),
+                Value<DateTime?> lockedUntil = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OfflineStaffCredentialsCompanion.insert(
+                staffId: staffId,
+                shopId: shopId,
+                salt: salt,
+                pinHash: pinHash,
+                offlineToken: offlineToken,
+                expiresAt: expiresAt,
+                failedAttempts: failedAttempts,
+                lockedUntil: lockedUntil,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $OfflineStaffCredentialsTable,
+                    OfflineStaffCredential
+                  >(table),
+                  BaseReferences<
+                    _$LocalDb,
+                    $OfflineStaffCredentialsTable,
+                    OfflineStaffCredential
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$OfflineStaffCredentialsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDb,
+      $OfflineStaffCredentialsTable,
+      OfflineStaffCredential,
+      $$OfflineStaffCredentialsTableFilterComposer,
+      $$OfflineStaffCredentialsTableOrderingComposer,
+      $$OfflineStaffCredentialsTableAnnotationComposer,
+      $$OfflineStaffCredentialsTableCreateCompanionBuilder,
+      $$OfflineStaffCredentialsTableUpdateCompanionBuilder,
+      (
+        OfflineStaffCredential,
+        BaseReferences<
+          _$LocalDb,
+          $OfflineStaffCredentialsTable,
+          OfflineStaffCredential
+        >,
+      ),
+      OfflineStaffCredential,
+      PrefetchHooks Function()
+    >;
 
 class $LocalDbManager {
   final _$LocalDb _db;
@@ -1281,4 +2111,9 @@ class $LocalDbManager {
       $$OutboxEntriesTableTableManager(_db, _db.outboxEntries);
   $$ShopSnapshotsTableTableManager get shopSnapshots =>
       $$ShopSnapshotsTableTableManager(_db, _db.shopSnapshots);
+  $$OfflineStaffCredentialsTableTableManager get offlineStaffCredentials =>
+      $$OfflineStaffCredentialsTableTableManager(
+        _db,
+        _db.offlineStaffCredentials,
+      );
 }

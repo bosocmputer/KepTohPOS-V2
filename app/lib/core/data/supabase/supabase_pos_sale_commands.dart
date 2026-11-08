@@ -173,12 +173,24 @@ mixin SupabasePosSaleCommands on SupabasePosBase, SupabasePosOffline
     DateTime? now,
   }) async {
     if (!allowCashier && staff.role == 'cashier') return false;
-    final ok = await staffRpc<bool>('void_bill', <String, dynamic>{
-      'p_bill_id': billId,
-      'p_reason': reason,
-      'p_at': _at(now),
-    });
-    if (ok) await reload();
+    var ok = true;
+    await runCommand(
+      'void_bill',
+      newId(),
+      <String, dynamic>{
+        'p_bill_id': billId,
+        'p_reason': reason,
+        'p_at': _at(now),
+      },
+      (s) => ok = voidBill(
+        s,
+        billId: billId,
+        me: staff,
+        reason: reason,
+        allowCashier: allowCashier,
+        now: now,
+      ),
+    );
     return ok;
   }
 

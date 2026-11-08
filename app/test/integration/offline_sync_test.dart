@@ -2,6 +2,7 @@
 import 'dart:io';
 
 import 'package:app/core/data/local/local_db.dart';
+import 'package:app/core/data/local/offline_credentials.dart';
 import 'package:app/core/data/local/outbox_queue.dart';
 import 'package:app/core/data/supabase/supabase_pos_repository.dart';
 import 'package:app/domain/domain.dart';
@@ -23,6 +24,113 @@ class _Switchable extends http.BaseClient {
   }
 }
 
+/// A paired device on a switchable network, a cashier (PIN 1111), a manager
+/// (PIN 2222), two tables and one package.
+class _Shop {
+  new(this.owner, this.net, this.repo, this.id);
+
+  final SupabaseClient owner;
+  final _Switchable net;
+  final SupabasePosRepository repo;
+  final String id;
+
+  StaffMember staff(String role) =>
+      repo.state.staff.firstWhere((s) => s.role == role);
+
+  Future<String> sell(StaffMember me, DiningTable table) async {
+    final billId = repo.newBillId(DateTime.now());
+    await repo.settleOrder(
+      table: table,
+      cart: TableTotals(a: 2),
+      staff: me,
+      timing: 'before',
+      packageId: repo.state.packages.single.id,
+      method: repo.state.payments.firstWhere((p) => p.type == 'cash'),
+      received: 59800,
+      billId: billId,
+      notes: '',
+    );
+    return billId;
+  }
+}
+
+Future<_Shop> _openShop(String url, String key) async {
+  HttpOverrides.global = null;
+  const auth = AuthClientOptions(
+    autoRefreshToken: false,
+    authFlowType: AuthFlowType.implicit,
+  );
+  final net = _Switchable();
+  final owner = SupabaseClient(url, key, authOptions: auth);
+  final device = SupabaseClient(url, key, authOptions: auth, httpClient: net);
+  await owner.auth.signUp(
+    email: 'off-${DateTime.now().microsecondsSinceEpoch}@example.test',
+    password: 'integration-pass-1',
+  );
+  final shopId = await owner.rpc<String>(
+    'create_organization_with_shop',
+    params: <String, dynamic>{
+      'p_org_name': 'ออฟไลน์',
+      'p_shop_name': 'ออฟไลน์',
+    },
+  );
+  final pairing = await owner.rpc<List<dynamic>>(
+    'create_device_pairing',
+    params: <String, dynamic>{'p_shop_id': shopId, 'p_name': 'เครื่อง 1'},
+  );
+  await device.auth.signInAnonymously();
+  await device.rpc<List<dynamic>>(
+    'claim_device',
+    params: <String, dynamic>{
+      'p_pairing_code': (pairing.first as Map<String, dynamic>)['pairing_code'],
+    },
+  );
+  for (final (name, role, pin) in <(String, String, String)>[
+    ('แคชเชียร์', 'cashier', '1111'),
+    ('ผู้จัดการ', 'manager', '2222'),
+  ]) {
+    final row = await owner
+        .from('staff')
+        .insert(<String, dynamic>{
+          'shop_id': shopId,
+          'name': name,
+          'role': role,
+        })
+        .select('id')
+        .single();
+    await owner.rpc<void>(
+      'set_staff_pin',
+      params: <String, dynamic>{'p_staff_id': row['id'], 'p_pin': pin},
+    );
+  }
+  await owner.from('dining_tables').insert(<Map<String, dynamic>>[
+    <String, dynamic>{'shop_id': shopId, 'name': 'A1', 'seats': 4},
+    <String, dynamic>{'shop_id': shopId, 'name': 'A2', 'seats': 4},
+  ]);
+  await owner.from('packages').insert(<String, dynamic>{
+    'shop_id': shopId,
+    'name': 'บุฟเฟต์',
+    'adult_price': 29900,
+    'child_price': 14900,
+  });
+  final repo = await SupabasePosRepository.open(
+    deviceClient: device,
+    shopId: shopId,
+    deviceUserId: device.auth.currentUser!.id,
+  );
+  final db = LocalDb(NativeDatabase.memory());
+  addTearDown(db.close);
+  repo
+    ..outbox = OutboxQueue(db, shopId: shopId)
+    // The VM has no Web Crypto; a plain hash is enough to compare PINs here.
+    ..credentials = OfflineCredentials(
+      db,
+      shopId: shopId,
+      hash: (pin, salt) async => '$salt:$pin',
+    );
+  return _Shop(owner, net, repo, shopId);
+}
+
 void main() {
   final url = Platform.environment['SUPABASE_TEST_URL'];
   final key = Platform.environment['SUPABASE_TEST_ANON_KEY'];
@@ -32,96 +140,17 @@ void main() {
     'bills made offline sync later with the same numbers',
     skip: skip,
     () async {
-      // Arrange: a shop, a paired device on a switchable network, a cashier.
-      HttpOverrides.global = null;
-      const auth = AuthClientOptions(
-        autoRefreshToken: false,
-        authFlowType: AuthFlowType.implicit,
-      );
-      final net = _Switchable();
-      final owner = SupabaseClient(url!, key!, authOptions: auth);
-      final device = SupabaseClient(
-        url,
-        key,
-        authOptions: auth,
-        httpClient: net,
-      );
-      await owner.auth.signUp(
-        email: 'off-${DateTime.now().microsecondsSinceEpoch}@example.test',
-        password: 'integration-pass-1',
-      );
-      final shopId = await owner.rpc<String>(
-        'create_organization_with_shop',
-        params: <String, dynamic>{
-          'p_org_name': 'ออฟไลน์',
-          'p_shop_name': 'ออฟไลน์',
-        },
-      );
-      final pairing = await owner.rpc<List<dynamic>>(
-        'create_device_pairing',
-        params: <String, dynamic>{'p_shop_id': shopId, 'p_name': 'เครื่อง 1'},
-      );
-      await device.auth.signInAnonymously();
-      await device.rpc<List<dynamic>>(
-        'claim_device',
-        params: <String, dynamic>{
-          'p_pairing_code':
-              (pairing.first as Map<String, dynamic>)['pairing_code'],
-        },
-      );
-      final cashier = await owner
-          .from('staff')
-          .insert(<String, dynamic>{
-            'shop_id': shopId,
-            'name': 'แคชเชียร์',
-            'role': 'cashier',
-          })
-          .select('id')
-          .single();
-      await owner.rpc<void>(
-        'set_staff_pin',
-        params: <String, dynamic>{'p_staff_id': cashier['id'], 'p_pin': '1111'},
-      );
-      await owner.from('dining_tables').insert(<Map<String, dynamic>>[
-        <String, dynamic>{'shop_id': shopId, 'name': 'A1', 'seats': 4},
-        <String, dynamic>{'shop_id': shopId, 'name': 'A2', 'seats': 4},
-      ]);
-      await owner.from('packages').insert(<String, dynamic>{
-        'shop_id': shopId,
-        'name': 'บุฟเฟต์',
-        'adult_price': 29900,
-        'child_price': 14900,
-      });
-      final repo = await SupabasePosRepository.open(
-        deviceClient: device,
-        shopId: shopId,
-        deviceUserId: device.auth.currentUser!.id,
-      );
-      final db = LocalDb(NativeDatabase.memory());
-      addTearDown(db.close);
-      repo.outbox = OutboxQueue(db, shopId: shopId);
-      final me = repo.state.staff.firstWhere((s) => s.id == cashier['id']);
+      // Arrange
+      final shop = await _openShop(url!, key!);
+      final repo = shop.repo;
+      final me = shop.staff('cashier');
       await repo.signInWithPin(me.id, '1111');
       await repo.openCashShift(staffId: me.id, floatAmount: 100000);
-      final cash = repo.state.payments.firstWhere((p) => p.type == 'cash');
-      final pkg = repo.state.packages.single;
-
-      Future<void> sell(DiningTable table) => repo.settleOrder(
-        table: table,
-        cart: TableTotals(a: 2),
-        staff: me,
-        timing: 'before',
-        packageId: pkg.id,
-        method: cash,
-        received: 59800,
-        billId: repo.newBillId(DateTime.now()),
-        notes: '',
-      );
 
       // Act: the internet drops, two tables pay.
-      net.down = true;
-      await sell(repo.state.tables[0]);
-      await sell(repo.state.tables[1]);
+      shop.net.down = true;
+      await shop.sell(me, repo.state.tables[0]);
+      await shop.sell(me, repo.state.tables[1]);
 
       // Assert: sold on the device with its own receipt numbers, queued.
       expect(repo.state.sales.map((b) => b.no), <String>[
@@ -132,17 +161,17 @@ void main() {
       expect(await repo.outbox!.pendingCount(), 2);
 
       // Act: the internet is back.
-      net.down = false;
+      shop.net.down = false;
       final result = await repo.flushOutbox();
 
       // Assert: the server keeps both bills with the same numbers and totals.
       expect(result!.sent, 2);
       expect(result.rejected, 0);
       expect(await repo.outbox!.pendingCount(), 0);
-      final bills = await owner
+      final bills = await shop.owner
           .from('bills')
           .select('no, total')
-          .eq('shop_id', shopId)
+          .eq('shop_id', shop.id)
           .order('no', ascending: true);
       expect(bills, <Map<String, dynamic>>[
         <String, dynamic>{'no': '00000-POS01-000001', 'total': 59800},
@@ -152,6 +181,70 @@ void main() {
         '00000-POS01-000001',
         '00000-POS01-000002',
       ]);
+    },
+  );
+
+  test(
+    'a sale queued by one person survives another sign-in; offline PIN; '
+    'manager voids offline',
+    skip: skip,
+    () async {
+      // Arrange: the manager opens the shift, the cashier signs in online.
+      final shop = await _openShop(url!, key!);
+      final repo = shop.repo;
+      final cashier = shop.staff('cashier');
+      final manager = shop.staff('manager');
+      await repo.signInWithPin(manager.id, '2222');
+      await repo.openCashShift(staffId: manager.id, floatAmount: 100000);
+      await repo.signInWithPin(cashier.id, '1111');
+
+      // Act: the internet drops while the cashier sells.
+      shop.net.down = true;
+      final billId = await shop.sell(cashier, repo.state.tables.first);
+
+      // Act: back online, the manager signs in before the queue is sent,
+      // which ends the cashier's session on this device.
+      shop.net.down = false;
+      expect(
+        await repo.signInWithPin(manager.id, '2222'),
+        PinSignInResult.success,
+      );
+      final first = await repo.flushOutbox();
+
+      // Assert: the cashier's sale still went through.
+      expect(first!.rejected, 0);
+      expect(first.sent, 1);
+
+      // Act & Assert: offline, PINs are checked on the device.
+      shop.net.down = true;
+      await repo.signOutStaff();
+      expect(
+        await repo.signInWithPin(manager.id, '0000'),
+        PinSignInResult.invalid,
+      );
+      expect(
+        await repo.signInWithPin(manager.id, '2222'),
+        PinSignInResult.success,
+      );
+
+      // Act: still offline, the manager voids the bill.
+      expect(
+        await repo.voidSale(billId: billId, staff: manager, reason: 'ทดสอบ'),
+        isTrue,
+      );
+      expect(repo.state.sales.single.voided, isTrue);
+      shop.net.down = false;
+      final second = await repo.flushOutbox();
+
+      // Assert: the server has the bill, voided.
+      expect(second!.sent, 1);
+      expect(second.rejected, 0);
+      final bill = await shop.owner
+          .from('bills')
+          .select('voided')
+          .eq('id', billId)
+          .single();
+      expect(bill['voided'], isTrue);
     },
   );
 }

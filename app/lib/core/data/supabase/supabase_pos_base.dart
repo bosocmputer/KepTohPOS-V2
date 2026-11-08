@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:app/core/data/local/offline_credentials.dart';
 import 'package:app/core/data/local/outbox_queue.dart';
 import 'package:app/core/data/supabase/supabase_state_loader.dart';
 import 'package:app/domain/domain.dart';
@@ -41,6 +42,13 @@ abstract class SupabasePosBase {
 
   /// Commands made offline; set once the browser database is open.
   OutboxQueue? outbox;
+
+  /// PIN checks for signing in offline; set with [outbox].
+  OfflineCredentials? credentials;
+
+  /// The signed-in person's 7-day token, which queued commands carry so they
+  /// stay valid after someone else signs in on this device.
+  String? offlineToken;
 
   /// `BRANCH-POSxx`, so this device can number its own receipts offline;
   /// `null` leaves numbering to the server.

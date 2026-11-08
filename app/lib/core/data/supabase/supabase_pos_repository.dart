@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:app/core/data/local/offline_credentials.dart';
 import 'package:app/core/data/supabase/supabase_pos_base.dart';
 import 'package:app/core/data/supabase/supabase_pos_offline.dart';
 import 'package:app/core/data/supabase/supabase_pos_sale_commands.dart';
@@ -101,7 +102,11 @@ class SupabasePosRepository extends SupabasePosBase
         params: <String, dynamic>{'p_staff_id': staffId, 'p_pin': pin},
       );
     } on Object catch (e) {
-      throw describeError(e);
+      final error = describeError(e);
+      if (error is PosOfflineException && credentials != null) {
+        return await _signInOffline(staffId, pin);
+      }
+      throw error;
     }
     if (result['ok'] != true) {
       return result['reason'] == 'locked'
@@ -109,15 +114,49 @@ class SupabasePosRepository extends SupabasePosBase
           : PinSignInResult.invalid;
     }
     staffToken = result['session_token'] as String?;
+    offlineToken = result['offline_token'] as String?;
     signedInStaffId = staffId;
+    final token = offlineToken;
+    final expires = result['offline_expires_at'] as String?;
+    if (token != null && expires != null) {
+      await credentials?.save(
+        staffId: staffId,
+        pin: pin,
+        offlineToken: token,
+        expiresAt: DateTime.parse(expires),
+      );
+    }
     await reload();
     return PinSignInResult.success;
+  }
+
+  Future<PinSignInResult> _signInOffline(String staffId, String pin) async {
+    final check = await credentials!.verify(staffId, pin);
+    switch (check.result) {
+      case OfflinePinResult.success:
+        staffToken = check.token;
+        offlineToken = check.token;
+        signedInStaffId = staffId;
+        if (!controller.isClosed) controller.add(posState);
+        return PinSignInResult.success;
+      case OfflinePinResult.locked:
+        return PinSignInResult.locked;
+      case OfflinePinResult.invalid:
+        return PinSignInResult.invalid;
+      case OfflinePinResult.unknown:
+      case OfflinePinResult.expired:
+        throw const PosCommandException(
+          'ตอนนี้ออฟไลน์ และคนนี้ยังไม่ได้เข้าเครื่องนี้ใน 7 วันที่ผ่านมา '
+          'กรุณาให้คนที่เคยเข้าแล้วใช้งานไปก่อน',
+        );
+    }
   }
 
   @override
   Future<void> signOutStaff() async {
     final token = staffToken;
     staffToken = null;
+    offlineToken = null;
     signedInStaffId = null;
     if (token != null) {
       try {
@@ -129,7 +168,11 @@ class SupabasePosRepository extends SupabasePosBase
         // The token is already forgotten here and expires on the server.
       }
     }
-    await reload();
+    try {
+      await reload();
+    } on PosOfflineException {
+      if (!controller.isClosed) controller.add(posState);
+    }
   }
 
   /// Applies theme changes locally, and saves them when an owner is signed in.
