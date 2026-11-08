@@ -4,7 +4,8 @@ import 'package:app/features/onboarding/data/device_session.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Owner sign-in: LINE first, with email and password as the fallback.
+/// Owner sign-in: LINE first, then Google, with email and password as the
+/// fallback.
 class OwnerLoginForm extends StatefulWidget {
   const new({required this.session, required this.onSignedIn, super.key});
 
@@ -76,6 +77,14 @@ class _OwnerLoginFormState extends State<OwnerLoginForm> {
           block: true,
           disabled: _busy,
           onPressed: () => _run(widget.session.signInOwnerWithLine),
+        ),
+        const SizedBox(height: AppDimensions.space2),
+        Btn(
+          key: const ValueKey('owner-google-btn'),
+          label: 'เข้าสู่ระบบด้วย Google',
+          block: true,
+          disabled: _busy,
+          onPressed: () => _run(widget.session.signInOwnerWithGoogle),
         ),
         const SizedBox(height: AppDimensions.space4),
         Field(

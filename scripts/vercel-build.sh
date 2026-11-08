@@ -27,5 +27,9 @@ if [ "${POS_BACKEND:-}" = "supabase" ]; then
     "--dart-define=SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:?SUPABASE_ANON_KEY is required}"
   )
 fi
+# Cloudflare Turnstile site key (public); empty leaves captcha off.
+if [ -n "${CAPTCHA_SITE_KEY:-}" ]; then
+  DEFINES+=("--dart-define=CAPTCHA_SITE_KEY=${CAPTCHA_SITE_KEY}")
+fi
 
 flutter build web --release ${DEFINES[@]+"${DEFINES[@]}"}

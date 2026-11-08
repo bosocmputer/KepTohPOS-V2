@@ -1,5 +1,6 @@
 import 'package:app/core/data/supabase/network_activity.dart';
 import 'package:app/core/data/supabase/supabase_pos_repository.dart';
+import 'package:app/features/onboarding/data/captcha.dart';
 import 'package:app/features/onboarding/data/device_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -105,7 +106,7 @@ class DeviceSession {
   /// Pairs this device using a one-time code and returns its shop id.
   Future<String> claim(String code) async {
     if (_deviceAuth.userId == null) {
-      await _deviceAuth.signInAnonymously();
+      await _deviceAuth.signInAnonymously(captchaToken: await captchaToken());
     }
     final rows = await device.rpc<List<dynamic>>(
       'claim_device',
@@ -124,19 +125,32 @@ class DeviceSession {
 
   /// Signs the owner in with email and password.
   Future<void> signInOwner(String email, String password) async {
-    await owner.auth.signInWithPassword(email: email, password: password);
+    await owner.auth.signInWithPassword(
+      email: email,
+      password: password,
+      captchaToken: await captchaToken(),
+    );
   }
 
   /// Creates an owner account. Returns `false` when the project requires the
   /// email to be confirmed before the first sign-in.
   Future<bool> signUpOwner(String email, String password) async {
-    final res = await owner.auth.signUp(email: email, password: password);
+    final res = await owner.auth.signUp(
+      email: email,
+      password: password,
+      captchaToken: await captchaToken(),
+    );
     return res.session != null;
   }
 
   /// Sends the browser to LINE; the app reloads signed in when it returns.
   Future<void> signInOwnerWithLine() async {
     await owner.auth.signInWithOAuth(_kLineProvider);
+  }
+
+  /// Sends the browser to Google; the app reloads signed in when it returns.
+  Future<void> signInOwnerWithGoogle() async {
+    await owner.auth.signInWithOAuth(OAuthProvider.google);
   }
 
   /// Lists the shops the signed-in owner can manage.
