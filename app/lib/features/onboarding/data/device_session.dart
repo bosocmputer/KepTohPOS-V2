@@ -159,6 +159,7 @@ class DeviceSession {
         deviceClient: device,
         ownerClient: owner,
         shopId: shopId,
+        deviceUserId: _deviceAuth.userId,
       );
 
   /// Signs the owner in with email and password.

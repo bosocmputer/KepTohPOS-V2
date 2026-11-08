@@ -77,7 +77,7 @@ class _OnboardingAppState extends State<OnboardingApp> {
     final session = _session!;
     final repo = await session.openRepository(shopId);
     await configureDependencies(repository: repo, deviceSession: session);
-    final sync = startSync(session, shopId);
+    final sync = startSync(session, repo);
     runApp(KepTohApp(busy: session.busy, sync: sync.status));
   }
 

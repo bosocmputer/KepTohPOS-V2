@@ -4,7 +4,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(93);
+select plan(96);
 
 create schema tests;
 create function tests.q(p_role text, p_uid uuid, p_anon boolean, p_sql text) returns text
@@ -220,6 +220,19 @@ select tests.device_a(format($$select 1 from open_shift(%L, '90000000-0000-0000-
 select is((select count(*)::int from shifts where shop_id = tests.val('shop')::uuid), 2, 'เปิดกะซ้ำ id เดิมไม่บันทึกซ้ำ');
 select is(tests.device_a(format($$select 1 from open_shift(%L, '90000000-0000-0000-0000-000000000002', 100000, now())$$, tests.val('manager'))), 'ERR:23505', 'เปิดสองกะพร้อมกันไม่ได้');
 select is(tests.device_a(format($$select settle_bill(%L, '60000000-0000-0000-0000-000000000006', '70000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 'before', 1, 0, 0, '{}', '50000000-0000-0000-0000-000000000001', 29900, 29900, now()) ->> 'shift_id'$$, tests.val('manager'))), '90000000-0000-0000-0000-000000000001', 'บิลผูกกับกะที่เปิดอยู่');
+-- เลขใบเสร็จจากเครื่อง (ขายตอนออฟไลน์)
+create function tests.settle_seq(p_bill text, p_session text, p_seq text) returns text language sql as $$
+  select format(
+    $f$select settle_bill(%L, %L, %L, '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 'before', 1, 0, 0, '{}', '50000000-0000-0000-0000-000000000001', 29900, 29900, now(), p_seq => %s) ->> 'no'$f$,
+    tests.val('manager'), p_bill, p_session, p_seq
+  )
+$$;
+select tests.set_val('seq', (select (receipt_seq + 5)::text from devices where shop_id = tests.val('shop')::uuid and revoked_at is null));
+select is(tests.device_a(tests.settle_seq('60000000-0000-0000-0000-000000000007', '70000000-0000-0000-0000-000000000006', tests.val('seq'))),
+  (select branch_code from shops where id = tests.val('shop')::uuid) || '-POS01-' || lpad(tests.val('seq'), 6, '0'), 'ใช้เลขใบเสร็จที่เครื่องส่งมา');
+select is(tests.device_a(tests.settle_seq('60000000-0000-0000-0000-000000000008', '70000000-0000-0000-0000-000000000006', tests.val('seq'))), 'ERR:23505', 'เลขที่ใช้แล้วใช้ซ้ำไม่ได้');
+select is(tests.device_a(tests.settle_seq('60000000-0000-0000-0000-000000000009', '70000000-0000-0000-0000-000000000006', 'null')),
+  (select branch_code from shops where id = tests.val('shop')::uuid) || '-POS01-' || lpad((tests.val('seq')::int + 1)::text, 6, '0'), 'ไม่ส่งเลขมา server ออกต่อจากเลขล่าสุด');
 select is(tests.device_a(format($$select 1 from close_shift(%L, '90000000-0000-0000-0000-000000000001', 129900, now())$$, tests.val('manager'))), '1', 'ปิดกะได้');
 select is((select counted from shifts where id = '90000000-0000-0000-0000-000000000001'), 129900::bigint, 'บันทึกยอดนับเงิน');
 

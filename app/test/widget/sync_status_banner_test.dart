@@ -36,15 +36,15 @@ void main() {
       tester,
       const SyncStatus(online: false, pending: 0),
     );
-    expect(find.text('ออฟไลน์ · ตรวจการเชื่อมต่ออินเทอร์เน็ต'), findsOneWidget);
+    expect(
+      find.text('ออฟไลน์ · ขายต่อได้ ข้อมูลจะส่งเมื่อเน็ตกลับมา'),
+      findsOneWidget,
+    );
 
     // Act & Assert
     status.value = const SyncStatus(online: false, pending: 2);
     await tester.pump();
-    expect(
-      find.text('ออฟไลน์ · รอส่ง 2 รายการเมื่อเน็ตกลับมา'),
-      findsOneWidget,
-    );
+    expect(find.text('ออฟไลน์ · ขายต่อได้ · รอส่ง 2 รายการ'), findsOneWidget);
 
     status.value = const SyncStatus(online: true, pending: 2);
     await tester.pump();

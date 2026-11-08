@@ -15,8 +15,8 @@ class SyncStatusBanner extends StatelessWidget {
   static String? textFor(SyncStatus s) {
     if (!s.online) {
       return s.pending > 0
-          ? 'ออฟไลน์ · รอส่ง ${s.pending} รายการเมื่อเน็ตกลับมา'
-          : 'ออฟไลน์ · ตรวจการเชื่อมต่ออินเทอร์เน็ต';
+          ? 'ออฟไลน์ · ขายต่อได้ · รอส่ง ${s.pending} รายการ'
+          : 'ออฟไลน์ · ขายต่อได้ ข้อมูลจะส่งเมื่อเน็ตกลับมา';
     }
     if (s.pending > 0) return 'กำลังส่งข้อมูลที่ค้าง ${s.pending} รายการ';
     return null;

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app/core/data/supabase/supabase_pos_base.dart';
+import 'package:app/core/data/supabase/supabase_pos_offline.dart';
 import 'package:app/core/data/supabase/supabase_pos_sale_commands.dart';
 import 'package:app/core/data/supabase/supabase_pos_setup_commands.dart';
 import 'package:app/core/data/supabase/supabase_pos_stock_commands.dart';
@@ -15,6 +16,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// in [PosState] so the existing domain code and screens work unchanged.
 class SupabasePosRepository extends SupabasePosBase
     with
+        SupabasePosOffline,
         SupabasePosSaleCommands,
         SupabasePosStockCommands,
         SupabasePosSetupCommands
@@ -27,21 +29,44 @@ class SupabasePosRepository extends SupabasePosBase
   });
 
   /// Loads the shop for a paired device.
+  ///
+  /// With [deviceUserId] (the device's auth user) the repository learns this
+  /// device's receipt prefix and last number, so it can number receipts
+  /// itself, including offline.
   static Future<SupabasePosRepository> open({
     required SupabaseClient deviceClient,
     required String shopId,
     SupabaseClient? ownerClient,
+    String? deviceUserId,
   }) async {
     final snapshot = await SupabaseStateLoader(
       deviceClient,
       shopId,
     ).load(currentStaffId: '');
-    return SupabasePosRepository(
+    final repo = SupabasePosRepository(
       deviceClient: deviceClient,
       ownerClient: ownerClient,
       shopId: shopId,
       snapshot: snapshot,
     );
+    if (deviceUserId != null) {
+      final device = await deviceClient
+          .from('devices')
+          .select('code, receipt_seq')
+          .eq('auth_user_id', deviceUserId)
+          .maybeSingle();
+      final shop = await deviceClient
+          .from('shops')
+          .select('branch_code')
+          .eq('id', shopId)
+          .single();
+      if (device != null) {
+        repo
+          ..receiptPrefix = '${shop['branch_code']}-${device['code']}'
+          ..receiptSeq = (device['receipt_seq'] as num).toInt();
+      }
+    }
+    return repo;
   }
 
   @override
