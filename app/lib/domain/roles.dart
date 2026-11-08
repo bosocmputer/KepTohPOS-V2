@@ -142,6 +142,25 @@ bool canAccessViewId(String role, String viewId) {
 List<AppViewSpec> allowedViewsForRole(String role) =>
     kAppViews.where((v) => canRoleAccessView(role, v)).toList();
 
+/// Views built on costs and profit, hidden from a manager the owner has not
+/// allowed to see costs (`StaffMember.seesCosts`).
+const Set<String> kCostViewIds = <String>{'dashboard', 'reports'};
+
+/// [allowedViewsForRole] minus the cost views when [seesCosts] is false.
+List<AppViewSpec> allowedViewsFor(String role, {required bool seesCosts}) =>
+    allowedViewsForRole(role)
+        .where((v) => seesCosts || !kCostViewIds.contains(v.id))
+        .toList();
+
+/// [canAccessViewId] that also hides the cost views when [seesCosts] is false.
+bool canAccessViewIdFor(
+  String role,
+  String viewId, {
+  required bool seesCosts,
+}) =>
+    canAccessViewId(role, viewId) &&
+    (seesCosts || !kCostViewIds.contains(viewId.split('/').first));
+
 /// Zero-pads [n] to length [l].
 String padInt(int n, [int l = 2]) => n.toString().padLeft(l, '0');
 

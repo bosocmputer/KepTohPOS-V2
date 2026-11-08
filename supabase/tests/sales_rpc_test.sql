@@ -4,7 +4,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(92);
+select plan(93);
 
 create schema tests;
 create function tests.q(p_role text, p_uid uuid, p_anon boolean, p_sql text) returns text
@@ -207,6 +207,8 @@ select is(tests.device_a(tests.mgr_data(tests.val('cashier'))), 'ERR:42501', '�
 
 -- สลับคนบนเครื่อง: session เก่าใช้ไม่ได้
 select tests.set_val('manager', tests.device_a($$select verify_staff_pin('10000000-0000-0000-0000-000000000002', '2222') ->> 'session_token'$$));
+select is(tests.device_a(tests.mgr_data(tests.val('manager'))), 'ERR:42501', 'ผู้จัดการที่ยังไม่ได้รับสิทธิ์เห็นต้นทุนอ่านข้อมูลรายงานไม่ได้');
+update staff set can_view_costs = true where id = '10000000-0000-0000-0000-000000000002';
 select is(tests.device_a(tests.mgr_data(tests.val('manager'))), '1', 'ผู้จัดการใช้ PIN อ่านข้อมูลรายงานได้');
 select is(tests.device_a(tests.settle(tests.val('cashier'), '60000000-0000-0000-0000-000000000005', '70000000-0000-0000-0000-000000000005', 1, 0, 0, '{}', '50000000-0000-0000-0000-000000000001', 29900, 29900)), 'ERR:42501', 'สลับคนแล้ว session เก่าใช้ไม่ได้');
 select is(tests.device_a(format($$select void_bill(%L, '60000000-0000-0000-0000-000000000003', 'ทดสอบ', now())$$, tests.val('manager'))), 'true', 'ผู้จัดการยกเลิกบิลของโต๊ะที่ปิดแล้วได้');

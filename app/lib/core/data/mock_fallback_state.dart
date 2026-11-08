@@ -43,7 +43,13 @@ PosState buildFallbackState(DateTime currentNow) {
     ],
     staff: const <StaffMember>[
       StaffMember(id: 'st1', name: 'อัย', role: 'owner', pin: '1234'),
-      StaffMember(id: 'st2', name: 'ไอติม', role: 'manager', pin: '2222'),
+      StaffMember(
+        id: 'st2',
+        name: 'ไอติม',
+        role: 'manager',
+        pin: '2222',
+        canViewCosts: true,
+      ),
       StaffMember(id: 'st3', name: 'เนส', role: 'cashier', pin: '1111'),
     ],
     payments: const <PaymentMethod>[

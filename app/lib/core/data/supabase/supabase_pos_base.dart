@@ -89,16 +89,13 @@ abstract class SupabasePosBase {
 
   /// Reloads the snapshot from the server and broadcasts it.
   Future<PosState> reload() async {
-    final role = posState.staff
-        .where((x) => x.id == signedInStaffId)
-        .firstOrNull
-        ?.role;
+    final me = posState.staff.where((x) => x.id == signedInStaffId).firstOrNull;
     final SupabaseSnapshot snapshot;
     try {
       snapshot = await SupabaseStateLoader(deviceClient, shopId).load(
         currentStaffId: signedInStaffId ?? '',
         token: staffToken,
-        staffRole: role,
+        readsCosts: me?.seesCosts ?? false,
       );
     } on Object catch (e) {
       throw describeError(e);

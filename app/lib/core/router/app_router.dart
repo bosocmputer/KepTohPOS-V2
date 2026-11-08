@@ -64,7 +64,7 @@ GoRouter createAppRouter({
     final rootViewId = viewId.split('/').first;
     if (viewId.isNotEmpty &&
         viewId != 'dev/components' &&
-        !canAccessViewId(me.role, rootViewId)) {
+        !canAccessViewIdFor(me.role, rootViewId, seesCosts: me.seesCosts)) {
       return '/tables';
     }
     return null;

@@ -21,6 +21,7 @@ void main() {
     late String shopId;
     late String cashierId;
     late String managerId;
+    late String limitedManagerId;
 
     SupabaseClient client() => SupabaseClient(
       url!,
@@ -81,6 +82,12 @@ void main() {
 
       cashierId = await addStaff('แคชเชียร์', 'cashier', '1111');
       managerId = await addStaff('ผู้จัดการ', 'manager', '2222');
+      // The owner lets this manager see costs; the second one stays off.
+      await owner
+          .from('staff')
+          .update(<String, dynamic>{'can_view_costs': true})
+          .eq('id', managerId);
+      limitedManagerId = await addStaff('ผู้จัดการทั่วไป', 'manager', '3333');
       await owner.from('dining_tables').insert(<Map<String, dynamic>>[
         <String, dynamic>{'shop_id': shopId, 'name': 'A1', 'seats': 4},
         <String, dynamic>{'shop_id': shopId, 'name': 'A2', 'seats': 4},
@@ -434,6 +441,19 @@ void main() {
         expect(ingredientNow.single.lastCost, 19000);
       },
     );
+
+    test('a manager without the cost permission sees no costs', () async {
+      // Act
+      final result = await repo.signInWithPin(limitedManagerId, '3333');
+
+      // Assert
+      expect(result, PinSignInResult.success);
+      expect(staffOf(limitedManagerId).seesCosts, isFalse);
+      expect(repo.canReadCosts, isFalse);
+      expect(repo.state.addons.every((a) => a.cost == 0), isTrue);
+      expect(staffOf(managerId).seesCosts, isTrue);
+      await repo.signOutStaff();
+    });
 
     test('demo tools and JSON transfer are refused on real data', () async {
       // Act & Assert

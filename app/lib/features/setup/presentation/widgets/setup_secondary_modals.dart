@@ -217,6 +217,11 @@ class _SetupSecondaryEditorModalState extends State<SetupSecondaryEditorModal> {
               'เปิดใช้งานบัญชีสำหรับเข้าสู่ระบบด้วยรหัส PIN',
               (on) => _staff = _staff.copyWith(active: on),
             ),
+            _sw(
+              _staff.canViewCosts,
+              'ผู้จัดการ: ให้เห็นต้นทุน กำไร และรายงาน (เจ้าของเห็นเสมอ)',
+              (on) => _staff = _staff.copyWith(canViewCosts: on),
+            ),
           ]),
           'payments' => _col([
             _row(

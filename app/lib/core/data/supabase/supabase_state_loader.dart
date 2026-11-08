@@ -55,7 +55,7 @@ class SupabaseStateLoader {
   Future<SupabaseSnapshot> load({
     required String currentStaffId,
     String? token,
-    String? staffRole,
+    bool readsCosts = false,
   }) async {
     final shop = await _client
         .from('shops')
@@ -98,7 +98,7 @@ class SupabaseStateLoader {
       _all('settled_table_events', '*', 'event_id'),
     ]);
 
-    final manager = token != null && staffRole != 'cashier';
+    final manager = token != null && readsCosts;
     final extra = manager
         ? await _client.rpc<Map<String, dynamic>>(
             'get_manager_data',

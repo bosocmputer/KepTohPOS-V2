@@ -6,10 +6,9 @@
 - **M1 progress (2026-11-08, branch `m1/f1-leftovers`, draft PR #13):**
   - Done: SA-04 QR without PromptPay (`f98ae58`) · pgTAP per-shop counts (`fc6289a`) · E2E `cashier_flow_test` (`e57693e`) · ledger test uses business day (`25797eb`) · Google button + Turnstile captcha code (`dd582e1`) · setup tab "เครื่องและลิงก์เข้าร้าน" + 24h pairing links + revoke, E2E `device_link_flow_test` (`c773b83`, migration pushed to remote)
   - Staging domain now follows `m1/f1-leftovers` · Google provider enabled in Supabase (GCP project `keptoh-pos`, account bosnontawat.ai@gmail.com, consent screen in Testing) · Turnstile widget "KepToh POS" (Cloudflare Bos_catdog@hotmail.com) · Vercel Preview env `CAPTCHA_SITE_KEY` added
+- **Done later on 2026-11-08:** Google + captcha live on staging (Turnstile secret verified: no token → 400, real token → 200) · owner sign-out / leave device / redesigned first screens (`ffa0c54`) · build script fix (`32458cf`) · manager cost switch `staff.can_view_costs` (migration `20261108000300`, needs `db push`)
 - **Next Immediate Step:**
-  - Captcha: staging bundle had no site key after `c773b83`; `a580973` logs "Captcha: on/off" in the Vercel build — read it, fix, then the user pastes the Turnstile secret into Supabase › Attack Protection and we test sign-up on staging
-  - Google login on staging: first try expired (`bad_oauth_state`, chooser left open); user to retry
-  - Manager "เห็นต้นทุนและกำไร" switch (~12 files): `staff.can_view_costs` default false, `get_manager_data` checks it, loader `manager` flag, `StaffMember.canViewCosts`, staff modal switch, dashboard/reports nav per staff (keep `canRoleAccessView` for role parity tests), mock manager set to true
+  - User runs `supabase db push` for `20261108000300_staff_can_view_costs.sql`, then merge PR #13 (M1 done) → start M2 offline
   - Decided: no online manager accounts; managers join via device link + PIN
 - **Known Constraints / Decisions:**
   - Staging = https://keptoh-staging.vercel.app (ผู้ใช้อนุญาตให้ใส่ PIN ทดสอบ 1234) · Supabase Site URL ชี้ staging · Redirect: staging, Preview เดิม, localhost

@@ -106,6 +106,7 @@ StaffMember staffFromRow(Row r) => StaffMember(
   role: _s(r['role']),
   pin: '',
   active: r['active'] as bool,
+  canViewCosts: (r['can_view_costs'] as bool?) ?? false,
 );
 
 /// Maps a `payment_methods` row.

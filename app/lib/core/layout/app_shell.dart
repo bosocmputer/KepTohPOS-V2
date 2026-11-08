@@ -23,6 +23,7 @@ class AppShell extends StatefulWidget {
     this.dateKey = '2026-11-04',
     this.staffName = 'พี่ต้อม (เจ้าของร้าน)',
     this.staffRole = 'owner',
+    this.seesCosts = true,
     this.shiftOpenTimeText = '09:00',
     this.shiftStaffName = 'พี่ต้อม (เจ้าของร้าน)',
     this.initialDrawerOpen = false,
@@ -43,6 +44,9 @@ class AppShell extends StatefulWidget {
   final String dateKey;
   final String staffName;
   final String staffRole;
+
+  /// False for a manager the owner has not allowed to see costs.
+  final bool seesCosts;
   final String? shiftOpenTimeText;
   final String? shiftStaffName;
   final bool initialDrawerOpen;
@@ -75,10 +79,17 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final allowedViews = allowedViewsForRole(widget.staffRole);
+    final allowedViews = allowedViewsFor(
+      widget.staffRole,
+      seesCosts: widget.seesCosts,
+    );
     final hasAccess =
         widget.activeViewId == 'dev/components' ||
-        canAccessViewId(widget.staffRole, widget.activeViewId);
+        canAccessViewIdFor(
+          widget.staffRole,
+          widget.activeViewId,
+          seesCosts: widget.seesCosts,
+        );
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -175,6 +186,7 @@ class _AppShellState extends State<AppShell> {
                     activeViewId: widget.activeViewId,
                     staffName: widget.staffName,
                     staffRole: widget.staffRole,
+                    seesCosts: widget.seesCosts,
                     shiftOpenTimeText: widget.shiftOpenTimeText,
                     shiftStaffName: widget.shiftStaffName,
                     onSelectView: _handleSelectView,
