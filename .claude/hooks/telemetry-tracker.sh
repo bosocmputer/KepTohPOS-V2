@@ -142,6 +142,8 @@ FRIENDLY_THAI_LABELS = {
     "pptx": "สร้างสไลด์นำเสนอ PowerPoint .pptx อัตโนมัติ (Anthropic Official)",
     "unslop": "สแกนและล้าง AI UI Slop ครบ 9 ด้าน (heydamir/unslop)",
     "ui-anti-slop": "กฎออกแบบ UI สะอาดไร้กลิ่นอาย AI (unslop + frontend-design + Three.js)",
+    "security-audit": "ตรวจความปลอดภัยเชิงลึกไร้ False-Positive (Cloudflare Security Gate)",
+    "/security-audit": "สั่งรัน Security Audit แยก Confirmed vs Needs Validation (Cloudflare)",
 }
 
 def friendly_power_name(rel_path, meta, title):
@@ -486,8 +488,124 @@ def extract_live_session_thoughts(root_dir, ag_conv_id="", active_eng="claude"):
                     thoughts.append(item)
                     desk_thoughts[desk] = item
 
+    # สกัดความคิดสดจาก Subagents จริงใน <session-id>/subagents/agent-*.jsonl (ถ้ามี)
+    sess_id_full = os.path.splitext(os.path.basename(latest_f))[0]
+    sub_dir = os.path.join(proj_dir, sess_id_full, "subagents")
+    if os.path.isdir(sub_dir):
+        for sub_f in sorted(glob.glob(os.path.join(sub_dir, "agent-*.jsonl")), key=os.path.getmtime):
+            meta_f = sub_f.replace(".jsonl", ".meta.json")
+            s_desk = "explorer"
+            if os.path.isfile(meta_f):
+                try:
+                    m_obj = json.load(open(meta_f, encoding="utf-8"))
+                    at = str(m_obj.get("agentType") or m_obj.get("description") or "").lower()
+                    if "debug" in at or "fix" in at:
+                        s_desk = "debugger"
+                    elif "review" in at or "security" in at or "audit" in at or "qa" in at:
+                        s_desk = "reviewer"
+                    elif "implement" in at or "code" in at:
+                        s_desk = "implementer"
+                    else:
+                        s_desk = "explorer"
+                except Exception:
+                    pass
+            try:
+                with open(sub_f, "rb") as sfp:
+                    sfp.seek(0, os.SEEK_END)
+                    ssz = sfp.tell()
+                    sfp.seek(max(0, ssz - 120000), os.SEEK_SET)
+                    s_chunk = sfp.read().decode("utf-8", errors="ignore")
+                for sline in s_chunk.splitlines():
+                    if "\"assistant\"" not in sline:
+                        continue
+                    sobj = json.loads(sline)
+                    if sobj.get("type") != "assistant":
+                        continue
+                    smsg = sobj.get("message") or {}
+                    smodel = str(smsg.get("model") or "subagent").upper()
+                    for sc in (smsg.get("content") or []):
+                        if isinstance(sc, dict) and sc.get("type") in ("thinking", "text"):
+                            stxt = " ".join(str(sc.get("thinking") or sc.get("text") or "").replace("**", "").replace("`", "").split()).strip()
+                            if len(stxt) >= 8:
+                                s_item = {
+                                    "time": now_local,
+                                    "kind": "SUBAGENT",
+                                    "desk": s_desk,
+                                    "text": f"🤖 [{smodel}] {stxt[:230]}",
+                                }
+                                desk_thoughts[s_desk] = s_item
+            except Exception:
+                pass
+
     thoughts.reverse()
     return thoughts[:12], desk_thoughts
+
+def extract_session_proof_metrics(root_dir):
+    proof = {
+        "sessionId": "none",
+        "opusTurns": 0,
+        "sonnetTurns": 0,
+        "haikuTurns": 0,
+        "subagentCalls": 0,
+        "subagentFiles": 0,
+        "subagentByDesk": {"explorer": 0, "implementer": 0, "debugger": 0, "reviewer": 0},
+        "offloadPct": 0,
+    }
+    slug = re.sub(r"[^A-Za-z0-9-]", "-", os.path.realpath(root_dir))
+    proj_dir = os.path.expanduser(f"~/.claude/projects/{slug}")
+    if not os.path.isdir(proj_dir):
+        return proof
+    files = sorted(glob.glob(os.path.join(proj_dir, "*.jsonl")), key=os.path.getmtime, reverse=True)
+    if not files:
+        return proof
+    latest_f = files[0]
+    sess_id_full = os.path.splitext(os.path.basename(latest_f))[0]
+    proof["sessionId"] = sess_id_full[:8]
+
+    def scan_jsonl_models(f_path, count_agents=False):
+        try:
+            with open(f_path, "r", encoding="utf-8", errors="ignore") as fp:
+                for line in fp:
+                    if "\"assistant\"" not in line:
+                        continue
+                    if "\"model\"" in line:
+                        m_match = re.search(r'"model"\s*:\s*"([^"]+)"', line)
+                        if m_match:
+                            m_low = m_match.group(1).lower()
+                            if "opus" in m_low:
+                                proof["opusTurns"] += 1
+                            elif "sonnet" in m_low:
+                                proof["sonnetTurns"] += 1
+                            elif "haiku" in m_low:
+                                proof["haikuTurns"] += 1
+                    if count_agents and "\"name\":\"Agent\"" in line.replace(" ", ""):
+                        try:
+                            obj = json.loads(line)
+                            for c in ((obj.get("message") or {}).get("content") or []):
+                                if isinstance(c, dict) and c.get("type") == "tool_use" and c.get("name") == "Agent":
+                                    proof["subagentCalls"] += 1
+                                    st = str((c.get("input") or {}).get("subagent_type") or "implementer").lower()
+                                    d_k = "explorer" if "explor" in st else ("debugger" if "debug" in st else ("reviewer" if ("review" in st or "security" in st) else "implementer"))
+                                    proof["subagentByDesk"][d_k] = proof["subagentByDesk"].get(d_k, 0) + 1
+                        except Exception:
+                            pass
+        except Exception:
+            pass
+
+    scan_jsonl_models(latest_f, count_agents=True)
+    sub_dir = os.path.join(proj_dir, sess_id_full, "subagents")
+    if os.path.isdir(sub_dir):
+        sub_jsonls = glob.glob(os.path.join(sub_dir, "agent-*.jsonl"))
+        proof["subagentFiles"] = len(sub_jsonls)
+        for sf in sub_jsonls:
+            scan_jsonl_models(sf, count_agents=False)
+        if proof["subagentFiles"] > proof["subagentCalls"]:
+            proof["subagentCalls"] = proof["subagentFiles"]
+
+    total_t = proof["opusTurns"] + proof["sonnetTurns"] + proof["haikuTurns"]
+    if total_t > 0:
+        proof["offloadPct"] = round(((proof["sonnetTurns"] + proof["haikuTurns"]) * 100.0) / total_t, 1)
+    return proof
 
 def push_used_item(kind, name, path, desk, detail_txt=""):
     # ข้ามการบันทึก loop-circuit-breaker.sh ซ้ำๆ ในสถานะปกติ เพื่อไม่ให้รกหน้าประวัติ
@@ -570,6 +688,11 @@ if mode_type == "stdin":
             state["activeSkill"] = "root-cause-debug"
             state["activeSkillFile"] = ".claude/skills/root-cause-debug/SKILL.md"
             push_used_item("SKILL", "root-cause-debug", ".claude/skills/root-cause-debug/SKILL.md", "debugger", state["currentTask"])
+        elif "/security-audit" in p_low or "security audit" in p_low or "ช่องโหว่" in p_low:
+            state["activeCommand"] = "/security-audit"
+            state["activeSkill"] = "security-audit"
+            state["activeSkillFile"] = ".claude/skills/security-audit/SKILL.md"
+            push_used_item("SKILL", "security-audit", ".claude/skills/security-audit/SKILL.md", "reviewer", state["currentTask"])
         elif "/review" in p_low or "รีวิว" in p_low or "ตรวจ" in p_low:
             state["activeCommand"] = "/review"
             state["activeSkill"] = "pragmatic-review"
@@ -627,7 +750,7 @@ if mode_type == "stdin":
             elif skill_slug == "root-cause-debug":
                 state["activeNode"] = "debugger"
                 state["activeAgentFile"] = ".claude/agents/debugger.md"
-            elif skill_slug in ("pragmatic-review", "verification-before-completion"):
+            elif skill_slug in ("pragmatic-review", "verification-before-completion", "security-audit"):
                 state["activeNode"] = "reviewer"
                 state["activeAgentFile"] = ".claude/agents/reviewer.md"
             else:
@@ -895,6 +1018,9 @@ else:
     if hook_arg:
         push_used_item("HOOK", os.path.basename(hook_arg), hook_arg.split(" ")[0], node, clean_detail or "")
 
+state["sessionProof"] = extract_session_proof_metrics(project_root)
+if state["sessionProof"].get("subagentCalls", 0) > int(stats.get("subagentSpawns", 0)):
+    stats["subagentSpawns"] = state["sessionProof"]["subagentCalls"]
 state["stats"] = stats
 state["workspaceCatalog"] = scan_workspace_catalog(project_root)
 

@@ -1409,7 +1409,11 @@
         </div>
         <div class="stat-strip" style="margin-top:8px;">
           <div class="stat-item">
-            <div class="stat-lbl">สำรวจไฟล์ด้วย Haiku</div>
+            <div class="stat-lbl">แตก Subagent จริง</div>
+            <div class="stat-val" id="stat-subagent-spawns">0 ครั้ง</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-lbl">อ่าน/ค้นหาไฟล์จริง</div>
             <div class="stat-val" id="stat-explorer-reads">0 ครั้ง</div>
           </div>
           <div class="stat-item">
@@ -1417,12 +1421,33 @@
             <div class="stat-val" id="stat-files-edited">0 ครั้ง</div>
           </div>
           <div class="stat-item">
-            <div class="stat-lbl">รันตรวจเทสต์จริง</div>
-            <div class="stat-val" id="stat-verifier-runs">0 ครั้ง</div>
+            <div class="stat-lbl">รันเทสต์ / บล็อกคำสั่ง</div>
+            <div class="stat-val" id="stat-verifier-runs">0 / 0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-group">
+        <div class="sg-header">
+          <span>หลักฐานสัดส่วนโมเดลจริง (Session .jsonl)</span>
+          <span id="proof-session-badge">กำลังอ่าน...</span>
+        </div>
+        <div class="stat-strip" style="margin-top:8px;">
+          <div class="stat-item">
+            <div class="stat-lbl">Opus (วางแผน)</div>
+            <div class="stat-val" id="proof-opus-turns">0 รอบ</div>
           </div>
           <div class="stat-item">
-            <div class="stat-lbl">บล็อกคำสั่งอันตราย/ลูป</div>
-            <div class="stat-val" id="stat-blocked-count">0 ครั้ง</div>
+            <div class="stat-lbl">Sonnet (เขียน/ตรวจ)</div>
+            <div class="stat-val" id="proof-sonnet-turns">0 รอบ</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-lbl">Haiku (สำรวจไว)</div>
+            <div class="stat-val" id="proof-haiku-turns">0 รอบ</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-lbl">แบ่งเบาภาระ Opus</div>
+            <div class="stat-val" id="proof-offload-pct">0%</div>
           </div>
         </div>
       </div>
@@ -3753,13 +3778,32 @@
         );
         setTxt('real-diff-badge', data.lastDiffStat || 'git status สด');
 
+        const proof = data.sessionProof || {};
+        const subSpawns = Math.max(
+          Number(proof.subagentCalls || 0),
+          Number(stats.subagentSpawns || 0)
+        );
+        setTxt('stat-subagent-spawns', `${subSpawns} ครั้ง`);
         setTxt('stat-explorer-reads', `${stats.explorerReads ?? 0} ครั้ง`);
         setTxt(
           'stat-files-edited',
           `${stats.implementerEdits || stats.filesEdited || modFiles.length} ครั้ง`
         );
-        setTxt('stat-verifier-runs', `${stats.verifierRuns ?? 0} ครั้ง`);
-        setTxt('stat-blocked-count', `${stats.blockedCount ?? 0} ครั้ง`);
+        setTxt(
+          'stat-verifier-runs',
+          `${stats.verifierRuns ?? 0} / ${stats.blockedCount ?? 0}`
+        );
+
+        setTxt(
+          'proof-session-badge',
+          proof.sessionId && proof.sessionId !== 'none'
+            ? `Session #${proof.sessionId}`
+            : 'รอเริ่มแชท'
+        );
+        setTxt('proof-opus-turns', `${proof.opusTurns ?? 0} รอบ`);
+        setTxt('proof-sonnet-turns', `${proof.sonnetTurns ?? 0} รอบ`);
+        setTxt('proof-haiku-turns', `${proof.haikuTurns ?? 0} รอบ`);
+        setTxt('proof-offload-pct', `${proof.offloadPct ?? 0}%`);
 
         const touchedList = document.getElementById('touched-files-list');
         const filesCountLbl = document.getElementById('files-count-label');

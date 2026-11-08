@@ -1,6 +1,6 @@
 # Project Overview & Universal Agent Governance
 > ใช้ร่วมกันทั้ง **Claude Code** (`.claude/`) และ **Antigravity / VS Code** (`.agents/`)
-> **Upstream Architectures:** [`anthropics/skills`](https://github.com/anthropics/skills) • [Anthropic AI-Native SDLC Playbook](https://claude.com/resources/articles/the-ai-native-sdlc-playbook) • [`andrej-karpathy-skills`](https://github.com/forrestchang/andrej-karpathy-skills) • [`obra/superpowers`](https://github.com/obra/superpowers) • [`garrytan/gstack`](https://github.com/garrytan/gstack) • [`jeffallan/claude-skills`](https://github.com/jeffallan/claude-skills) • [`supabase/agent-skills`](https://github.com/supabase/agent-skills) • [`trailofbits/claude-code-config`](https://github.com/trailofbits/claude-code-config) • [`heydamir/unslop`](https://github.com/heydamir/unslop) • [`mrdoob/three.js`](https://github.com/mrdoob/three.js)
+> **Upstream Architectures:** [`anthropics/skills`](https://github.com/anthropics/skills) • [Anthropic AI-Native SDLC Playbook](https://claude.com/resources/articles/the-ai-native-sdlc-playbook) • [`cloudflare/security-audit-skill`](https://github.com/cloudflare/security-audit-skill) • [`andrej-karpathy-skills`](https://github.com/forrestchang/andrej-karpathy-skills) • [`obra/superpowers`](https://github.com/obra/superpowers) • [`garrytan/gstack`](https://github.com/garrytan/gstack) • [`jeffallan/claude-skills`](https://github.com/jeffallan/claude-skills) • [`supabase/agent-skills`](https://github.com/supabase/agent-skills) • [`trailofbits/claude-code-config`](https://github.com/trailofbits/claude-code-config) • [`heydamir/unslop`](https://github.com/heydamir/unslop) • [`mrdoob/three.js`](https://github.com/mrdoob/three.js)
 
 ## 0. Auto-Detect Tech Stack & Quick Commands (รองรับหลายภาษาอัตโนมัติ)
 ให้ตรวจสอบไฟล์ตั้งต้นในโปรเจกต์เพื่อเลือกใช้คำสั่งรันเทสต์และตรวจโค้ดให้ตรงกับภาษาที่ใช้จริงโดยอัตโนมัติ:
@@ -32,8 +32,9 @@
 | **ลงมือเขียน/แก้โค้ดหลายไฟล์ (2–5 ไฟล์) + รันเทสต์ย่อยจนผ่าน** | **Multi-Step Implementation** | **Claude:** `Agent(subagent_type="implementer", model="sonnet")` • **Antigravity:** `invoke_subagent(TypeName="self", Model="inherit", Role="Surgical Implementer")` |
 | **"เทสต์พัง / บั๊กหน้า... / Error..." (ต้องสืบหาสาเหตุและลองแก้)** | **Root-Cause Debugging** | **Claude:** `Agent(subagent_type="debugger", model="sonnet")` • **Antigravity:** `invoke_subagent(TypeName="self", Model="inherit", Role="2-Strike Debugger")` |
 | **"ช่วยตรวจโค้ด / รีวิว / รันชุดทดสอบ E2E หรือ Browser"** | **QA Review & E2E Suite** | **Claude:** `Agent(subagent_type="reviewer", model="sonnet")` • **Antigravity:** `invoke_subagent(TypeName="browser" หรือ "self", Model="inherit", Role="QA Verifier")` |
+| **"ตรวจความปลอดภัย / `/security-audit` / เช็ก RLS & RPC"** | **Security Audit (Cloudflare Gate)** | โหลด `security-audit` ส่ง `explorer` (`haiku`/`flash`) หาพื้นผิวโจมตี + `reviewer` (`sonnet`) ไล่เส้นทาง `entrypoint ➔ sink` แยก `[CONFIRMED]` ออกจาก `[NEEDS_VALIDATION]` |
 | **"สร้าง 3D Viewer / Three.js / WebGL"** | งานแสดงผล 3 มิติบนเว็บ | โหลด `threejs-expert` (มาตรฐาน `mrdoob/three.js r187+`: `three/addons/*`, `HDRLoader`, `OutputPass`, `dispose()`) |
-| **"เปิดจอ 3D / เปิดมอนิเตอร์ 3D"** | เปิดศูนย์บัญชาการ 3D เรียลไทม์ | รัน `bash .claude/hooks/open-hud.sh` เพื่อเปิด 3D Command & Monitor Center |
+| **"เปิดจอ 3D / เปิดมอนิเตอร์ 3D / เช็กหลักฐานโมเดล"** | เปิดศูนย์บัญชาการ 3D / ตรวจสถิติ | รัน `bash .claude/hooks/open-hud.sh` (จอ 3D) หรือ `bash .claude/hooks/audit-session-proof.sh` (ตรวจสัดส่วนโมเดลจาก `.jsonl`) |
 
 ---
 
