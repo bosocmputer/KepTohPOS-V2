@@ -1,5 +1,6 @@
 import 'package:app/core/data/supabase/network_activity.dart';
 import 'package:app/core/data/supabase/supabase_pos_repository.dart';
+import 'package:app/features/onboarding/data/captcha.dart';
 import 'package:app/features/onboarding/data/device_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -15,6 +16,25 @@ class OwnedShop {
 
   final String id;
   final String name;
+}
+
+/// A POS device of the shop, as the owner sees it in setup.
+class ShopDevice {
+  const new({
+    required this.id,
+    required this.code,
+    required this.name,
+    required this.paired,
+    required this.revoked,
+    required this.isThisDevice,
+  });
+
+  final String id;
+  final String code;
+  final String name;
+  final bool paired;
+  final bool revoked;
+  final bool isThisDevice;
 }
 
 /// [DeviceAuthStorage] backed by the app's persistent local storage.
@@ -56,6 +76,22 @@ class DeviceSession {
   bool get isOwnerSignedIn {
     final user = owner.auth.currentUser;
     return user != null && !user.isAnonymous;
+  }
+
+  /// The signed-in owner's email, or `null` when there is none (LINE may not
+  /// share one).
+  String? get ownerEmail =>
+      isOwnerSignedIn ? owner.auth.currentUser!.email : null;
+
+  /// Signs the owner out of this browser. The device pairing is not touched.
+  Future<void> signOutOwner() => owner.auth.signOut();
+
+  /// Unpairs this device from its shop and signs the owner out, so the
+  /// first screen shows again. The shop's data stays on the server.
+  Future<void> leaveShop() async {
+    await device.rpc<void>('leave_device');
+    await _deviceAuth.signOut();
+    if (isOwnerSignedIn) await owner.auth.signOut();
   }
 
   /// Initializes Supabase and restores this device's saved session.
@@ -105,7 +141,7 @@ class DeviceSession {
   /// Pairs this device using a one-time code and returns its shop id.
   Future<String> claim(String code) async {
     if (_deviceAuth.userId == null) {
-      await _deviceAuth.signInAnonymously();
+      await _deviceAuth.signInAnonymously(captchaToken: await captchaToken());
     }
     final rows = await device.rpc<List<dynamic>>(
       'claim_device',
@@ -124,19 +160,32 @@ class DeviceSession {
 
   /// Signs the owner in with email and password.
   Future<void> signInOwner(String email, String password) async {
-    await owner.auth.signInWithPassword(email: email, password: password);
+    await owner.auth.signInWithPassword(
+      email: email,
+      password: password,
+      captchaToken: await captchaToken(),
+    );
   }
 
   /// Creates an owner account. Returns `false` when the project requires the
   /// email to be confirmed before the first sign-in.
   Future<bool> signUpOwner(String email, String password) async {
-    final res = await owner.auth.signUp(email: email, password: password);
+    final res = await owner.auth.signUp(
+      email: email,
+      password: password,
+      captchaToken: await captchaToken(),
+    );
     return res.session != null;
   }
 
   /// Sends the browser to LINE; the app reloads signed in when it returns.
   Future<void> signInOwnerWithLine() async {
     await owner.auth.signInWithOAuth(_kLineProvider);
+  }
+
+  /// Sends the browser to Google; the app reloads signed in when it returns.
+  Future<void> signInOwnerWithGoogle() async {
+    await owner.auth.signInWithOAuth(OAuthProvider.google);
   }
 
   /// Lists the shops the signed-in owner can manage.
@@ -174,6 +223,48 @@ class DeviceSession {
       params: <String, dynamic>{'p_staff_id': staff['id'], 'p_pin': pin},
     );
     return shopId;
+  }
+
+  /// The shop's devices, oldest first, read with the owner's login.
+  Future<List<ShopDevice>> shopDevices(String shopId) async {
+    final me = _deviceAuth.userId;
+    final rows = await owner
+        .from('devices')
+        .select('id, code, name, auth_user_id, paired_at, revoked_at')
+        .eq('shop_id', shopId)
+        .order('code');
+    return rows
+        .map(
+          (r) => ShopDevice(
+            id: r['id'] as String,
+            code: r['code'] as String,
+            name: r['name'] as String,
+            paired: r['paired_at'] != null,
+            revoked: r['revoked_at'] != null,
+            isThisDevice: me != null && r['auth_user_id'] == me,
+          ),
+        )
+        .toList();
+  }
+
+  /// Creates a one-time code, valid for 24 hours, that pairs a new device
+  /// named [deviceName] with [shopId].
+  Future<String> createDeviceCode(String shopId, String deviceName) async {
+    final rows = await owner.rpc<List<dynamic>>(
+      'create_device_pairing',
+      params: <String, dynamic>{'p_shop_id': shopId, 'p_name': deviceName},
+    );
+    return (rows.first as Map<String, dynamic>)['pairing_code'] as String;
+  }
+
+  /// Stops [deviceId] from reading or writing the shop's data.
+  Future<void> revokeDevice(String deviceId) async {
+    await owner
+        .from('devices')
+        .update(<String, dynamic>{
+          'revoked_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('id', deviceId);
   }
 
   /// Registers this device with [shopId] using the owner's permission.

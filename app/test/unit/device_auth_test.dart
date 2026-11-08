@@ -66,6 +66,30 @@ void main() {
     expect(storage.value, contains('refresh-a1'));
   });
 
+  test('sends the captcha token with the sign-up when there is one', () async {
+    // Arrange
+    final auth = build((_) => _tokenResponse('a1'));
+
+    // Act
+    await auth.signInAnonymously(captchaToken: 'cf-token');
+
+    // Assert
+    expect(jsonDecode(requests.single.body), <String, dynamic>{
+      'gotrue_meta_security': <String, dynamic>{'captcha_token': 'cf-token'},
+    });
+  });
+
+  test('signs up with an empty body when captcha is off', () async {
+    // Arrange
+    final auth = build((_) => _tokenResponse('a1'));
+
+    // Act
+    await auth.signInAnonymously();
+
+    // Assert
+    expect(jsonDecode(requests.single.body), <String, dynamic>{});
+  });
+
   test('a restored session keeps working without calling the server', () async {
     // Arrange
     await build((_) => _tokenResponse('a1')).signInAnonymously();

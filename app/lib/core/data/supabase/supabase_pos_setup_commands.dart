@@ -195,6 +195,7 @@ mixin SupabasePosSetupCommands on SupabasePosBase implements PosRepository {
           'name': i.name,
           'role': i.role,
           'active': i.active,
+          'can_view_costs': i.canViewCosts,
         });
         if (!keepPin) {
           await ownerClient!.rpc<void>(

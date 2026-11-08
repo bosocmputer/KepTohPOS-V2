@@ -5,6 +5,7 @@ import 'package:app/features/setup/presentation/cubit/setup_cubit.dart';
 import 'package:app/features/setup/presentation/widgets/setup_catalog_panels.dart';
 import 'package:app/features/setup/presentation/widgets/setup_costing_demo_panels.dart';
 import 'package:app/features/setup/presentation/widgets/setup_crud_modals.dart';
+import 'package:app/features/setup/presentation/widgets/setup_devices_panel.dart';
 import 'package:app/features/setup/presentation/widgets/setup_nav_sidebar.dart';
 import 'package:app/features/setup/presentation/widgets/setup_owner_login_banner.dart';
 import 'package:app/features/setup/presentation/widgets/setup_shop_costing_panels.dart';
@@ -140,6 +141,7 @@ class _SetupPageState extends State<SetupPage> {
           onSave: cubit.saveCosting,
         ),
         'theme' => const SetupThemeSection(),
+        'devices' => SetupDevicesPanel(staffRole: widget.staffRole),
         'demo' => SetupDemoPanel(
           posState: s,
           onExportJson: () => setState(() => _jsonModalIsImport = false),

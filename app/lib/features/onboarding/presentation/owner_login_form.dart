@@ -4,7 +4,8 @@ import 'package:app/features/onboarding/data/device_session.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Owner sign-in: LINE first, with email and password as the fallback.
+/// Owner sign-in: LINE first, then Google, with email and password as the
+/// fallback.
 class OwnerLoginForm extends StatefulWidget {
   const new({required this.session, required this.onSignedIn, super.key});
 
@@ -69,15 +70,52 @@ class _OwnerLoginFormState extends State<OwnerLoginForm> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
+        SizedBox(
+          height: AppDimensions.btnLgH,
+          child: FilledButton(
+            key: const ValueKey('owner-line-btn'),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppRawTokens.lineGreen,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+              ),
+              textStyle: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            onPressed: _busy
+                ? null
+                : () => _run(widget.session.signInOwnerWithLine),
+            child: const Text('เข้าสู่ระบบด้วย LINE'),
+          ),
+        ),
+        const SizedBox(height: AppDimensions.space2),
         Btn(
-          key: const ValueKey('owner-line-btn'),
-          label: 'เข้าสู่ระบบด้วย LINE',
-          kind: BtnKind.primary,
+          key: const ValueKey('owner-google-btn'),
+          label: 'เข้าสู่ระบบด้วย Google',
+          size: BtnSize.lg,
           block: true,
           disabled: _busy,
-          onPressed: () => _run(widget.session.signInOwnerWithLine),
+          onPressed: () => _run(widget.session.signInOwnerWithGoogle),
         ),
         const SizedBox(height: AppDimensions.space4),
+        Row(
+          children: [
+            Expanded(child: Divider(color: t.line)),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.space2,
+              ),
+              child: Text(
+                'หรือใช้อีเมล',
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: t.muted),
+              ),
+            ),
+            Expanded(child: Divider(color: t.line)),
+          ],
+        ),
+        const SizedBox(height: AppDimensions.space3),
         Field(
           label: 'อีเมล',
           child: AppTextInput(

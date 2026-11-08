@@ -55,6 +55,9 @@ abstract final class AppRawTokens {
   static const Color qrBg = Color(0xFFFFFFFF);
   static const Color qrInk = Color(0xFF172033);
   static const Color promptPayBlue = Color(0xFF113566);
+
+  /// LINE's brand green, which Thai users look for on a LINE sign-in button.
+  static const Color lineGreen = Color(0xFF06C755);
   static const Color scrim = Color.fromRGBO(14, 16, 21, 0.55);
 }
 

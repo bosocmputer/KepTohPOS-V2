@@ -134,6 +134,8 @@ class SalePaymentPanel extends StatelessWidget {
           SizedBox(height: gap),
           if (method.type == 'cash')
             CashPaymentSection(state: state, staff: staff, compact: compactH)
+          else if (method.type == 'qr' && !state.hasPromptPay)
+            const PromptPayMissing()
           else if (method.type == 'qr')
             PromptPayQR(promptpayId: s.shop.promptpay, amount: payOrder.total)
           else if (method.type == 'transfer' &&

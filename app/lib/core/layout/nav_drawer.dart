@@ -23,6 +23,7 @@ class NavPanel extends StatelessWidget {
     this.onClose,
     this.onShiftAction,
     this.onLogout,
+    this.seesCosts = true,
   });
 
   final String activeViewId;
@@ -34,6 +35,9 @@ class NavPanel extends StatelessWidget {
   final VoidCallback? onClose;
   final VoidCallback? onShiftAction;
   final VoidCallback? onLogout;
+
+  /// False hides the cost views (see `allowedViewsFor`).
+  final bool seesCosts;
 
   ThemeCubit? _maybeThemeCubit(BuildContext context) {
     try {
@@ -48,7 +52,7 @@ class NavPanel extends StatelessWidget {
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
     final baseId = activeViewId.split('/').first;
-    final views = allowedViewsForRole(staffRole);
+    final views = allowedViewsFor(staffRole, seesCosts: seesCosts);
     final isOpen = shiftOpenTimeText != null;
     final themeCubit = _maybeThemeCubit(context);
     final compactH = MediaQuery.sizeOf(context).height < 840;

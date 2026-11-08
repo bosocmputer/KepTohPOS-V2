@@ -43,6 +43,7 @@ class StaffMember {
     required this.role,
     required this.pin,
     this.active = true,
+    this.canViewCosts = false,
   });
 
   factory fromJson(Map<String, dynamic> json) => StaffMember(
@@ -51,6 +52,7 @@ class StaffMember {
     role: json['role'] as String,
     pin: json['pin'] as String,
     active: (json['active'] as bool?) ?? true,
+    canViewCosts: (json['canViewCosts'] as bool?) ?? false,
   );
 
   final String id;
@@ -59,18 +61,26 @@ class StaffMember {
   final String pin;
   final bool active;
 
+  /// Set by the owner per manager; owners always see costs, cashiers never.
+  final bool canViewCosts;
+
+  /// Whether this person may see costs, profit and the reports built on them.
+  bool get seesCosts => role == 'owner' || (role == 'manager' && canViewCosts);
+
   StaffMember copyWith({
     String? id,
     String? name,
     String? role,
     String? pin,
     bool? active,
+    bool? canViewCosts,
   }) => StaffMember(
     id: id ?? this.id,
     name: name ?? this.name,
     role: role ?? this.role,
     pin: pin ?? this.pin,
     active: active ?? this.active,
+    canViewCosts: canViewCosts ?? this.canViewCosts,
   );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -79,6 +89,7 @@ class StaffMember {
     'role': role,
     'pin': pin,
     'active': active,
+    'canViewCosts': canViewCosts,
   };
 }
 

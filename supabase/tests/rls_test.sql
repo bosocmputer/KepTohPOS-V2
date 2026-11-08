@@ -4,7 +4,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(59);
+select plan(63);
 
 -- รัน SQL ในบทบาท + ผู้ใช้ที่กำหนด แล้วคืนผลเป็น text หรือ ERR:<sqlstate>
 -- กลับมาเป็น postgres ก่อนคืนค่า เพราะตารางภายในของ pgTAP ใช้ไม่ได้จากบทบาทอื่น
@@ -82,6 +82,11 @@ create function tests.val(p_key text) returns text language sql as $$ select val
 
 -- จับคู่เครื่อง
 select is(tests.owner_b(format($$select pairing_code from create_device_pairing(%L, 'x')$$, tests.shop_a())), 'ERR:42501', 'ออกรหัสจับคู่ให้ร้านอื่นไม่ได้');
+select ok(
+  (select max(p.expires_at) - now() > interval '23 hours'
+   from private.device_pairings p join public.devices d on d.id = p.device_id
+   where d.shop_id = tests.shop_a()),
+  'รหัสจับคู่ใช้ได้ 24 ชั่วโมง เพื่อส่งเป็นลิงก์ทาง LINE');
 select is(tests.owner_a(format($$select device_id from claim_device(%L)$$, tests.val('pair_a'))), 'ERR:42501', 'บัญชีเจ้าของใช้ claim_device ไม่ได้');
 select is(tests.device_a($$select device_id from claim_device('WRONGCODE')$$), 'ERR:P0002', 'รหัสจับคู่ผิดใช้ไม่ได้');
 select is(tests.device_a('select count(*) from shops'), '0', 'บัญชีเครื่องที่ยังไม่จับคู่ไม่เห็นร้าน');
@@ -91,7 +96,8 @@ select is(tests.device_b(format($$select shop_id from claim_device(%L)$$, tests.
 
 insert into bills (id, shop_id, device_id, no, business_date, at, subtotal, total, method_type, received)
 select gen_random_uuid(), d.shop_id, d.id, '00000-' || d.code || '-000001', current_date, now(), 29900, 29900, 'cash', 29900
-from devices d;
+from devices d
+where d.shop_id in (tests.shop_a(), tests.shop_b());
 
 -- แยกข้อมูลรายร้าน
 select is(tests.owner_a('select count(*) from shops'), '1', 'เจ้าของ A เห็นร้านเดียว');
@@ -148,6 +154,11 @@ select is(tests.device_a(format($$select verify_staff_pin(%L, '1234') ->> 'ok'$$
 -- เพิกถอนเครื่อง
 update devices set revoked_at = now() where shop_id = tests.shop_b();
 select is(tests.device_b('select count(*) from packages'), '0', 'เครื่องที่ถูกเพิกถอนไม่เห็นข้อมูล');
+
+-- เครื่องออกจากร้านเอง
+select is(tests.owner_a('select leave_device()::text'), 'ERR:42501', 'บัญชีเจ้าของใช้ leave_device ไม่ได้');
+select lives_ok($$select tests.device_a('select leave_device()::text')$$, 'เครื่อง A ออกจากร้านได้');
+select is(tests.device_a('select count(*) from packages'), '0', 'ออกจากร้านแล้วเครื่องไม่เห็นข้อมูลร้าน');
 
 -- สิทธิ์เรียกฟังก์ชัน: ฟังก์ชันใหม่ได้ EXECUTE ให้ PUBLIC โดยอัตโนมัติ จึงต้องตรวจทุกตัว
 select is(

@@ -91,7 +91,7 @@ select is(tests.device_a(tests.purchase_sql('50000000-0000-0000-0000-00000000000
 select is((select note from purchases where id = '50000000-0000-0000-0000-000000000001'), 'รับช่วงเช้า', 'ตัดช่องว่างของโน้ต');
 select is((select total from purchase_lines where purchase_id = '50000000-0000-0000-0000-000000000001'), 95000::bigint, 'บันทึกยอดรายการ');
 select is(tests.device_a(tests.purchase_sql('50000000-0000-0000-0000-000000000001', '[{"ingredient_id":"30000000-0000-0000-0000-000000000001","qty":5,"total":95000}]')), 'true', 'ส่งซ้ำด้วย id เดิมคืน true');
-select is((select count(*)::int from purchase_lines), 1, 'ส่งซ้ำแล้วไม่เกิดรายการใหม่');
+select is((select count(*)::int from purchase_lines where shop_id = tests.val('shop')::uuid), 1, 'ส่งซ้ำแล้วไม่เกิดรายการใหม่');
 select is(tests.device_a(tests.purchase_sql('50000000-0000-0000-0000-000000000002', '[]')), 'ERR:22023', 'บิลซื้อว่างไม่ได้');
 select is(tests.device_a(tests.purchase_sql('50000000-0000-0000-0000-000000000002', '[{"ingredient_id":"30000000-0000-0000-0000-000000000001","qty":0,"total":100}]')), 'ERR:22023', 'จำนวนต้องมากกว่า 0');
 select is(tests.device_a(tests.purchase_sql('50000000-0000-0000-0000-000000000002', '[{"ingredient_id":"30000000-0000-0000-0000-000000000009","qty":1,"total":100}]')), 'ERR:22023', 'ใช้วัตถุดิบร้านอื่นไม่ได้');
@@ -103,7 +103,7 @@ select is(tests.device_a(format($$select remove_purchase(%L, '50000000-0000-0000
 select is(tests.device_a(tests.expense_sql('[{"id":"60000000-0000-0000-0000-000000000001","type_id":"40000000-0000-0000-0000-000000000001","amount":25000,"note":" น้ำแข็ง "}]')), 'true', 'แคชเชียร์เพิ่มค่าใช้จ่ายได้');
 select is((select type_name || '|' || note from expenses where id = '60000000-0000-0000-0000-000000000001'), 'แก๊สทดสอบ|น้ำแข็ง', 'สแนปช็อตชื่อประเภทและตัดช่องว่าง');
 select tests.device_a(tests.expense_sql('[{"id":"60000000-0000-0000-0000-000000000001","type_id":"40000000-0000-0000-0000-000000000001","amount":25000,"note":"x"}]'));
-select is((select count(*)::int from expenses), 1, 'ส่งซ้ำไม่เกิดค่าใช้จ่ายซ้ำ');
+select is((select count(*)::int from expenses where shop_id = tests.val('shop')::uuid), 1, 'ส่งซ้ำไม่เกิดค่าใช้จ่ายซ้ำ');
 select is(tests.device_a(tests.expense_sql('[{"id":"60000000-0000-0000-0000-000000000002","type_id":"40000000-0000-0000-0000-000000000001","amount":0}]')), 'ERR:22023', 'ยอดต้องมากกว่า 0');
 select is(tests.device_a(tests.expense_sql('[{"id":"60000000-0000-0000-0000-000000000002","type_id":"40000000-0000-0000-0000-000000000009","amount":100}]')), 'ERR:22023', 'ใช้ประเภทค่าใช้จ่ายร้านอื่นไม่ได้');
 select is(tests.device_a(format($$select update_expense(%L, '60000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000001', 30000, 'x')$$, tests.val('token'))), 'ERR:42501', 'แคชเชียร์แก้ค่าใช้จ่ายไม่ได้');
@@ -129,7 +129,7 @@ select is((select amount from expenses where id = '60000000-0000-0000-0000-00000
 select is(tests.device_a(format($$select remove_expense(%L, '60000000-0000-0000-0000-000000000001')$$, tests.val('token'))), 'true', 'ผู้จัดการลบค่าใช้จ่ายได้');
 select is(tests.device_a(format($$select remove_expense(%L, '60000000-0000-0000-0000-000000000001')$$, tests.val('token'))), 'false', 'ลบซ้ำคืน false');
 select is(tests.device_a(format($$select remove_purchase(%L, '50000000-0000-0000-0000-000000000001')$$, tests.val('token'))), 'true', 'ผู้จัดการลบบิลซื้อได้');
-select is((select count(*)::int from purchase_lines), 0, 'ลบบิลแล้วรายการหายด้วย');
+select is((select count(*)::int from purchase_lines where shop_id = tests.val('shop')::uuid), 0, 'ลบบิลแล้วรายการหายด้วย');
 select is(tests.device_a(format($$select reopen_day(%L, '2026-11-07')$$, tests.val('token'))), 'true', 'ผู้จัดการเปิดวันที่ปิดแล้วได้');
 select is(tests.device_a(format($$select reopen_day(%L, '2026-11-07')$$, tests.val('token'))), 'false', 'เปิดซ้ำคืน false');
 

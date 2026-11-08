@@ -47,6 +47,12 @@ const List<SetupTabSpec> kSetupTabs = [
   SetupTabSpec('ingredients', 'วัตถุดิบ', 'box', 'สต็อกและคู่ค้า'),
   SetupTabSpec('suppliers', 'แหล่งซื้อของ', 'stock', 'สต็อกและคู่ค้า'),
   SetupTabSpec('staff', 'พนักงานและสิทธิ์', 'user', 'การเงินและระบบ'),
+  SetupTabSpec(
+    'devices',
+    'เครื่องและลิงก์เข้าร้าน',
+    'tables',
+    'การเงินและระบบ',
+  ),
   SetupTabSpec('payments', 'ช่องทางชำระเงิน', 'receipt', 'การเงินและระบบ'),
   SetupTabSpec('fixedCosts', 'ค่าคงที่รายเดือน', 'bills', 'การเงินและระบบ'),
   SetupTabSpec('expenseTypes', 'ประเภทค่าใช้จ่าย', 'note', 'การเงินและระบบ'),

@@ -149,6 +149,7 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
           pageTitle: widget.viewSpec.title,
           staffName: me.name,
           staffRole: me.role,
+          seesCosts: me.seesCosts,
           shiftOpenTimeText: shiftTimeText,
           shiftStaffName: shiftStaffName,
           initialDrawerOpen: widget.initialDrawerOpen,

@@ -60,9 +60,18 @@ class DeviceAuth {
     }
   }
 
-  /// Creates the anonymous device account.
-  Future<void> signInAnonymously() =>
-      _request(Uri.parse('$_url/auth/v1/signup'), const <String, dynamic>{});
+  /// Creates the anonymous device account. [captchaToken] is required by the
+  /// server once captcha protection is turned on.
+  Future<void> signInAnonymously({String? captchaToken}) => _request(
+    Uri.parse('$_url/auth/v1/signup'),
+    captchaToken == null
+        ? const <String, dynamic>{}
+        : <String, dynamic>{
+            'gotrue_meta_security': <String, dynamic>{
+              'captcha_token': captchaToken,
+            },
+          },
+  );
 
   /// Returns a usable access token, refreshing it shortly before it expires,
   /// or `null` when signed out so that calls run as the anonymous API role.

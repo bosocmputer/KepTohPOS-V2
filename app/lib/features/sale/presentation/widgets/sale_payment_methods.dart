@@ -185,6 +185,41 @@ class PromptPayQR extends StatelessWidget {
   }
 }
 
+/// Shown instead of the QR when the shop has no PromptPay number yet.
+class PromptPayMissing extends StatelessWidget {
+  const new({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final tt = Theme.of(context).textTheme;
+    return Container(
+      key: const ValueKey('promptpay-missing'),
+      padding: const EdgeInsets.all(AppDimensions.space4),
+      decoration: BoxDecoration(
+        color: t.dangerSoft,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        border: Border.all(color: t.danger),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'ร้านยังไม่ได้ตั้งเบอร์พร้อมเพย์',
+            style: tt.titleMedium?.copyWith(color: t.danger),
+          ),
+          const SizedBox(height: AppDimensions.space1),
+          Text(
+            'สร้าง QR ไม่ได้ ให้เจ้าของร้านใส่เบอร์ที่ '
+            'ตั้งค่า › ร้านและใบเสร็จ หรือเลือกรับเงินวิธีอื่น',
+            style: tt.bodySmall?.copyWith(color: t.ink),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Transfer / card summary card for non-cash/non-QR payment methods.
 class TransferStatusSection extends StatelessWidget {
   const new({required this.methodName, this.bankAccount, super.key});
