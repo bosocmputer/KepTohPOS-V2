@@ -156,8 +156,8 @@ void main() {
     test('computeLedger without today uses clock date even when state contains '
         'future dates', () {
       final clockNow = DateTime.now();
-      final clockKey = dkey(clockNow);
       final s = _loadSeededState(clockNow);
+      final clockKey = businessDayKey(clockNow, s.shop.dayCutoffMinutes);
       const futureDate = '2099-12-31';
       s.counts[futureDate] = <String, double>{'i1': 5};
       s.purchases.add(
