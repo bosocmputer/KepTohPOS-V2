@@ -91,4 +91,44 @@ void main() {
     expect(await other.pendingCount(), 0);
     expect(await queue.pendingCount(), 1);
   });
+
+  test('counts waiting bills and reports progress while sending', () async {
+    // Arrange: two bills among three commands.
+    await queue.add(id: 'r', fn: 'send_round', params: {'k': 'r'}, now: t0);
+    await queue.add(id: 'b1', fn: 'settle_bill', params: {'k': 'b1'}, now: t0);
+    await queue.add(id: 'b2', fn: 'settle_bill', params: {'k': 'b2'}, now: t0);
+    expect(await queue.watchPendingBills().first, 2);
+    final seen = <OutboxProgress?>[];
+    queue.progress.addListener(() => seen.add(queue.progress.value));
+
+    // Act
+    await queue.flush((fn, params) async {});
+
+    // Assert: started at 0/3, ended done with every bill sent.
+    expect(seen.first, const OutboxProgress(total: 3, bills: 2));
+    expect(
+      queue.progress.value,
+      const OutboxProgress(
+        total: 3,
+        bills: 2,
+        sent: 3,
+        sentBills: 2,
+        done: true,
+      ),
+    );
+    expect(await queue.watchPendingBills().first, 0);
+  });
+
+  test('a probe while still offline leaves no progress behind', () async {
+    // Arrange
+    await addThree();
+
+    // Act
+    await queue.flush(
+      (fn, params) async => throw const OutboxOfflineException(),
+    );
+
+    // Assert
+    expect(queue.progress.value, isNull);
+  });
 }

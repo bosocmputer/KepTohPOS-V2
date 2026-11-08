@@ -12,14 +12,42 @@ class SyncStatusBanner extends StatelessWidget {
   final ValueListenable<SyncStatus> status;
   final Widget child;
 
+  static String _bills(int n) => n > 0 ? ' (บิล $n ใบ)' : '';
+
   static String? textFor(SyncStatus s) {
+    final p = s.progress;
+    if (p != null && !p.done) {
+      return 'กำลังส่ง ${p.sent}/${p.total} รายการ'
+          '${p.bills > 0 ? ' · บิล ${p.sentBills}/${p.bills} ใบ' : ''}';
+    }
     if (!s.online) {
       return s.pending > 0
           ? 'ออฟไลน์ · ขายต่อได้ · รอส่ง ${s.pending} รายการ'
+                '${_bills(s.pendingBills)}'
           : 'ออฟไลน์ · ขายต่อได้ ข้อมูลจะส่งเมื่อเน็ตกลับมา';
     }
-    if (s.pending > 0) return 'กำลังส่งข้อมูลที่ค้าง ${s.pending} รายการ';
+    if (p != null && p.done) {
+      return p.rejected > 0
+          ? 'ส่งแล้ว ${p.sent} รายการ · ไม่ผ่าน ${p.rejected} รายการ '
+                'ให้ผู้จัดการตรวจสอบ'
+          : '✓ ส่งครบแล้ว ${p.sent} รายการ'
+                '${p.sentBills > 0 ? ' · บิล ${p.sentBills} ใบ' : ''}';
+    }
+    if (s.pending > 0) {
+      return 'กำลังส่งข้อมูลที่ค้าง ${s.pending} รายการ'
+          '${_bills(s.pendingBills)}';
+    }
     return null;
+  }
+
+  /// Green once everything went through, red when offline or refused.
+  static SyncTone toneFor(SyncStatus s) {
+    final p = s.progress;
+    if (p != null && p.done && s.online) {
+      return p.rejected > 0 ? SyncTone.bad : SyncTone.good;
+    }
+    if (!s.online && (p == null || p.done)) return SyncTone.bad;
+    return SyncTone.busy;
   }
 
   @override
@@ -33,8 +61,11 @@ class SyncStatusBanner extends StatelessWidget {
           if (text == null) return const SizedBox.shrink();
           final t = context.tokens;
           final narrow = MediaQuery.sizeOf(context).width < 600;
-          final bg = s.online ? t.primarySoft : t.dangerSoft;
-          final fg = s.online ? t.primary : t.dangerInk;
+          final (bg, fg, icon) = switch (toneFor(s)) {
+            SyncTone.good => (t.successSoft, t.success, 'check'),
+            SyncTone.bad => (t.dangerSoft, t.dangerInk, 'alert'),
+            SyncTone.busy => (t.primarySoft, t.primary, 'clock'),
+          };
           return Positioned(
             left: 0,
             right: 0,
@@ -53,7 +84,7 @@ class SyncStatusBanner extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      AppIcon(s.online ? 'clock' : 'alert', color: fg),
+                      AppIcon(icon, color: fg),
                       const SizedBox(width: AppDimensions.space2),
                       Text(
                         text,
@@ -71,3 +102,6 @@ class SyncStatusBanner extends StatelessWidget {
     ],
   );
 }
+
+/// Colour of the sync banner.
+enum SyncTone { good, bad, busy }

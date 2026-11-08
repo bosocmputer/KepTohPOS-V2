@@ -89,6 +89,8 @@ ConnectionMonitor startSync(
       (r) => !r.contains(ConnectivityResult.none),
     ),
     pendingCount: queue.watchPendingCount(),
+    pendingBills: queue.watchPendingBills(),
+    progress: queue.progress,
   );
   repo
     ..outbox = queue

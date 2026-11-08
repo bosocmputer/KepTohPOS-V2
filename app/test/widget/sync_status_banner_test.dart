@@ -1,4 +1,5 @@
 import 'package:app/core/data/local/connection_monitor.dart';
+import 'package:app/core/data/local/outbox_queue.dart';
 import 'package:app/core/theme/app_theme.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -53,5 +54,67 @@ void main() {
     status.value = const SyncStatus(online: true, pending: 0);
     await tester.pump();
     expect(banner, findsNothing);
+  });
+
+  testWidgets('counts bills offline, shows progress, then a green done', (
+    tester,
+  ) async {
+    // Arrange
+    final status = await pump(
+      tester,
+      const SyncStatus(online: false, pending: 5, pendingBills: 2),
+    );
+    expect(
+      find.text('ออฟไลน์ · ขายต่อได้ · รอส่ง 5 รายการ (บิล 2 ใบ)'),
+      findsOneWidget,
+    );
+
+    // Act & Assert: sending.
+    status.value = const SyncStatus(
+      online: true,
+      pending: 2,
+      pendingBills: 1,
+      progress: OutboxProgress(total: 5, bills: 2, sent: 3, sentBills: 1),
+    );
+    await tester.pump();
+    expect(find.text('กำลังส่ง 3/5 รายการ · บิล 1/2 ใบ'), findsOneWidget);
+
+    // Act & Assert: done.
+    status.value = const SyncStatus(
+      online: true,
+      pending: 0,
+      progress: OutboxProgress(
+        total: 5,
+        bills: 2,
+        sent: 5,
+        sentBills: 2,
+        done: true,
+      ),
+    );
+    await tester.pump();
+    expect(find.text('✓ ส่งครบแล้ว 5 รายการ · บิล 2 ใบ'), findsOneWidget);
+    expect(SyncStatusBanner.toneFor(status.value).name, 'good');
+  });
+
+  testWidgets('a refused command is called out', (tester) async {
+    await pump(
+      tester,
+      const SyncStatus(
+        online: true,
+        pending: 0,
+        progress: OutboxProgress(
+          total: 3,
+          bills: 1,
+          sent: 2,
+          sentBills: 1,
+          rejected: 1,
+          done: true,
+        ),
+      ),
+    );
+    expect(
+      find.text('ส่งแล้ว 2 รายการ · ไม่ผ่าน 1 รายการ ให้ผู้จัดการตรวจสอบ'),
+      findsOneWidget,
+    );
   });
 }
