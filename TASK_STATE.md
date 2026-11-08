@@ -7,9 +7,13 @@
   - Done: SA-04 QR without PromptPay (`f98ae58`) · pgTAP per-shop counts (`fc6289a`) · E2E `cashier_flow_test` (`e57693e`) · ledger test uses business day (`25797eb`) · Google button + Turnstile captcha code (`dd582e1`) · setup tab "เครื่องและลิงก์เข้าร้าน" + 24h pairing links + revoke, E2E `device_link_flow_test` (`c773b83`, migration pushed to remote)
   - Staging domain now follows `m1/f1-leftovers` · Google provider enabled in Supabase (GCP project `keptoh-pos`, account bosnontawat.ai@gmail.com, consent screen in Testing) · Turnstile widget "KepToh POS" (Cloudflare Bos_catdog@hotmail.com) · Vercel Preview env `CAPTCHA_SITE_KEY` added
 - **Done later on 2026-11-08:** Google + captcha live on staging (Turnstile secret verified: no token → 400, real token → 200) · owner sign-out / leave device / redesigned first screens (`ffa0c54`) · build script fix (`32458cf`) · manager cost switch `staff.can_view_costs` (migration `20261108000300`, needs `db push`)
+- **M2 (branch `m2/offline`, draft PR #14) — parts 1–4 done, all migrations pushed to remote (000400 receipt seq, 000500 offline staff tokens):**
+  - Drift `LocalDb` (outbox, snapshots, offline PIN creds) · `OutboxQueue` · `ConnectionMonitor` + `SyncStatusBanner` · `SyncEngine` (flush on reconnect + every 15 s, snapshot autosave 1 s, costs stripped)
+  - Sale commands via `runCommand` (queue + local domain apply) · device receipt numbers (`settle_bill` p_seq) · 7-day offline tokens (survive another sign-in) · offline PIN (PBKDF2 Web Crypto, 5 misses → 5 min) · offline voids · offline app start from snapshot
+  - Tests: `offline_sync_test` (3 scenarios, real local Supabase), `local_db_web_test` (Chrome), unit 165, pgTAP PASS, E2E 7 suites
 - **Next Immediate Step:**
-  - User runs `supabase db push` for `20261108000300_staff_can_view_costs.sql`, then merge PR #13 (M1 done) → start M2 offline
-  - Decided: no online manager accounts; managers join via device link + PIN
+  - User tries offline on staging (staging domain now on `m2/offline`), then merge PR #14 → M3 realtime multi-device
+  - Known gaps: no browser E2E that cuts the network (flutter drive cannot); stock/expense/setup writes still need online; two devices offline can open the same table (M3)
 - **Known Constraints / Decisions:**
   - Staging = https://keptoh-staging.vercel.app (ผู้ใช้อนุญาตให้ใส่ PIN ทดสอบ 1234) · Supabase Site URL ชี้ staging · Redirect: staging, Preview เดิม, localhost
   - merge เข้า `main` ผ่าน PR บน GitHub เท่านั้น (คำสั่ง `git merge`/`git checkout main` ถูกระบบสิทธิ์บล็อก) · ผู้ใช้เลือก Create a merge commit

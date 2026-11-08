@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:app/app.dart';
+import 'package:app/core/data/local/local_db.dart';
 import 'package:app/core/di/injection.dart';
 import 'package:app/core/theme/app_theme.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/features/onboarding/data/device_session.dart';
+import 'package:app/features/onboarding/data/sync_setup.dart';
 import 'package:app/features/onboarding/presentation/onboarding_shell.dart';
 import 'package:app/features/onboarding/presentation/owner_login_form.dart';
 import 'package:app/features/onboarding/presentation/owner_shop_step.dart';
@@ -68,15 +70,33 @@ class _OnboardingAppState extends State<OnboardingApp> {
         });
       }
     } on Object {
+      // No connection: open the shop as last saved on this device, if any.
+      if (await _enterOffline()) return;
       if (mounted) setState(() => _step = _Step.failed);
     }
+  }
+
+  Future<bool> _enterOffline() async {
+    final session = _session;
+    if (session == null) return false;
+    final db = LocalDb();
+    final repo = await restoreOffline(session, db);
+    if (repo == null) {
+      await db.close();
+      return false;
+    }
+    await configureDependencies(repository: repo, deviceSession: session);
+    final sync = startSync(session, repo, db: db);
+    runApp(KepTohApp(busy: session.busy, sync: sync.status));
+    return true;
   }
 
   Future<void> _enter(String shopId) async {
     final session = _session!;
     final repo = await session.openRepository(shopId);
     await configureDependencies(repository: repo, deviceSession: session);
-    runApp(KepTohApp(busy: session.busy));
+    final sync = startSync(session, repo);
+    runApp(KepTohApp(busy: session.busy, sync: sync.status));
   }
 
   Future<void> _signOutOwner() async {

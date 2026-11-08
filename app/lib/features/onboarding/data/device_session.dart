@@ -66,6 +66,9 @@ class DeviceSession {
   /// `true` while any request to the server is still in flight.
   ValueListenable<bool> get busy => _activity.busy;
 
+  /// Whether the last request reached the server (see [NetworkActivity]).
+  ValueListenable<bool> get reachable => _activity.reachable;
+
   /// The paired device's client. Sales run through this one.
   final SupabaseClient device;
 
@@ -156,6 +159,7 @@ class DeviceSession {
         deviceClient: device,
         ownerClient: owner,
         shopId: shopId,
+        deviceUserId: _deviceAuth.userId,
       );
 
   /// Signs the owner in with email and password.

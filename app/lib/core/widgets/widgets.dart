@@ -20,5 +20,6 @@ export 'package:app/core/widgets/product_card.dart';
 export 'package:app/core/widgets/seg.dart';
 export 'package:app/core/widgets/stat.dart';
 export 'package:app/core/widgets/stepper.dart';
+export 'package:app/core/widgets/sync_status_banner.dart';
 export 'package:app/core/widgets/tabs.dart';
 export 'package:app/core/widgets/toast.dart';

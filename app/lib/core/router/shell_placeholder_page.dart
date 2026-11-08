@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app/core/layout/app_shell.dart';
 import 'package:app/core/router/app_router.dart';
+import 'package:app/core/sync/sync_widgets.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/formatters.dart';
 import 'package:app/domain/domain.dart';
@@ -198,7 +199,12 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
           onShiftAction: () => activeShift != null
               ? context.go('/shift')
               : setState(() => _manualOpenShiftModal = true),
-          onLogout: () {
+          onLogout: () async {
+            final go = await confirmWithPendingSync(
+              context,
+              action: 'ออกจากระบบ',
+            );
+            if (!go || !context.mounted) return;
             unawaited(authCubit?.logout());
             context.go('/login');
           },

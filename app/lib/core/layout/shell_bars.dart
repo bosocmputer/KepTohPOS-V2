@@ -1,3 +1,4 @@
+import 'package:app/core/sync/sync_widgets.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/roles.dart';
@@ -94,6 +95,9 @@ class _ShellHeaderBarState extends State<ShellHeaderBar> {
           compact: widget.isMobile || maxW < 640,
           onTap: widget.onOpenDrawer,
         );
+        final syncChip = SyncStatusButton(
+          compact: widget.isMobile || maxW < 640,
+        );
         return Container(
           key: const ValueKey('shell-header'),
           height: twoRows ? null : widget.height + topInset,
@@ -117,6 +121,7 @@ class _ShellHeaderBarState extends State<ShellHeaderBar> {
                         const SizedBox(width: 12),
                         Expanded(child: titleNode),
                         const SizedBox(width: 12),
+                        syncChip,
                         userChip,
                       ],
                     ),
@@ -177,6 +182,7 @@ class _ShellHeaderBarState extends State<ShellHeaderBar> {
                         const SizedBox(width: 10),
                       ],
                     ],
+                    syncChip,
                     userChip,
                   ],
                 ),

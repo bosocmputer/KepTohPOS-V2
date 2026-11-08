@@ -18,9 +18,14 @@ dependencies:
   qr_flutter: ^4.1.0
   supabase_flutter: ^2.18.3
   uuid: ^4.6.0
+  drift: ^2.35.3
+  drift_flutter: ^0.3.1
+  connectivity_plus: ^7.3.2
 
 dev_dependencies:
   bloc_test: ^10.0.0
+  build_runner: ^2.16.1
+  drift_dev: ^2.35.2
   flutter_test:
     sdk: flutter
   integration_test:
@@ -53,3 +58,13 @@ flutter:
           weight: 600
         - asset: assets/fonts/IBMPlexSansThai-Bold.ttf
           weight: 700
+
+# Native SQLite for tests on the Dart VM (the web app uses web/sqlite3.wasm).
+# Use the operating system's library instead of downloading one from GitHub
+# at build time, which failed CI whenever GitHub release downloads were down.
+# Revisit before shipping an Android build, which has no system SQLite.
+hooks:
+  user_defines:
+    sqlite3:
+      source: system
+      name_linux: /usr/lib/x86_64-linux-gnu/libsqlite3.so.0

@@ -1,8 +1,11 @@
 import 'dart:async';
 
+import 'package:app/core/data/local/offline_credentials.dart';
+import 'package:app/core/data/local/outbox_queue.dart';
 import 'package:app/core/data/supabase/supabase_state_loader.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/domain/pos_command_exception.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -37,6 +40,23 @@ abstract class SupabasePosBase {
   String? staffToken;
   String? signedInStaffId;
 
+  /// Commands made offline; set once the browser database is open.
+  OutboxQueue? outbox;
+
+  /// PIN checks for signing in offline; set with [outbox].
+  OfflineCredentials? credentials;
+
+  /// The signed-in person's 7-day token, which queued commands carry so they
+  /// stay valid after someone else signs in on this device.
+  String? offlineToken;
+
+  /// `BRANCH-POSxx`, so this device can number its own receipts offline;
+  /// `null` leaves numbering to the server.
+  String? receiptPrefix;
+
+  /// The last receipt number this device used.
+  int receiptSeq = 0;
+
   /// Whether a real owner account is signed in for setup changes.
   bool get hasOwnerSession {
     final user = ownerClient?.auth.currentUser;
@@ -68,6 +88,7 @@ abstract class SupabasePosBase {
         _ => const PosCommandException('ทำรายการไม่สำเร็จ'),
       };
     }
+    if (error is http.ClientException) return const PosOfflineException();
     return const PosCommandException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
   }
 
@@ -89,6 +110,10 @@ abstract class SupabasePosBase {
 
   /// Reloads the snapshot from the server and broadcasts it.
   Future<PosState> reload() async {
+    // Server data lacks what is still queued; keep the local state until the
+    // outbox has been sent.
+    final queue = outbox;
+    if (queue != null && await queue.pendingCount() > 0) return posState;
     final me = posState.staff.where((x) => x.id == signedInStaffId).firstOrNull;
     final SupabaseSnapshot snapshot;
     try {

@@ -34,3 +34,4 @@ else
 fi
 
 flutter build web --release ${DEFINES[@]+"${DEFINES[@]}"}
+bash scripts/build_sw.sh

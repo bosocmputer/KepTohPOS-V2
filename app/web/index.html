@@ -117,6 +117,16 @@
       observer.observe(document.body, { childList: true, subtree: true });
     })();
   </script>
+  <script>
+    // Keeps the app's files on this device so it opens without internet.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function (e) {
+          console.warn('service worker not registered', e);
+        });
+      });
+    }
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

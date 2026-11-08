@@ -1,4 +1,5 @@
 import 'package:app/core/di/injection.dart';
+import 'package:app/core/sync/sync_widgets.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/features/onboarding/data/device_session.dart';
@@ -22,6 +23,13 @@ class _SetupDeviceLeaveSectionState extends State<SetupDeviceLeaveSection> {
   String _error = '';
 
   Future<void> _leave() async {
+    // Leaving now would strand bills that have not reached the server.
+    final clear = await confirmWithPendingSync(
+      context,
+      action: 'ออกจากร้าน',
+      block: true,
+    );
+    if (!clear || !mounted) return;
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
