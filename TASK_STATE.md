@@ -3,9 +3,14 @@
 - **Completed & Verified (2026-11-07):**
   - F1 merge แล้ว (PR #11) · migration 000100–001200 อยู่บนโปรเจกต์ `pbujdexhdzglymgnbsuw` ครบ · Production บน Vercel ยังเป็น mock (ตัวแปร Supabase ตั้งเฉพาะ Preview)
   - M0 merge แล้ว (PR #12): `.github/workflows/ci.yml` · E2E `app/integration_test/{sale,setup,shift}_flow_test.dart` รันด้วย `scripts/e2e.sh` · `docs/test_matrix.md` → CI ผ่านทั้งหมด, unit/bloc/widget 136/136, pgTAP 197, integration 9
-- **Next Immediate Step:** M1 บนกิ่ง `m1/f1-leftovers` (แตกจาก `main` แล้ว)
-  - ซ่อน/เตือน QR เมื่อร้านยังไม่ตั้งพร้อมเพย์ (SA-04) · ให้ pgTAP นับเฉพาะร้านของตัวเอง (`supabase/tests/*.sql` ตกถ้า DB local มีข้อมูลค้าง) · เชิญผู้จัดการ · captcha · ปุ่ม Google · E2E ฝั่งแคชเชียร์
-  - ย้ายโดเมน staging `keptoh-staging.vercel.app` ไปผูกกับกิ่ง M1 (ตอนนี้ผูกกับ `qa/m0-test-foundation`)
+- **M1 progress (2026-11-08, branch `m1/f1-leftovers`, draft PR #13):**
+  - Done: SA-04 QR without PromptPay (`f98ae58`) · pgTAP per-shop counts (`fc6289a`) · E2E `cashier_flow_test` (`e57693e`) · ledger test uses business day (`25797eb`) · Google button + Turnstile captcha code (`dd582e1`) · setup tab "เครื่องและลิงก์เข้าร้าน" + 24h pairing links + revoke, E2E `device_link_flow_test` (`c773b83`, migration pushed to remote)
+  - Staging domain now follows `m1/f1-leftovers` · Google provider enabled in Supabase (GCP project `keptoh-pos`, account bosnontawat.ai@gmail.com, consent screen in Testing) · Turnstile widget "KepToh POS" (Cloudflare Bos_catdog@hotmail.com) · Vercel Preview env `CAPTCHA_SITE_KEY` added
+- **Next Immediate Step:**
+  - Captcha: staging bundle had no site key after `c773b83`; `a580973` logs "Captcha: on/off" in the Vercel build — read it, fix, then the user pastes the Turnstile secret into Supabase › Attack Protection and we test sign-up on staging
+  - Google login on staging: first try expired (`bad_oauth_state`, chooser left open); user to retry
+  - Manager "เห็นต้นทุนและกำไร" switch (~12 files): `staff.can_view_costs` default false, `get_manager_data` checks it, loader `manager` flag, `StaffMember.canViewCosts`, staff modal switch, dashboard/reports nav per staff (keep `canRoleAccessView` for role parity tests), mock manager set to true
+  - Decided: no online manager accounts; managers join via device link + PIN
 - **Known Constraints / Decisions:**
   - Staging = https://keptoh-staging.vercel.app (ผู้ใช้อนุญาตให้ใส่ PIN ทดสอบ 1234) · Supabase Site URL ชี้ staging · Redirect: staging, Preview เดิม, localhost
   - merge เข้า `main` ผ่าน PR บน GitHub เท่านั้น (คำสั่ง `git merge`/`git checkout main` ถูกระบบสิทธิ์บล็อก) · ผู้ใช้เลือก Create a merge commit
