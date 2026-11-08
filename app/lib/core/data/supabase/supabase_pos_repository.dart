@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app/core/data/local/offline_credentials.dart';
+import 'package:app/core/data/local/shop_snapshot_store.dart';
 import 'package:app/core/data/supabase/supabase_pos_base.dart';
 import 'package:app/core/data/supabase/supabase_pos_offline.dart';
 import 'package:app/core/data/supabase/supabase_pos_sale_commands.dart';
@@ -28,6 +29,32 @@ class SupabasePosRepository extends SupabasePosBase
     required super.shopId,
     required super.snapshot,
   });
+
+  /// Restarts from a snapshot saved by [toSnapshot], for opening the app
+  /// without a connection. Costs are never in it.
+  factory restore({
+    required SupabaseClient deviceClient,
+    required String shopId,
+    required Map<String, dynamic> data,
+    SupabaseClient? ownerClient,
+  }) =>
+      SupabasePosRepository(
+          deviceClient: deviceClient,
+          ownerClient: ownerClient,
+          shopId: shopId,
+          snapshot: SupabaseSnapshot(
+            state: PosState.fromJson(data['state'] as Map<String, dynamic>)
+                .copy()
+                .freeze(),
+            sessionByTable: Map<String, String>.from(
+              data['sessionByTable'] as Map<String, dynamic>,
+            ),
+            organizationId: data['organizationId'] as String,
+            canReadCosts: false,
+          ),
+        )
+        ..receiptPrefix = data['receiptPrefix'] as String?
+        ..receiptSeq = (data['receiptSeq'] as num? ?? 0).toInt();
 
   /// Loads the shop for a paired device.
   ///
@@ -69,6 +96,15 @@ class SupabasePosRepository extends SupabasePosBase
     }
     return repo;
   }
+
+  /// What `restore` needs, with costs removed.
+  Map<String, dynamic> toSnapshot() => <String, dynamic>{
+    'state': stripCosts(posState.toJson()),
+    'sessionByTable': sessionByTable,
+    'organizationId': organizationId,
+    'receiptPrefix': receiptPrefix,
+    'receiptSeq': receiptSeq,
+  };
 
   @override
   PosState get state => posState;

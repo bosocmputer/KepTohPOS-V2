@@ -79,6 +79,18 @@ class OutboxQueue {
     _db.outboxEntries,
   )..where(_pending)).watch().map((rows) => rows.length);
 
+  /// The largest integer [param] among commands still waiting, or 0; used to
+  /// continue receipt numbers after a restart while offline.
+  Future<int> maxPendingInt(String param) async {
+    final rows = await (_db.select(_db.outboxEntries)..where(_pending)).get();
+    var max = 0;
+    for (final r in rows) {
+      final v = (jsonDecode(r.params) as Map<String, dynamic>)[param];
+      if (v is int && v > max) max = v;
+    }
+    return max;
+  }
+
   /// Commands the server refused, oldest first, for someone to review.
   Future<List<OutboxEntry>> rejectedEntries() =>
       (_db.select(_db.outboxEntries)

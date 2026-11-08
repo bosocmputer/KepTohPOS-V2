@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:app/core/data/local/local_db.dart';
 import 'package:app/core/data/local/offline_credentials.dart';
 import 'package:app/core/data/local/outbox_queue.dart';
+import 'package:app/core/data/local/shop_snapshot_store.dart';
 import 'package:app/core/data/supabase/supabase_pos_repository.dart';
 import 'package:app/domain/domain.dart';
 import 'package:drift/native.dart';
@@ -27,12 +28,14 @@ class _Switchable extends http.BaseClient {
 /// A paired device on a switchable network, a cashier (PIN 1111), a manager
 /// (PIN 2222), two tables and one package.
 class _Shop {
-  new(this.owner, this.net, this.repo, this.id);
+  new(this.owner, this.net, this.repo, this.id, this.db, this.device);
 
   final SupabaseClient owner;
   final _Switchable net;
   final SupabasePosRepository repo;
   final String id;
+  final LocalDb db;
+  final SupabaseClient device;
 
   StaffMember staff(String role) =>
       repo.state.staff.firstWhere((s) => s.role == role);
@@ -128,7 +131,7 @@ Future<_Shop> _openShop(String url, String key) async {
       shopId: shopId,
       hash: (pin, salt) async => '$salt:$pin',
     );
-  return _Shop(owner, net, repo, shopId);
+  return _Shop(owner, net, repo, shopId, db, device);
 }
 
 void main() {
@@ -245,6 +248,99 @@ void main() {
           .eq('id', billId)
           .single();
       expect(bill['voided'], isTrue);
+    },
+  );
+
+  test(
+    'restarting offline continues from the saved shop',
+    skip: skip,
+    () async {
+      // Arrange: a costed add-on; a manager who sees costs; one online sale.
+      final shop = await _openShop(url!, key!);
+      await shop.owner.from('addons').insert(<String, dynamic>{
+        'shop_id': shop.id,
+        'name': 'โค้ก',
+        'category': 'เครื่องดื่ม',
+        'price': 4500,
+        'cost': 3000,
+        'stock': 24,
+      });
+      await shop.owner
+          .from('staff')
+          .update(<String, dynamic>{'can_view_costs': true})
+          .eq('shop_id', shop.id)
+          .eq('role', 'manager');
+      final repo = shop.repo;
+      final cashier = shop.staff('cashier');
+      final manager = shop.staff('manager');
+      await repo.signInWithPin(cashier.id, '1111');
+      await repo.signInWithPin(manager.id, '2222');
+      await repo.openCashShift(staffId: manager.id, floatAmount: 100000);
+      await shop.sell(manager, repo.state.tables[0]);
+      expect(repo.state.addons.single.cost, 3000);
+
+      // Act: offline, one more sale, and the shop is saved as the app does.
+      shop.net.down = true;
+      await shop.sell(manager, repo.state.tables[1]);
+      final store = ShopSnapshotStore(shop.db);
+      await store.save(shop.id, repo.toSnapshot());
+
+      // Assert: what is kept on the device has no cost.
+      final saved = (await store.latest())!;
+      final addons = (saved.data['state'] as Map)['addons'] as List<dynamic>;
+      expect((addons.single as Map)['cost'], 0);
+
+      // Act: the app restarts, still offline, from the saved shop.
+      final queue = OutboxQueue(shop.db, shopId: shop.id);
+      final restarted =
+          SupabasePosRepository.restore(
+              deviceClient: shop.device,
+              shopId: saved.shopId,
+              data: saved.data,
+            )
+            ..outbox = queue
+            ..credentials = shop.repo.credentials;
+      final queued = await queue.maxPendingInt('p_seq');
+      if (queued > restarted.receiptSeq) restarted.receiptSeq = queued;
+      expect(
+        await restarted.signInWithPin(cashier.id, '1111'),
+        PinSignInResult.success,
+      );
+      final again = _Shop(
+        shop.owner,
+        shop.net,
+        restarted,
+        shop.id,
+        shop.db,
+        shop.device,
+      );
+      await again.sell(cashier, restarted.state.tables[0]);
+
+      // Assert: earlier sales are there and numbering continues.
+      expect(restarted.state.sales.map((b) => b.no).toList()..sort(), <String>[
+        '00000-POS01-000001',
+        '00000-POS01-000002',
+        '00000-POS01-000003',
+      ]);
+      expect(restarted.canReadCosts, isFalse);
+
+      // Act: the internet is back.
+      shop.net.down = false;
+      final result = await restarted.flushOutbox();
+
+      // Assert: the server has all three bills.
+      expect(result!.rejected, 0);
+      expect(result.sent, 2);
+      final bills = await shop.owner
+          .from('bills')
+          .select('no')
+          .eq('shop_id', shop.id)
+          .order('no', ascending: true);
+      expect(bills.map((b) => b['no']), <String>[
+        '00000-POS01-000001',
+        '00000-POS01-000002',
+        '00000-POS01-000003',
+      ]);
     },
   );
 }
