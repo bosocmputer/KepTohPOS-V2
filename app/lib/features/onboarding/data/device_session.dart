@@ -86,6 +86,14 @@ class DeviceSession {
   /// Signs the owner out of this browser. The device pairing is not touched.
   Future<void> signOutOwner() => owner.auth.signOut();
 
+  /// Unpairs this device from its shop and signs the owner out, so the
+  /// first screen shows again. The shop's data stays on the server.
+  Future<void> leaveShop() async {
+    await device.rpc<void>('leave_device');
+    await _deviceAuth.signOut();
+    if (isOwnerSignedIn) await owner.auth.signOut();
+  }
+
   /// Initializes Supabase and restores this device's saved session.
   static Future<DeviceSession> start() async {
     final activity = NetworkActivity();

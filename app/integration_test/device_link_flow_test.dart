@@ -23,8 +23,8 @@ class _MemoryStorage implements DeviceAuthStorage {
 }
 
 /// End-to-end: the owner makes a one-time link for a second device in setup,
-/// another device joins with it, and the owner then revokes that device.
-/// Covers ON-05 and ON-08.
+/// another device joins with it, the owner revokes that device, and finally
+/// takes this device out of the shop. Covers ON-05, ON-08 and ON-11.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -110,5 +110,21 @@ void main() {
     expect(row['revoked_at'], isNotNull);
     final after = await phoneCall('shops?select=id');
     expect(jsonDecode(after.body), isEmpty);
+
+    // Act: the owner takes this device out of the shop.
+    await tapKey(tester, 'device-leave-btn');
+    await tapKey(tester, 'device-leave-confirm-btn');
+
+    // Assert: back on the first screen, and this device is revoked.
+    await waitFor(tester, find.byKey(const ValueKey('choose-owner-btn')));
+    // Leaving signs the owner out, which this page's test client shares.
+    final again = await ownerClient(e2e.email, e2e.password);
+    final own = await again
+        .from('devices')
+        .select('revoked_at')
+        .eq('shop_id', await shopIdOf(again, e2e))
+        .eq('code', 'POS01')
+        .single();
+    expect(own['revoked_at'], isNotNull);
   });
 }

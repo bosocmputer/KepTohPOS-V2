@@ -5,6 +5,7 @@ import 'package:app/core/utils/open_url.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/onboarding/data/device_session.dart';
+import 'package:app/features/setup/presentation/widgets/setup_device_leave_section.dart';
 import 'package:app/features/setup/presentation/widgets/setup_nav_sidebar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,7 +19,10 @@ String deviceLink(String origin, String code) =>
 /// Owner-only list of the shop's devices, with a link to add one more: a
 /// second tablet, or a manager's phone for checking reports from home.
 class SetupDevicesPanel extends StatefulWidget {
-  const new({super.key});
+  const new({required this.staffRole, super.key});
+
+  /// Only the owner may take this device out of the shop.
+  final String staffRole;
 
   @override
   State<SetupDevicesPanel> createState() => _SetupDevicesPanelState();
@@ -124,6 +128,8 @@ class _SetupDevicesPanelState extends State<SetupDevicesPanel> {
             const SizedBox(height: AppDimensions.space4),
             _deviceList(),
           ],
+          if (session != null && widget.staffRole == 'owner')
+            SetupDeviceLeaveSection(session: session),
         ],
       ),
     );

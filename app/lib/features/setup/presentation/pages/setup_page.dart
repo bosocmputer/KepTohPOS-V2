@@ -141,7 +141,7 @@ class _SetupPageState extends State<SetupPage> {
           onSave: cubit.saveCosting,
         ),
         'theme' => const SetupThemeSection(),
-        'devices' => const SetupDevicesPanel(),
+        'devices' => SetupDevicesPanel(staffRole: widget.staffRole),
         'demo' => SetupDemoPanel(
           posState: s,
           onExportJson: () => setState(() => _jsonModalIsImport = false),
