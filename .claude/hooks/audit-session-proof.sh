@@ -2,7 +2,8 @@
 # ตัวตรวจสอบหลักฐานการทำงานจริงของ Agent Guard Template จากไฟล์ Session .jsonl และ Telemetry
 set -euo pipefail
 
-PROJECT_ROOT=$(git --no-optional-locks rev-parse --show-toplevel 2>/dev/null || pwd)
+SCRIPT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+PROJECT_ROOT="${1:-$(git --no-optional-locks rev-parse --show-toplevel 2>/dev/null || echo "$SCRIPT_ROOT")}"
 
 python3 - "$PROJECT_ROOT" <<'PYEOF'
 import sys, os, re, glob, json
