@@ -1,5 +1,6 @@
 import 'package:app/core/theme/app_theme.dart';
 import 'package:app/core/theme/tokens.dart';
+import 'package:app/core/widgets/dev_components_sections.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -20,24 +21,11 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
   int _step = 2;
   String _seg = 'before';
   String _tab = 'all';
-  String _pin = '12';
-  int _page = 1;
   AppBrandPalette _palette = AppBrandPalette.orange;
   static const _segItems = <SegItem<String>>[
     SegItem(value: 'before', label: 'จ่ายก่อนกิน', tone: SegTone.green),
     SegItem(value: 'after', label: 'กินก่อนจ่าย', tone: SegTone.orange),
   ];
-  static final _sampleCols = <DataTableCol<(String, String, String)>>[
-    DataTableCol(key: 'no', label: 'เลขบิล', cellBuilder: (_, r) => Text(r.$1)),
-    DataTableCol(key: 'tb', label: 'โต๊ะ', cellBuilder: (_, r) => Text(r.$2)),
-    DataTableCol(
-      key: 'total',
-      label: 'ยอดรวม',
-      align: ColAlign.right,
-      cellBuilder: (_, r) => Text(r.$3),
-    ),
-  ];
-
   Widget _buildTopBar(BuildContext context) {
     final t = context.tokens;
     return Container(
@@ -241,48 +229,7 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
           ),
         ],
       ),
-      PosDataTable<(String, String, String)>(
-        label: 'ตารางบิลตัวอย่าง',
-        columns: _sampleCols,
-        rows: const [
-          ('261104-001', 'A1', '฿607'),
-          ('261104-002', 'A2', '฿1,196'),
-        ],
-        footerCells: const [
-          Text('รวมทั้งหมด'),
-          SizedBox.shrink(),
-          Text('฿1,803'),
-        ],
-      ),
-      Pagination(
-        page: _page,
-        pages: 3,
-        onChanged: (n) => setState(() => _page = n),
-      ),
-      PinDots(value: _pin),
-      NumPad(
-        value: _pin,
-        maxLen: 4,
-        filledKeys: true,
-        showClear: true,
-        onChanged: (v) => setState(() => _pin = v),
-      ),
-      const Empty(title: 'ยังไม่มีรายการ', text: 'กดเพิ่มรายการเพื่อเริ่ม'),
-      Modal(
-        title: 'ตัวอย่าง Modal',
-        sub: 'คำอธิบายย่อย',
-        onClose: () {},
-        footer: [_b('ยกเลิก'), _b('บันทึก', BtnKind.primary)],
-        child: const Text('เนื้อหาภายใน Modal'),
-      ),
-      Confirm(
-        title: 'ยืนยันการลบ',
-        text: 'คุณต้องการลบรายการนี้ใช่หรือไม่?',
-        danger: true,
-        onYes: () {},
-        onNo: () {},
-      ),
-      const Center(child: AppToast(message: 'บันทึกข้อมูลเรียบร้อย')),
+      const DevLowerSections(),
     ];
     return ColoredBox(
       color: tokens.bg,
