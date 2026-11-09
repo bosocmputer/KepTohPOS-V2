@@ -35,6 +35,7 @@ Inspect root manifest files (including monorepo subfolders such as `app/`, `supa
 | **"ช่วยตรวจโค้ด / รีวิว / รันชุดทดสอบ E2E หรือ Browser"** | **QA Review & E2E Suite** | `invoke_subagent(TypeName="browser" or "self", Model="inherit", Role="QA Verifier")` |
 | **"ตรวจความปลอดภัย / `/security-audit` / เช็ก RLS & RPC"** | **Security Audit (Cloudflare Gate)** | Load `security-audit`: spawn `research` (`flash`) to map attack surface + `self` (`inherit`) to trace `entrypoint ➔ sink` (`[CONFIRMED]` vs `[NEEDS_VALIDATION]`) |
 | **"สร้าง 3D Viewer / Three.js / WebGL"** | Web 3D Visualization | Load `threejs-expert` (`mrdoob/three.js r187+`: `three/addons/*`, `HDRLoader`, `OutputPass`, `dispose()`) |
+| **"จดเป็นบทเรียน / จำไว้ว่า... / `/learn`"** | Self-Learning Memory | Distill into a 1-line rule in `.claude/rules/project-pitfalls.md` & `.agents/rules/project-pitfalls.md` (max 30 rules) |
 | **"เปิดจอ 3D / เช็กหลักฐานโมเดล"** | 3D HUD / Session Proof | Run `bash .claude/hooks/open-hud.sh` (3D Monitor) or `bash .claude/hooks/audit-session-proof.sh` (`.jsonl` model audit) |
 
 ---
@@ -77,8 +78,12 @@ Inspect root manifest files (including monorepo subfolders such as `app/`, `supa
 
 ---
 
-## 5. Known Project Pitfalls (`Anthropic SDLC Playbook Stage 3 — 2-Repeat Memory`)
-> **Persistence Rule (Survives Template `rsync` Upgrades):**
-> Whenever the agent repeats the same project-specific mistake a 2nd time, append a concise 1-line rule to **`.claude/rules/project-pitfalls.md`** (and mirror to `.agents/rules/project-pitfalls.md`). Template `rsync` updates exclude `project-pitfalls.md` so project-specific lessons are never overwritten.
+## 5. Self-Learning Pitfall Memory (`Anthropic SDLC Playbook Stage 3 — Blocker & Correction Distillation`)
+> **Persistence & Anti-Bloat Rule (Survives Template `rsync` Upgrades):**
+> Automatically distill project-specific lessons into **`.claude/rules/project-pitfalls.md`** (and mirror to **`.agents/rules/project-pitfalls.md`**) across **3 mandatory triggers**:
+> 1. **After Fixing a `[BLOCKER] [CONFIRMED]`:** When a blocker caught by `reviewer` or a recurring test failure is resolved, append a 1-line prevention rule so future milestones never repeat it.
+> 2. **On User Correction or `/learn`:** When the user corrects a project assumption or invokes `/learn`, record the rule immediately.
+> 3. **At Milestone Close / `/handoff`:** Before closing a milestone or writing `TASK_STATE.md`, distill any new project-specific gotchas (e.g., DB unit conventions, RLS quirks, test viewport requirements) into `project-pitfalls.md`.
+> - **Format & Cap:** Strictly **1 line per rule** (`- **[Category]:** <Rule + short reason>`), capped at **30 rules maximum** (merge overlapping rules if full).
 - Never weaken or edit existing test assertions (`expect`/`assert`) to make a failing test pass; fix the root cause in production code.
 - When modifying rules or skills in `.claude/`, always keep `.agents/` synchronized for seamless Claude Code ↔ Antigravity handoffs.

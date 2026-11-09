@@ -144,6 +144,8 @@ FRIENDLY_THAI_LABELS = {
     "ui-anti-slop": "กฎออกแบบ UI สะอาดไร้กลิ่นอาย AI (unslop + frontend-design + Three.js)",
     "security-audit": "ตรวจความปลอดภัยเชิงลึกไร้ False-Positive (Cloudflare Security Gate)",
     "/security-audit": "สั่งรัน Security Audit แยก Confirmed vs Needs Validation (Cloudflare)",
+    "project-pitfalls": "ความจำระยะยาวเฉพาะโปรเจกต์ — สกัดบทเรียนจาก Blocker & บั๊กซ้ำ (Stage 3 Memory)",
+    "/learn": "สกัดบทเรียนและข้อตกลงเฉพาะโปรเจกต์เก็บเข้าความจำถาวร (1-Line Pitfall Memory)",
 }
 
 def friendly_power_name(rel_path, meta, title):
