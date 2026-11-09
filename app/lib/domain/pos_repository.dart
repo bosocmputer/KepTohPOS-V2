@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:app/domain/models.dart';
 import 'package:app/domain/pos_setup_commands.dart';
+import 'package:app/domain/sales_tax_report.dart';
 import 'package:app/domain/stock_balance_ops.dart';
+
+export 'package:app/domain/sales_tax_report.dart';
 
 int _shiftCounter = 0;
 
@@ -209,6 +212,11 @@ abstract class PosRepository implements PosSetupCommands {
     String? buyerTaxId,
     String? buyerBranch,
   });
+
+  /// Sales-tax rows for `month` (`YYYY-MM`) and the daily per-device summary
+  /// for `from`..`to` (`YYYY-MM-DD`); owner/manager, server required.
+  Future<List<SalesTaxRow>> getSalesTaxReport(String month);
+  Future<List<DeviceDaySummary>> getDailyDeviceSummary(String from, String to);
 
   /// Cancels an unpaid open table and restores its addon stock.
   Future<PosState> cancelTable(String tableId);
