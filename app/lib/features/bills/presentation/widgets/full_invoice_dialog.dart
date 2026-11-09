@@ -1,4 +1,4 @@
-import 'package:app/core/theme/tokens.dart';
+import 'package:app/core/utils/thai_tax.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/pos_command_exception.dart';
 import 'package:flutter/material.dart';
@@ -34,29 +34,24 @@ class _FullInvoiceDialogState extends State<_FullInvoiceDialog> {
   String _name = '';
   String _address = '';
   String _taxId = '';
-  String _branch = '';
-  bool _headOffice = true;
+  String _branch = '00000';
   String _error = '';
   bool _busy = false;
 
   String? _validate() {
     if (_name.trim().isEmpty) return 'กรุณาระบุชื่อผู้ซื้อ';
     if (_address.trim().isEmpty) return 'กรุณาระบุที่อยู่ผู้ซื้อ';
-    final tax = _taxId.trim();
+    final tax = normalizeTaxId(_taxId);
     if (tax.isEmpty) return null;
-    if (!RegExp(r'^\d{13}$').hasMatch(tax)) {
-      return 'เลขประจำตัวผู้เสียภาษีต้องมี 13 หลัก';
-    }
-    if (!_headOffice && !RegExp(r'^\d{5}$').hasMatch(_branch.trim())) {
-      return 'กรุณาระบุรหัสสาขา 5 หลัก';
-    }
+    if (!isValidTaxId(tax)) return 'กรุณาตรวจเลขประจำตัวผู้เสียภาษี';
+    if (!isValidBranchCode(_branch)) return 'กรุณาระบุรหัสสาขา 5 หลัก';
     return null;
   }
 
   Future<void> _submit() async {
     final invalid = _validate();
     if (invalid != null) return setState(() => _error = invalid);
-    final tax = _taxId.trim();
+    final tax = normalizeTaxId(_taxId);
     setState(() {
       _busy = true;
       _error = '';
@@ -66,7 +61,7 @@ class _FullInvoiceDialogState extends State<_FullInvoiceDialog> {
         _name.trim(),
         _address.trim(),
         tax.isEmpty ? null : tax,
-        tax.isEmpty ? null : (_headOffice ? '00000' : _branch.trim()),
+        tax.isEmpty ? null : _branch,
       );
       if (mounted) Navigator.pop(context, true);
     } on PosCommandException catch (e) {
@@ -86,83 +81,39 @@ class _FullInvoiceDialogState extends State<_FullInvoiceDialog> {
   });
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: const Text('ออกใบกำกับเต็มรูป'),
-    content: SizedBox(
-      width: 380,
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Field(
-              label: 'ชื่อผู้ซื้อ',
-              child: AppTextInput(
-                key: const ValueKey('fullinv-name-input'),
-                value: _name,
-                onChanged: (v) => _edit(() => _name = v),
-              ),
-            ),
-            const SizedBox(height: AppDimensions.space2),
-            Field(
-              label: 'ที่อยู่',
-              child: AppTextInput(
-                key: const ValueKey('fullinv-address-input'),
-                value: _address,
-                maxLines: 3,
-                onChanged: (v) => _edit(() => _address = v),
-              ),
-            ),
-            const SizedBox(height: AppDimensions.space2),
-            Field(
-              label: 'เลขประจำตัวผู้เสียภาษี (ถ้ามี)',
-              child: AppTextInput(
-                key: const ValueKey('fullinv-taxid-input'),
-                value: _taxId,
-                keyboardType: TextInputType.number,
-                onChanged: (v) => _edit(() => _taxId = v),
-              ),
-            ),
-            if (_taxId.trim().isNotEmpty) ...[
-              SwitchListTile(
-                key: const ValueKey('fullinv-headoffice-switch'),
-                contentPadding: EdgeInsets.zero,
-                title: const Text('สำนักงานใหญ่'),
-                value: _headOffice,
-                onChanged: (v) => _edit(() => _headOffice = v),
-              ),
-              if (!_headOffice)
-                Field(
-                  label: 'รหัสสาขา (5 หลัก)',
-                  child: AppTextInput(
-                    key: const ValueKey('fullinv-branch-input'),
-                    value: _branch,
-                    keyboardType: TextInputType.number,
-                    onChanged: (v) => _edit(() => _branch = v),
-                  ),
-                ),
-            ],
-            if (_error.isNotEmpty) ...[
-              const SizedBox(height: AppDimensions.space2),
-              Text(
-                _error,
-                key: const ValueKey('fullinv-error'),
-                style: TextStyle(color: context.tokens.dangerInk),
-              ),
-            ],
-          ],
+  Widget build(BuildContext context) => FormModal(
+    title: 'ออกใบกำกับเต็มรูป',
+    submitLabel: 'ออกใบกำกับเต็มรูป',
+    busy: _busy,
+    error: _error,
+    onSubmit: _submit,
+    onCancel: () => Navigator.pop(context, false),
+    children: [
+      Field(
+        label: 'ชื่อผู้ซื้อ',
+        child: AppTextInput(
+          key: const ValueKey('fullinv-name-input'),
+          value: _name,
+          onChanged: (v) => _edit(() => _name = v),
         ),
       ),
-    ),
-    actions: [
-      TextButton(
-        onPressed: _busy ? null : () => Navigator.pop(context, false),
-        child: const Text('ยกเลิก'),
+      Field(
+        label: 'ที่อยู่',
+        child: AppTextInput(
+          key: const ValueKey('fullinv-address-input'),
+          value: _address,
+          maxLines: 3,
+          onChanged: (v) => _edit(() => _address = v),
+        ),
       ),
-      TextButton(
-        key: const ValueKey('fullinv-submit-btn'),
-        onPressed: _busy ? null : _submit,
-        child: const Text('ออกใบกำกับเต็มรูป'),
+      TaxIdBranchInput(
+        key: const ValueKey('fullinv-tax-branch'),
+        taxId: _taxId,
+        branchCode: _branch,
+        onChanged: (t, b) => _edit(() {
+          _taxId = t;
+          _branch = b;
+        }),
       ),
     ],
   );

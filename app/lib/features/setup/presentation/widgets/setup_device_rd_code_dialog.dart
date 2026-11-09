@@ -1,4 +1,3 @@
-import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/pos_command_exception.dart';
 import 'package:flutter/material.dart';
@@ -71,45 +70,26 @@ class _RdCodeDialogState extends State<_RdCodeDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: Text('เลขรหัสประจำเครื่อง ${widget.deviceName}'),
-    content: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Field(
-          label: 'เลขรหัสประจำเครื่อง (สรรพากร)',
-          hint:
-              'ใส่ตามที่สรรพากรอนุมัติ (ภ.พ.06) เครื่องที่มีเลขนี้'
-              ' จะพิมพ์ใบกำกับภาษีอย่างย่อได้เมื่อร้านจด VAT',
-          child: AppTextInput(
-            key: const ValueKey('rd-code-input'),
-            value: _value,
-            onChanged: (v) => setState(() {
-              _value = v;
-              _error = '';
-            }),
-          ),
+  Widget build(BuildContext context) => FormModal(
+    title: 'เลขรหัสประจำเครื่อง ${widget.deviceName}',
+    busy: _busy,
+    error: _error,
+    onSubmit: _save,
+    onCancel: () => Navigator.pop(context, false),
+    children: [
+      Field(
+        label: 'เลขรหัสประจำเครื่อง (สรรพากร)',
+        hint:
+            'ใส่ตามที่สรรพากรอนุมัติ (ภ.พ.06) เครื่องที่มีเลขนี้'
+            ' จะพิมพ์ใบกำกับภาษีอย่างย่อได้เมื่อร้านจด VAT',
+        child: AppTextInput(
+          key: const ValueKey('rd-code-input'),
+          value: _value,
+          onChanged: (v) => setState(() {
+            _value = v;
+            _error = '';
+          }),
         ),
-        if (_error.isNotEmpty) ...[
-          const SizedBox(height: AppDimensions.space2),
-          Text(
-            _error,
-            key: const ValueKey('rd-code-error'),
-            style: TextStyle(color: context.tokens.dangerInk),
-          ),
-        ],
-      ],
-    ),
-    actions: [
-      TextButton(
-        onPressed: _busy ? null : () => Navigator.pop(context, false),
-        child: const Text('ยกเลิก'),
-      ),
-      TextButton(
-        key: const ValueKey('rd-code-save-btn'),
-        onPressed: _busy ? null : _save,
-        child: const Text('บันทึก'),
       ),
     ],
   );

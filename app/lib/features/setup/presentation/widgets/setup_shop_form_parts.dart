@@ -1,4 +1,5 @@
 import 'package:app/core/theme/tokens.dart';
+import 'package:app/core/utils/thai_tax.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:flutter/material.dart';
@@ -19,8 +20,7 @@ class _State extends State<SetupVatRegisteredSwitch> {
   String _error = '';
 
   void _toggle(bool on) {
-    final taxOk = RegExp(r'^\d{13}$')
-        .hasMatch(widget.shop.taxId.replaceAll(RegExp(r'[\s-]'), ''));
+    final taxOk = isValidTaxId(widget.shop.taxId);
     final String err;
     if (on && !taxOk) {
       err = 'กรอกเลขประจำตัวผู้เสียภาษี 13 หลักก่อน';
@@ -35,7 +35,7 @@ class _State extends State<SetupVatRegisteredSwitch> {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.tokens;
+    final tt = Theme.of(context).textTheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -54,7 +54,7 @@ class _State extends State<SetupVatRegisteredSwitch> {
             child: Text(
               _error,
               key: const ValueKey('setup-vat-registered-error'),
-              style: TextStyle(color: t.danger, fontSize: 12),
+              style: tt.labelSmall?.copyWith(color: context.tokens.danger),
             ),
           ),
         const SizedBox(height: AppDimensions.space3),

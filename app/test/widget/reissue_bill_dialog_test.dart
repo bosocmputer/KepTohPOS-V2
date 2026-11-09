@@ -1,5 +1,6 @@
 import 'package:app/core/data/mock_fallback_state.dart';
 import 'package:app/core/theme/app_theme.dart';
+import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/pos_command_exception.dart';
 import 'package:app/features/bills/presentation/widgets/reissue_bill_dialog.dart';
 import 'package:flutter/material.dart';
@@ -35,7 +36,7 @@ void main() {
   }
 
   Future<void> submit(WidgetTester tester) async {
-    await tester.tap(find.byKey(const ValueKey('reissue-submit-btn')));
+    await tester.tap(find.widgetWithText(Btn, 'ออกใบใหม่แทน'));
     await tester.pumpAndSettle();
   }
 
@@ -63,7 +64,7 @@ void main() {
     expect(calls, <List<String?>>[
       <String?>['ผิดช่องทาง', null, null],
     ]);
-    expect(find.byKey(const ValueKey('reissue-submit-btn')), findsNothing);
+    expect(find.widgetWithText(Btn, 'ออกใบใหม่แทน'), findsNothing);
   });
 
   testWidgets('transfer requires a bank account', (tester) async {
@@ -86,7 +87,7 @@ void main() {
     await typeReason(tester);
     await submit(tester);
     expect(find.text('ต้องออนไลน์เพื่อออกใบใหม่แทน'), findsOneWidget);
-    expect(find.byKey(const ValueKey('reissue-submit-btn')), findsOneWidget);
+    expect(find.widgetWithText(Btn, 'ออกใบใหม่แทน'), findsOneWidget);
   });
 
   testWidgets('command error is shown and dialog stays', (tester) async {
@@ -95,6 +96,6 @@ void main() {
     await typeReason(tester);
     await submit(tester);
     expect(find.text('บิลนี้ถูกยกเลิกแล้ว'), findsOneWidget);
-    expect(find.byKey(const ValueKey('reissue-submit-btn')), findsOneWidget);
+    expect(find.widgetWithText(Btn, 'ออกใบใหม่แทน'), findsOneWidget);
   });
 }

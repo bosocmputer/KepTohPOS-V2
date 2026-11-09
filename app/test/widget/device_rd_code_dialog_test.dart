@@ -1,4 +1,5 @@
 import 'package:app/core/theme/app_theme.dart';
+import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/pos_command_exception.dart';
 import 'package:app/features/setup/presentation/widgets/setup_device_rd_code_dialog.dart';
 import 'package:flutter/material.dart';
@@ -39,7 +40,7 @@ void main() {
 
   Future<void> type(WidgetTester tester, String text) async {
     await tester.enterText(find.byKey(const ValueKey('rd-code-input')), text);
-    await tester.tap(find.byKey(const ValueKey('rd-code-save-btn')));
+    await tester.tap(find.widgetWithText(Btn, 'บันทึก'));
     await tester.pumpAndSettle();
   }
 
@@ -71,7 +72,7 @@ void main() {
 
     await type(tester, 'ผิด รูปแบบ');
 
-    expect(find.byKey(const ValueKey('rd-code-error')), findsOneWidget);
+    expect(find.textContaining('A-Z, 0-9'), findsOneWidget);
     expect(saved, isEmpty);
     expect(result, isNull);
   });

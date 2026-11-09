@@ -1,4 +1,3 @@
-import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/domain/pos_command_exception.dart';
@@ -25,7 +24,7 @@ Widget billReceiptOverlay(
     onVoid: (r) => cubit.voidBillById(staff: staff, reason: r),
     replacesNo: state.replacesNoOf(bill),
     extraActions: [
-      if (state.canReissue(bill, staff))
+      if (state.canReissue(bill, staff) && !bill.isFullInvoice)
         Btn(
           key: const ValueKey('receipt-reissue-btn'),
           icon: 'receipt',
@@ -131,91 +130,64 @@ class _ReissueDialogState extends State<_ReissueDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: const Text('ออกใบใหม่แทน'),
-    content: SizedBox(
-      width: 380,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Field(
-            label: 'เหตุผล',
-            child: AppTextInput(
-              key: const ValueKey('reissue-reason-input'),
-              value: _reason,
-              onChanged: (v) => setState(() {
-                _reason = v;
-                _error = '';
-              }),
-              placeholder: 'เช่น ลูกค้าขอเปลี่ยนช่องทางชำระเงิน',
-            ),
-          ),
-          const SizedBox(height: AppDimensions.space2),
-          Field(
-            label: 'ช่องทางชำระเงิน',
-            child: Dropdown<String>(
-              key: const ValueKey('reissue-method-dropdown'),
-              value: _methodId ?? '',
-              onChanged: (v) => setState(() {
-                _methodId = v.isEmpty ? null : v;
-                _bankId = null;
-                _error = '';
-              }),
-              options: [
-                const DropdownOption<String>(
-                  value: '',
-                  label: 'ใช้ช่องทางเดิม',
+  Widget build(BuildContext context) => FormModal(
+    title: 'ออกใบใหม่แทน',
+    submitLabel: 'ออกใบใหม่แทน',
+    busy: _busy,
+    error: _error,
+    onSubmit: _submit,
+    onCancel: () => Navigator.pop(context, false),
+    children: [
+      Field(
+        label: 'เหตุผล',
+        child: AppTextInput(
+          key: const ValueKey('reissue-reason-input'),
+          value: _reason,
+          onChanged: (v) => setState(() {
+            _reason = v;
+            _error = '';
+          }),
+          placeholder: 'เช่น ลูกค้าขอเปลี่ยนช่องทางชำระเงิน',
+        ),
+      ),
+      Field(
+        label: 'ช่องทางชำระเงิน',
+        child: Dropdown<String>(
+          key: const ValueKey('reissue-method-dropdown'),
+          value: _methodId ?? '',
+          onChanged: (v) => setState(() {
+            _methodId = v.isEmpty ? null : v;
+            _bankId = null;
+            _error = '';
+          }),
+          options: [
+            const DropdownOption<String>(value: '', label: 'ใช้ช่องทางเดิม'),
+            for (final p in widget.pos.payments.where((p) => p.active))
+              DropdownOption<String>(value: p.id, label: p.name),
+          ],
+        ),
+      ),
+      if (_isTransfer)
+        Field(
+          label: 'บัญชีธนาคาร',
+          child: Dropdown<String>(
+            key: const ValueKey('reissue-bank-dropdown'),
+            value: _bankId,
+            onChanged: (v) => setState(() {
+              _bankId = v;
+              _error = '';
+            }),
+            options: [
+              for (final b in widget.pos.shop.bankAccounts.where(
+                (b) => b.active,
+              ))
+                DropdownOption<String>(
+                  value: b.id,
+                  label: '${b.bankName} ${b.accountNo}',
                 ),
-                for (final p in widget.pos.payments.where((p) => p.active))
-                  DropdownOption<String>(value: p.id, label: p.name),
-              ],
-            ),
+            ],
           ),
-          if (_isTransfer) ...[
-            const SizedBox(height: AppDimensions.space2),
-            Field(
-              label: 'บัญชีธนาคาร',
-              child: Dropdown<String>(
-                key: const ValueKey('reissue-bank-dropdown'),
-                value: _bankId,
-                onChanged: (v) => setState(() {
-                  _bankId = v;
-                  _error = '';
-                }),
-                options: [
-                  for (final b in widget.pos.shop.bankAccounts.where(
-                    (b) => b.active,
-                  ))
-                    DropdownOption<String>(
-                      value: b.id,
-                      label: '${b.bankName} ${b.accountNo}',
-                    ),
-                ],
-              ),
-            ),
-          ],
-          if (_error.isNotEmpty) ...[
-            const SizedBox(height: AppDimensions.space2),
-            Text(
-              _error,
-              key: const ValueKey('reissue-error'),
-              style: TextStyle(color: context.tokens.dangerInk),
-            ),
-          ],
-        ],
-      ),
-    ),
-    actions: [
-      TextButton(
-        onPressed: _busy ? null : () => Navigator.pop(context, false),
-        child: const Text('ยกเลิก'),
-      ),
-      TextButton(
-        key: const ValueKey('reissue-submit-btn'),
-        onPressed: _busy ? null : _submit,
-        child: const Text('ออกใบใหม่แทน'),
-      ),
+        ),
     ],
   );
 }

@@ -77,22 +77,13 @@ class _SetupDevicesPanelState extends State<SetupDevicesPanel> {
   Future<void> _revoke(ShopDevice d) async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('ยกเลิก ${d.name}?'),
-        content: const Text(
-          'เครื่องนี้จะใช้ร้านไม่ได้อีก ถ้าจะใช้ต่อต้องส่งลิงก์ใหม่',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('ไม่ใช่'),
-          ),
-          TextButton(
-            key: const ValueKey('device-revoke-confirm-btn'),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('ยกเลิกเครื่อง'),
-          ),
-        ],
+      builder: (context) => Confirm(
+        title: 'ยกเลิก ${d.name}?',
+        text: 'เครื่องนี้จะใช้ร้านไม่ได้อีก ถ้าจะใช้ต่อต้องส่งลิงก์ใหม่',
+        yesLabel: 'ยกเลิกเครื่อง',
+        danger: true,
+        onYes: () => Navigator.pop(context, true),
+        onNo: () => Navigator.pop(context, false),
       ),
     );
     if (ok ?? false) await _run(() => _session!.revokeDevice(d.id));
@@ -276,24 +267,32 @@ class _SetupDevicesPanelState extends State<SetupDevicesPanel> {
     },
   );
 
-  Widget _rdCodeRow(ShopDevice d) => Row(
-    children: [
-      Expanded(
-        child: Text(
-          d.rdMachineCode == null
-              ? 'เลขรหัสเครื่อง: ยังไม่ได้ใส่ — พิมพ์ได้แค่ใบเสร็จธรรมดา'
-              : 'เลขรหัสเครื่อง: ${d.rdMachineCode}',
-          key: ValueKey('device-rd-code-${d.code}'),
-          style: Theme.of(context).textTheme.bodySmall,
+  Widget _rdCodeRow(ShopDevice d) {
+    final code = d.rdMachineCode;
+    return Row(
+      spacing: AppDimensions.space2,
+      children: [
+        Pill(
+          label: code == null ? 'ยังไม่ได้ใส่' : 'ใส่แล้ว',
+          tone: code == null ? PillTone.neutral : PillTone.green,
         ),
-      ),
-      Btn(
-        key: ValueKey('device-rd-edit-${d.code}'),
-        label: 'แก้ไขเลขรหัส',
-        kind: BtnKind.ghost,
-        disabled: _busy,
-        onPressed: () => _editRdCode(d),
-      ),
-    ],
-  );
+        Expanded(
+          child: Text(
+            code == null
+                ? 'เลขรหัสเครื่อง: พิมพ์ได้แค่ใบเสร็จธรรมดา'
+                : 'เลขรหัสเครื่อง: $code',
+            key: ValueKey('device-rd-code-${d.code}'),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
+        Btn(
+          key: ValueKey('device-rd-edit-${d.code}'),
+          label: 'แก้ไขเลขรหัส',
+          kind: BtnKind.ghost,
+          disabled: _busy,
+          onPressed: () => _editRdCode(d),
+        ),
+      ],
+    );
+  }
 }
