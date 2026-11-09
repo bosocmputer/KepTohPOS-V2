@@ -1,7 +1,5 @@
-
 import 'dart:async';
 
-import 'package:app/core/diagnostics/e2e_trace.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/domain/pos_command_exception.dart';
 import 'package:equatable/equatable.dart';
@@ -105,7 +103,6 @@ class AuthCubit extends Cubit<AuthState> {
         ),
       ) {
     _sub = _repository.stream.listen((_) {
-      e2eTrace('auth: repo event mutating=$_mutatingSession');
       if (!_mutatingSession) _syncFromRepo();
     });
   }
@@ -163,20 +160,17 @@ class AuthCubit extends Cubit<AuthState> {
 
   void _syncFromRepo({bool? shouldPromptOpenShift}) {
     final hasShift = openShiftOf(_repository.state) != null;
-    final next = _buildStateFromRepo(
-      _repository,
-      now: _clock(),
-      selectedStaffId: state.selectedStaffId,
-      pin: state.pin,
-      error: state.error,
-      shouldPromptOpenShift:
-          shouldPromptOpenShift ?? (state.shouldPromptOpenShift && !hasShift),
+    emit(
+      _buildStateFromRepo(
+        _repository,
+        now: _clock(),
+        selectedStaffId: state.selectedStaffId,
+        pin: state.pin,
+        error: state.error,
+        shouldPromptOpenShift:
+            shouldPromptOpenShift ?? (state.shouldPromptOpenShift && !hasShift),
+      ),
     );
-    e2eTrace(
-      'auth: syncFromRepo emit staff=${next.currentStaff?.id} '
-      'prompt=${next.shouldPromptOpenShift} auth=${next.isAuthenticated}',
-    );
-    emit(next);
   }
 
   /// Selects a staff member in the login dropdown and resets PIN/error.
@@ -194,7 +188,6 @@ class AuthCubit extends Cubit<AuthState> {
     final who = state.selectedStaff;
     if (who == null) return false;
     final v = pinOverride ?? state.pin;
-    e2eTrace('auth: submitPin who=${who.id} pinLen=${v.length}');
     if (v.length != 4) {
       emit(state.copyWith(error: 'ใส่ PIN ให้ครบ 4 หลัก'));
       return false;
@@ -207,14 +200,9 @@ class AuthCubit extends Cubit<AuthState> {
     final PinSignInResult result;
     try {
       result = await _repository.signInWithPin(who.id, v);
-      e2eTrace('auth: signInWithPin result=$result');
     } on PosCommandException catch (e) {
-      e2eTrace('auth: signInWithPin PosCommandException ${e.message}');
       emit(state.copyWith(pin: '', error: e.message, checking: false));
       return false;
-    } on Object catch (e) {
-      e2eTrace('auth: signInWithPin exception $e');
-      rethrow;
     } finally {
       slow.cancel();
       _mutatingSession = false;

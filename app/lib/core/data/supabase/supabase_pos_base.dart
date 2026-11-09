@@ -1,10 +1,8 @@
-
 import 'dart:async';
 
 import 'package:app/core/data/local/offline_credentials.dart';
 import 'package:app/core/data/local/outbox_queue.dart';
 import 'package:app/core/data/supabase/supabase_state_loader.dart';
-import 'package:app/core/diagnostics/e2e_trace.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/domain/pos_command_exception.dart';
 import 'package:http/http.dart' as http;
@@ -114,12 +112,8 @@ abstract class SupabasePosBase {
   Future<PosState> reload() async {
     // Server data lacks what is still queued; keep the local state until the
     // outbox has been sent.
-    e2eTrace('base: reload start signedIn=$signedInStaffId');
     final queue = outbox;
-    if (queue != null && await queue.pendingCount() > 0) {
-      e2eTrace('base: reload skipped (outbox pending)');
-      return posState;
-    }
+    if (queue != null && await queue.pendingCount() > 0) return posState;
     final me = posState.staff.where((x) => x.id == signedInStaffId).firstOrNull;
     final SupabaseSnapshot snapshot;
     try {
@@ -129,14 +123,12 @@ abstract class SupabasePosBase {
         readsCosts: me?.seesCosts ?? false,
       );
     } on Object catch (e) {
-      e2eTrace('base: reload error $e');
       throw describeError(e);
     }
     posState = snapshot.state;
     sessionByTable = snapshot.sessionByTable;
     organizationId = snapshot.organizationId;
     costsLoaded = snapshot.canReadCosts;
-    e2eTrace('base: reload done state.current=${posState.currentStaffId}');
     if (!controller.isClosed) controller.add(posState);
     return posState;
   }

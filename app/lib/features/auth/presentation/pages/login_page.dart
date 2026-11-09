@@ -1,9 +1,7 @@
-
 import 'dart:async';
 
 import 'dart:math' as math;
 
-import 'package:app/core/diagnostics/e2e_trace.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
@@ -30,10 +28,7 @@ class LoginPage extends StatelessWidget {
 
     return BlocConsumer<AuthCubit, AuthState>(
       listenWhen: (prev, curr) => !prev.isAuthenticated && curr.isAuthenticated,
-      listener: (context, state) {
-        e2eTrace('login listener: authenticated, calling onLoggedIn');
-        onLoggedIn?.call();
-      },
+      listener: (context, state) => onLoggedIn?.call(),
       builder: (context, state) => Scaffold(
         backgroundColor: tokens.surface,
         body: LayoutBuilder(
@@ -224,7 +219,6 @@ class _LoginFormPanel extends StatelessWidget {
           rowGap: tight ? AppDimensions.space2 : AppDimensions.space3,
           colGap: compact ? AppDimensions.space2 : AppDimensions.space3,
           onChanged: (v) {
-            e2eTrace('pad onChanged len=${v.length}');
             cubit.setPin(v);
             if (v.length == 4) unawaited(cubit.submitPin(v));
           },
