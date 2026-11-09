@@ -30,7 +30,9 @@
       "Bash(cargo clippy*)",
       "Bash(git status*)",
       "Bash(git diff*)",
-      "Bash(git log*)"
+      "Bash(git log*)",
+      "Bash(git checkout -b *)",
+      "Bash(git switch *)"
     ],
     "deny": [
       "Read(./.env)",
@@ -56,7 +58,13 @@
       "Write(./**/*.jks)",
       "Bash(rm -rf *)",
       "Bash(git push --force*)",
-      "Bash(git checkout *)",
+      "Bash(git checkout .)",
+      "Bash(git checkout -- *)",
+      "Bash(git checkout -f*)",
+      "Bash(git checkout --force*)",
+      "Bash(git switch -f*)",
+      "Bash(git switch --force*)",
+      "Bash(git switch --discard-changes*)",
       "Bash(git restore *)",
       "Bash(git reset --hard*)",
       "Bash(git clean *)"

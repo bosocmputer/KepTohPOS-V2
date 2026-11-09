@@ -1,6 +1,6 @@
 ---
 name: explorer
-description: Use this agent when you need fast, read-only codebase exploration, dependency mapping, or impact analysis before planning a multi-file change. Do not use for trivial 1-file edits. (นักสำรวจหาพิกัดไฟล์ความเร็วสูงด้วย Haiku ประหยัดโควต้า 15 เท่า โดยไม่แก้ไขโค้ด)
+description: Use proactively when you need fast, read-only codebase exploration (>3 files), dependency mapping, or impact analysis before planning a multi-file change. Do not use for trivial 1-file edits. (นักสำรวจหาพิกัดไฟล์ความเร็วสูงด้วย Haiku ประหยัดโควต้า 15 เท่า โดยไม่แก้ไขโค้ด)
 tools: Read, Grep, Glob
 disallowedTools: Write, Edit, Bash
 model: haiku

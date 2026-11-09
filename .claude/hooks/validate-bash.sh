@@ -36,9 +36,24 @@ if echo "$COMMAND" | grep -qE '(\$\{IFS\}|\$IFS|base64[[:space:]]+(-d|--decode)[
   block_action "ตรวจพบการพลางคำสั่งด้วย IFS หรือ base64 decode เข้าสู่ Shell (Shell Obfuscation Blocked)"
 fi
 
-# 2. ดักจับคำสั่งทำลายข้อมูล ทับโค้ดที่ยังไม่ Commit หรือบังคับ Push ทับกิ่งหลัก (รวมถึง git push +main)
-if echo "$COMMAND" | grep -qE '(rm -rf /|rm -rf ~|rm -rf \$HOME|rm -rf \*|DROP DATABASE|TRUNCATE TABLE|git push.*(--force|-f)|git push[[:space:]]+[^[:space:]]+[[:space:]]+\+[a-zA-Z0-9_/.-]+|git reset --hard|git checkout (\.|--|HEAD)|git restore |git clean -[fd]|git branch -D|chmod 777)'; then
+# 2. ดักจับคำสั่งทำลายข้อมูล ทับโค้ดที่ยังไม่ Commit หรือบังคับ Push ทับกิ่งหลัก (รวมถึง git push +main และ git switch -f)
+if echo "$COMMAND" | grep -qE '(rm -rf /|rm -rf ~|rm -rf \$HOME|rm -rf \*|DROP DATABASE|TRUNCATE TABLE|git push.*(--force|-f)|git push[[:space:]]+[^[:space:]]+[[:space:]]+\+[a-zA-Z0-9_/.-]+|git reset --hard|git checkout[[:space:]]+(\.|--|HEAD|-f|--force)|git switch[[:space:]]+.*(-f|--force|--discard-changes)|git restore |git clean -[fd]|git branch -D|chmod 777)'; then
   block_action "คำสั่งถูกระงับเพื่อป้องกันข้อมูลสูญหายหรือทับโค้ดที่ยังไม่ได้ Commit"
+fi
+
+# 2.1 ดักจับ git checkout <filepath> (กรณีไม่ได้ใส่ -- แต่ระบุพาธไฟล์ที่มีอยู่จริงในโปรเจกต์ ซึ่งจะทับไฟล์ที่แก้ค้างไว้ทันที)
+if echo "$COMMAND" | grep -qE 'git[[:space:]]+checkout[[:space:]]+'; then
+  CO_ARGS=$(echo "$COMMAND" | sed -E 's/.*git[[:space:]]+checkout[[:space:]]+//; s/[;&|"].*//')
+  if ! echo "$CO_ARGS" | grep -qE '^(-b|-B|--orphan)[[:space:]]+'; then
+    for tok in $CO_ARGS; do
+      case "$tok" in
+        -*) continue ;;
+      esac
+      if [ -e "$PROJECT_ROOT/$tok" ] || [ -e "$PROJECT_ROOT/app/$tok" ] || echo "$tok" | grep -qE '\.(dart|ts|tsx|js|jsx|py|go|rs|sql|json|yaml|yml|md|sh|html|css|scss)$'; then
+        block_action "ระงับ git checkout ทับไฟล์ ($tok) เพื่อป้องกันโค้ดที่ยังไม่ Commit สูญหาย (อนุญาตเฉพาะ git checkout -b <branch> หรือสลับกิ่งเท่านั้น)"
+      fi
+    done
+  fi
 fi
 
 # 3. ดักจับการแอบติดตั้งแพ็กเกจใหม่โดยไม่ขออนุญาต (รองรับ JS/TS, Go, Flutter/Dart, Python, Rust — ปลดล็อกด้วย DEPS_APPROVED=1 เมื่อผู้ใช้อนุญาตแล้ว)
@@ -49,8 +64,9 @@ if [ "${DEPS_APPROVED:-0}" != "1" ] && ! echo "$COMMAND" | grep -q 'DEPS_APPROVE
 fi
 
 # 4. ดักจับการปล่อยของขึ้น Production หรือยิง Migration ฐานข้อมูลจริงโดยไม่ผ่านคนอนุมัติ (Anthropic AI-Native SDLC Playbook Stage 5 — Approval Gate)
+# หมายเหตุ: อนุญาต supabase db reset ในเครื่อง (Local Docker) สำหรับรันเทสต์ แต่บล็อก supabase db push และ supabase db reset --linked/--db-url
 if [ "${RELEASE_APPROVED:-0}" != "1" ] && ! echo "$COMMAND" | grep -q 'RELEASE_APPROVED=1'; then
-  if echo "$COMMAND" | grep -qE '(vercel([[:space:]]+deploy)?[[:space:]]+.*--prod|netlify[[:space:]]+deploy.*--prod|firebase[[:space:]]+deploy|wrangler[[:space:]]+(deploy|publish)|fly(ctl)?[[:space:]]+deploy|prisma[[:space:]]+migrate[[:space:]]+deploy|prisma[[:space:]]+db[[:space:]]+push.*--accept-data-loss|supabase[[:space:]]+db[[:space:]]+(push|reset)|drizzle-kit[[:space:]]+push|terraform[[:space:]]+(apply|destroy)|kubectl[[:space:]]+(apply|delete)|helm[[:space:]]+(upgrade|uninstall))'; then
+  if echo "$COMMAND" | grep -qE '(vercel([[:space:]]+deploy)?[[:space:]]+.*--prod|netlify[[:space:]]+deploy.*--prod|firebase[[:space:]]+deploy|wrangler[[:space:]]+(deploy|publish)|fly(ctl)?[[:space:]]+deploy|prisma[[:space:]]+migrate[[:space:]]+deploy|prisma[[:space:]]+db[[:space:]]+push.*--accept-data-loss|supabase[[:space:]]+db[[:space:]]+push|supabase[[:space:]]+db[[:space:]]+reset[[:space:]]+.*(--linked|--db-url)|drizzle-kit[[:space:]]+push|terraform[[:space:]]+(apply|destroy)|kubectl[[:space:]]+(apply|delete)|helm[[:space:]]+(upgrade|uninstall))'; then
     block_action "ระงับคำสั่ง Deploy ขึ้น Production หรือแก้ไขฐานข้อมูลจริงโดยพลการ (Stage 5 Approval Gate: ต้องให้ผู้ใช้อนุมัติก่อน หากอนุมัติในแชทแล้วให้ใส่ RELEASE_APPROVED=1 นำหน้าคำสั่ง)"
   fi
 fi

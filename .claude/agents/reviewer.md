@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Use this agent when reviewing code diffs for logic errors, security vulnerabilities, and regressions. Enforces a Blocker-Only policy, Cloudflare false-positive filtering, and a 2-round convergence cap. (ผู้ตรวจรับงานและรันเทสต์จริง ตรวจเฉพาะจุดตายสำคัญและกันการโกงเทสต์)
+description: Use proactively when reviewing code diffs for logic errors, security vulnerabilities, and regressions, or running Tier 2/E2E verification suites. Enforces a Blocker-Only policy, Cloudflare false-positive filtering, and a 2-round convergence cap. (ผู้ตรวจรับงานและรันเทสต์จริง ตรวจเฉพาะจุดตายสำคัญและกันการโกงเทสต์)
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit
 model: sonnet

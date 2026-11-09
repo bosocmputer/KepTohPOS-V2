@@ -360,11 +360,13 @@ def infer_thought_desk(txt, tool_names=None, tool_descs=None):
         return "explorer"
     return "core"
 
-def extract_live_session_thoughts(root_dir, ag_conv_id="", active_eng="claude"):
+def extract_live_session_thoughts(root_dir, ag_conv_id="", active_eng="claude", ag_transcript_path=""):
     thoughts = []
     desk_thoughts = {}
-    if active_eng == "antigravity" and ag_conv_id:
-        ag_f = os.path.expanduser(f"~/.gemini/antigravity/brain/{ag_conv_id}/.system_generated/logs/transcript.jsonl")
+    if active_eng == "antigravity" and (ag_transcript_path or ag_conv_id):
+        ag_f = os.path.expanduser(ag_transcript_path) if ag_transcript_path else os.path.expanduser(f"~/.gemini/antigravity/brain/{ag_conv_id}/.system_generated/logs/transcript.jsonl")
+        if not os.path.isfile(ag_f) and ag_conv_id:
+            ag_f = os.path.expanduser(f"~/.gemini/antigravity/brain/{ag_conv_id}/.system_generated/logs/transcript.jsonl")
         if os.path.isfile(ag_f):
             try:
                 with open(ag_f, "rb") as fp:
@@ -656,6 +658,8 @@ if mode_type == "stdin":
         state["activeModel"] = str(payload["modelName"])
     if payload.get("conversationId"):
         state["lastConversationId"] = str(payload["conversationId"])
+    if payload.get("transcriptPath"):
+        state["lastTranscriptPath"] = str(payload["transcriptPath"])
 
     prompt_txt = payload.get("prompt") or payload.get("lastUserInput") or ""
     if prompt_txt:
@@ -1029,6 +1033,7 @@ agent_thoughts, desk_thoughts = extract_live_session_thoughts(
     project_root,
     state.get("lastConversationId", ""),
     state.get("activeEngine", "claude"),
+    state.get("lastTranscriptPath", ""),
 )
 if agent_thoughts:
     state["agentThoughts"] = agent_thoughts

@@ -1,6 +1,6 @@
 ---
 name: implementer
-description: Use this agent when executing well-scoped code changes across 1-5 files following Karpathy Surgical Guidelines and mandatory fresh test verification. (นักพัฒนาสายลุยด้วย Sonnet แก้ไขโค้ดเฉพาะจุดอย่างแม่นยำ ไม่กระทบส่วนอื่น)
+description: Use proactively when executing well-scoped code changes across 2-5 files following Karpathy Surgical Guidelines and mandatory fresh test verification. (นักพัฒนาสายลุยด้วย Sonnet แก้ไขโค้ดเฉพาะจุดอย่างแม่นยำ ไม่กระทบส่วนอื่น)
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: sonnet
 maxTurns: 15

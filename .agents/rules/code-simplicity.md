@@ -1,9 +1,15 @@
 ---
 description: "(กฎเขียนโค้ดให้เรียบง่ายที่สุด แก้เฉพาะจุด ไม่สร้างความซับซ้อนเกินจำเป็น)"
 paths:
-  - "src/**/*"
-  - "app/**/*"
-  - "lib/**/*"
+  - "**/src/**"
+  - "**/app/**"
+  - "**/lib/**"
+  - "**/supabase/**"
+  - "**/packages/**"
+  - "**/cmd/**"
+  - "**/internal/**"
+  - "**/pkg/**"
+  - "**/scripts/**"
 ---
 # Karpathy Coding Guidelines (`forrestchang/andrej-karpathy-skills`)
 

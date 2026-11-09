@@ -29,6 +29,12 @@ description: Use when modifying database schemas, creating tables, adding column
 3. **ACID Transactions:** Wrap multi-table mutations (e.g., inventory deduction + order creation, wallet balance transfers) inside a database transaction (`$transaction` / `BEGIN...COMMIT`).
 4. **Row-Level Security (RLS) & Bounded Queries:** Always scope queries by tenant/owner and apply `LIMIT` / cursor pagination. Never use unbounded `SELECT *` on growing tables.
 
+### Step 4: Supabase RPCs, Realtime Publication & Multi-Device Sync Safety
+1. **`SECURITY DEFINER` RPC Hardening:** Always set `SET search_path = public, pg_temp;` and explicitly verify caller tenant/shop membership (`auth.uid()` / `shop_id`) inside the function body; never trust client-passed `shop_id` alone.
+2. **Realtime Publication & RLS (`postgres_changes`):** Tables using Supabase Realtime `postgres_changes` must be added to `ALTER PUBLICATION supabase_realtime ADD TABLE ...` AND have `SELECT` RLS policies enabled so events do not leak across tenants.
+3. **`REPLICA IDENTITY FULL` Caveat:** Enable `REPLICA IDENTITY FULL` only on tables that explicitly require old row values on `UPDATE`/`DELETE` streams, as it increases WAL volume.
+4. **Atomic Conditional State Transitions:** Prevent multi-device race conditions by using atomic conditional updates (`UPDATE ... SET status = $1, version = version + 1 WHERE id = $2 AND status = $3`) and checking affected row count.
+
 ## 3. Constraints (`MUST DO` / `MUST NOT DO`)
 - **MUST** use parameterized queries / prepared statements for all inputs.
 - **MUST** wrap multi-step state mutations in a single transaction.
