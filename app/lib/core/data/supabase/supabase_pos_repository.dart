@@ -4,6 +4,7 @@ import 'package:app/core/data/local/offline_credentials.dart';
 import 'package:app/core/data/local/shop_snapshot_store.dart';
 import 'package:app/core/data/supabase/supabase_day_bills.dart';
 import 'package:app/core/data/supabase/supabase_pos_base.dart';
+import 'package:app/core/data/supabase/supabase_pos_invoice_commands.dart';
 import 'package:app/core/data/supabase/supabase_pos_offline.dart';
 import 'package:app/core/data/supabase/supabase_pos_sale_commands.dart';
 import 'package:app/core/data/supabase/supabase_pos_setup_commands.dart';
@@ -21,6 +22,7 @@ class SupabasePosRepository extends SupabasePosBase
     with
         SupabasePosOffline,
         SupabasePosSaleCommands,
+        SupabasePosInvoiceCommands,
         SupabasePosStockCommands,
         SupabasePosSetupCommands
     implements PosRepository {
@@ -55,6 +57,7 @@ class SupabasePosRepository extends SupabasePosBase
           ),
         )
         ..receiptPrefix = data['receiptPrefix'] as String?
+        ..rdMachineCode = data['rdMachineCode'] as String?
         ..receiptSeq = (data['receiptSeq'] as num? ?? 0).toInt();
 
   /// Loads the shop for a paired device.
@@ -81,7 +84,7 @@ class SupabasePosRepository extends SupabasePosBase
     if (deviceUserId != null) {
       final device = await deviceClient
           .from('devices')
-          .select('code, receipt_seq')
+          .select('code, receipt_seq, rd_machine_code')
           .eq('auth_user_id', deviceUserId)
           .maybeSingle();
       final shop = await deviceClient
@@ -92,6 +95,7 @@ class SupabasePosRepository extends SupabasePosBase
       if (device != null) {
         repo
           ..receiptPrefix = '${shop['branch_code']}-${device['code']}'
+          ..rdMachineCode = device['rd_machine_code'] as String?
           ..receiptSeq = (device['receipt_seq'] as num).toInt();
       }
     }
@@ -104,6 +108,7 @@ class SupabasePosRepository extends SupabasePosBase
     'sessionByTable': sessionByTable,
     'organizationId': organizationId,
     'receiptPrefix': receiptPrefix,
+    'rdMachineCode': rdMachineCode,
     'receiptSeq': receiptSeq,
   };
 

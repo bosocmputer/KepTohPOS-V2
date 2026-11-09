@@ -1,8 +1,8 @@
 import 'package:app/core/theme/tokens.dart';
-import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/sale/presentation/widgets/receipt_card.dart';
+import 'package:app/features/sale/presentation/widgets/receipt_fresh_banner.dart';
 import 'package:app/features/sale/presentation/widgets/table_summary_modal.dart';
 import 'package:flutter/material.dart';
 
@@ -27,6 +27,8 @@ class ReceiptModal extends StatefulWidget {
     this.tableSummary,
     this.allowCashierVoid = false,
     this.onCancelTable,
+    this.extraActions = const <Widget>[],
+    this.replacesNo,
   });
 
   final ShopConfig shop;
@@ -42,6 +44,8 @@ class ReceiptModal extends StatefulWidget {
   final TableSummarySlip? tableSummary;
   final bool allowCashierVoid;
   final VoidCallback? onCancelTable;
+  final List<Widget> extraActions;
+  final String? replacesNo;
 
   @override
   State<ReceiptModal> createState() => _ReceiptModalState();
@@ -68,7 +72,6 @@ class _ReceiptModalState extends State<ReceiptModal> {
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
     final bill = widget.bill;
-    final changeTxt = baht(bill.change, bill.change % 100 != 0 ? 2 : 0);
     final canVoid =
         !bill.voided &&
         !bill.isSlipPreview &&
@@ -110,6 +113,7 @@ class _ReceiptModalState extends State<ReceiptModal> {
                           label: 'ยกเลิกบิล',
                           onPressed: () => setState(() => _voiding = true),
                         ),
+                      ...widget.extraActions,
                       Btn(
                         key: const ValueKey('receipt-print-btn'),
                         icon: 'printer',
@@ -134,13 +138,14 @@ class _ReceiptModalState extends State<ReceiptModal> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (widget.fresh && !bill.isSlipPreview) ...[
-                    _buildFreshBanner(t, tt, bill, changeTxt),
+                    ReceiptFreshBanner(bill: bill),
                     const SizedBox(height: AppDimensions.space3),
                   ],
                   ReceiptCard(
                     shop: widget.shop,
                     bill: bill,
                     isCopy: widget.isCopy ?? !widget.fresh,
+                    replacesNo: widget.replacesNo,
                   ),
                 ],
               ),
@@ -223,72 +228,6 @@ class _ReceiptModalState extends State<ReceiptModal> {
             ),
           ],
         ),
-      ],
-    ),
-  );
-
-  Widget _buildFreshBanner(
-    AppTokens t,
-    TextTheme tt,
-    BillRecord bill,
-    String changeTxt,
-  ) => Container(
-    padding: const EdgeInsets.symmetric(
-      horizontal: AppDimensions.space4,
-      vertical: AppDimensions.space3,
-    ),
-    decoration: BoxDecoration(
-      color: t.successSoft,
-      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-      border: Border.all(color: t.success),
-    ),
-    child: Row(
-      children: [
-        Container(
-          width: AppDimensions.space9,
-          height: AppDimensions.space9,
-          decoration: BoxDecoration(color: t.success, shape: BoxShape.circle),
-          child: Center(child: AppIcon('check', color: t.onPrimary)),
-        ),
-        const SizedBox(width: AppDimensions.space3),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'รับเงินเรียบร้อย',
-                style: tt.titleMedium?.copyWith(
-                  color: t.success,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Text(
-                'ชำระผ่าน ${bill.methodName}',
-                style: tt.labelSmall?.copyWith(color: t.ink),
-              ),
-            ],
-          ),
-        ),
-        if (bill.methodType == 'cash')
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                'เงินทอน',
-                style: tt.labelSmall?.copyWith(
-                  color: t.success,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Text(
-                changeTxt,
-                style: tt.headlineMedium?.copyWith(
-                  color: t.success,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
       ],
     ),
   );

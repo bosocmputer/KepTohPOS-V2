@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:app/domain/models.dart';
 import 'package:app/domain/pos_setup_commands.dart';
+import 'package:app/domain/sales_tax_report.dart';
 import 'package:app/domain/stock_balance_ops.dart';
+
+export 'package:app/domain/sales_tax_report.dart';
 
 int _shiftCounter = 0;
 
@@ -190,6 +193,30 @@ abstract class PosRepository implements PosSetupCommands {
     bool allowCashier = false,
     DateTime? now,
   });
+
+  /// Voids [billId] and issues a new bill in its place (new payment method or
+  /// tax invoice), owner/manager only. The server must be reachable.
+  Future<BillRecord> reissueBill({
+    required String billId,
+    required String reason,
+    String? methodId,
+    String? bankAccountId,
+  });
+
+  /// Voids [billId] and issues a full tax invoice (ม.86/4) in its place,
+  /// owner/manager only. [buyerTaxId] needs [buyerBranch]. Server required.
+  Future<BillRecord> issueFullInvoice({
+    required String billId,
+    required String buyerName,
+    required String buyerAddress,
+    String? buyerTaxId,
+    String? buyerBranch,
+  });
+
+  /// Sales-tax rows for `month` (`YYYY-MM`) and the daily per-device summary
+  /// for `from`..`to` (`YYYY-MM-DD`); owner/manager, server required.
+  Future<List<SalesTaxRow>> getSalesTaxReport(String month);
+  Future<List<DeviceDaySummary>> getDailyDeviceSummary(String from, String to);
 
   /// Cancels an unpaid open table and restores its addon stock.
   Future<PosState> cancelTable(String tableId);

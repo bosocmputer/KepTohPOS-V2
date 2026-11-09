@@ -3,6 +3,7 @@ import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/reports/presentation/cubit/reports_cubit.dart';
+import 'package:app/features/reports/presentation/pages/sales_tax_report_page.dart';
 import 'package:app/features/reports/presentation/widgets/daily_report_table.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -215,6 +216,7 @@ class _ReportsPageState extends State<ReportsPage> {
                           tone: PillTone.orange,
                           label: 'หักค่าคงที่ยังไม่ครบเดือน',
                         ),
+                      const SalesTaxReportButton(),
                       PendingBadge(onTap: widget.onGoSetupCosting),
                     ],
                     children: [

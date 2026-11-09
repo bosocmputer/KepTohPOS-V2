@@ -1,4 +1,5 @@
 import 'package:app/domain/domain.dart';
+import 'package:app/domain/pos_command_exception.dart';
 
 /// In-memory implementation of the [PosRepository] write commands.
 ///
@@ -7,6 +8,8 @@ import 'package:app/domain/domain.dart';
 mixin MockPosCommands implements PosRepository {
   /// Applies [mutator] to a copy of the state and broadcasts the result.
   PosState update(void Function(PosState s) mutator);
+
+  int _fullInvoiceSeq = 0;
 
   @override
   Future<PosState> setTableNotes(String tableId, String notes) async =>
@@ -88,6 +91,82 @@ mixin MockPosCommands implements PosRepository {
       ),
     );
     return ok;
+  }
+
+  @override
+  Future<BillRecord> reissueBill({
+    required String billId,
+    required String reason,
+    String? methodId,
+    String? bankAccountId,
+  }) async {
+    late BillRecord created;
+    update((s) {
+      final old = s.sales.firstWhere((b) => b.id == billId);
+      if (old.voided) throw const PosCommandException('บิลนี้ถูกยกเลิกแล้ว');
+      final at = DateTime.now().toUtc().toIso8601String();
+      old
+        ..voided = true
+        ..voidReason = reason.trim().isEmpty ? 'ไม่ระบุ' : reason.trim()
+        ..voidBy = 'เจ้าของ'
+        ..voidAt = at;
+      created = BillRecord.fromJson(<String, dynamic>{
+        ...old.toJson(),
+        'id': 'r${s.sales.length + 1}-${old.id}',
+        'no': '${old.no}-R',
+        'voided': false,
+        'voidReason': null,
+        'voidBy': null,
+        'voidAt': null,
+        'replacesBillId': old.id,
+        'methodId': ?methodId,
+        'bankAccountId': ?bankAccountId,
+      });
+      s.sales.add(created);
+    });
+    return created;
+  }
+
+  @override
+  Future<BillRecord> issueFullInvoice({
+    required String billId,
+    required String buyerName,
+    required String buyerAddress,
+    String? buyerTaxId,
+    String? buyerBranch,
+  }) async {
+    late BillRecord created;
+    update((s) {
+      final old = s.sales.firstWhere((b) => b.id == billId);
+      if (old.voided) throw const PosCommandException('บิลนี้ถูกยกเลิกแล้ว');
+      if (old.isFullInvoice) {
+        throw const PosCommandException('บิลนี้เป็นใบกำกับภาษีเต็มรูปแล้ว');
+      }
+      final seq = ++_fullInvoiceSeq;
+      old
+        ..voided = true
+        ..voidReason = 'ออกใบกำกับภาษีเต็มรูปแทน'
+        ..voidBy = 'เจ้าของ'
+        ..voidAt = DateTime.now().toUtc().toIso8601String();
+      created = BillRecord.fromJson(<String, dynamic>{
+        ...old.toJson(),
+        'id': 'f$seq-${old.id}',
+        'no': '${s.shop.branchCode}-F-${seq.toString().padLeft(6, '0')}',
+        'voided': false,
+        'voidReason': null,
+        'voidBy': null,
+        'voidAt': null,
+        'isTaxInvoice': true,
+        'replacesBillId': old.id,
+        'isFullInvoice': true,
+        'buyerName': buyerName.trim(),
+        'buyerAddress': buyerAddress.trim(),
+        'buyerTaxId': ?buyerTaxId,
+        'buyerBranch': ?buyerBranch,
+      });
+      s.sales.add(created);
+    });
+    return created;
   }
 
   @override

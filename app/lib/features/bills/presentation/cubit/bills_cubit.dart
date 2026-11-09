@@ -132,6 +132,60 @@ class BillsCubit extends Cubit<BillsState> {
     return ok;
   }
 
+  /// Voids [billId] and issues a replacement, then opens the new bill.
+  /// Failures (incl. offline) propagate as [PosCommandException].
+  Future<void> reissueBill({
+    required String billId,
+    required String reason,
+    String? methodId,
+    String? bankAccountId,
+  }) async {
+    final created = await _repository.reissueBill(
+      billId: billId,
+      reason: reason,
+      methodId: methodId,
+      bankAccountId: bankAccountId,
+    );
+    if (isClosed) return;
+    if (state.isOlderDay) await _loadOlder(state.selectedDate);
+    if (isClosed) return;
+    emit(
+      state.copyWith(
+        posState: _repository.state,
+        selectedBillId: created.id,
+        toastMessage: 'ออกใบใหม่แทนแล้ว ${created.no}',
+      ),
+    );
+  }
+
+  /// Converts [billId] into a full tax invoice and opens the new bill.
+  /// Failures (incl. offline) propagate as [PosCommandException].
+  Future<void> issueFullInvoice({
+    required String billId,
+    required String buyerName,
+    required String buyerAddress,
+    String? buyerTaxId,
+    String? buyerBranch,
+  }) async {
+    final created = await _repository.issueFullInvoice(
+      billId: billId,
+      buyerName: buyerName,
+      buyerAddress: buyerAddress,
+      buyerTaxId: buyerTaxId,
+      buyerBranch: buyerBranch,
+    );
+    if (isClosed) return;
+    if (state.isOlderDay) await _loadOlder(state.selectedDate);
+    if (isClosed) return;
+    emit(
+      state.copyWith(
+        posState: _repository.state,
+        selectedBillId: created.id,
+        toastMessage: 'ออกใบกำกับเต็มรูปแล้ว ${created.no}',
+      ),
+    );
+  }
+
   @override
   Future<void> close() async {
     await _sub?.cancel();

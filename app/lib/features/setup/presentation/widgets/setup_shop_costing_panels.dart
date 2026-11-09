@@ -151,7 +151,7 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
                     _dd(
                       'ประเภทภาษีมูลค่าเพิ่ม (VAT)',
                       _v.vatMode,
-                      kVatModes,
+                      _v.vatRegistered ? kVatModes : kVatModesUnregistered,
                       (s) => _v.copyWith(vatMode: s),
                     ),
                   ),

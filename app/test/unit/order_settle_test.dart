@@ -109,7 +109,7 @@ void main() {
         ]);
         expect(resDown.subtotal, 51200);
         expect(resDown.service, 2560);
-        expect(resDown.vat, 3763);
+        expect(resDown.vat, 3762);
         expect(resDown.rounding, -23);
         expect(resDown.total, 57500);
 

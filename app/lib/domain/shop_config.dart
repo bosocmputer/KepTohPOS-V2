@@ -5,11 +5,13 @@ class ShopConfig {
   const new({
     this.name = '',
     this.branch = '',
+    this.branchCode = '00000',
     this.address = '',
     this.phone = '',
     this.taxId = '',
     this.promptpay = '',
     this.vatMode = 'none',
+    this.vatRegistered = true,
     this.vatRate = 7.0,
     this.servicePct = 0,
     this.defaultFloat = 100000,
@@ -32,6 +34,7 @@ class ShopConfig {
   factory fromJson(Map<String, dynamic> json) => ShopConfig(
     name: (json['name'] as String?) ?? '',
     branch: (json['branch'] as String?) ?? '',
+    branchCode: (json['branchCode'] as String?) ?? '00000',
     address: (json['address'] as String?) ?? '',
     phone: (json['phone'] as String?) ?? '',
     taxId: (json['taxId'] as String?) ?? '',
@@ -63,11 +66,16 @@ class ShopConfig {
 
   final String name;
   final String branch;
+  final String branchCode;
   final String address;
   final String phone;
   final String taxId;
   final String promptpay;
   final String vatMode;
+
+  /// Organization is VAT registered; if not, only vatMode `none` is allowed.
+  /// Not part of `shop.json`.
+  final bool vatRegistered;
   final double vatRate;
   final double servicePct;
   final int defaultFloat;
@@ -92,11 +100,13 @@ class ShopConfig {
   ShopConfig copyWith({
     String? name,
     String? branch,
+    String? branchCode,
     String? address,
     String? phone,
     String? taxId,
     String? promptpay,
     String? vatMode,
+    bool? vatRegistered,
     double? vatRate,
     double? servicePct,
     int? defaultFloat,
@@ -117,11 +127,13 @@ class ShopConfig {
   }) => ShopConfig(
     name: name ?? this.name,
     branch: branch ?? this.branch,
+    branchCode: branchCode ?? this.branchCode,
     address: address ?? this.address,
     phone: phone ?? this.phone,
     taxId: taxId ?? this.taxId,
     promptpay: promptpay ?? this.promptpay,
     vatMode: vatMode ?? this.vatMode,
+    vatRegistered: vatRegistered ?? this.vatRegistered,
     vatRate: vatRate ?? this.vatRate,
     servicePct: servicePct ?? this.servicePct,
     defaultFloat: defaultFloat ?? this.defaultFloat,
@@ -145,6 +157,7 @@ class ShopConfig {
   Map<String, dynamic> toJson() => <String, dynamic>{
     'name': name,
     'branch': branch,
+    'branchCode': branchCode,
     'address': address,
     'phone': phone,
     'taxId': taxId,

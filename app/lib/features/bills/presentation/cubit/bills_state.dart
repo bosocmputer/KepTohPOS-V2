@@ -129,6 +129,21 @@ class BillsState extends Equatable {
     ...olderBills,
   ].where((b) => b.id == selectedBillId).firstOrNull;
 
+  /// Number of the voided bill that [b] replaces, if known.
+  String? replacesNoOf(BillRecord b) => b.replacesBillId == null
+      ? null
+      : [
+          ...posState.sales,
+          ...olderBills,
+        ].where((o) => o.id == b.replacesBillId).firstOrNull?.no;
+
+  /// Owner/manager may reissue an unvoided bill of the current month.
+  bool canReissue(BillRecord b, StaffMember staff) =>
+      staff.role != 'cashier' &&
+      !b.voided &&
+      !b.isSlipPreview &&
+      b.date.startsWith(todayDate.substring(0, 7));
+
   /// Selectable dates from `posState.startDate` through [todayDate].
   List<String> get availableDates {
     final set = <String>{selectedDate, todayDate};

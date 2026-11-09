@@ -5,7 +5,7 @@ import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/bills/presentation/cubit/bills_cubit.dart';
 import 'package:app/features/bills/presentation/widgets/bills_filter_drawer.dart';
-import 'package:app/features/sale/presentation/widgets/sale_receipt_modal.dart';
+import 'package:app/features/bills/presentation/widgets/reissue_bill_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -284,14 +284,7 @@ class BillsPage extends StatelessWidget {
             ),
           if (selectedBill != null)
             Positioned.fill(
-              child: ReceiptModal(
-                shop: state.posState.shop,
-                bill: selectedBill,
-                fresh: false,
-                staff: staff,
-                onDone: () => cubit.selectBill(null),
-                onVoid: (r) => cubit.voidBillById(staff: staff, reason: r),
-              ),
+              child: billReceiptOverlay(context, cubit, selectedBill, staff),
             ),
         ],
       ),
