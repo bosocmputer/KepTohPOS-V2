@@ -406,6 +406,35 @@ void main() {
     });
 
     test(
+      'owner turns VAT registration and VAT mode on/off in one save',
+      () async {
+        // Arrange
+        final before = repo.state.shop;
+
+        // Act: register + VAT mode together, then both off together.
+        final on = await repo.saveShopSettings(
+          before.copyWith(
+            taxId: '0105500000001',
+            vatRegistered: true,
+            vatMode: 'included',
+          ),
+        );
+        final onShop = repo.state.shop;
+        final off = await repo.saveShopSettings(
+          onShop.copyWith(vatRegistered: false, vatMode: 'none'),
+        );
+
+        // Assert
+        expect(on.ok, isTrue);
+        expect(onShop.vatRegistered, isTrue);
+        expect(onShop.vatMode, 'included');
+        expect(off.ok, isTrue);
+        expect(repo.state.shop.vatRegistered, isFalse);
+        expect(repo.state.shop.vatMode, 'none');
+      },
+    );
+
+    test(
       'the owner adds and edits add-ons and ingredients with costs',
       () async {
         // Arrange: a manager session can read costs back.

@@ -4,6 +4,7 @@ import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/sale/presentation/widgets/receipt_card.dart';
 import 'package:app/features/setup/presentation/widgets/setup_nav_sidebar.dart';
+import 'package:app/features/setup/presentation/widgets/setup_shop_form_parts.dart';
 import 'package:flutter/material.dart';
 
 /// Editable store profile & receipt configuration (`ShopForm` + Live Preview).
@@ -12,12 +13,14 @@ class SetupShopPanel extends StatefulWidget {
     required this.shop,
     required this.onSave,
     this.isSaving = false,
+    this.canEditVat = false,
     super.key,
   });
 
   final ShopConfig shop;
   final ValueChanged<ShopConfig> onSave;
   final bool isSaving;
+  final bool canEditVat;
 
   @override
   State<SetupShopPanel> createState() => _SetupShopPanelState();
@@ -30,55 +33,6 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
   void didUpdateWidget(covariant SetupShopPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.shop != widget.shop) _v = widget.shop;
-  }
-
-  BillRecord _buildPreviewBill() {
-    const pkg = PackageItem(
-      id: 'pk1',
-      name: 'บุฟเฟต์หมูกระทะ',
-      adultPrice: 19900,
-      childPrice: 9900,
-    );
-    AddonLineInput ad(String id, String n, int p, int q) => AddonLineInput(
-      addon: AddonItem(
-        id: id,
-        name: n,
-        category: 'เครื่องดื่ม',
-        price: p,
-        cost: 0,
-        stock: 10,
-      ),
-      qty: q,
-    );
-    final order = calcOrder(_v, pkg, 3, 1, 0, [
-      ad('ad1', 'เบียร์สิงห์ ขวดใหญ่', 9000, 2),
-      ad('ad2', 'น้ำแข็งถัง', 2000, 1),
-    ]);
-    return BillRecord(
-      id: 'pv',
-      no: 'B261105-001',
-      date: '2026-11-05',
-      at: '2026-11-05T18:30:00',
-      tableId: 't1',
-      tableName: 'A1',
-      staffId: 'st1',
-      staffName: 'น้องมุก',
-      packageId: 'pk1',
-      lines: order.lines,
-      subtotal: order.subtotal,
-      service: order.service,
-      vat: order.vat,
-      rounding: order.rounding,
-      total: order.total,
-      heads: order.heads,
-      methodId: 'pm1',
-      methodName: 'เงินสด',
-      methodType: 'cash',
-      received: 100000,
-      change: 100000 - order.total,
-      vatMode: _v.vatMode,
-      vatRate: _v.vatRate,
-    );
   }
 
   Widget _row(Widget l, Widget r) => Padding(
@@ -155,6 +109,11 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
                       (s) => _v.copyWith(vatMode: s),
                     ),
                   ),
+                  if (widget.canEditVat)
+                    SetupVatRegisteredSwitch(
+                      shop: _v,
+                      onChanged: (s) => setState(() => _v = s),
+                    ),
                   _row(
                     _txt(
                       'อัตราภาษีมูลค่าเพิ่ม (%)',
@@ -233,7 +192,7 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
                     style: tt.labelSmall?.copyWith(color: t.muted),
                   ),
                   const SizedBox(height: AppDimensions.space2_5),
-                  ReceiptCard(shop: _v, bill: _buildPreviewBill()),
+                  ReceiptCard(shop: _v, bill: buildShopPreviewBill(_v)),
                 ],
               ),
             );

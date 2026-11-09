@@ -82,17 +82,28 @@ mixin SupabasePosSetupCommands on SupabasePosBase implements PosRepository {
   };
 
   @override
-  Future<SetupCrudResult> saveShopSettings(ShopConfig next) => _save(
-    (s) => saveShopInState(s, next),
-    () async {
-      final tax = next.taxId.replaceAll(RegExp(r'[\s-]'), '');
-      await ownerClient!.from('shops').update(_shopRow(next)).eq('id', shopId);
-      await ownerClient!
-          .from('organizations')
-          .update(<String, dynamic>{'tax_id': tax.isEmpty ? null : tax})
-          .eq('id', organizationId);
-    },
-  );
+  Future<SetupCrudResult> saveShopSettings(ShopConfig next) =>
+      _save((s) => saveShopInState(s, next), () async {
+        final tax = next.taxId.replaceAll(RegExp(r'[\s-]'), '');
+        Future<void> org() => ownerClient!
+            .from('organizations')
+            .update(<String, dynamic>{
+              'tax_id': tax.isEmpty ? null : tax,
+              'vat_registered': next.vatRegistered,
+            })
+            .eq('id', organizationId);
+        Future<void> shop() =>
+            ownerClient!.from('shops').update(_shopRow(next)).eq('id', shopId);
+        // DB triggers: a VAT shop needs a VAT-registered org. Register the
+        // org before enabling shop VAT; drop shop VAT before un-registering.
+        if (next.vatRegistered) {
+          await org();
+          await shop();
+        } else {
+          await shop();
+          await org();
+        }
+      });
 
   @override
   Future<SetupCrudResult> saveCostingSettings(ShopConfig next) => _save(
