@@ -64,4 +64,7 @@ Before making any claim of success ("Done", "Fixed", "Tests pass"):
   - **Command:** `<คำสั่งที่รันจริง>`
   - **Output:** `<ผลลัพธ์จริง เช่น pass X, fail 0 (Exit Code: 0)>`
   - **Unverified Scope:** `<ระบุตรงๆ หากส่วนใดยังไม่ได้รันทดสอบ>`
+
+### 📊 ผลชี้วัด Agent Guard Template (เมื่อจบฟีเจอร์ / จบ Milestone / รัน `/verify`)
+(รันคำสั่ง `bash .claude/hooks/audit-session-proof.sh --brief` แล้วนำผลลัพธ์ 3 บรรทัดมาแสดงต่อท้าย)
 ```

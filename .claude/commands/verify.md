@@ -15,4 +15,4 @@ Run the mandatory **Verification Gate Function** (for multi-suite or E2E verific
    - **Tier 3 (Non-Blocking Smoke Check):** Check active ports via `lsof -i :<port>` and test via `curl -s -i` (never run `npm run dev`, `go run`, or `flutter run` in the foreground).
 3. **READ:** Inspect the full terminal output, exit code, and pass/fail counts.
 4. **VERIFY:** Confirm whether the output actually proves the claim.
-5. **REPORT:** Output the exact command run and actual terminal result, explicitly stating any tier that was not run.
+5. **REPORT & SESSION PROOF:** Output the exact command run and actual terminal result, explicitly stating any tier that was not run, then run `bash .claude/hooks/audit-session-proof.sh --brief` and append the `### 📊 ผลชี้วัด Agent Guard Template` block to the end of your reply.

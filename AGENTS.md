@@ -69,10 +69,11 @@ Inspect root manifest files (including monorepo subfolders such as `app/`, `supa
 
 ---
 
-## 4. Evidence-Based Reporting (No Over-Claiming)
+## 4. Evidence-Based Reporting (No Over-Claiming) & Session Proof Summary
 - Report only what was actually executed and verified in the current turn, citing the **exact command run** and **real terminal output**.
 - Explicitly state **"ยังไม่ได้รันทดสอบ"** for anything not executed (e.g., server not running or E2E skipped).
 - Never use exaggerated claims such as `"เสร็จสมบูรณ์ 100%"`, `"สมบูรณ์แบบ"`, or `"ไม่มีบั๊กแน่นอน"`.
+- **End-of-Task / Milestone Session Proof Report:** Whenever finishing a milestone, merging a PR, or running `/verify` or `/handoff` (do NOT run on trivial mid-task turns), execute `bash .claude/hooks/audit-session-proof.sh --brief` and include its 3-line `### 📊 ผลชี้วัด Agent Guard Template` output at the bottom of your final response.
 
 ---
 

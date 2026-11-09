@@ -32,7 +32,8 @@
       "Bash(git diff*)",
       "Bash(git log*)",
       "Bash(git checkout -b *)",
-      "Bash(git switch *)"
+      "Bash(git switch *)",
+      "Bash(bash .claude/hooks/audit-session-proof.sh*)"
     ],
     "deny": [
       "Read(./.env)",

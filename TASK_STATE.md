@@ -11,9 +11,13 @@
   - Drift `LocalDb` (outbox, snapshots, offline PIN creds) · `OutboxQueue` · `ConnectionMonitor` + `SyncStatusBanner` · `SyncEngine` (flush on reconnect + every 15 s, snapshot autosave 1 s, costs stripped)
   - Sale commands via `runCommand` (queue + local domain apply) · device receipt numbers (`settle_bill` p_seq) · 7-day offline tokens (survive another sign-in) · offline PIN (PBKDF2 Web Crypto, 5 misses → 5 min) · offline voids · offline app start from snapshot
   - Tests: `offline_sync_test` (3 scenarios, real local Supabase), `local_db_web_test` (Chrome), unit 165, pgTAP PASS, E2E 7 suites
+- **M2 merged (PR #14, 2026-11-08). M3 merged (PR #15, 2026-11-09, merge `a9fc842`):**
+  - Realtime: statement triggers on sales tables → private broadcast `shop:<id>` (no row data), RLS via `can_read_shop`; `RealtimeSync` debounces 500 ms → `reload()` run in `NetworkActivity.quietly` (background reloads must not trip `BusyOverlay`, which dropped PIN taps)
+  - Same table opened on two devices → merged via `table_session_aliases`; `cancel_table` rejects alias ids (user-approved rule (2))
+  - Tests: pgTAP 234, `test/integration/realtime_two_devices_test.dart` (~0.5–0.7 s, cross-shop refused), CI all green incl. 7 E2E. Migrations 20261109000100/000200 pushed to staging; Realtime "Allow public access" OFF
 - **Next Immediate Step:**
-  - User tries offline on staging (staging domain now on `m2/offline`), then merge PR #14 → M3 realtime multi-device
-  - Known gaps: no browser E2E that cuts the network (flutter drive cannot); stock/expense/setup writes still need online; two devices offline can open the same table (M3)
+  - M4: SQL reports + nightly backup (not started)
+  - Known gaps: two-browser test on staging not done (Turnstile blocks automated browsers); golden tests fail locally (50, not in CI, not checked on main); stock/expense/setup writes still need online; staging domain still on `m3/realtime`
 - **Known Constraints / Decisions:**
   - Staging = https://keptoh-staging.vercel.app (ผู้ใช้อนุญาตให้ใส่ PIN ทดสอบ 1234) · Supabase Site URL ชี้ staging · Redirect: staging, Preview เดิม, localhost
   - merge เข้า `main` ผ่าน PR บน GitHub เท่านั้น (คำสั่ง `git merge`/`git checkout main` ถูกระบบสิทธิ์บล็อก) · ผู้ใช้เลือก Create a merge commit

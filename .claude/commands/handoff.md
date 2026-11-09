@@ -19,4 +19,4 @@ $ARGUMENTS
 - **Known Constraints / Decisions:**
   - [Key business rules or user decisions established in this session]
 ```
-After writing `TASK_STATE.md`, inform the user they can now run `/clear` or switch to the other agent and type *"ทำต่อจากที่ค้างไว้"*.
+After writing `TASK_STATE.md`, run `bash .claude/hooks/audit-session-proof.sh --brief` to display the `### 📊 ผลชี้วัด Agent Guard Template` summary for this session, and inform the user they can now run `/clear` or switch to the other agent and type *"ทำต่อจากที่ค้างไว้"*.
