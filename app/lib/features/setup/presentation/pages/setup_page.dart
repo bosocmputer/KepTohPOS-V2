@@ -132,6 +132,7 @@ class _SetupPageState extends State<SetupPage> {
         'shop' => SetupShopPanel(
           shop: s.shop,
           isSaving: state.isSaving,
+          canEditVat: widget.staffRole == 'owner',
           onSave: cubit.saveShop,
         ),
         'costing' => SetupCostingPanel(
