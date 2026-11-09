@@ -36,8 +36,8 @@ if echo "$COMMAND" | grep -qE '(\$\{IFS\}|\$IFS|base64[[:space:]]+(-d|--decode)[
   block_action "ตรวจพบการพลางคำสั่งด้วย IFS หรือ base64 decode เข้าสู่ Shell (Shell Obfuscation Blocked)"
 fi
 
-# 2. ดักจับคำสั่งทำลายข้อมูล ทับโค้ดที่ยังไม่ Commit หรือบังคับ Push ทับกิ่งหลัก (รวมถึง git push +main และ git switch -f)
-if echo "$COMMAND" | grep -qE '(rm -rf /|rm -rf ~|rm -rf \$HOME|rm -rf \*|DROP DATABASE|TRUNCATE TABLE|git push.*(--force|-f)|git push[[:space:]]+[^[:space:]]+[[:space:]]+\+[a-zA-Z0-9_/.-]+|git reset --hard|git checkout[[:space:]]+(\.|--|HEAD|-f|--force)|git switch[[:space:]]+.*(-f|--force|--discard-changes)|git restore |git clean -[fd]|git branch -D|chmod 777)'; then
+# 2. ดักจับคำสั่งทำลายข้อมูล ทับโค้ดที่ยังไม่ Commit หรือบังคับ Push ทับกิ่งหลัก (รวมถึง git push +main และ git switch -f โดยไม่กวาดข้าม && หรือ ; ไปโดนคำสั่งอื่น)
+if echo "$COMMAND" | grep -qE '(rm -rf /|rm -rf ~|rm -rf \$HOME|rm -rf \*|DROP DATABASE|TRUNCATE TABLE|git[[:space:]]+push([[:space:]]+[^;&|[:space:]]+)*[[:space:]]+(--force|--force-with-lease|-f)([[:space:]]|$|;|"|\|)|git[[:space:]]+push[[:space:]]+[^;&|[:space:]]+[[:space:]]+\+[a-zA-Z0-9_/.-]+|git reset --hard|git checkout[[:space:]]+(\.|--|HEAD|-f|--force)|git[[:space:]]+switch([[:space:]]+[^;&|[:space:]]+)*[[:space:]]+(-f|--force|--discard-changes)([[:space:]]|$|;|"|\|)|git restore |git clean -[fd]|git branch -D|chmod 777)'; then
   block_action "คำสั่งถูกระงับเพื่อป้องกันข้อมูลสูญหายหรือทับโค้ดที่ยังไม่ได้ Commit"
 fi
 

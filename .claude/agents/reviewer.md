@@ -4,7 +4,6 @@ description: Use proactively when reviewing code diffs for logic errors, securit
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit
 model: sonnet
-maxTurns: 8
 skills:
   - pragmatic-review
   - security-audit

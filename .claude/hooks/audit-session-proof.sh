@@ -43,6 +43,12 @@ def scan_file(fpath, acc, is_parent=False):
                                     acc["first_prompt"] = clean_u[:75]
                     except Exception:
                         pass
+                if is_parent and "<task-notification>" in line and "<subagent_tokens>" in line:
+                    m_tid = re.search(r"<task-id>(.*?)</task-id>", line)
+                    m_tok = re.search(r"<subagent_tokens>(\d+)</subagent_tokens>", line)
+                    if m_tid and m_tok:
+                        tid_k = m_tid.group(1)
+                        acc["sub_tokens_by_id"][tid_k] = max(acc["sub_tokens_by_id"].get(tid_k, 0), int(m_tok.group(1)))
                 if '"assistant"' not in line:
                     continue
                 m_match = re.search(r'"model"\s*:\s*"([^"]+)"', line)
@@ -81,6 +87,7 @@ def analyze_session(jf):
         "sub_files": 0,
         "parent_roles": {"explorer": 0, "implementer": 0, "debugger": 0, "reviewer": 0},
         "meta_roles": {"explorer": 0, "implementer": 0, "debugger": 0, "reviewer": 0},
+        "sub_tokens_by_id": {},
         "first_prompt": "",
     }
     scan_file(jf, acc, is_parent=True)
@@ -126,9 +133,11 @@ if brief_mode:
     off_p = round(((acc["sonnet"] + acc["haiku"]) * 100.0) / tot, 1) if tot else 0.0
     r = acc["roles"]
     sub_tot = max(acc["sub_files"], sum(r.values()), acc["sub_calls"])
+    sub_toks = sum(acc["sub_tokens_by_id"].values())
+    tok_note = f" — รับภาระรวม `{sub_toks:,} tokens`" if sub_toks > 0 else ""
     print(f"### 📊 ผลชี้วัด Agent Guard Template (Session `#{acc['sess_id'][:8]}`)")
     print(f"- **สัดส่วนโมเดล ({tot} รอบ):** Opus `{op_p}%` ({acc['opus']} รอบ) | Sonnet `{so_p}%` ({acc['sonnet']} รอบ) | Haiku `{ha_p}%` ({acc['haiku']} รอบ) ➔ **แบ่งเบาภาระ Opus (Offload): `{off_p}%`**")
-    print(f"- **Subagents ที่เรียกใช้จริง:** `{sub_tot}` ตัว (`Explorer: {r['explorer']}`, `Implementer: {r['implementer']}`, `Debugger: {r['debugger']}`, `Reviewer: {r['reviewer']}`)")
+    print(f"- **Subagents ที่เรียกใช้จริง:** `{sub_tot}` ตัว (`Explorer: {r['explorer']}`, `Implementer: {r['implementer']}`, `Debugger: {r['debugger']}`, `Reviewer: {r['reviewer']}`){tok_note}")
     print(f"- **Hooks ป้องกันระบบ:** สแกนไฟล์ `{st.get('explorerReads', 0)}` ครั้ง | แก้ไฟล์+Checkpoint `{st.get('filesEdited', 0)}` ครั้ง | รันเทสต์ `{st.get('verifierRuns', 0)}` ครั้ง | บล็อกคำสั่งผิดกฎ `{st.get('blockedCount', 0)}` ครั้ง | 2-Strike: `{strike_str}`")
     sys.exit(0)
 
@@ -148,6 +157,7 @@ for idx, jf in enumerate(jsonl_files, 1):
     offload_pct = round(((sonnet_t + haiku_t) * 100.0) / tot, 1) if tot > 0 else 0.0
     r = acc["roles"]
     sub_tot = max(acc["sub_files"], sum(r.values()), acc["sub_calls"])
+    sub_toks = sum(acc["sub_tokens_by_id"].values())
     tag = "🔥 [แชทล่าสุด]" if idx == len(jsonl_files) else "🕓 [แชทก่อนหน้า]"
     print(f"\n{tag} Session #{acc['sess_id'][:8]} (อัปเดตล่าสุด: {acc['mtime']})")
     if acc["first_prompt"]:
@@ -157,7 +167,8 @@ for idx, jf in enumerate(jsonl_files, 1):
     print(f"     ├─ 🔵 Sonnet : {sonnet_t} รอบ ({round(sonnet_t*100.0/tot, 1) if tot else 0.0}%)")
     print(f"     └─ 🟢 Haiku  : {haiku_t} รอบ ({round(haiku_t*100.0/tot, 1) if tot else 0.0}%)")
     print(f"   • การเรียก Subagent จริง (Agent Tool) : {sub_tot} ตัว (ไฟล์ Subagent บนดิสก์: {acc['sub_files']} ไฟล์)")
-    print(f"     └─ แยกตามตำแหน่ง: Explorer={r['explorer']} | Implementer={r['implementer']} | Debugger={r['debugger']} | Reviewer={r['reviewer']}")
+    print(f"     ├─ แยกตามตำแหน่ง: Explorer={r['explorer']} | Implementer={r['implementer']} | Debugger={r['debugger']} | Reviewer={r['reviewer']}")
+    print(f"     └─ โทเค็นที่ Subagents รับไปทำแทน Opus : {sub_toks:,} tokens")
     print(f"   • สัดส่วนงานที่แบ่งเบาจาก Opus (Offload %) : {offload_pct}%")
 
 if st:
