@@ -39,6 +39,7 @@ abstract class SupabasePosBase {
   bool costsLoaded;
   String? staffToken;
   String? signedInStaffId;
+  int _reloadSeq = 0;
 
   /// Commands made offline; set once the browser database is open.
   OutboxQueue? outbox;
@@ -114,6 +115,10 @@ abstract class SupabasePosBase {
     // outbox has been sent.
     final queue = outbox;
     if (queue != null && await queue.pendingCount() > 0) return posState;
+    // Reloads can overlap (a realtime signal while signing in). Only the
+    // newest may apply, so an older one loaded for another staff (or none)
+    // cannot overwrite it.
+    final seq = ++_reloadSeq;
     final me = posState.staff.where((x) => x.id == signedInStaffId).firstOrNull;
     final SupabaseSnapshot snapshot;
     try {
@@ -125,6 +130,7 @@ abstract class SupabasePosBase {
     } on Object catch (e) {
       throw describeError(e);
     }
+    if (seq != _reloadSeq) return posState;
     posState = snapshot.state;
     sessionByTable = snapshot.sessionByTable;
     organizationId = snapshot.organizationId;
