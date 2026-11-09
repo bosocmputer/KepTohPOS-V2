@@ -117,7 +117,11 @@ ConnectionMonitor startSync(
     // Other devices' changes arrive as a signal; reload skips while the outbox
     // still holds unsent commands.
     ..registerSingleton<RealtimeSync>(
-      RealtimeSync.shop(session.device, repo.shopId, repo.reload),
+      RealtimeSync.shop(
+        session.device,
+        repo.shopId,
+        () => session.quietly(repo.reload),
+      ),
       dispose: (r) => r.dispose(),
     );
   return monitor;

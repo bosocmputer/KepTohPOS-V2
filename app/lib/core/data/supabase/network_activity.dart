@@ -23,14 +23,20 @@ class NetworkActivity extends http.BaseClient {
   /// Wi-Fi without internet is common in shops, so this beats the OS status.
   ValueListenable<bool> get reachable => _reachable;
 
+  /// Runs [body] without marking the app busy. A background refresh (another
+  /// device changed data) must not block taps, e.g. a PIN being typed.
+  Future<T> quietly<T>(Future<T> Function() body) =>
+      runZoned(body, zoneValues: {#networkActivityQuiet: true});
+
   void _start() => _busy.value = ++_pending > 0;
 
   void _end() => _busy.value = --_pending > 0;
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    _start();
-    var ended = false;
+    final quiet = Zone.current[#networkActivityQuiet] == true;
+    if (!quiet) _start();
+    var ended = quiet;
     void end() {
       if (ended) return;
       ended = true;

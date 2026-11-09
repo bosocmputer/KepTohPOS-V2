@@ -66,6 +66,10 @@ class DeviceSession {
   /// `true` while any request to the server is still in flight.
   ValueListenable<bool> get busy => _activity.busy;
 
+  /// Runs [body] without showing the busy overlay (see
+  /// [NetworkActivity.quietly]).
+  Future<T> quietly<T>(Future<T> Function() body) => _activity.quietly(body);
+
   /// Whether the last request reached the server (see [NetworkActivity]).
   ValueListenable<bool> get reachable => _activity.reachable;
 
