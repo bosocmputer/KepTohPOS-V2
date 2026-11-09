@@ -3,40 +3,18 @@ import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/reports/presentation/cubit/reports_cubit.dart';
-import 'package:app/features/reports/presentation/pages/sales_tax_report_page.dart';
 import 'package:app/features/reports/presentation/widgets/daily_report_table.dart';
+import 'package:app/features/reports/presentation/widgets/pending_badge.dart';
+import 'package:app/features/reports/presentation/widgets/sales_tax_report_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 export 'package:app/features/reports/presentation/cubit/reports_cubit.dart';
 export 'package:app/features/reports/presentation/widgets/daily_report_table.dart';
+export 'package:app/features/reports/presentation/widgets/pending_badge.dart';
 
 /// Active column preset mode for [DailyReportTable] (`all | profit | sales`).
 String _activeReportColMode = 'all';
-
-/// Badge indicating formulas use provisional defaults (`PendingBadge` in
-/// `prototype/index.html:1528`).
-class PendingBadge extends StatelessWidget {
-  const new({super.key, this.onTap});
-
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    const pill = Pill(
-      key: ValueKey('pending-badge'),
-      tone: PillTone.orange,
-      label: 'ค่าตั้งต้น · รอยืนยันกับร้าน',
-    );
-    return onTap == null
-        ? pill
-        : InkWell(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-            onTap: onTap,
-            child: pill,
-          );
-  }
-}
 
 /// Column definition for [DailyReportTable].
 class ReportColSpec {
@@ -183,6 +161,9 @@ class _ReportsPageState extends State<ReportsPage> {
     return BlocBuilder<ReportsCubit, ReportsState>(
       builder: (context, state) {
         final rep = state.report;
+        final repo = context.read<PosRepository>();
+        final showTax = canSeeSalesTaxTab(repo);
+        final taxTab = showTax && _colMode == 'tax';
         final shop = state.posState.shop;
         final d = parseKey('${rep.selectedMonth}-01');
         final mDays = DateTime(d.year, d.month + 1, 0).day;
@@ -216,7 +197,6 @@ class _ReportsPageState extends State<ReportsPage> {
                           tone: PillTone.orange,
                           label: 'หักค่าคงที่ยังไม่ครบเดือน',
                         ),
-                      const SalesTaxReportButton(),
                       PendingBadge(onTap: widget.onGoSetupCosting),
                     ],
                     children: [
@@ -224,69 +204,84 @@ class _ReportsPageState extends State<ReportsPage> {
                       Seg<String>(
                         key: const ValueKey('reports-col-mode-seg'),
                         value: _colMode,
-                        items: const [
-                          SegItem(value: 'all', label: 'ทุกคอลัมน์'),
-                          SegItem(value: 'profit', label: 'กำไร & Food cost'),
-                          SegItem(value: 'sales', label: 'ยอดขาย & ซื้อเข้า'),
+                        items: [
+                          const SegItem(value: 'all', label: 'ทุกคอลัมน์'),
+                          const SegItem(
+                            value: 'profit',
+                            label: 'กำไร & Food cost',
+                          ),
+                          const SegItem(
+                            value: 'sales',
+                            label: 'ยอดขาย & ซื้อเข้า',
+                          ),
+                          if (showTax)
+                            const SegItem(value: 'tax', label: 'ภาษีขาย'),
                         ],
                         onChanged: _setColMode,
                       ),
                     ],
                   ),
                   const SizedBox(height: AppDimensions.space4),
-                  StatsGroup(
-                    key: const ValueKey('reports-month-stats'),
-                    children: [
-                      Stat(
-                        label: 'ยอดขายทั้งเดือน',
-                        value: baht(rep.totalNet),
-                        sub:
-                            '${rep.totalBills} บิล · '
-                            '${fmt(rep.totalHeads)} หัว',
-                      ),
-                      Stat(
-                        label: 'ต้นทุนวัตถุดิบ',
-                        value: hasClosed ? baht(rep.closedIngCost) : '–',
-                        sub: 'เครื่องดื่ม ${baht(rep.closedAddonCost)}',
-                      ),
-                      Stat(
-                        label: 'กำไรขั้นต้น',
-                        value: hasClosed ? baht(rep.closedProfit) : '–',
-                        tone: pTone(rep.closedProfit),
-                        sub: closedLbl,
-                      ),
-                      if (rep.showNetProfit)
+                  if (taxTab)
+                    SalesTaxReportTab(
+                      repository: repo,
+                      month: rep.selectedMonth,
+                    )
+                  else ...[
+                    StatsGroup(
+                      key: const ValueKey('reports-month-stats'),
+                      children: [
                         Stat(
-                          label: 'กำไรสุทธิ (ประมาณ)',
-                          value: hasClosed ? baht(rep.closedNetProfit) : '–',
-                          tone: pTone(rep.closedNetProfit),
+                          label: 'ยอดขายทั้งเดือน',
+                          value: baht(rep.totalNet),
                           sub:
-                              'รายวัน ${baht(dailyExp)} · '
-                              'คงที่ ${baht(rep.fixedDeducted)} / '
-                              '${baht(rep.fixedFullMonth)}',
+                              '${rep.totalBills} บิล · '
+                              '${fmt(rep.totalHeads)} หัว',
                         ),
-                      Stat(
-                        label: 'ซื้อของเข้า',
-                        value: baht(rep.totalPurchases),
-                        sub: 'เงินที่จ่ายออกจริง',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppDimensions.space4),
-                  DailyReportTable(
-                    key: ValueKey('daily-report-table-$_colMode'),
-                    report: rep,
-                    onDayTap: widget.onSelectDateForBills,
-                  ),
-                  const SizedBox(height: AppDimensions.space4),
-                  Text(
-                    'ซื้อเข้า ≠ ต้นทุน: ซื้อเข้าคือเงินที่จ่ายออกวันนั้น '
-                    'ส่วนต้นทุนคือมูลค่าวัตถุดิบที่ใช้ไปจริง '
-                    '(ยกมา + ซื้อเข้า − เหลือ) · ค่าใช้จ่าย = รายวัน + '
-                    'ค่าคงที่รายเดือนเฉลี่ย$divTxt '
-                    '(ขายแล้ว ${rep.salesDays} วัน)',
-                    style: tt.bodySmall?.copyWith(color: t.muted),
-                  ),
+                        Stat(
+                          label: 'ต้นทุนวัตถุดิบ',
+                          value: hasClosed ? baht(rep.closedIngCost) : '–',
+                          sub: 'เครื่องดื่ม ${baht(rep.closedAddonCost)}',
+                        ),
+                        Stat(
+                          label: 'กำไรขั้นต้น',
+                          value: hasClosed ? baht(rep.closedProfit) : '–',
+                          tone: pTone(rep.closedProfit),
+                          sub: closedLbl,
+                        ),
+                        if (rep.showNetProfit)
+                          Stat(
+                            label: 'กำไรสุทธิ (ประมาณ)',
+                            value: hasClosed ? baht(rep.closedNetProfit) : '–',
+                            tone: pTone(rep.closedNetProfit),
+                            sub:
+                                'รายวัน ${baht(dailyExp)} · '
+                                'คงที่ ${baht(rep.fixedDeducted)} / '
+                                '${baht(rep.fixedFullMonth)}',
+                          ),
+                        Stat(
+                          label: 'ซื้อของเข้า',
+                          value: baht(rep.totalPurchases),
+                          sub: 'เงินที่จ่ายออกจริง',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppDimensions.space4),
+                    DailyReportTable(
+                      key: ValueKey('daily-report-table-$_colMode'),
+                      report: rep,
+                      onDayTap: widget.onSelectDateForBills,
+                    ),
+                    const SizedBox(height: AppDimensions.space4),
+                    Text(
+                      'ซื้อเข้า ≠ ต้นทุน: ซื้อเข้าคือเงินที่จ่ายออกวันนั้น '
+                      'ส่วนต้นทุนคือมูลค่าวัตถุดิบที่ใช้ไปจริง '
+                      '(ยกมา + ซื้อเข้า − เหลือ) · ค่าใช้จ่าย = รายวัน + '
+                      'ค่าคงที่รายเดือนเฉลี่ย$divTxt '
+                      '(ขายแล้ว ${rep.salesDays} วัน)',
+                      style: tt.bodySmall?.copyWith(color: t.muted),
+                    ),
+                  ],
                 ],
               ),
             );

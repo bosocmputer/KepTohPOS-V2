@@ -1,5 +1,6 @@
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/formatters.dart';
+import 'package:app/core/utils/thai_tax.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:flutter/material.dart';
@@ -114,10 +115,7 @@ class ReceiptBuyerBlock extends StatelessWidget {
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
     final taxId = bill.buyerTaxId ?? '';
-    final branch = bill.buyerBranch ?? '';
-    final branchTxt = branch == '00000' || branch.isEmpty
-        ? 'สำนักงานใหญ่'
-        : 'สาขาที่ $branch';
+    final branchTxt = branchLabel(bill.buyerBranch ?? '00000');
     final lines = <String>[
       'ผู้ซื้อ: ${bill.buyerName ?? "-"}',
       if ((bill.buyerAddress ?? '').isNotEmpty) bill.buyerAddress!,

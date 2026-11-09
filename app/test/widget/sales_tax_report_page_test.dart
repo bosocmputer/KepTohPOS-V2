@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:app/app.dart';
 import 'package:app/core/data/mock_pos_repository.dart';
 import 'package:app/domain/domain.dart';
-import 'package:app/features/reports/presentation/pages/sales_tax_report_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -59,7 +58,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Act
-    await tester.tap(find.byKey(const ValueKey('sales-tax-report-button')));
+    await tester.tap(find.text('ภาษีขาย'));
     await tester.pumpAndSettle();
 
     // Assert
@@ -82,8 +81,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Assert
-    expect(find.byType(SalesTaxReportButton), findsNothing);
-    expect(find.text('รายงานภาษีขาย'), findsNothing);
+    expect(find.text('ภาษีขาย'), findsNothing);
   });
 
   testWidgets('non-VAT shop hides the entry for the owner', (tester) async {
@@ -100,6 +98,6 @@ void main() {
     await tester.pumpAndSettle();
 
     // Assert
-    expect(find.byKey(const ValueKey('sales-tax-report-button')), findsNothing);
+    expect(find.text('ภาษีขาย'), findsNothing);
   });
 }
