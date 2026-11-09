@@ -137,9 +137,11 @@ class BillsPage extends StatelessWidget {
                 PosDataTable<BillRecord>(
                   rows: state.pagedBills,
                   onRowTap: (b) => cubit.selectBill(b.id),
-                  empty: const Empty(
+                  empty: Empty(
                     title: 'ไม่มีบิล',
-                    text: 'ยังไม่มีรายการขายตามเงื่อนไขที่เลือก',
+                    text: state.olderFailed
+                        ? 'ต้องออนไลน์เพื่อดูบิลย้อนหลัง'
+                        : 'ยังไม่มีรายการขายตามเงื่อนไขที่เลือก',
                   ),
                   columns: [
                     DataTableCol<BillRecord>(

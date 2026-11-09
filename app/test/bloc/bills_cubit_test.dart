@@ -37,6 +37,20 @@ PosRepository _buildSeededBillsRepo(DateTime fixedNow) {
   });
 }
 
+class _OlderDaysRepo extends Fake implements PosRepository {
+  new(this.state, this.fetch);
+
+  @override
+  final PosState state;
+  final Future<List<BillRecord>> Function(String date) fetch;
+
+  @override
+  Stream<PosState> get stream => const Stream<PosState>.empty();
+
+  @override
+  Future<List<BillRecord>> billsForDay(String date) => fetch(date);
+}
+
 void main() {
   final fixedNow = DateTime(2026, 11, 4, 18);
 
@@ -149,5 +163,59 @@ void main() {
         expect(repo.state.addons.first.stock, stockBefore + 2);
       },
     );
+  });
+
+  group('BillsCubit older days', () {
+    final base = _buildSeededBillsRepo(fixedNow).state;
+    final old = base.sales.first;
+    const oldDay = '2026-10-01';
+    PosState withRawFrom() => base.copy()..rawFrom = '2026-10-29';
+
+    test('a day before rawFrom is fetched on demand', () async {
+      final asked = <String>[];
+      final cubit = BillsCubit(
+        _OlderDaysRepo(withRawFrom(), (d) async {
+          asked.add(d);
+          return <BillRecord>[old];
+        }),
+        now: fixedNow,
+      )..setDate(oldDay);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(asked, <String>[oldDay]);
+      expect(cubit.state.isOlderDay, isTrue);
+      expect(cubit.state.dayBills.map((b) => b.id), <String>[old.id]);
+      expect(cubit.state.olderFailed, isFalse);
+      expect(cubit.state.availableDates, contains(oldDay));
+      await cubit.close();
+    });
+
+    test('a failed fetch sets olderFailed and shows no bills', () async {
+      final cubit = BillsCubit(
+        _OlderDaysRepo(withRawFrom(), (_) async => throw Exception('offline')),
+        now: fixedNow,
+      )..setDate(oldDay);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.olderFailed, isTrue);
+      expect(cubit.state.dayBills, isEmpty);
+      await cubit.close();
+    });
+
+    test('a day inside the raw window is not fetched', () async {
+      var calls = 0;
+      final cubit = BillsCubit(
+        _OlderDaysRepo(withRawFrom(), (_) async {
+          calls++;
+          return <BillRecord>[];
+        }),
+        now: fixedNow,
+      )..setDate('2026-11-03');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(calls, 0);
+      expect(cubit.state.isOlderDay, isFalse);
+      await cubit.close();
+    });
   });
 }

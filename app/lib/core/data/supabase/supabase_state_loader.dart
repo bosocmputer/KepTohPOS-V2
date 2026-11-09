@@ -1,5 +1,7 @@
+import 'package:app/core/data/supabase/supabase_open_tables.dart';
 import 'package:app/core/data/supabase/supabase_row_mappers.dart';
 import 'package:app/domain/models.dart';
+import 'package:app/domain/roles.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 const int _kPageSize = 1000;
@@ -35,13 +37,17 @@ class SupabaseStateLoader {
   final SupabaseClient _client;
   final String _shopId;
 
-  Future<List<Row>> _all(String table, String columns, String orderBy) async {
+  /// Pages through a table; [since] = (column, value) keeps `column >= value`.
+  Future<List<Row>> _all(
+    String table,
+    String columns,
+    String orderBy, {
+    (String, String)? since,
+  }) async {
     final rows = <Row>[];
     for (var from = 0; ; from += _kPageSize) {
-      final page = await _client
-          .from(table)
-          .select(columns)
-          .eq('shop_id', _shopId)
+      final q = _client.from(table).select(columns).eq('shop_id', _shopId);
+      final page = await (since == null ? q : q.gte(since.$1, since.$2))
           .order(orderBy, ascending: true)
           .range(from, from + _kPageSize - 1);
       rows.addAll(page);
@@ -68,6 +74,11 @@ class SupabaseStateLoader {
         .eq('id', shop['org_id'] as String)
         .single();
     final startDate = (shop['created_at'] as String).substring(0, 10);
+    // Raw bills only for the last 7 business days; older days are totals.
+    final cutoff = (shop['day_cutoff_minutes'] as num?)?.toInt() ?? 0;
+    final rawFrom = dkey(
+      addDays(parseKey(businessDayKey(DateTime.now(), cutoff)), -6),
+    );
 
     final results = await Future.wait(<Future<List<Row>>>[
       _all('bank_accounts', '*', 'id'),
@@ -84,11 +95,13 @@ class SupabaseStateLoader {
       _all('staff', '*', 'name'),
       _all('payment_methods', '*', 'id'),
       _all('expense_types', '*', 'name'),
-      _all('bills', '*', 'at'),
+      _all('bills', '*', 'at', since: ('business_date', rawFrom)),
       _all(
         'bill_lines',
-        'id, shop_id, bill_id, line_no, type, item_id, name, qty, price',
+        'id, shop_id, bill_id, line_no, type, item_id, name, qty, price, '
+            'bills!inner(business_date)',
         'id',
+        since: ('bills.business_date', rawFrom),
       ),
       _all('shifts', '*', 'opened_at'),
       _all('stock_counts', '*', 'ingredient_id'),
@@ -104,7 +117,7 @@ class SupabaseStateLoader {
             'get_manager_data',
             params: <String, dynamic>{
               'p_shop_id': _shopId,
-              'p_from': startDate,
+              'p_from': rawFrom,
               'p_to': DateTime.now()
                   .add(const Duration(days: 2))
                   .toIso8601String()
@@ -120,6 +133,11 @@ class SupabaseStateLoader {
           )
         : const <String, dynamic>{};
 
+    final dailyTotals = rawFrom.compareTo(startDate) > 0
+        ? await _dailyTotals(startDate, rawFrom, token)
+        : const <String, DailySalesTotal>{};
+
+    final addonSalesBefore = await _addonSalesBefore(startDate, rawFrom, token);
     List<Row> listOf(String key) =>
         ((extra[key] as List<dynamic>?) ?? const <dynamic>[]).cast<Row>();
     Map<String, int> costs(String key, String field) => <String, int>{
@@ -155,7 +173,7 @@ class SupabaseStateLoader {
           .toDouble();
     }
 
-    final open = _openTables(
+    final open = openTablesFrom(
       sessions: results[13],
       rounds: results[14],
       adjustments: results[15],
@@ -190,6 +208,9 @@ class SupabaseStateLoader {
       counts: counts,
       openTables: open.tables,
       expenses: listOf('expenses').map(expenseFromRow).toList(),
+      rawFrom: rawFrom,
+      dailyTotals: dailyTotals,
+      addonSalesBefore: addonSalesBefore,
       purchases: listOf('purchases').map(purchaseFromRow).toList(),
       initialStock: <String, StockLot>{
         for (final l in listOf('initial_stock'))
@@ -208,77 +229,72 @@ class SupabaseStateLoader {
     );
   }
 
-  ({Map<String, OpenTableState> tables, Map<String, String> sessions})
-  _openTables({
-    required List<Row> sessions,
-    required List<Row> rounds,
-    required List<Row> adjustments,
-    required Set<String> settled,
-    required List<Row> bills,
-  }) {
-    final tables = <String, OpenTableState>{};
-    final bySession = <String, String>{};
-    for (final s in sessions.where((x) => x['closed_at'] == null)) {
-      final id = s['id'] as String;
-      final tableId = s['table_id'] as String;
-      final sessionRounds = rounds.where((r) => r['session_id'] == id);
-      final sessionAdjusts = adjustments.where((j) => j['session_id'] == id);
-      final sessionBills = bills.where((b) => b['session_id'] == id);
-
-      // Same running total as openOrAdd/adjustSent/voidBill in the domain.
-      var a = 0;
-      var c = 0;
-      var f = 0;
-      void add(Row r, int sign) {
-        a += sign * (r['heads_a'] as int);
-        c += sign * (r['heads_c'] as int);
-        f += sign * (r['heads_f'] as int);
-      }
-
-      final isAfter = s['timing'] == 'after';
-      if (isAfter) {
-        for (final r in sessionRounds) {
-          add(r, 1);
-        }
-        for (final j in sessionAdjusts.where((x) => x['kind'] == 'head')) {
-          final qty = j['qty'] as int;
-          switch (j['key']) {
-            case 'a':
-              a -= qty;
-            case 'c':
-              c -= qty;
-            case 'f':
-              f -= qty;
-          }
-        }
-      } else {
-        for (final b in sessionBills.where((x) => x['voided'] != true)) {
-          add(b, 1);
-        }
-      }
-
-      tables[tableId] = OpenTableState(
-        openedAt: s['opened_at'] as String,
-        packageId: s['package_id'] as String,
-        timing: s['timing'] as String,
-        notes: s['notes'] as String,
-        billIds: sessionBills.map((b) => b['id'] as String).toList(),
-        heads: HeadsCount(a: a < 0 ? 0 : a, c: c < 0 ? 0 : c, f: f < 0 ? 0 : f),
-        rounds: sessionRounds
-            .where((r) => !settled.contains(r['id']))
-            .map(roundFromRow)
-            .toList(),
-        adjusts: sessionAdjusts
-            .where((j) => !settled.contains(j['id']))
-            .map(adjustmentFromRow)
-            .toList(),
-        log: sessionAdjusts
-            .where((j) => settled.contains(j['id']))
-            .map(adjustmentFromRow)
-            .toList(),
+  /// Totals for [from] up to the day before [rawFrom], 400 days per call.
+  Future<Map<String, DailySalesTotal>> _dailyTotals(
+    String from,
+    String rawFrom,
+    String? token,
+  ) async {
+    final end = addDays(parseKey(rawFrom), -1);
+    final out = <String, DailySalesTotal>{};
+    for (var d = parseKey(from); !d.isAfter(end); d = addDays(d, 401)) {
+      final to = addDays(d, 400).isAfter(end) ? end : addDays(d, 400);
+      final rows = await _client.rpc<List<dynamic>>(
+        'get_daily_sales_totals',
+        params: <String, dynamic>{
+          'p_shop_id': _shopId,
+          'p_from': dkey(d),
+          'p_to': dkey(to),
+          'p_token': token,
+        },
       );
-      bySession[tableId] = id;
+      for (final r in rows.cast<Row>()) {
+        out[r['business_date'] as String] = DailySalesTotal(
+          bills: r['bills'] as int,
+          a: r['a'] as int,
+          c: r['c'] as int,
+          f: r['f'] as int,
+          gross: (r['gross'] as num).toDouble(),
+          net: (r['net'] as num).toDouble(),
+          buffetNet: (r['buffet_net'] as num).toDouble(),
+          addonNet: (r['addon_net'] as num).toDouble(),
+          addonCost: (r['addon_cost'] as num?)?.toDouble(),
+        );
+      }
     }
-    return (tables: tables, sessions: bySession);
+    return out;
+  }
+
+  /// Add-on sales the dashboard (month / 30 days) needs from before [rawFrom].
+  Future<List<AddonSaleDay>> _addonSalesBefore(
+    String startDate,
+    String rawFrom,
+    String? token,
+  ) async {
+    final today = parseKey(rawFrom).add(const Duration(days: 6));
+    final monthStart = DateTime(today.year, today.month);
+    final back30 = addDays(today, -29);
+    var from = dkey(monthStart.isBefore(back30) ? monthStart : back30);
+    if (from.compareTo(startDate) < 0) from = startDate;
+    if (from.compareTo(rawFrom) >= 0) return const <AddonSaleDay>[];
+    final rows = await _client.rpc<List<dynamic>>(
+      'get_addon_sales',
+      params: <String, dynamic>{
+        'p_shop_id': _shopId,
+        'p_from': from,
+        'p_to': dkey(addDays(parseKey(rawFrom), -1)),
+        'p_token': token,
+      },
+    );
+    return [
+      for (final r in rows.cast<Row>())
+        AddonSaleDay(
+          date: r['business_date'] as String,
+          name: r['name'] as String,
+          qty: (r['qty'] as num).toInt(),
+          rev: (r['rev'] as num).toDouble(),
+          cost: (r['cost'] as num?)?.toDouble(),
+        ),
+    ];
   }
 }

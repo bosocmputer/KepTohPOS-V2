@@ -16,7 +16,8 @@
   - Same table opened on two devices → merged via `table_session_aliases`; `cancel_table` rejects alias ids (user-approved rule (2))
   - Tests: pgTAP 234, `test/integration/realtime_two_devices_test.dart` (~0.5–0.7 s, cross-shop refused), CI all green incl. 7 E2E. Migrations 20261109000100/000200 pushed to staging; Realtime "Allow public access" OFF
 - **Next Immediate Step:**
-  - M4: SQL reports + nightly backup (not started)
+  - M4 (branch `m4/reports-backup`, 2026-11-09): app loads raw bills only for last 7 business days (`PosState.rawFrom`); older days via RPC `get_daily_sales_totals` (000300, ledger) + `get_addon_sales` (000400, dashboard month/30) + bills page fetches old days on demand (offline → "ต้องออนไลน์เพื่อดูบิลย้อนหลัง"); trigger blocks deleting bank accounts used by bills. Reviewer APPROVE ×2. Migrations 000300/000400 NOT pushed to staging yet; PR not opened. Note: future delete-shop feature must handle the bank-account trigger
+  - **Nightly backup moved out of M4 (user decision 2026-11-09) → must be done before go-live in M6.** Plan then: Supabase Pro if there is revenue, else GitHub Actions `pg_dump` → encrypt → Cloudflare R2 (keep 30). Repo is PUBLIC: never store dumps as repo files or Actions artifacts
   - Known gaps: two-browser test on staging not done (Turnstile blocks automated browsers); golden tests fail locally (50, not in CI, not checked on main); stock/expense/setup writes still need online; staging domain still on `m3/realtime`
 - **Known Constraints / Decisions:**
   - Staging = https://keptoh-staging.vercel.app (ผู้ใช้อนุญาตให้ใส่ PIN ทดสอบ 1234) · Supabase Site URL ชี้ staging · Redirect: staging, Preview เดิม, localhost

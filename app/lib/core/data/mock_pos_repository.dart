@@ -196,6 +196,10 @@ class MockPosRepository
   }
 
   @override
+  Future<List<BillRecord>> billsForDay(String date) async =>
+      _state.sales.where((b) => b.date == date).toList();
+
+  @override
   bool get isDemoData => true;
 
   @override
