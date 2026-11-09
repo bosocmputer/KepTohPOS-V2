@@ -1,5 +1,7 @@
+
 import 'dart:async';
 
+import 'package:app/core/diagnostics/e2e_trace.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -13,6 +15,7 @@ class RealtimeSync {
     this.debounce = const Duration(milliseconds: 500),
   }) {
     _sub = signals.listen((_) {
+      e2eTrace('realtime: signal');
       _timer?.cancel();
       _timer = Timer(debounce, _fire);
     });
@@ -36,6 +39,7 @@ class RealtimeSync {
 
   Future<void> _fire() async {
     if (_disposed) return;
+    e2eTrace('realtime: _fire');
     try {
       await _onChange();
     } on Object catch (e) {

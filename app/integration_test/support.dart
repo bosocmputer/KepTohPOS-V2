@@ -1,3 +1,4 @@
+import 'package:app/core/diagnostics/e2e_trace.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/main.dart' as app;
 import 'package:flutter/material.dart';
@@ -161,7 +162,8 @@ Future<void> signInAndOpenShift(WidgetTester tester, String pin) async {
   while (openShift.evaluate().isEmpty && shiftOpen.evaluate().isEmpty) {
     if (DateTime.now().isAfter(end)) {
       throw TestFailure(
-        'No shift prompt after PIN\nOn screen: ${_screenText()}',
+        'No shift prompt after PIN\nOn screen: ${_screenText()}'
+        '\nTrace:\n${e2eTraceLines.join('\n')}',
       );
     }
     await tester.pump(const Duration(milliseconds: 100));

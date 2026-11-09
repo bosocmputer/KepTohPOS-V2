@@ -1,8 +1,10 @@
+
 import 'dart:async';
 
 import 'package:app/core/data/local/offline_credentials.dart';
 import 'package:app/core/data/local/outbox_queue.dart';
 import 'package:app/core/data/supabase/supabase_state_loader.dart';
+import 'package:app/core/diagnostics/e2e_trace.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/domain/pos_command_exception.dart';
 import 'package:http/http.dart' as http;
@@ -39,7 +41,6 @@ abstract class SupabasePosBase {
   bool costsLoaded;
   String? staffToken;
   String? signedInStaffId;
-  int _reloadSeq = 0;
 
   /// Commands made offline; set once the browser database is open.
   OutboxQueue? outbox;
@@ -113,12 +114,12 @@ abstract class SupabasePosBase {
   Future<PosState> reload() async {
     // Server data lacks what is still queued; keep the local state until the
     // outbox has been sent.
+    e2eTrace('base: reload start signedIn=$signedInStaffId');
     final queue = outbox;
-    if (queue != null && await queue.pendingCount() > 0) return posState;
-    // Reloads can overlap (a realtime signal while signing in). Only the
-    // newest may apply, so an older one loaded for another staff (or none)
-    // cannot overwrite it.
-    final seq = ++_reloadSeq;
+    if (queue != null && await queue.pendingCount() > 0) {
+      e2eTrace('base: reload skipped (outbox pending)');
+      return posState;
+    }
     final me = posState.staff.where((x) => x.id == signedInStaffId).firstOrNull;
     final SupabaseSnapshot snapshot;
     try {
@@ -128,13 +129,14 @@ abstract class SupabasePosBase {
         readsCosts: me?.seesCosts ?? false,
       );
     } on Object catch (e) {
+      e2eTrace('base: reload error $e');
       throw describeError(e);
     }
-    if (seq != _reloadSeq) return posState;
     posState = snapshot.state;
     sessionByTable = snapshot.sessionByTable;
     organizationId = snapshot.organizationId;
     costsLoaded = snapshot.canReadCosts;
+    e2eTrace('base: reload done state.current=${posState.currentStaffId}');
     if (!controller.isClosed) controller.add(posState);
     return posState;
   }

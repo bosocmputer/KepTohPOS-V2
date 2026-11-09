@@ -1,5 +1,7 @@
+
 import 'dart:async';
 
+import 'package:app/core/diagnostics/e2e_trace.dart';
 import 'package:app/core/router/shell_placeholder_page.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/widgets/dev_components_page.dart';
@@ -56,6 +58,7 @@ GoRouter createAppRouter({
     if (authCubit == null) return null;
     final me = authCubit.state.currentStaff;
     final loc = state.matchedLocation;
+    e2eTrace('router redirect loc=$loc me=${me?.id}');
     if (me == null) {
       return (loc != '/login' && loc != '/dev/components') ? '/login' : null;
     }
@@ -73,8 +76,12 @@ GoRouter createAppRouter({
     GoRoute(path: '/', redirect: (_, _) => '/tables'),
     GoRoute(
       path: '/login',
-      builder: (context, state) =>
-          LoginPage(onLoggedIn: () => context.go('/tables')),
+      builder: (context, state) => LoginPage(
+        onLoggedIn: () {
+          e2eTrace('router: go /tables from login');
+          context.go('/tables');
+        },
+      ),
     ),
     GoRoute(
       path: '/tables/:tableId',

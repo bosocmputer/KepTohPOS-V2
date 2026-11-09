@@ -1,3 +1,4 @@
+
 import 'dart:async';
 
 import 'package:app/core/data/local/offline_credentials.dart';
@@ -8,6 +9,7 @@ import 'package:app/core/data/supabase/supabase_pos_sale_commands.dart';
 import 'package:app/core/data/supabase/supabase_pos_setup_commands.dart';
 import 'package:app/core/data/supabase/supabase_pos_stock_commands.dart';
 import 'package:app/core/data/supabase/supabase_state_loader.dart';
+import 'package:app/core/diagnostics/e2e_trace.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/domain/pos_command_exception.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -144,6 +146,9 @@ class SupabasePosRepository extends SupabasePosBase
       }
       throw error;
     }
+    e2eTrace(
+      'repo: verify_staff_pin ok=${result['ok']} reason=${result['reason']}',
+    );
     if (result['ok'] != true) {
       return result['reason'] == 'locked'
           ? PinSignInResult.locked
@@ -162,7 +167,11 @@ class SupabasePosRepository extends SupabasePosBase
         expiresAt: DateTime.parse(expires),
       );
     }
+    e2eTrace('repo: signIn before reload staff=$signedInStaffId');
     await reload();
+    e2eTrace(
+      'repo: signIn after reload state.current=${posState.currentStaffId}',
+    );
     return PinSignInResult.success;
   }
 
