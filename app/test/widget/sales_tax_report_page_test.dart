@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:app/app.dart';
 import 'package:app/core/data/mock_pos_repository.dart';
+import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -66,6 +67,13 @@ void main() {
     expect(find.byKey(const ValueKey('sales-tax-totals')), findsOneWidget);
     expect(find.text('สรุปรายวันรายเครื่อง'), findsOneWidget);
     expect(find.text('ส่งออก CSV'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(Toolbar),
+        matching: find.byKey(const ValueKey('sales-tax-export')),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('cashier never gets the tax report entry', (tester) async {

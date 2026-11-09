@@ -134,6 +134,7 @@ class ReportsPage extends StatefulWidget {
 
 class _ReportsPageState extends State<ReportsPage> {
   String _colMode = 'all';
+  final _taxExport = ValueNotifier<VoidCallback?>(null);
 
   @override
   void initState() {
@@ -144,11 +145,13 @@ class _ReportsPageState extends State<ReportsPage> {
   @override
   void dispose() {
     _activeReportColMode = 'all';
+    _taxExport.dispose();
     super.dispose();
   }
 
   void _setColMode(String mode) => setState(() {
     _colMode = mode;
+    _taxExport.value = null;
     _activeReportColMode = mode;
   });
 
@@ -197,6 +200,7 @@ class _ReportsPageState extends State<ReportsPage> {
                           tone: PillTone.orange,
                           label: 'หักค่าคงที่ยังไม่ครบเดือน',
                         ),
+                      if (taxTab) salesTaxExportButton(_taxExport),
                       PendingBadge(onTap: widget.onGoSetupCosting),
                     ],
                     children: [
@@ -226,6 +230,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     SalesTaxReportTab(
                       repository: repo,
                       month: rep.selectedMonth,
+                      exportAction: _taxExport,
                     )
                   else ...[
                     StatsGroup(

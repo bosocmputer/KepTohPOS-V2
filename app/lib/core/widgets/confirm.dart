@@ -14,6 +14,8 @@ class Confirm extends StatelessWidget {
     this.yesLabel = 'ยืนยัน',
     this.danger = false,
     this.child,
+    this.yesKey,
+    this.noKey,
   });
 
   final String title;
@@ -23,6 +25,8 @@ class Confirm extends StatelessWidget {
   final VoidCallback onYes;
   final VoidCallback onNo;
   final Widget? child;
+  final Key? yesKey;
+  final Key? noKey;
 
   @override
   Widget build(BuildContext context) {
@@ -31,8 +35,9 @@ class Confirm extends StatelessWidget {
       title: title,
       onClose: onNo,
       footer: [
-        Btn(label: 'ยกเลิก', onPressed: onNo),
+        Btn(key: noKey, label: 'ยกเลิก', onPressed: onNo),
         Btn(
+          key: yesKey,
           label: yesLabel,
           kind: danger ? BtnKind.dangerSolid : BtnKind.primary,
           onPressed: onYes,
