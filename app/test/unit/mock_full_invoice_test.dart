@@ -43,11 +43,7 @@ void main() {
     expect(created.total, old.total);
     expect(created.voided, isFalse);
     await expectLater(
-      repo.issueFullInvoice(
-        billId: old.id,
-        buyerName: 'x',
-        buyerAddress: 'y',
-      ),
+      repo.issueFullInvoice(billId: old.id, buyerName: 'x', buyerAddress: 'y'),
       throwsA(isA<PosCommandException>()),
     );
   });

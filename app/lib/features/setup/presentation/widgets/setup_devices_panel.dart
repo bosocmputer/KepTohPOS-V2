@@ -8,7 +8,7 @@ import 'package:app/domain/pos_command_exception.dart';
 import 'package:app/features/onboarding/data/device_session.dart';
 import 'package:app/features/setup/presentation/widgets/setup_device_leave_section.dart';
 import 'package:app/features/setup/presentation/widgets/setup_device_rd_code_dialog.dart';
-import 'package:app/features/setup/presentation/widgets/setup_nav_sidebar.dart';
+import 'package:app/features/setup/presentation/widgets/setup_device_table.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -77,22 +77,14 @@ class _SetupDevicesPanelState extends State<SetupDevicesPanel> {
   Future<void> _revoke(ShopDevice d) async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('ยกเลิก ${d.name}?'),
-        content: const Text(
-          'เครื่องนี้จะใช้ร้านไม่ได้อีก ถ้าจะใช้ต่อต้องส่งลิงก์ใหม่',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('ไม่ใช่'),
-          ),
-          TextButton(
-            key: const ValueKey('device-revoke-confirm-btn'),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('ยกเลิกเครื่อง'),
-          ),
-        ],
+      builder: (context) => Confirm(
+        title: 'ยกเลิก ${d.name}?',
+        text: 'เครื่องนี้จะใช้ร้านไม่ได้อีก ถ้าจะใช้ต่อต้องส่งลิงก์ใหม่',
+        yesLabel: 'ยกเลิกเครื่อง',
+        danger: true,
+        yesKey: const ValueKey('device-revoke-confirm-btn'),
+        onYes: () => Navigator.pop(context, true),
+        onNo: () => Navigator.pop(context, false),
       ),
     );
     if (ok ?? false) await _run(() => _session!.revokeDevice(d.id));
@@ -119,40 +111,37 @@ class _SetupDevicesPanelState extends State<SetupDevicesPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final tt = Theme.of(context).textTheme;
     final t = context.tokens;
     final session = _session;
-    return SetupCard(
+    return Column(
       key: const ValueKey('setup-devices-panel'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('เครื่องและลิงก์เข้าร้าน', style: tt.titleMedium),
-          const SizedBox(height: AppDimensions.space1),
-          Text(
-            'ส่งลิงก์ให้แท็บเล็ตเครื่องใหม่ หรือมือถือผู้จัดการ '
-            'เปิดแล้วเข้าร้านนี้ได้ทันที จากนั้นแต่ละคนเข้าด้วย PIN ของตัวเอง',
-            style: tt.bodySmall?.copyWith(color: t.muted),
-          ),
-          const SizedBox(height: AppDimensions.space3),
-          if (session == null || _shopId == null)
-            const Text('ใช้ได้เมื่อเชื่อมต่อฐานข้อมูลของร้านจริง')
-          else if (!session.isOwnerSignedIn)
-            const Text('เข้าสู่ระบบบัญชีเจ้าของร้านด้านบนก่อน')
-          else ...[
-            _createRow(),
-            if (_link != null) _linkCard(_link!),
-            if (_error.isNotEmpty) ...[
-              const SizedBox(height: AppDimensions.space2),
-              Text(_error, style: TextStyle(color: t.dangerInk)),
-            ],
-            const SizedBox(height: AppDimensions.space4),
-            _deviceList(),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const PageHeader(
+          title: 'เครื่องและลิงก์เข้าร้าน',
+          desc:
+              'ส่งลิงก์ให้แท็บเล็ตเครื่องใหม่ หรือมือถือผู้จัดการ '
+              'เปิดแล้วเข้าร้านนี้ได้ทันที '
+              'จากนั้นแต่ละคนเข้าด้วย PIN ของตัวเอง',
+        ),
+        const SizedBox(height: AppDimensions.space3),
+        if (session == null || _shopId == null)
+          const Text('ใช้ได้เมื่อเชื่อมต่อฐานข้อมูลของร้านจริง')
+        else if (!session.isOwnerSignedIn)
+          const Text('เข้าสู่ระบบบัญชีเจ้าของร้านด้านบนก่อน')
+        else ...[
+          _createRow(),
+          if (_link != null) _linkCard(_link!),
+          if (_error.isNotEmpty) ...[
+            const SizedBox(height: AppDimensions.space2),
+            Text(_error, style: TextStyle(color: t.dangerInk)),
           ],
-          if (session != null && widget.staffRole == 'owner')
-            SetupDeviceLeaveSection(session: session),
+          const SizedBox(height: AppDimensions.space3),
+          _deviceList(),
         ],
-      ),
+        if (session != null && widget.staffRole == 'owner')
+          SetupDeviceLeaveSection(session: session),
+      ],
     );
   }
 
@@ -232,68 +221,12 @@ class _SetupDevicesPanelState extends State<SetupDevicesPanel> {
       if (snapshot.hasError) {
         return const Text('โหลดรายชื่อเครื่องไม่ได้');
       }
-      return Column(
-        children: [
-          for (final d in snapshot.data!)
-            ListTile(
-              key: ValueKey('device-row-${d.code}'),
-              contentPadding: EdgeInsets.zero,
-              title: Text('${d.name} (${d.code})'),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Pill(
-                      label: switch (d) {
-                        ShopDevice(revoked: true) => 'ยกเลิกแล้ว',
-                        ShopDevice(isThisDevice: true) => 'เครื่องนี้',
-                        ShopDevice(paired: true) => 'ใช้งานอยู่',
-                        _ => 'รอเปิดลิงก์',
-                      },
-                      tone: d.revoked
-                          ? PillTone.neutral
-                          : d.paired
-                          ? PillTone.green
-                          : PillTone.orange,
-                    ),
-                  ),
-                  if (!d.revoked) _rdCodeRow(d),
-                ],
-              ),
-              trailing: d.revoked || d.isThisDevice
-                  ? null
-                  : Btn(
-                      key: ValueKey('device-revoke-${d.code}'),
-                      label: d.paired ? 'ยกเลิกเครื่อง' : 'ยกเลิกลิงก์',
-                      kind: BtnKind.ghost,
-                      disabled: _busy,
-                      onPressed: () => _revoke(d),
-                    ),
-            ),
-        ],
+      return SetupDeviceTable(
+        devices: snapshot.data!,
+        busy: _busy,
+        onEditRd: _editRdCode,
+        onRevoke: _revoke,
       );
     },
-  );
-
-  Widget _rdCodeRow(ShopDevice d) => Row(
-    children: [
-      Expanded(
-        child: Text(
-          d.rdMachineCode == null
-              ? 'เลขรหัสเครื่อง: ยังไม่ได้ใส่ — พิมพ์ได้แค่ใบเสร็จธรรมดา'
-              : 'เลขรหัสเครื่อง: ${d.rdMachineCode}',
-          key: ValueKey('device-rd-code-${d.code}'),
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-      ),
-      Btn(
-        key: ValueKey('device-rd-edit-${d.code}'),
-        label: 'แก้ไขเลขรหัส',
-        kind: BtnKind.ghost,
-        disabled: _busy,
-        onPressed: () => _editRdCode(d),
-      ),
-    ],
   );
 }

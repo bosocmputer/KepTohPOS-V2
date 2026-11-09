@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:app/app.dart';
 import 'package:app/core/data/mock_pos_repository.dart';
+import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
-import 'package:app/features/reports/presentation/pages/sales_tax_report_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -59,7 +59,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Act
-    await tester.tap(find.byKey(const ValueKey('sales-tax-report-button')));
+    await tester.tap(find.text('ภาษีขาย'));
     await tester.pumpAndSettle();
 
     // Assert
@@ -67,6 +67,26 @@ void main() {
     expect(find.byKey(const ValueKey('sales-tax-totals')), findsOneWidget);
     expect(find.text('สรุปรายวันรายเครื่อง'), findsOneWidget);
     expect(find.text('ส่งออก CSV'), findsOneWidget);
+    final table = find.byType(PosDataTable<SalesTaxRow>);
+    expect(
+      find.descendant(of: table, matching: find.text('รวม')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: table, matching: find.text('หมายเหตุ')),
+      findsOneWidget,
+    );
+    final buyerCell = find
+        .ancestor(of: find.text('–').first, matching: find.byType(Column))
+        .first;
+    expect(tester.widget<Column>(buyerCell).children, hasLength(1));
+    expect(
+      find.descendant(
+        of: find.byType(Toolbar),
+        matching: find.byKey(const ValueKey('sales-tax-export')),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('cashier never gets the tax report entry', (tester) async {
@@ -82,8 +102,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Assert
-    expect(find.byType(SalesTaxReportButton), findsNothing);
-    expect(find.text('รายงานภาษีขาย'), findsNothing);
+    expect(find.text('ภาษีขาย'), findsNothing);
   });
 
   testWidgets('non-VAT shop hides the entry for the owner', (tester) async {
@@ -100,6 +119,6 @@ void main() {
     await tester.pumpAndSettle();
 
     // Assert
-    expect(find.byKey(const ValueKey('sales-tax-report-button')), findsNothing);
+    expect(find.text('ภาษีขาย'), findsNothing);
   });
 }

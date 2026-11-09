@@ -1,4 +1,5 @@
 import 'package:app/core/theme/app_theme.dart';
+import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/pos_command_exception.dart';
 import 'package:app/features/bills/presentation/widgets/full_invoice_dialog.dart';
 import 'package:flutter/material.dart';
@@ -32,11 +33,17 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> type(WidgetTester t, String key, String v) =>
-      t.enterText(find.byKey(ValueKey(key)), v);
+  Future<void> type(WidgetTester t, String key, String v) {
+    final finder = switch (key) {
+      'fullinv-taxid-input' => find.byType(AppTextInput).at(2),
+      'fullinv-branch-input' => find.byType(AppTextInput).at(3),
+      _ => find.byKey(ValueKey(key)),
+    };
+    return t.enterText(finder, v);
+  }
 
   Future<void> submit(WidgetTester t) async {
-    await t.tap(find.byKey(const ValueKey('fullinv-submit-btn')));
+    await t.tap(find.widgetWithText(Btn, 'ออกใบกำกับเต็มรูป'));
     await t.pumpAndSettle();
   }
 
@@ -71,7 +78,7 @@ void main() {
     await type(t, 'fullinv-address-input', '1 ถนน');
     await type(t, 'fullinv-taxid-input', '1234567890123');
     await t.pumpAndSettle();
-    await t.tap(find.byKey(const ValueKey('fullinv-headoffice-switch')));
+    await t.tap(find.byType(AppSwitch));
     await t.pumpAndSettle();
     await submit(t);
     expect(find.text('กรุณาระบุรหัสสาขา 5 หลัก'), findsOneWidget);
@@ -87,7 +94,7 @@ void main() {
     await type(t, 'fullinv-taxid-input', '1234567890123');
     await submit(t);
     expect(calls.single[3], '00000');
-    expect(find.byKey(const ValueKey('fullinv-submit-btn')), findsNothing);
+    expect(find.widgetWithText(Btn, 'ออกใบกำกับเต็มรูป'), findsNothing);
   });
 
   testWidgets('offline error stays open with Thai message', (t) async {
@@ -97,6 +104,6 @@ void main() {
     await type(t, 'fullinv-address-input', '1 ถนน');
     await submit(t);
     expect(find.text('ต้องออนไลน์เพื่อออกใบกำกับภาษีเต็มรูป'), findsOneWidget);
-    expect(find.byKey(const ValueKey('fullinv-submit-btn')), findsOneWidget);
+    expect(find.widgetWithText(Btn, 'ออกใบกำกับเต็มรูป'), findsOneWidget);
   });
 }
