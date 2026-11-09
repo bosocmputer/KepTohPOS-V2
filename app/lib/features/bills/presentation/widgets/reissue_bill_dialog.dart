@@ -3,6 +3,7 @@ import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/domain/pos_command_exception.dart';
 import 'package:app/features/bills/presentation/cubit/bills_cubit.dart';
+import 'package:app/features/bills/presentation/widgets/full_invoice_dialog.dart';
 import 'package:app/features/sale/presentation/widgets/sale_receipt_modal.dart';
 import 'package:flutter/material.dart';
 
@@ -37,6 +38,25 @@ Widget billReceiptOverlay(
               reason: r,
               methodId: m,
               bankAccountId: a,
+            ),
+          ),
+        ),
+      if (state.canReissue(bill, staff) &&
+          state.posState.shop.vatRegistered &&
+          state.posState.shop.vatMode != 'none' &&
+          !bill.isFullInvoice)
+        Btn(
+          key: const ValueKey('receipt-full-invoice-btn'),
+          icon: 'receipt',
+          label: 'ออกใบกำกับเต็มรูป',
+          onPressed: () => showFullInvoiceDialog(
+            context,
+            onSubmit: (n, a, t, b) => cubit.issueFullInvoice(
+              billId: bill.id,
+              buyerName: n,
+              buyerAddress: a,
+              buyerTaxId: t,
+              buyerBranch: b,
             ),
           ),
         ),

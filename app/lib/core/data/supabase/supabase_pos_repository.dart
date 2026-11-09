@@ -4,6 +4,7 @@ import 'package:app/core/data/local/offline_credentials.dart';
 import 'package:app/core/data/local/shop_snapshot_store.dart';
 import 'package:app/core/data/supabase/supabase_day_bills.dart';
 import 'package:app/core/data/supabase/supabase_pos_base.dart';
+import 'package:app/core/data/supabase/supabase_pos_invoice_commands.dart';
 import 'package:app/core/data/supabase/supabase_pos_offline.dart';
 import 'package:app/core/data/supabase/supabase_pos_sale_commands.dart';
 import 'package:app/core/data/supabase/supabase_pos_setup_commands.dart';
@@ -21,6 +22,7 @@ class SupabasePosRepository extends SupabasePosBase
     with
         SupabasePosOffline,
         SupabasePosSaleCommands,
+        SupabasePosInvoiceCommands,
         SupabasePosStockCommands,
         SupabasePosSetupCommands
     implements PosRepository {

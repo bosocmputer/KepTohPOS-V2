@@ -200,6 +200,16 @@ abstract class PosRepository implements PosSetupCommands {
     String? bankAccountId,
   });
 
+  /// Voids [billId] and issues a full tax invoice (ม.86/4) in its place,
+  /// owner/manager only. [buyerTaxId] needs [buyerBranch]. Server required.
+  Future<BillRecord> issueFullInvoice({
+    required String billId,
+    required String buyerName,
+    required String buyerAddress,
+    String? buyerTaxId,
+    String? buyerBranch,
+  });
+
   /// Cancels an unpaid open table and restores its addon stock.
   Future<PosState> cancelTable(String tableId);
 

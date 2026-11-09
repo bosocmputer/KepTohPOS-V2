@@ -158,6 +158,34 @@ class BillsCubit extends Cubit<BillsState> {
     );
   }
 
+  /// Converts [billId] into a full tax invoice and opens the new bill.
+  /// Failures (incl. offline) propagate as [PosCommandException].
+  Future<void> issueFullInvoice({
+    required String billId,
+    required String buyerName,
+    required String buyerAddress,
+    String? buyerTaxId,
+    String? buyerBranch,
+  }) async {
+    final created = await _repository.issueFullInvoice(
+      billId: billId,
+      buyerName: buyerName,
+      buyerAddress: buyerAddress,
+      buyerTaxId: buyerTaxId,
+      buyerBranch: buyerBranch,
+    );
+    if (isClosed) return;
+    if (state.isOlderDay) await _loadOlder(state.selectedDate);
+    if (isClosed) return;
+    emit(
+      state.copyWith(
+        posState: _repository.state,
+        selectedBillId: created.id,
+        toastMessage: 'ออกใบกำกับเต็มรูปแล้ว ${created.no}',
+      ),
+    );
+  }
+
   @override
   Future<void> close() async {
     await _sub?.cancel();

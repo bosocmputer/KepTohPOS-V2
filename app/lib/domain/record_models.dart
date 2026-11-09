@@ -1,6 +1,7 @@
 import 'package:app/domain/models.dart';
 export 'package:app/domain/expense_record.dart';
 export 'package:app/domain/models.dart' show ShiftRecord, StockLot;
+export 'package:app/domain/purchase_record.dart';
 
 /// Settled sale bill (`s.sales`) or pre-settlement POS slip (`isSlipPreview`).
 class BillRecord {
@@ -37,6 +38,11 @@ class BillRecord {
     this.isTaxInvoice = false,
     this.isSlipPreview = false,
     this.replacesBillId,
+    this.isFullInvoice = false,
+    this.buyerName,
+    this.buyerTaxId,
+    this.buyerBranch,
+    this.buyerAddress,
     this.voided = false,
     this.voidReason,
     this.voidBy,
@@ -80,6 +86,11 @@ class BillRecord {
     rdMachineCode: json['rdMachineCode'] as String?,
     isTaxInvoice: (json['isTaxInvoice'] as bool?) ?? false,
     replacesBillId: json['replacesBillId'] as String?,
+    isFullInvoice: (json['isFullInvoice'] as bool?) ?? false,
+    buyerName: json['buyerName'] as String?,
+    buyerTaxId: json['buyerTaxId'] as String?,
+    buyerBranch: json['buyerBranch'] as String?,
+    buyerAddress: json['buyerAddress'] as String?,
     voided: (json['voided'] as bool?) ?? false,
     voidReason: json['voidReason'] as String?,
     voidBy: json['voidBy'] as String?,
@@ -122,6 +133,13 @@ class BillRecord {
 
   /// Id of the voided bill this one was reissued to replace.
   final String? replacesBillId;
+
+  /// Full tax invoice (ม.86/4) and its buyer; tax id/branch only if given.
+  final bool isFullInvoice;
+  final String? buyerName;
+  final String? buyerTaxId;
+  final String? buyerBranch;
+  final String? buyerAddress;
   bool voided;
   String? voidReason;
   String? voidBy;
@@ -140,7 +158,9 @@ class BillRecord {
       if ((vatMode ?? shop.vatMode) == 'included') 'ราคารวมภาษีมูลค่าเพิ่มแล้ว',
     ],
     if (replacesBillId != null && replacesNo == null) 'ออกแทนฉบับเดิม',
-    if (replacesBillId != null && replacesNo != null)
+    if (replacesBillId != null && replacesNo != null && isFullInvoice)
+      'ออกแทนใบกำกับภาษีอย่างย่อ/ใบเสร็จเลขที่ $replacesNo',
+    if (replacesBillId != null && replacesNo != null && !isFullInvoice)
       'ยกเลิกและออกฉบับใหม่แทนเลขที่ $replacesNo',
   ];
 
@@ -177,6 +197,11 @@ class BillRecord {
     isTaxInvoice: isTaxInvoice,
     isSlipPreview: isSlipPreview,
     replacesBillId: replacesBillId,
+    isFullInvoice: isFullInvoice,
+    buyerName: buyerName,
+    buyerTaxId: buyerTaxId,
+    buyerBranch: buyerBranch,
+    buyerAddress: buyerAddress,
     voided: voided,
     voidReason: voidReason,
     voidBy: voidBy,
@@ -215,64 +240,14 @@ class BillRecord {
     if (rdMachineCode != null) 'rdMachineCode': rdMachineCode,
     if (isTaxInvoice) 'isTaxInvoice': true,
     if (replacesBillId != null) 'replacesBillId': replacesBillId,
+    if (isFullInvoice) 'isFullInvoice': true,
+    if (buyerName != null) 'buyerName': buyerName,
+    if (buyerTaxId != null) 'buyerTaxId': buyerTaxId,
+    if (buyerBranch != null) 'buyerBranch': buyerBranch,
+    if (buyerAddress != null) 'buyerAddress': buyerAddress,
     'voided': voided,
     if (voidReason != null) 'voidReason': voidReason,
     if (voidBy != null) 'voidBy': voidBy,
     if (voidAt != null) 'voidAt': voidAt,
-  };
-}
-
-/// Line item inside a purchase bill.
-class PurchaseLine {
-  const new({required this.ingId, required this.qty, required this.total});
-  factory fromJson(Map<String, dynamic> j) => PurchaseLine(
-    ingId: j['ingId'] as String,
-    qty: (j['qty'] as num).toDouble(),
-    total: (j['total'] as num).toInt(),
-  );
-  final String ingId;
-  final double qty;
-  final int total;
-  Map<String, dynamic> toJson() => <String, dynamic>{
-    'ingId': ingId,
-    'qty': qty,
-    'total': total,
-  };
-}
-
-/// Morning ingredient purchase bill (`s.purchases`).
-class PurchaseRecord {
-  const new({
-    required this.id,
-    required this.date,
-    required this.at,
-    required this.supplierId,
-    required this.lines,
-    this.note = '',
-  });
-  factory fromJson(Map<String, dynamic> json) => PurchaseRecord(
-    id: json['id'] as String,
-    date: json['date'] as String,
-    at: json['at'] as String,
-    supplierId: (json['supplierId'] as String?) ?? '',
-    lines: ((json['lines'] as List<dynamic>?) ?? const <dynamic>[])
-        .cast<Map<String, dynamic>>()
-        .map(PurchaseLine.fromJson)
-        .toList(),
-    note: (json['note'] as String?) ?? '',
-  );
-  final String id;
-  final String date;
-  final String at;
-  final String supplierId;
-  final List<PurchaseLine> lines;
-  final String note;
-  Map<String, dynamic> toJson() => <String, dynamic>{
-    'id': id,
-    'date': date,
-    'at': at,
-    'supplierId': supplierId,
-    'lines': lines.map((l) => l.toJson()).toList(),
-    'note': note,
   };
 }

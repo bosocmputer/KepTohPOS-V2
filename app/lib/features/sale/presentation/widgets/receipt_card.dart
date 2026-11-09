@@ -29,7 +29,9 @@ class ReceiptCard extends StatelessWidget {
     final effVatRate = bill.vatRate ?? shop.vatRate;
     final docTitle = bill.isSlipPreview
         ? 'ใบแจ้งยอดค่าอาหาร (ยังไม่ได้ชำระเงิน)'
-        : (bill.isTaxInvoice
+        : (bill.isFullInvoice
+              ? 'ใบกำกับภาษี/ใบเสร็จรับเงิน'
+              : bill.isTaxInvoice
               ? 'ใบเสร็จรับเงิน/ใบกำกับภาษีอย่างย่อ'
               : 'ใบเสร็จรับเงิน');
     final showQr =
@@ -112,6 +114,7 @@ class ReceiptCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppDimensions.space1_5),
+          if (bill.isFullInvoice) ReceiptBuyerBlock(bill: bill),
           _row(t, tt, 'เลขที่ ${bill.no}', 'โต๊ะ ${bill.tableName}'),
           _row(t, tt, dtTxt, 'แคชเชียร์: ${bill.staffName}'),
           Text(hTxt, style: tt.labelSmall?.copyWith(color: t.muted)),
