@@ -34,6 +34,26 @@ void main() {
     expect(seen.last, isFalse);
   });
 
+  test('a quiet background request does not block the screen', () async {
+    // Arrange
+    final reply = Completer<http.Response>();
+    final activity = NetworkActivity(MockClient((_) => reply.future));
+
+    // Act
+    final call = activity.quietly(
+      () => activity.get(Uri.parse('https://x.test/reload')),
+    );
+    await Future<void>.delayed(Duration.zero);
+    final whileWaiting = activity.busy.value;
+    reply.complete(http.Response('ok', 200));
+    await call;
+
+    // Assert
+    expect(whileWaiting, isFalse);
+    expect(activity.busy.value, isFalse);
+    expect(activity.reachable.value, isTrue);
+  });
+
   test('a failed request does not leave busy stuck on', () async {
     // Arrange
     final activity = NetworkActivity(

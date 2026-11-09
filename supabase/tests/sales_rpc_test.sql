@@ -4,7 +4,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(101);
+select plan(103);
 
 create schema tests;
 create function tests.q(p_role text, p_uid uuid, p_anon boolean, p_sql text) returns text
@@ -136,8 +136,10 @@ select is(tests.addon_stock(), 8, 'ส่งซ้ำแล้วไม่ตั
 select is(tests.device_b(tests.settle(tests.val('token_b'), '60000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000098', 1, 0, 0, '{}', '50000000-0000-0000-0000-000000000001', 100, 100)), 'ERR:42501', 'ร้านอื่นส่ง id บิลนี้ไม่ได้');
 select is(tests.device_a(format($$select settle_bill(%L, '60000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 'before', 2, 1, 0, '{"40000000-0000-0000-0000-000000000001": 2}', '50000000-0000-0000-0000-000000000001', 100000, 86700, now()) -> 'lines' -> 2 ? 'cost'$$, tests.val('cashier'))), 'false', 'ผลลัพธ์ที่ส่งกลับเครื่องไม่มีต้นทุน');
 
--- โต๊ะเดียวเปิดซ้อนกันไม่ได้
-select is(tests.device_a(tests.settle(tests.val('cashier'), '60000000-0000-0000-0000-000000000002', '70000000-0000-0000-0000-000000000002', 1, 0, 0, '{}', '50000000-0000-0000-0000-000000000001', 29900, 29900)), 'ERR:23505', 'โต๊ะเดียวเปิดสองรอบพร้อมกันไม่ได้');
+-- โต๊ะเดียวเปิดซ้อน: รวมเข้า session เดิม (ดู merge_table_sessions_test.sql)
+select is(tests.device_a(tests.settle(tests.val('cashier'), '60000000-0000-0000-0000-000000000002', '70000000-0000-0000-0000-000000000002', 1, 0, 0, '{}', '50000000-0000-0000-0000-000000000001', 29900, 29900)), '29900', 'โต๊ะเดียวเปิดซ้อน รวมเข้า session เดิม');
+select is((select session_id::text from bills where id = '60000000-0000-0000-0000-000000000002'), '70000000-0000-0000-0000-000000000001', 'บิลที่รวมลง session เดิม');
+select is(tests.device_a(format($$select void_bill(%L, '60000000-0000-0000-0000-000000000002', 'x', now())$$, tests.val('cashier'))), 'true', 'ยกเลิกบิลที่รวมเพื่อให้ขั้นต่อไปเหมือนเดิม');
 
 -- ยกเลิกบิล
 select is(tests.device_a(format($$select void_bill(%L, '60000000-0000-0000-0000-000000000001', '  ', now())$$, tests.val('cashier'))), 'true', 'แคชเชียร์ยกเลิกบิลของโต๊ะที่เปิดอยู่ได้');
@@ -168,7 +170,8 @@ $$;
 select is(tests.device_a(tests.settle_after('60000000-0000-0000-0000-000000000003', 29900)), '29900', 'คิดเงินจากรอบหลังหักรายการ และ QR รับเท่ายอด');
 select is(tests.device_a(tests.settle_after('60000000-0000-0000-0000-000000000004', 29900)), 'ERR:22023', 'รอบที่คิดเงินแล้วคิดซ้ำไม่ได้');
 select is((select count(*)::int from settled_table_events where shop_id = tests.val('shop')::uuid), 3, 'บันทึกเหตุการณ์ที่คิดเงินแล้วครบ');
-select is((select no from bills where id = '60000000-0000-0000-0000-000000000003'), '00000-POS01-000002', 'เลขใบเสร็จเดินต่อ');
+-- 000002 ถูกใช้โดยบิลที่รวมโต๊ะด้านบน (60..02) จึงเดินต่อที่ 000003
+select is((select no from bills where id = '60000000-0000-0000-0000-000000000003'), '00000-POS01-000003', 'เลขใบเสร็จเดินต่อ');
 select is(tests.device_a(format($$select 1 from close_table(%L, '70000000-0000-0000-0000-000000000003', now())$$, tests.val('cashier'))), '1', 'เก็บโต๊ะได้');
 select is(tests.device_a(format($$select void_bill(%L, '60000000-0000-0000-0000-000000000003', 'x', now())$$, tests.val('cashier'))), 'ERR:42501', 'แคชเชียร์ยกเลิกบิลของโต๊ะที่ปิดแล้วไม่ได้');
 
