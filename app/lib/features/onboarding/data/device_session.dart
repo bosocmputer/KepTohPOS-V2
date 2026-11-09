@@ -27,6 +27,7 @@ class ShopDevice {
     required this.paired,
     required this.revoked,
     required this.isThisDevice,
+    required this.rdMachineCode,
   });
 
   final String id;
@@ -35,6 +36,7 @@ class ShopDevice {
   final bool paired;
   final bool revoked;
   final bool isThisDevice;
+  final String? rdMachineCode;
 }
 
 /// [DeviceAuthStorage] backed by the app's persistent local storage.
@@ -238,7 +240,10 @@ class DeviceSession {
     final me = _deviceAuth.userId;
     final rows = await owner
         .from('devices')
-        .select('id, code, name, auth_user_id, paired_at, revoked_at')
+        .select(
+          'id, code, name, auth_user_id, paired_at, revoked_at, '
+          'rd_machine_code',
+        )
         .eq('shop_id', shopId)
         .order('code');
     return rows
@@ -250,6 +255,7 @@ class DeviceSession {
             paired: r['paired_at'] != null,
             revoked: r['revoked_at'] != null,
             isThisDevice: me != null && r['auth_user_id'] == me,
+            rdMachineCode: r['rd_machine_code'] as String?,
           ),
         )
         .toList();
@@ -273,6 +279,11 @@ class DeviceSession {
           'revoked_at': DateTime.now().toUtc().toIso8601String(),
         })
         .eq('id', deviceId);
+  }
+
+  /// Sets the RD machine code of device [id]; `null` clears it.
+  Future<void> setRdMachineCode(String id, String? code) async {
+    await owner.from('devices').update({'rd_machine_code': code}).eq('id', id);
   }
 
   /// Registers this device with [shopId] using the owner's permission.

@@ -32,6 +32,8 @@ class BillRecord {
     this.bankAccountInfo,
     this.eatUntil,
     this.timeLimitMin = 0,
+    this.rdMachineCode,
+    this.isTaxInvoice = false,
     this.isSlipPreview = false,
     this.voided = false,
     this.voidReason,
@@ -73,6 +75,8 @@ class BillRecord {
     bankAccountInfo: json['bankAccountInfo'] as String?,
     eatUntil: json['eatUntil'] as String?,
     timeLimitMin: (json['timeLimitMin'] as num?)?.toInt() ?? 0,
+    rdMachineCode: json['rdMachineCode'] as String?,
+    isTaxInvoice: (json['isTaxInvoice'] as bool?) ?? false,
     voided: (json['voided'] as bool?) ?? false,
     voidReason: json['voidReason'] as String?,
     voidBy: json['voidBy'] as String?,
@@ -107,11 +111,28 @@ class BillRecord {
   final String? bankAccountInfo;
   final String? eatUntil;
   final int timeLimitMin;
+
+  /// Settle-time snapshot: device RD machine code, tax invoice or not.
+  final String? rdMachineCode;
+  final bool isTaxInvoice;
   final bool isSlipPreview;
   bool voided;
   String? voidReason;
   String? voidBy;
   String? voidAt;
+
+  /// Seller tax id + abbreviated tax invoice lines (RD Notice 46).
+  List<String> taxLines(ShopConfig shop) => <String>[
+    if (shop.taxId.isNotEmpty) 'เลขผู้เสียภาษี ${shop.taxId}',
+    if (isTaxInvoice) ...<String>[
+      if (shop.branchCode == '00000')
+        'สำนักงานใหญ่'
+      else
+        'สาขาที่ ${shop.branchCode}',
+      'เลขรหัสประจำเครื่อง: ${rdMachineCode ?? '-'}',
+      if ((vatMode ?? shop.vatMode) == 'included') 'ราคารวมภาษีมูลค่าเพิ่มแล้ว',
+    ],
+  ];
 
   BillRecord copy() => BillRecord(
     id: id,
@@ -142,6 +163,8 @@ class BillRecord {
     bankAccountInfo: bankAccountInfo,
     eatUntil: eatUntil,
     timeLimitMin: timeLimitMin,
+    rdMachineCode: rdMachineCode,
+    isTaxInvoice: isTaxInvoice,
     isSlipPreview: isSlipPreview,
     voided: voided,
     voidReason: voidReason,
@@ -178,6 +201,8 @@ class BillRecord {
     if (bankAccountInfo != null) 'bankAccountInfo': bankAccountInfo,
     if (eatUntil != null) 'eatUntil': eatUntil,
     if (timeLimitMin > 0) 'timeLimitMin': timeLimitMin,
+    if (rdMachineCode != null) 'rdMachineCode': rdMachineCode,
+    if (isTaxInvoice) 'isTaxInvoice': true,
     'voided': voided,
     if (voidReason != null) 'voidReason': voidReason,
     if (voidBy != null) 'voidBy': voidBy,

@@ -70,7 +70,7 @@ class SupabaseStateLoader {
         .single();
     final org = await _client
         .from('organizations')
-        .select('id, tax_id')
+        .select('id, tax_id, vat_registered')
         .eq('id', shop['org_id'] as String)
         .single();
     final startDate = (shop['created_at'] as String).substring(0, 10);
@@ -188,7 +188,7 @@ class SupabaseStateLoader {
         shop,
         (org['tax_id'] as String?) ?? '',
         results[0].map(bankFromRow).toList(),
-      ),
+      ).copyWith(vatRegistered: org['vat_registered'] as bool),
       packages: results[1].map(packageFromRow).toList(),
       addons: results[2]
           .map((r) => addonFromRow(r, addonCosts[r['id']] ?? 0))

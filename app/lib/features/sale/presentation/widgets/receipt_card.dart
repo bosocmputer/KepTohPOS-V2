@@ -25,7 +25,7 @@ class ReceiptCard extends StatelessWidget {
     final effVatRate = bill.vatRate ?? shop.vatRate;
     final docTitle = bill.isSlipPreview
         ? 'ใบแจ้งยอดค่าอาหาร (ยังไม่ได้ชำระเงิน)'
-        : (effVatMode != 'none'
+        : (bill.isTaxInvoice
               ? 'ใบเสร็จรับเงิน/ใบกำกับภาษีอย่างย่อ'
               : 'ใบเสร็จรับเงิน');
     final showQr =
@@ -79,7 +79,7 @@ class ReceiptCard extends StatelessWidget {
             if (shop.branch.isNotEmpty) shop.branch,
             if (shop.address.isNotEmpty) shop.address,
             if (shop.phone.isNotEmpty) 'โทร ${shop.phone}',
-            if (shop.taxId.isNotEmpty) 'เลขผู้เสียภาษี ${shop.taxId}',
+            ...bill.taxLines(shop),
           ])
             Text(
               info,

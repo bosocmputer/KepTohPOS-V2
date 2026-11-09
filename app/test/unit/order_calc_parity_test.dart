@@ -52,7 +52,7 @@ void main() {
           vatRate: 7,
           rounding: 'down',
           service: 0,
-          vat: 4186,
+          vat: 4180,
           roundingAmount: -86,
           total: 63900,
         ),

@@ -4,8 +4,10 @@ import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/open_url.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
+import 'package:app/domain/pos_command_exception.dart';
 import 'package:app/features/onboarding/data/device_session.dart';
 import 'package:app/features/setup/presentation/widgets/setup_device_leave_section.dart';
+import 'package:app/features/setup/presentation/widgets/setup_device_rd_code_dialog.dart';
 import 'package:app/features/setup/presentation/widgets/setup_nav_sidebar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -94,6 +96,25 @@ class _SetupDevicesPanelState extends State<SetupDevicesPanel> {
       ),
     );
     if (ok ?? false) await _run(() => _session!.revokeDevice(d.id));
+  }
+
+  Future<void> _editRdCode(ShopDevice d) async {
+    final saved = await showRdMachineCodeDialog(
+      context,
+      deviceName: d.name,
+      current: d.rdMachineCode,
+      onSave: (code) async {
+        try {
+          await _session!.setRdMachineCode(d.id, code);
+        } on Object catch (e) {
+          throw switch (sl<PosRepository>()) {
+            final SupabasePosRepository r => r.describeError(e),
+            _ => const PosCommandException('ทำรายการไม่สำเร็จ'),
+          };
+        }
+      },
+    );
+    if ((saved ?? false) && mounted) setState(() => _devices = _load());
   }
 
   @override
@@ -218,21 +239,27 @@ class _SetupDevicesPanelState extends State<SetupDevicesPanel> {
               key: ValueKey('device-row-${d.code}'),
               contentPadding: EdgeInsets.zero,
               title: Text('${d.name} (${d.code})'),
-              subtitle: Align(
-                alignment: Alignment.centerLeft,
-                child: Pill(
-                  label: switch (d) {
-                    ShopDevice(revoked: true) => 'ยกเลิกแล้ว',
-                    ShopDevice(isThisDevice: true) => 'เครื่องนี้',
-                    ShopDevice(paired: true) => 'ใช้งานอยู่',
-                    _ => 'รอเปิดลิงก์',
-                  },
-                  tone: d.revoked
-                      ? PillTone.neutral
-                      : d.paired
-                      ? PillTone.green
-                      : PillTone.orange,
-                ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Pill(
+                      label: switch (d) {
+                        ShopDevice(revoked: true) => 'ยกเลิกแล้ว',
+                        ShopDevice(isThisDevice: true) => 'เครื่องนี้',
+                        ShopDevice(paired: true) => 'ใช้งานอยู่',
+                        _ => 'รอเปิดลิงก์',
+                      },
+                      tone: d.revoked
+                          ? PillTone.neutral
+                          : d.paired
+                          ? PillTone.green
+                          : PillTone.orange,
+                    ),
+                  ),
+                  if (!d.revoked) _rdCodeRow(d),
+                ],
               ),
               trailing: d.revoked || d.isThisDevice
                   ? null
@@ -247,5 +274,26 @@ class _SetupDevicesPanelState extends State<SetupDevicesPanel> {
         ],
       );
     },
+  );
+
+  Widget _rdCodeRow(ShopDevice d) => Row(
+    children: [
+      Expanded(
+        child: Text(
+          d.rdMachineCode == null
+              ? 'เลขรหัสเครื่อง: ยังไม่ได้ใส่ — พิมพ์ได้แค่ใบเสร็จธรรมดา'
+              : 'เลขรหัสเครื่อง: ${d.rdMachineCode}',
+          key: ValueKey('device-rd-code-${d.code}'),
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ),
+      Btn(
+        key: ValueKey('device-rd-edit-${d.code}'),
+        label: 'แก้ไขเลขรหัส',
+        kind: BtnKind.ghost,
+        disabled: _busy,
+        onPressed: () => _editRdCode(d),
+      ),
+    ],
   );
 }

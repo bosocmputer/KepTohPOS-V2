@@ -80,7 +80,7 @@ insert into fixed_costs (shop_id, name, amount) values (tests.val('shop')::uuid,
 -- สูตรคำนวณ: ค่าคาดหวังชุดเดียวกับ app/test/unit/order_calc_parity_test.dart
 select is(private.calc_bill_amounts(59800, 0, 'none', 7, 'down')::text, '(0,0,0,59800)', 'สูตร: ไม่มี VAT');
 select is(private.calc_bill_amounts(59800, 0, 'excluded', 7, 'none')::text, '(0,4186,0,63986)', 'สูตร: VAT แยกนอก ไม่ปัด');
-select is(private.calc_bill_amounts(59800, 0, 'excluded', 7, 'down')::text, '(0,4186,-86,63900)', 'สูตร: VAT แยกนอก ปัดลง');
+select is(private.calc_bill_amounts(59800, 0, 'excluded', 7, 'down')::text, '(0,4180,-86,63900)', 'สูตร: VAT แยกนอก ปัดลง');
 select is(private.calc_bill_amounts(59800, 0, 'included', 7, 'down')::text, '(0,3912,0,59800)', 'สูตร: VAT รวมใน');
 select is(private.calc_bill_amounts(29950, 10, 'none', 7, 'down')::text, '(2995,0,-45,32900)', 'สูตร: ค่าบริการ ปัดลง');
 select is(private.calc_bill_amounts(29950, 10, 'excluded', 7, 'none')::text, '(2995,2306,0,35251)', 'สูตร: ค่าบริการ + VAT แยกนอก');

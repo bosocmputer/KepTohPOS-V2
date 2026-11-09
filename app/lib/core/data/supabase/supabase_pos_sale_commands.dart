@@ -157,6 +157,11 @@ mixin SupabasePosSaleCommands on SupabasePosBase, SupabasePosOffline
         s.sales[i] = BillRecord.fromJson(<String, dynamic>{
           ...s.sales[i].toJson(),
           'no': '$prefix-${seq.toString().padLeft(6, '0')}',
+          'rdMachineCode': rdMachineCode,
+          'isTaxInvoice':
+              s.shop.vatRegistered &&
+              s.shop.vatMode != 'none' &&
+              rdMachineCode != null,
         });
       },
     );

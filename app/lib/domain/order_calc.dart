@@ -82,11 +82,15 @@ CalculatedOrder calcOrder(
     vat = _percentOf(base, vatRate);
     total = base + vat;
   }
-  if (shop.rounding == 'down' && total % 100 != 0) {
+  final roundsDown = shop.rounding == 'down' && total % 100 != 0;
+  if (roundsDown) {
     rounding = -(total % 100);
     total += rounding;
   }
-  if (shop.vatMode == 'included' && vatRate > 0) {
+  // Rounding is a discount: VAT is taken from the rounded total.
+  if ((shop.vatMode == 'included' ||
+          (roundsDown && shop.vatMode == 'excluded')) &&
+      vatRate > 0) {
     final basisPoints = (vatRate * 100).round();
     final divisor = 10000 + basisPoints;
     vat = (2 * total * basisPoints + divisor) ~/ (2 * divisor);

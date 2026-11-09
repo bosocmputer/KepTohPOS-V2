@@ -54,6 +54,9 @@ abstract class SupabasePosBase {
   /// `null` leaves numbering to the server.
   String? receiptPrefix;
 
+  /// This device's RD machine code (`null` until a manager sets it).
+  String? rdMachineCode;
+
   /// The last receipt number this device used.
   int receiptSeq = 0;
 

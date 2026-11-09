@@ -20,6 +20,11 @@ const Map<String, String> kVatModes = <String, String>{
   'excluded': 'แยกนอกราคาสินค้า (Excluded)',
 };
 
+/// VAT modes allowed when the organization is not VAT registered.
+const Map<String, String> kVatModesUnregistered = <String, String>{
+  'none': 'ไม่คิดภาษีมูลค่าเพิ่ม',
+};
+
 /// Ingredient storage locations (`LOCATION` in `prototype/index.html`).
 const Map<String, String> kLocations = <String, String>{
   'fridge': 'ตู้เย็น',
