@@ -67,6 +67,19 @@ void main() {
     expect(find.byKey(const ValueKey('sales-tax-totals')), findsOneWidget);
     expect(find.text('สรุปรายวันรายเครื่อง'), findsOneWidget);
     expect(find.text('ส่งออก CSV'), findsOneWidget);
+    final table = find.byType(PosDataTable<SalesTaxRow>);
+    expect(
+      find.descendant(of: table, matching: find.text('รวม')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: table, matching: find.text('หมายเหตุ')),
+      findsOneWidget,
+    );
+    final buyerCell = find
+        .ancestor(of: find.text('–').first, matching: find.byType(Column))
+        .first;
+    expect(tester.widget<Column>(buyerCell).children, hasLength(1));
     expect(
       find.descendant(
         of: find.byType(Toolbar),

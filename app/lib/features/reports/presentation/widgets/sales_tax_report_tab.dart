@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/download_file_stub.dart'
@@ -12,8 +11,7 @@ import 'package:app/domain/pos_command_exception.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-/// Whether [repo]'s current staff may open the sales-tax tab (VAT shop,
-/// owner/manager only).
+/// Sales-tax tab is for VAT shops, owner/manager only.
 bool canSeeSalesTaxTab(PosRepository repo) {
   final role = repo.currentStaff?.role;
   return repo.state.shop.vatRegistered &&
@@ -32,7 +30,6 @@ class SalesTaxReportTab extends StatefulWidget {
 
   final PosRepository repository;
   final String month;
-
   final ValueNotifier<VoidCallback?> exportAction;
 
   @override
@@ -99,7 +96,10 @@ class _SalesTaxReportTabState extends State<SalesTaxReportTab> {
   Widget _scroll(Widget table) => LayoutBuilder(
     builder: (_, c) => SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: SizedBox(width: math.max(c.maxWidth, 1100), child: table),
+      child: SizedBox(
+        width: c.maxWidth < 1280 ? 1280 : c.maxWidth,
+        child: table,
+      ),
     ),
   );
 
@@ -143,25 +143,24 @@ class _SalesTaxReportTabState extends State<SalesTaxReportTab> {
     label: switch (r.docType) {
       'abb' => 'ย่อ',
       'full' => 'เต็ม',
-      'receipt' => 'ใบเสร็จ',
-      _ => r.docType,
+      _ => 'ใบเสร็จ',
     },
   );
 
+  TextStyle? _muted(BuildContext c) =>
+      Theme.of(c).textTheme.bodySmall?.copyWith(color: c.tokens.muted);
+
   Widget _note(BuildContext context, SalesTaxRow r) {
-    final small = Theme.of(context).textTheme.bodySmall
-        ?.copyWith(color: context.tokens.muted);
     return Wrap(
       spacing: AppDimensions.space1_5,
-      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         if (r.voided) ...[
           const Pill(tone: PillTone.red, label: 'ยกเลิก'),
           if (r.voidReason?.isNotEmpty ?? false)
-            Text(r.voidReason!, style: small),
+            Text(r.voidReason!, style: _muted(context)),
         ],
         if (r.replacesNo != null)
-          Text('แทนเลขที่ ${r.replacesNo}', style: small),
+          Text('แทนเลขที่ ${r.replacesNo}', style: _muted(context)),
       ],
     );
   }
@@ -175,11 +174,7 @@ class _SalesTaxReportTabState extends State<SalesTaxReportTab> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text((r.buyerName ?? '').isEmpty ? '–' : r.buyerName!),
-        Text(
-          ids.isEmpty ? '–' : ids.join(' · '),
-          style: Theme.of(context).textTheme.bodySmall
-              ?.copyWith(color: context.tokens.muted),
-        ),
+        if (ids.isNotEmpty) Text(ids.join(' · '), style: _muted(context)),
       ],
     );
   }
@@ -226,12 +221,17 @@ class _SalesTaxReportTabState extends State<SalesTaxReportTab> {
           (_, r) => Text(r.businessDate),
           width: 104,
         ),
-        _cell<SalesTaxRow>('เลขที่', (_, r) => Text(r.no), flex: 2),
+        _cell<SalesTaxRow>(
+          'เลขที่',
+          (_, r) => Text(r.no, softWrap: false),
+          width: 200,
+        ),
         _cell<SalesTaxRow>('ประเภท', (_, r) => _docPill(r), width: 88),
         _cell<SalesTaxRow>('ผู้ซื้อ', _buyer, flex: 3),
         _amt('มูลค่า', (r) => r.base, 112),
         _amt('VAT', (r) => r.vat, 100),
         _amt('รวม', (r) => r.total, 120),
+        _cell<SalesTaxRow>('', (_, _) => const SizedBox(), width: 12),
         _cell<SalesTaxRow>('หมายเหตุ', _note, flex: 3),
       ],
     ),

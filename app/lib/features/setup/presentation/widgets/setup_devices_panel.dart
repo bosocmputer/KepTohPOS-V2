@@ -9,7 +9,6 @@ import 'package:app/features/onboarding/data/device_session.dart';
 import 'package:app/features/setup/presentation/widgets/setup_device_leave_section.dart';
 import 'package:app/features/setup/presentation/widgets/setup_device_rd_code_dialog.dart';
 import 'package:app/features/setup/presentation/widgets/setup_device_table.dart';
-import 'package:app/features/setup/presentation/widgets/setup_nav_sidebar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -112,40 +111,37 @@ class _SetupDevicesPanelState extends State<SetupDevicesPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final tt = Theme.of(context).textTheme;
     final t = context.tokens;
     final session = _session;
-    return SetupCard(
+    return Column(
       key: const ValueKey('setup-devices-panel'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('เครื่องและลิงก์เข้าร้าน', style: tt.titleMedium),
-          const SizedBox(height: AppDimensions.space1),
-          Text(
-            'ส่งลิงก์ให้แท็บเล็ตเครื่องใหม่ หรือมือถือผู้จัดการ '
-            'เปิดแล้วเข้าร้านนี้ได้ทันที จากนั้นแต่ละคนเข้าด้วย PIN ของตัวเอง',
-            style: tt.bodySmall?.copyWith(color: t.muted),
-          ),
-          const SizedBox(height: AppDimensions.space3),
-          if (session == null || _shopId == null)
-            const Text('ใช้ได้เมื่อเชื่อมต่อฐานข้อมูลของร้านจริง')
-          else if (!session.isOwnerSignedIn)
-            const Text('เข้าสู่ระบบบัญชีเจ้าของร้านด้านบนก่อน')
-          else ...[
-            _createRow(),
-            if (_link != null) _linkCard(_link!),
-            if (_error.isNotEmpty) ...[
-              const SizedBox(height: AppDimensions.space2),
-              Text(_error, style: TextStyle(color: t.dangerInk)),
-            ],
-            const SizedBox(height: AppDimensions.space4),
-            _deviceList(),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const PageHeader(
+          title: 'เครื่องและลิงก์เข้าร้าน',
+          desc:
+              'ส่งลิงก์ให้แท็บเล็ตเครื่องใหม่ หรือมือถือผู้จัดการ '
+              'เปิดแล้วเข้าร้านนี้ได้ทันที '
+              'จากนั้นแต่ละคนเข้าด้วย PIN ของตัวเอง',
+        ),
+        const SizedBox(height: AppDimensions.space3),
+        if (session == null || _shopId == null)
+          const Text('ใช้ได้เมื่อเชื่อมต่อฐานข้อมูลของร้านจริง')
+        else if (!session.isOwnerSignedIn)
+          const Text('เข้าสู่ระบบบัญชีเจ้าของร้านด้านบนก่อน')
+        else ...[
+          _createRow(),
+          if (_link != null) _linkCard(_link!),
+          if (_error.isNotEmpty) ...[
+            const SizedBox(height: AppDimensions.space2),
+            Text(_error, style: TextStyle(color: t.dangerInk)),
           ],
-          if (session != null && widget.staffRole == 'owner')
-            SetupDeviceLeaveSection(session: session),
+          const SizedBox(height: AppDimensions.space3),
+          _deviceList(),
         ],
-      ),
+        if (session != null && widget.staffRole == 'owner')
+          SetupDeviceLeaveSection(session: session),
+      ],
     );
   }
 
