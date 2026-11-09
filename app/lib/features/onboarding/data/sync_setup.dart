@@ -7,6 +7,7 @@ import 'package:app/core/data/local/outbox_queue.dart';
 import 'package:app/core/data/local/shop_snapshot_store.dart';
 import 'package:app/core/data/supabase/supabase_pos_repository.dart';
 import 'package:app/core/di/injection.dart';
+import 'package:app/core/sync/realtime_sync.dart';
 import 'package:app/core/sync/sync_center.dart';
 import 'package:app/features/onboarding/data/device_session.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -112,6 +113,12 @@ ConnectionMonitor startSync(
         shop: () => repo.state,
       ),
       dispose: (c) => c.dispose(),
+    )
+    // Other devices' changes arrive as a signal; reload skips while the outbox
+    // still holds unsent commands.
+    ..registerSingleton<RealtimeSync>(
+      RealtimeSync.shop(session.device, repo.shopId, repo.reload),
+      dispose: (r) => r.dispose(),
     );
   return monitor;
 }
