@@ -200,6 +200,26 @@ mixin SupabasePosSaleCommands on SupabasePosBase, SupabasePosOffline
   }
 
   @override
+  Future<BillRecord> reissueBill({
+    required String billId,
+    required String reason,
+    String? methodId,
+    String? bankAccountId,
+  }) async {
+    final newBillId = newId();
+    await staffRpc<Object?>('reissue_bill', <String, dynamic>{
+      'p_shop_id': shopId,
+      'p_bill_id': billId,
+      'p_new_id': newBillId,
+      'p_reason': reason,
+      'p_method_id': ?methodId,
+      'p_bank_account_id': ?bankAccountId,
+    });
+    final state = await reload();
+    return state.sales.firstWhere((b) => b.id == newBillId);
+  }
+
+  @override
   Future<PosState> cancelTable(String tableId) async {
     final session = sessionByTable[tableId];
     if (session == null) return posState;

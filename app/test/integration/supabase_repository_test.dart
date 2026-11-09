@@ -348,6 +348,28 @@ void main() {
       },
     );
 
+    test('reissue voids the old bill and links a same-total new one', () async {
+      // Arrange
+      expect(
+        await repo.signInWithPin(managerId, '2222'),
+        PinSignInResult.success,
+      );
+      final old = repo.state.sales.firstWhere((b) => !b.voided);
+
+      // Act
+      final created = await repo.reissueBill(
+        billId: old.id,
+        reason: 'เปลี่ยนวิธีชำระ',
+      );
+
+      // Assert
+      expect(repo.state.sales.firstWhere((b) => b.id == old.id).voided, isTrue);
+      expect(created.replacesBillId, old.id);
+      expect(created.voided, isFalse);
+      expect(created.total, old.total);
+      expect(created.no, isNot(old.no));
+    });
+
     test('setup needs the owner login and keeps a blank PIN', () async {
       // Arrange: a device session with no owner login cannot edit the catalog.
       final noOwner = await SupabasePosRepository.open(

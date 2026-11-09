@@ -1,4 +1,5 @@
 import 'package:app/domain/models.dart';
+export 'package:app/domain/expense_record.dart';
 export 'package:app/domain/models.dart' show ShiftRecord, StockLot;
 
 /// Settled sale bill (`s.sales`) or pre-settlement POS slip (`isSlipPreview`).
@@ -35,6 +36,7 @@ class BillRecord {
     this.rdMachineCode,
     this.isTaxInvoice = false,
     this.isSlipPreview = false,
+    this.replacesBillId,
     this.voided = false,
     this.voidReason,
     this.voidBy,
@@ -77,6 +79,7 @@ class BillRecord {
     timeLimitMin: (json['timeLimitMin'] as num?)?.toInt() ?? 0,
     rdMachineCode: json['rdMachineCode'] as String?,
     isTaxInvoice: (json['isTaxInvoice'] as bool?) ?? false,
+    replacesBillId: json['replacesBillId'] as String?,
     voided: (json['voided'] as bool?) ?? false,
     voidReason: json['voidReason'] as String?,
     voidBy: json['voidBy'] as String?,
@@ -116,13 +119,17 @@ class BillRecord {
   final String? rdMachineCode;
   final bool isTaxInvoice;
   final bool isSlipPreview;
+
+  /// Id of the voided bill this one was reissued to replace.
+  final String? replacesBillId;
   bool voided;
   String? voidReason;
   String? voidBy;
   String? voidAt;
 
   /// Seller tax id + abbreviated tax invoice lines (RD Notice 46).
-  List<String> taxLines(ShopConfig shop) => <String>[
+  /// [replacesNo] is the voided bill's number when the caller knows it.
+  List<String> taxLines(ShopConfig shop, {String? replacesNo}) => <String>[
     if (shop.taxId.isNotEmpty) 'เลขผู้เสียภาษี ${shop.taxId}',
     if (isTaxInvoice) ...<String>[
       if (shop.branchCode == '00000')
@@ -132,6 +139,9 @@ class BillRecord {
       'เลขรหัสประจำเครื่อง: ${rdMachineCode ?? '-'}',
       if ((vatMode ?? shop.vatMode) == 'included') 'ราคารวมภาษีมูลค่าเพิ่มแล้ว',
     ],
+    if (replacesBillId != null && replacesNo == null) 'ออกแทนฉบับเดิม',
+    if (replacesBillId != null && replacesNo != null)
+      'ยกเลิกและออกฉบับใหม่แทนเลขที่ $replacesNo',
   ];
 
   BillRecord copy() => BillRecord(
@@ -166,6 +176,7 @@ class BillRecord {
     rdMachineCode: rdMachineCode,
     isTaxInvoice: isTaxInvoice,
     isSlipPreview: isSlipPreview,
+    replacesBillId: replacesBillId,
     voided: voided,
     voidReason: voidReason,
     voidBy: voidBy,
@@ -203,6 +214,7 @@ class BillRecord {
     if (timeLimitMin > 0) 'timeLimitMin': timeLimitMin,
     if (rdMachineCode != null) 'rdMachineCode': rdMachineCode,
     if (isTaxInvoice) 'isTaxInvoice': true,
+    if (replacesBillId != null) 'replacesBillId': replacesBillId,
     'voided': voided,
     if (voidReason != null) 'voidReason': voidReason,
     if (voidBy != null) 'voidBy': voidBy,
@@ -261,40 +273,6 @@ class PurchaseRecord {
     'at': at,
     'supplierId': supplierId,
     'lines': lines.map((l) => l.toJson()).toList(),
-    'note': note,
-  };
-}
-
-/// Daily operating expense (`s.expenses`).
-class ExpenseRecord {
-  const new({
-    required this.id,
-    required this.date,
-    required this.at,
-    required this.typeId,
-    required this.amount,
-    this.note = '',
-  });
-  factory fromJson(Map<String, dynamic> json) => ExpenseRecord(
-    id: json['id'] as String,
-    date: json['date'] as String,
-    at: json['at'] as String,
-    typeId: json['typeId'] as String,
-    amount: (json['amount'] as num).toInt(),
-    note: (json['note'] as String?) ?? '',
-  );
-  final String id;
-  final String date;
-  final String at;
-  final String typeId;
-  final int amount;
-  final String note;
-  Map<String, dynamic> toJson() => <String, dynamic>{
-    'id': id,
-    'date': date,
-    'at': at,
-    'typeId': typeId,
-    'amount': amount,
     'note': note,
   };
 }

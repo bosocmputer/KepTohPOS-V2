@@ -166,6 +166,7 @@ BillRecord billFromRow(Row r, List<OrderLineItem> lines) => BillRecord(
   timeLimitMin: _i(r['time_limit_min']),
   rdMachineCode: r['rd_machine_code'] as String?,
   isTaxInvoice: (r['is_tax_invoice'] as bool?) ?? false,
+  replacesBillId: r['replaces_bill_id'] as String?,
   voided: r['voided'] as bool,
   voidReason: r['void_reason'] as String?,
   voidBy: r['void_by'] as String?,

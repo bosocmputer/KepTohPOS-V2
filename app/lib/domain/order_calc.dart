@@ -68,10 +68,7 @@ CalculatedOrder calcOrder(
       );
     }
   }
-  final subtotal = lines.fold<int>(
-    0,
-    (sum, line) => sum + line.qty * line.price,
-  );
+  final subtotal = lines.fold<int>(0, (sum, l) => sum + l.qty * l.price);
   final service = _percentOf(subtotal, shop.servicePct);
   final base = subtotal + service;
   final vatRate = shop.vatRate > 0 ? shop.vatRate : 0.0;

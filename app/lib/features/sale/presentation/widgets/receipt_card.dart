@@ -2,8 +2,8 @@ import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
+import 'package:app/features/sale/presentation/widgets/receipt_card_parts.dart';
 import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 /// Formatted thermal-style receipt card (`const Receipt` in `index.html`).
 class ReceiptCard extends StatelessWidget {
@@ -11,11 +11,15 @@ class ReceiptCard extends StatelessWidget {
     required this.shop,
     required this.bill,
     this.isCopy = false,
+    this.replacesNo,
     super.key,
   });
   final ShopConfig shop;
   final BillRecord bill;
   final bool isCopy;
+
+  /// Number of the voided bill this one replaces, when known.
+  final String? replacesNo;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +66,7 @@ class ReceiptCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (bill.voided) ...[
-            _voidStamp(t, tt),
+            ReceiptVoidStamp(bill: bill),
             const SizedBox(height: AppDimensions.space3),
           ],
           const Center(child: BrandLogo(size: AppDimensions.space10)),
@@ -79,7 +83,7 @@ class ReceiptCard extends StatelessWidget {
             if (shop.branch.isNotEmpty) shop.branch,
             if (shop.address.isNotEmpty) shop.address,
             if (shop.phone.isNotEmpty) 'โทร ${shop.phone}',
-            ...bill.taxLines(shop),
+            ...bill.taxLines(shop, replacesNo: replacesNo),
           ])
             Text(
               info,
@@ -182,7 +186,7 @@ class ReceiptCard extends StatelessWidget {
             _row(t, tt, 'เงินทอน', fmtAmt(bill.change), true),
           if (showQr) ...[
             const SizedBox(height: AppDimensions.space2_5),
-            _qrSection(t, tt),
+            ReceiptQrBox(shop: shop, bill: bill),
           ],
           if (shop.receiptFooter.isNotEmpty) ...[
             div,
@@ -219,81 +223,6 @@ class ReceiptCard extends StatelessWidget {
               fontWeight: b ? FontWeight.w700 : FontWeight.w500,
             ),
           ),
-      ],
-    ),
-  );
-
-  Widget _voidStamp(AppTokens t, TextTheme tt) {
-    final r = (bill.voidReason ?? '').trim();
-    final msg =
-        'ยกเลิกโดย ${bill.voidBy ?? "-"} · ${r.isEmpty ? "ไม่ระบุ" : r}';
-    return Container(
-      key: const ValueKey('receipt-void-stamp'),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.space3,
-        vertical: AppDimensions.space2,
-      ),
-      decoration: BoxDecoration(
-        color: t.dangerSoft,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-        border: Border.all(color: t.danger),
-      ),
-      child: Row(
-        children: [
-          const Pill(tone: PillTone.red, label: 'ยกเลิก'),
-          const SizedBox(width: AppDimensions.space2),
-          Expanded(
-            child: Text(
-              msg,
-              style: tt.bodySmall?.copyWith(
-                color: t.dangerInk,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _qrSection(AppTokens t, TextTheme tt) => Container(
-    key: const ValueKey('receipt-qr-box'),
-    padding: const EdgeInsets.all(AppDimensions.space2_5),
-    decoration: BoxDecoration(
-      color: t.surface2,
-      borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-      border: Border.all(color: t.line),
-    ),
-    child: Column(
-      children: [
-        Text(
-          'สแกน QR พร้อมเพย์เพื่อชำระเงิน',
-          style: tt.bodySmall?.copyWith(
-            color: t.ink,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        Text(
-          'พร้อมเพย์ ${shop.promptpay} · ยอดโอน '
-          '${baht(bill.total, bill.total % 100 != 0 ? 2 : 0)}',
-          style: tt.labelSmall?.copyWith(color: t.muted),
-        ),
-        const SizedBox(height: AppDimensions.space2),
-        RepaintBoundary(
-          child: Container(
-            padding: const EdgeInsets.all(AppDimensions.space1_5),
-            decoration: BoxDecoration(
-              color: AppRawTokens.paper,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-              border: Border.all(color: t.primary),
-            ),
-            child: QrImageView(
-              data: promptPayPayload(shop.promptpay, bill.total),
-              size: 120,
-              backgroundColor: AppRawTokens.paper,
-            ),
-          ),
-        ),
       ],
     ),
   );

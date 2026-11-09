@@ -191,6 +191,15 @@ abstract class PosRepository implements PosSetupCommands {
     DateTime? now,
   });
 
+  /// Voids [billId] and issues a new bill in its place (new payment method or
+  /// tax invoice), owner/manager only. The server must be reachable.
+  Future<BillRecord> reissueBill({
+    required String billId,
+    required String reason,
+    String? methodId,
+    String? bankAccountId,
+  });
+
   /// Cancels an unpaid open table and restores its addon stock.
   Future<PosState> cancelTable(String tableId);
 
