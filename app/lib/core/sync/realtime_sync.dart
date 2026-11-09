@@ -57,6 +57,9 @@ Stream<void> _shopSignals(SupabaseClient client, String shopId) {
   RealtimeChannel? channel;
   Timer? retry;
   StreamSubscription<AuthState>? auth;
+  // A client built with `accessToken` (the paired device) has no `auth`;
+  // realtime then fetches the token itself through that callback.
+  final customToken = client.accessToken != null;
 
   Future<void> open() async {
     retry?.cancel();
@@ -64,9 +67,13 @@ Stream<void> _shopSignals(SupabaseClient client, String shopId) {
     channel = null;
     if (old != null) await client.removeChannel(old);
     if (out.isClosed) return;
-    final token = client.auth.currentSession?.accessToken;
-    if (token == null) return;
-    await client.realtime.setAuth(token);
+    if (customToken) {
+      await client.realtime.setAuth(null);
+    } else {
+      final token = client.auth.currentSession?.accessToken;
+      if (token == null) return;
+      await client.realtime.setAuth(token);
+    }
     channel = client
         .channel(
           'shop:$shopId',
@@ -85,6 +92,7 @@ Stream<void> _shopSignals(SupabaseClient client, String shopId) {
   out
     ..onListen = () {
       unawaited(open());
+      if (customToken) return;
       auth = client.auth.onAuthStateChange.listen((s) {
         if (s.event == AuthChangeEvent.signedOut) {
           unawaited(out.close());
