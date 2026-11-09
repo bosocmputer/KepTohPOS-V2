@@ -21,6 +21,13 @@ Map<String, dynamic> stripCosts(Map<String, dynamic> state) {
       l.remove('cost');
     }
   }
+  for (final t
+      in (s['dailyTotals'] as Map<String, dynamic>? ?? const {}).values) {
+    (t as Map<String, dynamic>)['addonCost'] = null;
+  }
+  for (final a in rows(s['addonSalesBefore'])) {
+    a['cost'] = null;
+  }
   for (final e in rows(s['expenses'])) {
     e['amount'] = 0;
   }

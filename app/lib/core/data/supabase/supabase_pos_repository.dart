@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app/core/data/local/offline_credentials.dart';
 import 'package:app/core/data/local/shop_snapshot_store.dart';
+import 'package:app/core/data/supabase/supabase_day_bills.dart';
 import 'package:app/core/data/supabase/supabase_pos_base.dart';
 import 'package:app/core/data/supabase/supabase_pos_offline.dart';
 import 'package:app/core/data/supabase/supabase_pos_sale_commands.dart';
@@ -116,6 +117,22 @@ class SupabasePosRepository extends SupabasePosBase
   StaffMember? get currentStaff => posState.staff
       .where((x) => x.id == signedInStaffId && x.active)
       .firstOrNull;
+
+  @override
+  Future<List<BillRecord>> billsForDay(String date) async {
+    final me = posState.staff.where((x) => x.id == signedInStaffId).firstOrNull;
+    try {
+      return await loadDayBills(
+        deviceClient,
+        shopId,
+        date,
+        token: staffToken,
+        readsCosts: me?.seesCosts ?? false,
+      );
+    } on Object catch (e) {
+      throw describeError(e);
+    }
+  }
 
   @override
   bool get isDemoData => false;

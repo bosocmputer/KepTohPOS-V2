@@ -69,9 +69,11 @@ LedgerResult computeLedger(PosState s, {String? today}) {
     final purch = purchBy[k] ?? const <PurchaseRecord>[];
     final closed = cnt != null;
 
-    final sales = (salesBy[k] ?? const <BillRecord>[])
-        .where((b) => !b.voided)
-        .toList();
+    final rolled = s.rawFrom != null && k.compareTo(s.rawFrom!) < 0;
+    final tot = rolled ? s.dailyTotals[k] : null;
+    final sales = rolled
+        ? const <BillRecord>[]
+        : (salesBy[k] ?? const <BillRecord>[]).where((b) => !b.voided).toList();
     var buffetNet = 0.0;
     var addonNet = 0.0;
     var addonCost = 0.0;
@@ -97,6 +99,19 @@ LedgerResult computeLedger(PosState s, {String? today}) {
           buffetNet += v;
         }
       }
+    }
+
+    var billCount = sales.length;
+    if (tot != null) {
+      billCount = tot.bills;
+      gross = tot.gross;
+      net = tot.net;
+      a = tot.a;
+      c = tot.c;
+      f = tot.f;
+      buffetNet = tot.buffetNet;
+      addonNet = tot.addonNet;
+      addonCost = tot.addonCost ?? 0;
     }
 
     final headsW = a + c * w;
@@ -206,13 +221,13 @@ LedgerResult computeLedger(PosState s, {String? today}) {
       0,
       (acc, e) => acc + e.amount,
     );
-    final fixed = sales.isNotEmpty ? fixedPerDay : 0.0;
+    final fixed = billCount > 0 ? fixedPerDay : 0.0;
     final profit = closed ? net - ingCost - addonCost : null;
     final day = LedgerDaySummary(
       date: k,
       closed: closed,
       isToday: k == tk,
-      bills: sales.length,
+      bills: billCount,
       a: a,
       c: c,
       f: f,

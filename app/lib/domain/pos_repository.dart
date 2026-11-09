@@ -138,6 +138,10 @@ abstract class PosRepository implements PosSetupCommands {
   /// the server, so figures derived from it would be wrong when this is false.
   bool get canReadCosts;
 
+  /// Bills of business day [date], including days before `PosState.rawFrom`
+  /// whose raw bills are not in [state]. Throws when it cannot be fetched.
+  Future<List<BillRecord>> billsForDay(String date);
+
   /// Saves kitchen notes on an open table.
   Future<PosState> setTableNotes(String tableId, String notes);
 

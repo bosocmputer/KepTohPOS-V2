@@ -84,10 +84,7 @@ String describeEntry(OutboxEntry e, PosState shop, DateTime now) {
     );
   }
   if (e.contains('already voided')) {
-    return (
-      'บิลนี้ถูกยกเลิกไปแล้ว',
-      'ไม่ต้องส่งซ้ำ ให้ผู้จัดการตรวจสอบ',
-    );
+    return ('บิลนี้ถูกยกเลิกไปแล้ว', 'ไม่ต้องส่งซ้ำ ให้ผู้จัดการตรวจสอบ');
   }
   if (e.contains('not allowed') || e.contains('cannot')) {
     return (

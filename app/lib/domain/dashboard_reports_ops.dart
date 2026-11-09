@@ -189,6 +189,16 @@ DashboardSummary computeDashboardSummary(
       }
     }
   }
+  for (final r in s.addonSalesBefore) {
+    if (dateSet.contains(r.date)) {
+      final prev = addonAgg[r.name] ?? (q: 0, rev: 0.0, cost: 0.0);
+      addonAgg[r.name] = (
+        q: prev.q + r.qty,
+        rev: prev.rev + r.rev,
+        cost: prev.cost + (r.cost ?? 0),
+      );
+    }
+  }
   final addonSales = [
     for (final e in addonAgg.entries)
       AddonSalesSummaryRow(
