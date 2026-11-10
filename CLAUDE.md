@@ -70,7 +70,7 @@ Inspect root manifest files (including monorepo subfolders such as `app/`, `supa
 
 ---
 
-## 4. Evidence-Based Reporting (No Over-Claiming) & No Ceremony Overhead
+## 4. Evidence-Based Reporting (No Over-Claiming), No Ceremony Overhead & Next Steps
 1. **No Over-Claiming (รายงานตามจริง):**
    - Report only what was actually executed and verified in the current turn, citing the **exact command run** and **real terminal output**.
    - Explicitly state **"ยังไม่ได้รันทดสอบ"** for anything not executed, unverified, or assumed.
@@ -78,8 +78,10 @@ Inspect root manifest files (including monorepo subfolders such as `app/`, `supa
 2. **No Ceremony Overhead (ไม่เพิ่มพิธีกรรม):**
    - Do only what the task requires. Never create unrequested documentation files, extra approval steps, redundant checks, or unnecessary AI/subagent calls.
    - Do not write long preambles or repetitive summaries. If a deterministic script or CLI command can do the job, use the script instead of calling AI.
-3. **End-of-Task / Milestone Session Proof Report:**
-   - Whenever finishing a milestone, merging a PR, or running `/verify` or `/handoff` (do NOT run on trivial mid-task turns), execute `bash .claude/hooks/audit-session-proof.sh --brief` and include its 3-line `### 📊 ผลชี้วัด Agent Guard Template` output at the bottom of your final response.
+3. **Actionable Next Steps (`### ⏭️ ขั้นตอนถัดไป (Next Steps)`):**
+   - At the end of every completed task, include a concise **`### ⏭️ ขั้นตอนถัดไป (Next Steps)`** section (**1–3 bullet points max**) stating only real remaining actions (e.g., pending `supabase db push` for a new migration, a specific manual check, or the next logical feature).
+4. **End-of-Task / Milestone Session Proof Report (`### 📊 ผลชี้วัด Agent Guard Template`):**
+   - Whenever finishing a feature/task, closing a milestone, merging a PR, or running `/verify` or `/handoff`, execute `bash .claude/hooks/audit-session-proof.sh --brief` and append its 4-line `### 📊 ผลชี้วัด Agent Guard Template` output (Model Offload, Subagents & Tokens, Hooks, and Pitfall Memory) at the bottom of your final response.
 
 ---
 

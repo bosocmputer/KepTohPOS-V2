@@ -18,7 +18,7 @@ done
 PROJECT_ROOT="${TARGET_ARG:-$(git --no-optional-locks rev-parse --show-toplevel 2>/dev/null || echo "$SCRIPT_ROOT")}"
 
 python3 - "$PROJECT_ROOT" "$BRIEF_MODE" <<'PYEOF'
-import sys, os, re, glob, json, time
+import sys, os, re, glob, json, time, subprocess
 from datetime import datetime
 
 root_dir = os.path.realpath(sys.argv[1])
@@ -154,8 +154,8 @@ def scan_ag_file(fpath):
                                 res["first_prompt"] = txt_c[:75]
                         except Exception:
                             pass
-                    elif not has_user_explicit and '"SYSTEM_MESSAGE"' in line and "sender=" in line:
-                        m_snd = re.search(r"sender=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", line)
+                    elif not has_user_explicit and (('"SYSTEM_MESSAGE"' in line and "sender=" in line) or ("You are a subagent" in line)):
+                        m_snd = re.search(r"(?:sender=|conversation_id is )([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", line)
                         if m_snd:
                             res["parent_cid"] = m_snd.group(1)
                             res["is_subagent"] = True
@@ -309,10 +309,54 @@ for ag_cid, ag_info in ag_map.items():
 
 all_sessions.sort(key=lambda x: x.get("epoch") or 0)
 
+def scan_pitfalls(r_dir):
+    pf_path = os.path.join(r_dir, ".claude", "rules", "project-pitfalls.md")
+    rules = []
+    if os.path.isfile(pf_path):
+        try:
+            with open(pf_path, "r", encoding="utf-8", errors="ignore") as fp:
+                for ln in fp:
+                    s = ln.strip()
+                    if s.startswith("- **["):
+                        rules.append(s[2:].strip())
+        except Exception:
+            pass
+    added_recent = []
+    for diff_cmd in (
+        ["git", "--no-optional-locks", "diff", "HEAD", "--", ".claude/rules/project-pitfalls.md"],
+        ["git", "--no-optional-locks", "diff", "HEAD~1", "HEAD", "--", ".claude/rules/project-pitfalls.md"],
+    ):
+        try:
+            out = subprocess.check_output(diff_cmd, cwd=r_dir, stderr=subprocess.DEVNULL, timeout=1.5).decode("utf-8", errors="ignore")
+            for ln in out.splitlines():
+                if ln.startswith("+- **["):
+                    added_recent.append(ln[3:].strip())
+            if added_recent:
+                break
+        except Exception:
+            pass
+    def short_rule(r_txt):
+        return r_txt if len(r_txt) <= 115 else r_txt[:112] + "..."
+    return {
+        "count": len(rules),
+        "all": rules,
+        "added_recent": [short_rule(x) for x in added_recent],
+        "latest": short_rule(rules[-1]) if rules else "",
+    }
+
+pf_info = scan_pitfalls(root_dir)
+if pf_info["added_recent"]:
+    pf_brief_line = f"- **บทเรียนสะสม (Pitfall Memory):** `{pf_info['count']}/30` ข้อ — **สกัดใหม่ล่าสุด:** {pf_info['added_recent'][-1]}"
+elif pf_info["latest"]:
+    pf_brief_line = f"- **บทเรียนสะสม (Pitfall Memory):** `{pf_info['count']}/30` ข้อ (ล่าสุด: {pf_info['latest']})"
+else:
+    pf_brief_line = "- **บทเรียนสะสม (Pitfall Memory):** `0/30` ข้อ (ยังไม่มีบทเรียนเฉพาะโปรเจกต์)"
+
 if brief_mode:
     if not all_sessions:
         print("### 📊 ผลชี้วัด Agent Guard Template")
         print(f"- **Hooks ป้องกันระบบ:** สแกนอ่าน {st.get('explorerReads', 0)} ครั้ง | แก้ไฟล์+Checkpoint {st.get('filesEdited', 0)} ครั้ง | รันเทสต์ {st.get('verifierRuns', 0)} ครั้ง | บล็อกคำสั่งผิดกฎ {st.get('blockedCount', 0)} ครั้ง")
+        print(pf_brief_line)
         sys.exit(0)
     acc = all_sessions[-1]
     eng_lbl = "Antigravity " if acc.get("engine") == "antigravity" else ""
@@ -335,6 +379,7 @@ if brief_mode:
         print(f"- **สัดส่วนโมเดล ({tot} รอบ):** Opus `{op_p}%` ({acc['opus']} รอบ) | Sonnet `{so_p}%` ({acc['sonnet']} รอบ) | Haiku `{ha_p}%` ({acc['haiku']} รอบ) ➔ **แบ่งเบาภาระ Opus (Offload): `{off_p}%`**")
     print(f"- **Subagents ที่เรียกใช้จริง:** `{sub_tot}` ตัว (`Explorer: {r['explorer']}`, `Implementer: {r['implementer']}`, `Debugger: {r['debugger']}`, `Reviewer: {r['reviewer']}`){tok_note}")
     print(f"- **Hooks ป้องกันระบบ:** สแกนไฟล์ `{st.get('explorerReads', 0)}` ครั้ง | แก้ไฟล์+Checkpoint `{st.get('filesEdited', 0)}` ครั้ง | รันเทสต์ `{st.get('verifierRuns', 0)}` ครั้ง | บล็อกคำสั่งผิดกฎ `{st.get('blockedCount', 0)}` ครั้ง | 2-Strike: `{strike_str}`")
+    print(pf_brief_line)
     sys.exit(0)
 
 print("================================================================================")
@@ -378,6 +423,16 @@ if st:
     print(f"   • รันคำสั่งตรวจสอบเทสต์จริง (Verify) : {st.get('verifierRuns', 0)} ครั้ง")
     print(f"   • บล็อกคำสั่งอันตราย / ไฟล์ความลับ / วนลูป : {st.get('blockedCount', 0)} ครั้ง")
     print(f"   • สถานะเบรกเกอร์ 2-Strike ล่าสุด : {strike_str}")
+
+print("\n--------------------------------------------------------------------------------")
+print(f"🧠 ความจำระยะยาวเฉพาะโปรเจกต์ (.claude/rules/project-pitfalls.md — {pf_info['count']}/30 ข้อ):")
+if pf_info["added_recent"]:
+    for ar in pf_info["added_recent"]:
+        print(f"   ✨ [สกัดใหม่ล่าสุด] {ar}")
+elif pf_info["latest"]:
+    print(f"   • ล่าสุด: {pf_info['latest']}")
+else:
+    print("   • ยังไม่มีบทเรียนเฉพาะโปรเจกต์")
 
 print("================================================================================")
 PYEOF

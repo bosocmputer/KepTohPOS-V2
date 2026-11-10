@@ -6,7 +6,7 @@ description: Project-specific self-learning memory distilled from resolved [BLOC
 > **Anti-Bloat Governance (Strict 1-Line Distillation):**
 > 1. **When to Write:** Append a rule here whenever (a) a `[BLOCKER] [CONFIRMED]` defect is fixed, (b) the user corrects a project assumption or invokes `/learn`, or (c) a recurring gotcha is discovered before `/handoff`.
 > 2. **Format:** Maximum **1 line per rule**: `- **[Category]:** <What to always do / never do + 1-phrase reason>`
-> 3. **Capacity Cap:** Keep at most **30 rules** total (merge overlapping rules if full). Always mirror edits to both `.claude/rules/project-pitfalls.md` and `.agents/rules/project-pitfalls.md`.
+> 3. **Capacity Cap:** Keep at most **30 rules** total (merge overlapping rules if full). Single Source of Truth: `.agents/rules/project-pitfalls.md` automatically imports this file via `@[project-pitfalls](../../.claude/rules/project-pitfalls.md)`.
 > 4. **Safe Across Upgrades:** `rsync --exclude='project-pitfalls.md'` preserves this file during template updates.
 
 ## Active Project Pitfalls & Conventions
