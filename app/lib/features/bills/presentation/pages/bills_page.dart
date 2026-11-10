@@ -15,7 +15,7 @@ List<Widget> buildBillsHeaderActions(BillsCubit cubit) {
   final state = cubit.state;
   return <Widget>[
     SizedBox(
-      width: 210,
+      width: 176,
       child: Dropdown<String>(
         key: const ValueKey('bills-date-dropdown'),
         value: state.selectedDate,
@@ -145,7 +145,7 @@ class BillsPage extends StatelessWidget {
                     DataTableCol<BillRecord>(
                       key: 'no',
                       label: 'เลขที่',
-                      flex: 2,
+                      flex: 3,
                       cellBuilder: (_, b) => Row(
                         mainAxisSize: MainAxisSize.min,
                         spacing: AppDimensions.space1_5,
@@ -218,7 +218,6 @@ class BillsPage extends StatelessWidget {
                     DataTableCol<BillRecord>(
                       key: 'staff',
                       label: 'แคชเชียร์',
-                      flex: 2,
                       cellBuilder: (_, b) => Text(
                         b.staffName,
                         maxLines: 1,

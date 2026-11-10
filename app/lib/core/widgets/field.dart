@@ -217,7 +217,7 @@ class ResponsiveFormRow extends StatelessWidget {
       padding: EdgeInsets.only(bottom: bottomSpacing),
       child: LayoutBuilder(
         builder: (context, c) {
-          if (c.maxWidth < AppDimensions.mobileBp) {
+          if (c.maxWidth < 480) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
