@@ -207,24 +207,21 @@ class OnboardingLoadingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
-    return Container(
+    return Padding(
       padding: const EdgeInsets.all(AppDimensions.space6),
-      decoration: BoxDecoration(
-        color: t.surface,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        border: Border.all(color: t.line),
-        boxShadow: t.shadows,
-      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          WalkingOrangeLoader(label: subtitle),
+          const SizedBox(height: AppDimensions.space3),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: tt.displayMedium?.copyWith(color: t.ink),
+            style: tt.titleLarge?.copyWith(
+              color: t.ink,
+              fontWeight: FontWeight.w800,
+            ),
           ),
-          const SizedBox(height: AppDimensions.space3),
-          WalkingOrangeLoader(size: 120, label: subtitle),
         ],
       ),
     );

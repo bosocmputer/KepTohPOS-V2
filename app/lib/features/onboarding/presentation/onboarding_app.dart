@@ -287,10 +287,24 @@ class _OnboardingAppState extends State<OnboardingApp> {
     debugShowCheckedModeBanner: false,
     theme: AppTheme.build(brightness: Brightness.light),
     builder: (context, child) {
-      final busy = _session?.busy;
+      final busy = _step == _Step.loading ? null : _session?.busy;
       final page = child ?? const SizedBox.shrink();
       return busy == null ? page : BusyOverlay(busy: busy, child: page);
     },
-    home: Builder(builder: (context) => OnboardingShell(child: _body(context))),
+    home: Builder(
+      builder: (context) => _step == _Step.loading
+          ? Scaffold(
+              backgroundColor: context.tokens.bg,
+              body: SafeArea(
+                child: Center(
+                  child: OnboardingLoadingCard(
+                    title: 'เก็บโต๊ะ POS',
+                    subtitle: _loadingText,
+                  ),
+                ),
+              ),
+            )
+          : OnboardingShell(child: _body(context)),
+    ),
   );
 }

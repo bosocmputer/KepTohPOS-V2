@@ -142,7 +142,7 @@ class BillsPage extends StatelessWidget {
                           ),
                           child: Center(
                             child: WalkingOrangeLoader(
-                              size: 110,
+                              size: 180,
                               label: 'กำลังโหลดบิล…',
                             ),
                           ),

@@ -37,96 +37,89 @@
       justify-content: center;
       padding: 24px;
       background: radial-gradient(circle at 50% 35%, rgba(255, 122, 0, 0.08) 0%, #F4F4F5 68%);
-      transition: opacity 0.24s ease-out;
+      transition: opacity 0.2s ease-out;
     }
     #keptoh-boot-loader.fade-out {
       opacity: 0;
       pointer-events: none;
     }
-    .boot-card {
+    .boot-center {
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
       width: 100%;
       max-width: 340px;
-      padding: 28px 24px;
-      background: #FFFFFF;
-      border: 1px solid #E2E4E9;
-      border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(23, 32, 51, 0.06);
+      padding: 24px;
     }
-    .boot-logo-badge {
-      padding: 10px;
-      border-radius: 20px;
-      background: #FFF1E4;
-      margin-bottom: 16px;
-      animation: keptoh-pulse 2s ease-in-out infinite;
+    .boot-lottie-wrap {
+      width: 220px;
+      height: 172px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: visible;
     }
-    .boot-logo {
-      display: block;
-      width: 72px;
-      height: 72px;
-      border-radius: 16px;
-      object-fit: contain;
-      background: #FFFFFF;
-    }
-    .boot-title {
-      font-size: 22px;
-      font-weight: 700;
-      color: #172033;
-      margin: 0 0 6px 0;
-      letter-spacing: -0.01em;
+    #boot-lottie {
+      width: 220px;
+      height: 220px;
+      transform: scale(1.35);
+      transform-origin: center center;
     }
     .boot-sub {
-      font-size: 14px;
-      font-weight: 500;
-      color: #5B6475;
-      margin: 0 0 20px 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: #354055;
+      margin: 4px 0 12px 0;
     }
-    .boot-progress-track {
-      position: relative;
-      width: 180px;
-      height: 5px;
-      border-radius: 999px;
-      background: #FFF1E4;
-      overflow: hidden;
-    }
-    .boot-progress-bar {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 45%;
-      border-radius: 999px;
-      background: #FF7A00;
-      animation: keptoh-progress 1.25s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-    }
-    @keyframes keptoh-pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 122, 0, 0.18); }
-      50% { box-shadow: 0 0 0 8px rgba(255, 122, 0, 0); }
-    }
-    @keyframes keptoh-progress {
-      0% { left: -45%; }
-      100% { left: 100%; }
+    .boot-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #172033;
+      margin: 0;
+      letter-spacing: -0.01em;
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js" defer></script>
 </head>
 <body>
   <div id="keptoh-boot-loader" role="status" aria-live="polite">
-    <div class="boot-card">
-      <div class="boot-logo-badge">
-        <img class="boot-logo" src="logo.jpg" onerror="this.onerror=null;this.src='assets/assets/logo.jpg';" alt="เก็บโต๊ะ POS" />
+    <div class="boot-center">
+      <div class="boot-lottie-wrap">
+        <div id="boot-lottie"></div>
       </div>
-      <p class="boot-title">เก็บโต๊ะ POS</p>
       <p class="boot-sub">กำลังเตรียมระบบหน้าร้าน...</p>
-      <div class="boot-progress-track">
-        <div class="boot-progress-bar"></div>
-      </div>
+      <p class="boot-title">เก็บโต๊ะ POS</p>
     </div>
   </div>
 
   <script>
     (function () {
+      function initBootLottie() {
+        var el = document.getElementById('boot-lottie');
+        if (!el || !window.lottie) return;
+        var anim = window.lottie.loadAnimation({
+          container: el,
+          renderer: 'svg',
+          loop: true,
+          autoplay: true,
+          path: 'assets/assets/Walking_Orange.json'
+        });
+        anim.addEventListener('data_failed', function () {
+          window.lottie.loadAnimation({
+            container: el,
+            renderer: 'svg',
+            loop: true,
+            autoplay: true,
+            path: 'assets/Walking_Orange.json'
+          });
+        });
+      }
+      if (window.lottie) {
+        initBootLottie();
+      } else {
+        window.addEventListener('DOMContentLoaded', initBootLottie, { once: true });
+      }
       function dismissBootLoader() {
         var loader = document.getElementById('keptoh-boot-loader');
         if (!loader) return;
@@ -135,13 +128,13 @@
           if (loader && loader.parentNode) {
             loader.parentNode.removeChild(loader);
           }
-        }, 260);
+        }, 220);
       }
       window.addEventListener('flutter-first-frame', dismissBootLoader, { once: true });
       var observer = new MutationObserver(function () {
         if (document.querySelector('flutter-view, flt-glass-pane')) {
           observer.disconnect();
-          setTimeout(dismissBootLoader, 600);
+          setTimeout(dismissBootLoader, 80);
         }
       });
       observer.observe(document.body, { childList: true, subtree: true });

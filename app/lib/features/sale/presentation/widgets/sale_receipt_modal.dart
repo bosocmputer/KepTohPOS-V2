@@ -5,7 +5,6 @@ import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/sale/presentation/widgets/receipt_card.dart';
-import 'package:app/features/sale/presentation/widgets/receipt_fresh_banner.dart';
 import 'package:app/features/sale/presentation/widgets/table_summary_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
@@ -173,20 +172,11 @@ class _ReceiptModalState extends State<ReceiptModal>
                     ],
               child: _showConfetti
                   ? _buildConfettiView(t, tt, bill)
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (widget.fresh && !bill.isSlipPreview) ...[
-                          ReceiptFreshBanner(bill: bill),
-                          const SizedBox(height: AppDimensions.space3),
-                        ],
-                        ReceiptCard(
-                          shop: widget.shop,
-                          bill: bill,
-                          isCopy: widget.isCopy ?? !widget.fresh,
-                          replacesNo: widget.replacesNo,
-                        ),
-                      ],
+                  : ReceiptCard(
+                      shop: widget.shop,
+                      bill: bill,
+                      isCopy: widget.isCopy ?? !widget.fresh,
+                      replacesNo: widget.replacesNo,
                     ),
             ),
           ),
@@ -211,8 +201,8 @@ class _ReceiptModalState extends State<ReceiptModal>
             Lottie.asset(
               'assets/success_confetti.json',
               controller: _confettiCtrl,
-              width: 180,
-              height: 180,
+              width: 250,
+              height: 250,
               repeat: false,
               fit: BoxFit.contain,
               errorBuilder: (_, _, _) =>

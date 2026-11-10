@@ -264,7 +264,7 @@ class _SalesTaxReportTabState extends State<SalesTaxReportTab> {
     }
     if (rows == null) {
       return const Center(
-        child: WalkingOrangeLoader(size: 110, label: 'กำลังโหลดข้อมูล…'),
+        child: WalkingOrangeLoader(size: 180, label: 'กำลังโหลดข้อมูล…'),
       );
     }
     return Column(

@@ -122,7 +122,7 @@ class _OwnerShopStepState extends State<OwnerShopStep> {
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Center(
-            child: WalkingOrangeLoader(size: 110, label: 'กำลังโหลดข้อมูล…'),
+            child: WalkingOrangeLoader(size: 180, label: 'กำลังโหลดข้อมูล…'),
           );
         }
         if (snapshot.hasError) {

@@ -4,7 +4,7 @@ import 'package:lottie/lottie.dart';
 
 /// Centered walking-orange Lottie animation used across loading states.
 class WalkingOrangeLoader extends StatelessWidget {
-  const new({this.size = 136, this.label, super.key});
+  const new({this.size = 210, this.label, super.key});
 
   final double size;
   final String? label;
@@ -18,26 +18,29 @@ class WalkingOrangeLoader extends StatelessWidget {
       children: [
         SizedBox(
           width: size,
-          height: size,
-          child: Lottie.asset(
-            'assets/Walking_Orange.json',
-            width: size,
-            height: size,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => Center(
-              child: SizedBox(
-                width: 32,
-                height: 32,
-                child: CircularProgressIndicator(
-                  strokeWidth: 3,
-                  color: t.primary,
+          height: size * 0.78,
+          child: Transform.scale(
+            scale: 1.35,
+            child: Lottie.asset(
+              'assets/Walking_Orange.json',
+              width: size,
+              height: size,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) => Center(
+                child: SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    color: t.primary,
+                  ),
                 ),
               ),
             ),
           ),
         ),
         if (label != null && label!.isNotEmpty) ...[
-          const SizedBox(height: AppDimensions.space2),
+          const SizedBox(height: AppDimensions.space1),
           Text(
             label!,
             textAlign: TextAlign.center,
