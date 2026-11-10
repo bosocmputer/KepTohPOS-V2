@@ -3,6 +3,7 @@ import 'package:app/core/utils/thai_tax.dart';
 import 'package:app/core/widgets/app_switch.dart';
 import 'package:app/core/widgets/field.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Tax ID (13 digits) + head-office switch + 5-digit branch code, with inline
 /// validation. [onChanged] gets `(taxId, branchCode)`; head office = `00000`.
@@ -26,6 +27,15 @@ class TaxIdBranchInput extends StatefulWidget {
 
 class _TaxIdBranchInputState extends State<TaxIdBranchInput> {
   late bool _hq = widget.branchCode.isEmpty || widget.branchCode == '00000';
+
+  @override
+  void didUpdateWidget(covariant TaxIdBranchInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.branchCode != widget.branchCode &&
+        widget.branchCode.isNotEmpty) {
+      _hq = widget.branchCode == '00000';
+    }
+  }
 
   String? get _taxError {
     final t = normalizeTaxId(widget.taxId);
@@ -64,6 +74,10 @@ class _TaxIdBranchInputState extends State<TaxIdBranchInput> {
             value: widget.taxId,
             placeholder: '13 หลัก',
             keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(13),
+            ],
             onChanged: (v) => widget.onChanged(v, widget.branchCode),
           ),
         ),
@@ -85,6 +99,10 @@ class _TaxIdBranchInputState extends State<TaxIdBranchInput> {
               value: widget.branchCode,
               placeholder: '5 หลัก เช่น 00001',
               keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(5),
+              ],
               onChanged: (v) => widget.onChanged(widget.taxId, v),
             ),
           ),

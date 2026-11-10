@@ -25,7 +25,7 @@ Inspect root manifest files (including monorepo subfolders such as `app/`, `supa
 
 | User Request / Task Pattern | Scope | Mandatory Subagent (`Agent` Tool) & Model Routing |
 | :--- | :--- | :--- |
-| **"โปรเจกต์นี้ใช้ React / NestJS / สร้าง PDF / MCP..."** | Stack setup / Skill install | Load `tech-stack-skills` and install 2–4 matching skills via `bash .claude/hooks/install-skill.sh` |
+| **Document / Tooling Capability (`pdf`, `docx`, `xlsx`, `pptx`, `mcp-builder`, `webapp-testing`)** | Specialized Tooling Skill | Load `tech-stack-skills` and install via `bash .claude/hooks/install-skill.sh` (do NOT install generic language skills like `react-expert` or `flutter-expert` unless explicitly requested) |
 | **"ทำต่อจากที่ค้างไว้ / โควต้าอีกฝั่งหมด"** | Cross-agent handoff | Load `auto-resume-handoff`, inspect `.agent-last-state.log` + `git status` + `TASK_STATE.md` (if present), and resume immediately |
 | **"สร้างระบบ... / เพิ่มฟีเจอร์..." (Broad/Ambiguous)** | Architectural / Multi-option | Load `common-ground` and confirm 3–4 concise assumptions in Thai before writing code |
 | **Trivial Edit (1–2 known files)** | **Trivial Task (1–2 files)** | Execute directly in the main window via surgical `Edit` + Tier 1 single-file test (do NOT spawn subagents for 1–2 file edits) |
@@ -35,6 +35,7 @@ Inspect root manifest files (including monorepo subfolders such as `app/`, `supa
 | **"ช่วยตรวจโค้ด / รีวิว / รันชุดทดสอบ E2E"** | **QA Review & E2E Suite** | `Agent(subagent_type="reviewer", model="sonnet")` — runs `git diff` review, Tier 2 checks, and E2E suites |
 | **"ตรวจความปลอดภัย / `/security-audit` / เช็ก RLS & RPC"** | **Security Audit (Cloudflare Gate)** | Load `security-audit`: spawn `explorer` (`haiku`) to map attack surface + `reviewer` (`sonnet`) to trace `entrypoint ➔ sink` (`[CONFIRMED]` vs `[NEEDS_VALIDATION]`) |
 | **"สร้าง 3D Viewer / Three.js / WebGL"** | Web 3D Visualization | Load `threejs-expert` (`mrdoob/three.js r187+`: `three/addons/*`, `HDRLoader`, `OutputPass`, `dispose()`) |
+| **"จดเป็นบทเรียน / จำไว้ว่า... / `/learn`"** | Self-Learning Memory | Distill into a 1-line rule in `.claude/rules/project-pitfalls.md` & `.agents/rules/project-pitfalls.md` (max 30 rules) |
 | **"เปิดจอ 3D / เช็กหลักฐานโมเดล"** | 3D HUD / Session Proof | Run `bash .claude/hooks/open-hud.sh` (3D Monitor) or `bash .claude/hooks/audit-session-proof.sh` (`.jsonl` model audit) |
 
 ---
@@ -69,16 +70,25 @@ Inspect root manifest files (including monorepo subfolders such as `app/`, `supa
 
 ---
 
-## 4. Evidence-Based Reporting (No Over-Claiming) & Session Proof Summary
-- Report only what was actually executed and verified in the current turn, citing the **exact command run** and **real terminal output**.
-- Explicitly state **"ยังไม่ได้รันทดสอบ"** for anything not executed (e.g., server not running or E2E skipped).
-- Never use exaggerated claims such as `"เสร็จสมบูรณ์ 100%"`, `"สมบูรณ์แบบ"`, or `"ไม่มีบั๊กแน่นอน"`.
-- **End-of-Task / Milestone Session Proof Report:** Whenever finishing a milestone, merging a PR, or running `/verify` or `/handoff` (do NOT run on trivial mid-task turns), execute `bash .claude/hooks/audit-session-proof.sh --brief` and include its 3-line `### 📊 ผลชี้วัด Agent Guard Template` output at the bottom of your final response.
+## 4. Evidence-Based Reporting (No Over-Claiming) & No Ceremony Overhead
+1. **No Over-Claiming (รายงานตามจริง):**
+   - Report only what was actually executed and verified in the current turn, citing the **exact command run** and **real terminal output**.
+   - Explicitly state **"ยังไม่ได้รันทดสอบ"** for anything not executed, unverified, or assumed.
+   - Never use exaggerated claims such as `"100%"`, `"สมบูรณ์แบบ"`, `"ไม่มีบั๊ก"`, or claim cached data is live.
+2. **No Ceremony Overhead (ไม่เพิ่มพิธีกรรม):**
+   - Do only what the task requires. Never create unrequested documentation files, extra approval steps, redundant checks, or unnecessary AI/subagent calls.
+   - Do not write long preambles or repetitive summaries. If a deterministic script or CLI command can do the job, use the script instead of calling AI.
+3. **End-of-Task / Milestone Session Proof Report:**
+   - Whenever finishing a milestone, merging a PR, or running `/verify` or `/handoff` (do NOT run on trivial mid-task turns), execute `bash .claude/hooks/audit-session-proof.sh --brief` and include its 3-line `### 📊 ผลชี้วัด Agent Guard Template` output at the bottom of your final response.
 
 ---
 
-## 5. Known Project Pitfalls (`Anthropic SDLC Playbook Stage 3 — 2-Repeat Memory`)
-> **Persistence Rule (Survives Template `rsync` Upgrades):**
-> Whenever the agent repeats the same project-specific mistake a 2nd time, append a concise 1-line rule to **`.claude/rules/project-pitfalls.md`** (and mirror to `.agents/rules/project-pitfalls.md`). Template `rsync` updates exclude `project-pitfalls.md` so project-specific lessons are never overwritten.
+## 5. Self-Learning Pitfall Memory (`Anthropic SDLC Playbook Stage 3 — Blocker & Correction Distillation`)
+> **Persistence & Anti-Bloat Rule (Survives Template `rsync` Upgrades):**
+> Automatically distill project-specific lessons into **`.claude/rules/project-pitfalls.md`** (and mirror to **`.agents/rules/project-pitfalls.md`**) across **3 mandatory triggers**:
+> 1. **After Fixing a `[BLOCKER] [CONFIRMED]`:** When a blocker caught by `reviewer` or a recurring test failure is resolved, append a 1-line prevention rule so future milestones never repeat it.
+> 2. **On User Correction or `/learn`:** When the user corrects a project assumption or invokes `/learn`, record the rule immediately.
+> 3. **At Milestone Close / `/handoff`:** Before closing a milestone or writing `TASK_STATE.md`, distill any new project-specific gotchas (e.g., DB unit conventions, RLS quirks, test viewport requirements) into `project-pitfalls.md`.
+> - **Format & Cap:** Strictly **1 line per rule** (`- **[Category]:** <Rule + short reason>`), capped at **30 rules maximum** (merge overlapping rules if full).
 - Never weaken or edit existing test assertions (`expect`/`assert`) to make a failing test pass; fix the root cause in production code.
 - When modifying rules or skills in `.claude/`, always keep `.agents/` synchronized for seamless Claude Code ↔ Antigravity handoffs.

@@ -142,6 +142,7 @@ class BillsState extends Equatable {
       staff.role != 'cashier' &&
       !b.voided &&
       !b.isSlipPreview &&
+      !b.isFullInvoice &&
       b.date.startsWith(todayDate.substring(0, 7));
 
   /// Selectable dates from `posState.startDate` through [todayDate].

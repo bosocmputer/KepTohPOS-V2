@@ -45,6 +45,7 @@ Categorize findings strictly. Every reported `[BLOCKER]` must be proven from rep
 ### Step 3: Receiving & Applying Review (`receiving-code-review` Protocol)
 - **No Hollow Praise:** Skip conversational filler (*"You're absolutely right!"* or *"Great catch!"*).
 - **Verify Before Changing:** Trace each reported `[BLOCKER]` against the actual code contract, apply the surgical fix, and run the test suite.
+- **Distill Resolved Blocker into Pitfall Memory:** Once a `[BLOCKER] [CONFIRMED]` fix passes verification, append a concise 1-line prevention rule (`- **[Category]:** <Rule + reason>`, max 30 rules) to `.claude/rules/project-pitfalls.md` and `.agents/rules/project-pitfalls.md` so future milestones never repeat it.
 
 ### Step 4: Convergence Circuit Breaker (`MAX_ROUNDS = 2`)
 - **Round 1 of 2:** Report all source-confirmed `[BLOCKER]` defects found in the current diff (plus any separate `[NEEDS_VALIDATION]` notes).

@@ -89,6 +89,12 @@ String baht(num? satang, [int decimals = 0]) {
   return '฿${fmt(satang / 100, decimals)}';
 }
 
+/// Formats [satang] in Thai Baht, showing 2 decimals only when satang != 0.
+String bahtSmart(num? satang) {
+  if (satang == null || satang.isNaN) return '–';
+  return baht(satang, satang % 100 != 0 ? 2 : 0);
+}
+
 /// Formats a [satang] amount with thousand separators, without the currency
 /// sign (tables and chart labels).
 String fmtBaht(num? satang, [int decimals = 0]) =>

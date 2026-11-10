@@ -47,7 +47,11 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
             },
           ),
           const SizedBox(width: AppDimensions.space3),
-          Text('Components (dev)', style: TextStyle(color: t.ink)),
+          Text(
+            'Components (dev)',
+            style: Theme.of(context).textTheme.titleMedium
+                ?.copyWith(color: t.ink),
+          ),
           const Spacer(),
           Seg<AppBrandPalette>(
             value: _palette,
@@ -218,7 +222,7 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
               onTap: () {},
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppDimensions.space3),
           const Expanded(
             child: ProductCard(
               name: 'เบียร์ช้าง ขวดใหญ่',
@@ -234,7 +238,7 @@ class _DevComponentsPageState extends State<DevComponentsPage> {
     return ColoredBox(
       color: tokens.bg,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppDimensions.space5),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: 16,

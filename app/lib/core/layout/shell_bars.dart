@@ -217,34 +217,32 @@ class MobileBottomNavBar extends StatelessWidget {
   final ValueChanged<String> onSelectView;
   final VoidCallback onOpenMore;
 
-  Widget _item(
-    BuildContext context,
-    String key,
-    String icon,
-    String label,
-    bool sel,
-    VoidCallback onTap,
-  ) {
+  Widget _item(BuildContext context, AppViewSpec? v, bool moreSel) {
     final t = context.tokens;
+    final sel = v != null ? v.id == activeViewId : moreSel;
     final rad = BorderRadius.circular(AppDimensions.radiusMd);
     final fg = sel ? t.onPrimary : t.sideInk;
     return Expanded(
       child: Material(
-        key: ValueKey(key),
+        key: ValueKey('bottom-nav-${v?.id ?? "more"}'),
         color: sel ? t.primary : t.side.withValues(alpha: 0),
         borderRadius: rad,
         child: InkWell(
-          onTap: onTap,
+          onTap: v != null ? () => onSelectView(v.id) : onOpenMore,
           borderRadius: rad,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                AppIcon(icon, size: AppDimensions.iconLg, color: fg),
+                AppIcon(
+                  v?.icon ?? 'menu',
+                  size: AppDimensions.iconLg,
+                  color: fg,
+                ),
                 const SizedBox(height: 4),
                 Text(
-                  label,
+                  v?.label ?? 'เพิ่มเติม',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -279,24 +277,8 @@ class MobileBottomNavBar extends StatelessWidget {
         top: false,
         child: Row(
           children: [
-            for (final v in allowedViews.take(keep))
-              _item(
-                context,
-                'bottom-nav-${v.id}',
-                v.icon,
-                v.label,
-                v.id == activeViewId,
-                () => onSelectView(v.id),
-              ),
-            if (allowedViews.length > keep)
-              _item(
-                context,
-                'bottom-nav-more',
-                'menu',
-                'เพิ่มเติม',
-                moreSel,
-                onOpenMore,
-              ),
+            for (final v in allowedViews.take(keep)) _item(context, v, false),
+            if (allowedViews.length > keep) _item(context, null, moreSel),
           ],
         ),
       ),

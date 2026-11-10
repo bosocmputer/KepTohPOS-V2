@@ -88,6 +88,9 @@ abstract class SupabasePosBase {
         '23503' => const PosCommandException(
           'ลบไม่ได้ เพราะยังมีรายการอื่นใช้ข้อมูลนี้อยู่',
         ),
+        '23514' => const PosCommandException(
+          'ข้อมูลไม่ถูกต้องตามเงื่อนไขที่กำหนด',
+        ),
         _ => const PosCommandException('ทำรายการไม่สำเร็จ'),
       };
     }

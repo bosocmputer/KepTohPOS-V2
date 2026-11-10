@@ -75,6 +75,9 @@ class SyncStatusButton extends StatelessWidget {
                               ?.copyWith(
                                 color: stale ? t.dangerInk : fg,
                                 fontWeight: FontWeight.w700,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
                               ),
                         ),
                       ],

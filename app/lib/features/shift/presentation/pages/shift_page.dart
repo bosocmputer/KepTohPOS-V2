@@ -153,6 +153,55 @@ class _ActiveShiftCard extends StatelessWidget {
     final openedDate = dkey(DateTime.parse(shift.openedAt).toLocal());
     final diff = state.diff;
     final totalSales = stats.cash + stats.qr + stats.transfer;
+    final diffPill = diff != null
+        ? Pill(
+            key: const ValueKey('shift-diff-pill'),
+            tone: diff == 0 ? PillTone.green : PillTone.red,
+            label: diff == 0
+                ? 'ยอดตรง'
+                : '${diff > 0 ? "เกิน " : "ขาด "}${baht(diff.abs(), 2)}',
+          )
+        : const Pill(label: 'รอระบุยอดนับจริง');
+    final closeBtn = Btn(
+      key: const ValueKey('close-shift-btn'),
+      label: 'ปิดกะ',
+      kind: BtnKind.dark,
+      disabled: state.countedValue == null,
+      onPressed: () async {
+        if (await confirmWithPendingSync(context, action: 'ปิดกะ')) {
+          bloc.add(const ShiftConfirmCloseToggled(show: true));
+        }
+      },
+    );
+    final controls = <Widget>[
+      SizedBox(
+        width: 240,
+        child: AppTextInput(
+          key: const ValueKey('shift-counted-input'),
+          value: fmtInputNum(state.countedInput),
+          placeholder: 'ระบุยอดที่นับได้',
+          suffixText: '฿',
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          onChanged: (v) =>
+              bloc.add(ShiftCountedInputChanged(v.replaceAll(',', ''))),
+        ),
+      ),
+      Btn(
+        key: const ValueKey('shift-fill-expected-btn'),
+        label: 'ตรงตามระบบ (${baht(stats.expected)})',
+        onPressed: () =>
+            bloc.add(ShiftCountedInputChanged(bahtInputText(stats.expected))),
+      ),
+      if (state.countedInput.isNotEmpty)
+        Btn(
+          key: const ValueKey('shift-clear-counted-btn'),
+          label: 'ล้างค่า',
+          icon: 'x',
+          kind: BtnKind.ghost,
+          onPressed: () => bloc.add(const ShiftCountedInputChanged('')),
+        ),
+      diffPill,
+    ];
     return Container(
       key: const ValueKey('active-shift-card'),
       padding: const EdgeInsets.all(20),
@@ -219,79 +268,17 @@ class _ActiveShiftCard extends StatelessWidget {
                   ),
                 ),
                 LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isWide = constraints.maxWidth >= 680;
-                    final diffPill = diff != null
-                        ? Pill(
-                            key: const ValueKey('shift-diff-pill'),
-                            tone: diff == 0 ? PillTone.green : PillTone.red,
-                            label: diff == 0
-                                ? 'ยอดตรง'
-                                : '${diff > 0 ? "เกิน " : "ขาด "}'
-                                      '${baht(diff.abs(), 2)}',
-                          )
-                        : const Pill(label: 'รอระบุยอดนับจริง');
-                    final closeBtn = Btn(
-                      key: const ValueKey('close-shift-btn'),
-                      label: 'ปิดกะ',
-                      kind: BtnKind.dark,
-                      disabled: state.countedValue == null,
-                      onPressed: () async {
-                        if (await confirmWithPendingSync(
-                          context,
-                          action: 'ปิดกะ',
-                        )) {
-                          bloc.add(const ShiftConfirmCloseToggled(show: true));
-                        }
-                      },
-                    );
-                    final controls = <Widget>[
-                      SizedBox(
-                        width: 240,
-                        child: AppTextInput(
-                          key: const ValueKey('shift-counted-input'),
-                          value: fmtInputNum(state.countedInput),
-                          placeholder: 'ระบุยอดที่นับได้',
-                          suffixText: '฿',
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          onChanged: (v) => bloc.add(
-                            ShiftCountedInputChanged(v.replaceAll(',', '')),
-                          ),
+                  builder: (context, c) => c.maxWidth < 680
+                      ? Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [...controls, closeBtn],
+                        )
+                      : Row(
+                          spacing: 12,
+                          children: [...controls, const Spacer(), closeBtn],
                         ),
-                      ),
-                      Btn(
-                        key: const ValueKey('shift-fill-expected-btn'),
-                        label: 'ตรงตามระบบ (${baht(stats.expected)})',
-                        onPressed: () {
-                          final v = bahtInputText(stats.expected);
-                          bloc.add(ShiftCountedInputChanged(v));
-                        },
-                      ),
-                      if (state.countedInput.isNotEmpty)
-                        Btn(
-                          key: const ValueKey('shift-clear-counted-btn'),
-                          label: 'ล้างค่า',
-                          icon: 'x',
-                          kind: BtnKind.ghost,
-                          onPressed: () =>
-                              bloc.add(const ShiftCountedInputChanged('')),
-                        ),
-                      diffPill,
-                    ];
-                    return !isWide
-                        ? Wrap(
-                            spacing: 12,
-                            runSpacing: 12,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [...controls, closeBtn],
-                          )
-                        : Row(
-                            spacing: 12,
-                            children: [...controls, const Spacer(), closeBtn],
-                          );
-                  },
                 ),
               ],
             ),

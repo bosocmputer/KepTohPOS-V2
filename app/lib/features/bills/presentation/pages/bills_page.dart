@@ -15,7 +15,7 @@ List<Widget> buildBillsHeaderActions(BillsCubit cubit) {
   final state = cubit.state;
   return <Widget>[
     SizedBox(
-      width: 210,
+      width: 176,
       child: Dropdown<String>(
         key: const ValueKey('bills-date-dropdown'),
         value: state.selectedDate,
@@ -58,19 +58,19 @@ class BillsPage extends StatelessWidget {
     final screenW = MediaQuery.sizeOf(context).width;
     final isMobile = screenW <= AppDimensions.mobileBp;
     final pagePad = AppDimensions.pagePadding(screenW);
-    final boldInk = tt.bodyMedium?.copyWith(
+    final voided = state.voidedCount > 0;
+    const tabFeat = [FontFeature.tabularFigures()];
+    final tabular = tt.bodyMedium?.copyWith(
       color: t.ink,
-      fontWeight: FontWeight.w700,
+      fontFeatures: tabFeat,
     );
-    TextStyle? rowBold(BillRecord b) => tt.bodyMedium?.copyWith(
-      color: b.voided ? t.muted : t.ink,
-      fontWeight: FontWeight.w700,
-    );
+    final boldInk = tabular?.copyWith(fontWeight: FontWeight.w700);
+    TextStyle? rowBold(BillRecord b) =>
+        boldInk?.copyWith(color: b.voided ? t.muted : t.ink);
 
     return BlocListener<BillsCubit, BillsState>(
-      listenWhen: (prev, curr) =>
-          curr.toastMessage.isNotEmpty &&
-          curr.toastMessage != prev.toastMessage,
+      listenWhen: (p, c) =>
+          c.toastMessage.isNotEmpty && c.toastMessage != p.toastMessage,
       listener: (context, s) {
         showAppToast(context, s.toastMessage);
         context.read<BillsCubit>().clearToast();
@@ -95,7 +95,7 @@ class BillsPage extends StatelessWidget {
                   children: [
                     Stat(
                       label: 'ยอดขาย (${thDate(state.selectedDate)})',
-                      value: baht(state.totalSales),
+                      value: bahtSmart(state.totalSales),
                       sub: '${state.okBills.length} บิลที่ชำระสำเร็จ',
                       tone: StatTone.green,
                     ),
@@ -108,12 +108,10 @@ class BillsPage extends StatelessWidget {
                     Stat(
                       label: 'จำนวนบิล',
                       value: '${state.okBills.length}',
-                      sub: state.voidedCount > 0
+                      sub: voided
                           ? 'ยกเลิก ${state.voidedCount} บิล'
                           : 'ไม่มีบิลยกเลิก',
-                      tone: state.voidedCount > 0
-                          ? StatTone.red
-                          : StatTone.neutral,
+                      tone: voided ? StatTone.red : StatTone.neutral,
                     ),
                     Stat(
                       label: 'ลูกค้า (หัว)',
@@ -147,9 +145,10 @@ class BillsPage extends StatelessWidget {
                     DataTableCol<BillRecord>(
                       key: 'no',
                       label: 'เลขที่',
-                      flex: 2,
+                      flex: 3,
                       cellBuilder: (_, b) => Row(
                         mainAxisSize: MainAxisSize.min,
+                        spacing: AppDimensions.space1_5,
                         children: [
                           Flexible(
                             child: Text(
@@ -159,10 +158,10 @@ class BillsPage extends StatelessWidget {
                               style: rowBold(b),
                             ),
                           ),
-                          if (b.voided) ...[
-                            const SizedBox(width: AppDimensions.space1_5),
+                          if (b.isFullInvoice)
+                            const Pill(label: 'เต็มรูป', tone: PillTone.green),
+                          if (b.voided)
                             const Pill(label: 'ยกเลิก', tone: PillTone.red),
-                          ],
                           BillSyncBadge(billId: b.id),
                         ],
                       ),
@@ -170,19 +169,27 @@ class BillsPage extends StatelessWidget {
                     DataTableCol<BillRecord>(
                       key: 'at',
                       label: 'เวลา',
-                      cellBuilder: (_, b) => Text(thTime(b.at)),
+                      cellBuilder: (_, b) => Text(thTime(b.at), style: tabular),
                     ),
                     DataTableCol<BillRecord>(
                       key: 'table',
                       label: 'โต๊ะ',
-                      cellBuilder: (_, b) =>
-                          Text(b.tableName, style: rowBold(b)),
+                      cellBuilder: (_, b) => Text(
+                        b.tableName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: rowBold(b),
+                      ),
                     ),
                     DataTableCol<BillRecord>(
                       key: 'heads',
                       label: 'ลูกค้า',
-                      cellBuilder: (_, b) =>
-                          Text('${b.heads.a + b.heads.c + b.heads.f} คน'),
+                      cellBuilder: (_, b) => Text(
+                        '${b.heads.a + b.heads.c + b.heads.f} คน',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: tabular,
+                      ),
                     ),
                     DataTableCol<BillRecord>(
                       key: 'method',
@@ -190,13 +197,13 @@ class BillsPage extends StatelessWidget {
                       flex: 2,
                       cellBuilder: (_, b) => Row(
                         mainAxisSize: MainAxisSize.min,
+                        spacing: AppDimensions.space1_5,
                         children: [
                           AppIcon(
                             billsMethodIcon(b.methodType),
                             size: 14,
                             color: t.muted,
                           ),
-                          const SizedBox(width: AppDimensions.space1_5),
                           Flexible(
                             child: Text(
                               (b.bankAccountInfo ?? '').isNotEmpty
@@ -211,8 +218,11 @@ class BillsPage extends StatelessWidget {
                     DataTableCol<BillRecord>(
                       key: 'staff',
                       label: 'แคชเชียร์',
-                      flex: 2,
-                      cellBuilder: (_, b) => Text(b.staffName),
+                      cellBuilder: (_, b) => Text(
+                        b.staffName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     DataTableCol<BillRecord>(
                       key: 'total',
@@ -222,6 +232,7 @@ class BillsPage extends StatelessWidget {
                       cellBuilder: (_, b) => Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         mainAxisSize: MainAxisSize.min,
+                        spacing: AppDimensions.space1_5,
                         children: [
                           Text(
                             baht(b.total, 2),
@@ -232,8 +243,7 @@ class BillsPage extends StatelessWidget {
                                   : null,
                             ),
                           ),
-                          const SizedBox(width: AppDimensions.space1_5),
-                          Text('›', style: TextStyle(color: t.muted)),
+                          Text('›', style: tabular?.copyWith(color: t.muted)),
                         ],
                       ),
                     ),
@@ -256,10 +266,7 @@ class BillsPage extends StatelessWidget {
                           Text(
                             baht(state.totalSales, 2),
                             textAlign: TextAlign.right,
-                            style: tt.bodyMedium?.copyWith(
-                              color: t.successInk,
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: boldInk?.copyWith(color: t.successInk),
                           ),
                         ],
                 ),

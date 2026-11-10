@@ -59,9 +59,9 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
         case final SaleHeadsChanged e:
           _onHeadsChanged(e, emit);
         case final SaleAddonQtyChanged e:
-          _onAddonQtyChanged(e, emit);
+          _setAddonQty(e.addonId, e.qty, emit);
         case final SaleAddonIncremented e:
-          _onAddonIncremented(e, emit);
+          _setAddonQty(e.addonId, (state.ad[e.addonId] ?? 0) + 1, emit);
         case final SaleNotesSaved e:
           await _onNotesSaved(e, emit);
         case final SaleRoundSent e:
@@ -108,30 +108,19 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
     ),
   );
 
-  void _onAddonQtyChanged(SaleAddonQtyChanged event, Emitter<SaleState> emit) {
+  void _setAddonQty(String addonId, int rawQty, Emitter<SaleState> emit) {
     final addon = state.posState.addons
-        .where((x) => x.id == event.addonId)
+        .where((x) => x.id == addonId)
         .firstOrNull;
-    final clamped = math.min(math.max(0, event.qty), addon?.stock ?? event.qty);
+    final clamped = math.min(math.max(0, rawQty), addon?.stock ?? rawQty);
     final nextAd = Map<String, int>.from(state.ad);
     if (clamped > 0) {
-      nextAd[event.addonId] = clamped;
+      nextAd[addonId] = clamped;
     } else {
-      nextAd.remove(event.addonId);
+      nextAd.remove(addonId);
     }
     emit(state.copyWith(ad: Map<String, int>.unmodifiable(nextAd)));
   }
-
-  void _onAddonIncremented(
-    SaleAddonIncremented event,
-    Emitter<SaleState> emit,
-  ) => _onAddonQtyChanged(
-    SaleAddonQtyChanged(
-      addonId: event.addonId,
-      qty: (state.ad[event.addonId] ?? 0) + 1,
-    ),
-    emit,
-  );
 
   Future<void> _onNotesSaved(
     SaleNotesSaved event,

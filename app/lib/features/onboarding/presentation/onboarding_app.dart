@@ -31,6 +31,7 @@ class OnboardingApp extends StatefulWidget {
 class _OnboardingAppState extends State<OnboardingApp> {
   late DeviceSession? _session = widget.session;
   _Step _step = _Step.loading;
+  String _loadingText = 'กำลังเตรียมระบบหน้าร้าน...';
   String _code = '';
   bool _codeFromLink = false;
   String _error = '';
@@ -43,7 +44,10 @@ class _OnboardingAppState extends State<OnboardingApp> {
   }
 
   Future<void> _boot() async {
-    setState(() => _step = _Step.loading);
+    setState(() {
+      _loadingText = 'กำลังเตรียมระบบหน้าร้าน...';
+      _step = _Step.loading;
+    });
     try {
       final session = _session ??= await DeviceSession.start();
       final shopId = await session.pairedShopId();
@@ -92,6 +96,12 @@ class _OnboardingAppState extends State<OnboardingApp> {
   }
 
   Future<void> _enter(String shopId) async {
+    if (mounted) {
+      setState(() {
+        _loadingText = 'กำลังจัดเตรียมข้อมูลร้าน...';
+        _step = _Step.loading;
+      });
+    }
     final session = _session!;
     final repo = await session.openRepository(shopId);
     await configureDependencies(repository: repo, deviceSession: session);
@@ -163,8 +173,7 @@ class _OnboardingAppState extends State<OnboardingApp> {
     final session = _session;
     final children = switch (_step) {
       _Step.loading => <Widget>[
-        const OnboardingHeader(title: 'กำลังเปิดแอป…'),
-        const Center(child: CircularProgressIndicator()),
+        OnboardingLoadingCard(title: 'เก็บโต๊ะ POS', subtitle: _loadingText),
       ],
       _Step.failed => <Widget>[
         const OnboardingHeader(

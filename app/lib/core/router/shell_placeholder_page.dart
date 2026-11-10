@@ -143,6 +143,58 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
         viewId == 'setup' &&
         setupCubit?.state.itemCountOf(setupCubit.state.activeTab) != null;
 
+    final Widget body;
+    if (isSaleView) {
+      final page = SalePage(
+        staff: me,
+        onBackToTables: () => context.go('/tables'),
+        onSelectTable: (id) => context.go('/tables/$id'),
+        onRequestOpenShift: () => setState(() => _manualOpenShiftModal = true),
+      );
+      body = existingSaleBloc != null
+          ? page
+          : BlocProvider(
+              key: ValueKey('sale-bloc-${widget.saleTableId}'),
+              create: (_) => SaleBloc(
+                repo!,
+                initialTableId: widget.saleTableId!,
+                now: widget.now,
+              ),
+              child: page,
+            );
+    } else if (isTablesView) {
+      body = TablesPage(
+        onSelectTable: (id) => context.go('/tables/$id'),
+        onRequestOpenShift: () => setState(() => _manualOpenShiftModal = true),
+        onGoSetupTables: () => context.go('/setup'),
+      );
+    } else if (isBillsView) {
+      final page = BillsPage(staff: me);
+      body = billsCubit != null
+          ? page
+          : BlocProvider(
+              create: (_) => BillsCubit(
+                repo!,
+                now: widget.now,
+                initialDate: widget.billsDate,
+              ),
+              child: page,
+            );
+    } else {
+      body = buildAnalyticsOrPlaceholderBody(
+        context,
+        viewSpec: widget.viewSpec,
+        me: me,
+        tokens: tokens,
+        stockCubit: stockCubit,
+        shiftBloc: shiftBloc,
+        billsCubit: billsCubit,
+        existingDash: dashCubit,
+        existingRep: repCubit,
+        existingSetup: setupCubit,
+      );
+    }
+
     return Stack(
       children: [
         AppShell(
@@ -208,21 +260,7 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
             unawaited(authCubit?.logout());
             context.go('/login');
           },
-          child: _buildBody(
-            context,
-            viewId: viewId,
-            me: me,
-            repo: repo,
-            existingSaleBloc: existingSaleBloc,
-            tablesCubit: tablesCubit,
-            billsCubit: billsCubit,
-            stockCubit: stockCubit,
-            shiftBloc: shiftBloc,
-            dashCubit: dashCubit,
-            repCubit: repCubit,
-            setupCubit: setupCubit,
-            tokens: tokens,
-          ),
+          child: body,
         ),
         if (showOpenShiftModal)
           OpenShiftModal(
@@ -234,72 +272,6 @@ class _ShellPlaceholderPageState extends State<ShellPlaceholderPage> {
             },
           ),
       ],
-    );
-  }
-
-  Widget _buildBody(
-    BuildContext context, {
-    required String viewId,
-    required StaffMember me,
-    required PosRepository? repo,
-    required SaleBloc? existingSaleBloc,
-    required TablesCubit? tablesCubit,
-    required BillsCubit? billsCubit,
-    required StockCubit? stockCubit,
-    required ShiftBloc? shiftBloc,
-    required DashboardCubit? dashCubit,
-    required ReportsCubit? repCubit,
-    required SetupCubit? setupCubit,
-    required AppTokens tokens,
-  }) {
-    if (viewId == 'tables' &&
-        widget.saleTableId != null &&
-        (existingSaleBloc != null || repo != null)) {
-      final page = SalePage(
-        staff: me,
-        onBackToTables: () => context.go('/tables'),
-        onSelectTable: (id) => context.go('/tables/$id'),
-        onRequestOpenShift: () => setState(() => _manualOpenShiftModal = true),
-      );
-      return existingSaleBloc != null
-          ? page
-          : BlocProvider(
-              key: ValueKey('sale-bloc-${widget.saleTableId}'),
-              create: (_) => SaleBloc(
-                repo!,
-                initialTableId: widget.saleTableId!,
-                now: widget.now,
-              ),
-              child: page,
-            );
-    }
-    if (viewId == 'tables' && tablesCubit != null) {
-      return TablesPage(
-        onSelectTable: (id) => context.go('/tables/$id'),
-        onRequestOpenShift: () => setState(() => _manualOpenShiftModal = true),
-        onGoSetupTables: () => context.go('/setup'),
-      );
-    }
-    if (viewId == 'bills' && (billsCubit != null || repo != null)) {
-      final page = BillsPage(staff: me);
-      if (billsCubit != null) return page;
-      final d = widget.billsDate;
-      return BlocProvider(
-        create: (_) => BillsCubit(repo!, now: widget.now, initialDate: d),
-        child: page,
-      );
-    }
-    return buildAnalyticsOrPlaceholderBody(
-      context,
-      viewSpec: widget.viewSpec,
-      me: me,
-      tokens: tokens,
-      stockCubit: stockCubit,
-      shiftBloc: shiftBloc,
-      billsCubit: billsCubit,
-      existingDash: dashCubit,
-      existingRep: repCubit,
-      existingSetup: setupCubit,
     );
   }
 }

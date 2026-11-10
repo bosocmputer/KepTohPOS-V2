@@ -9,11 +9,12 @@ import 'package:app/features/reports/presentation/pages/reports_page.dart'
 import 'package:flutter/material.dart';
 
 /// Daily report table with a pinned left `วันที่` column and horizontally
-/// scrollable metric columns (`ReportsView` in `prototype/index.html:1593-1612`).
+/// scrollable metric columns (`ReportsView` in `prototype/index.html`).
 class DailyReportTable extends StatelessWidget {
-  const new({required this.report, super.key, this.onDayTap});
+  const new({required this.report, super.key, this.colMode, this.onDayTap});
 
   final MonthlyReportSummary report;
+  final String? colMode;
   final ValueChanged<String>? onDayTap;
 
   static const double _pinnedColWidth = 200;
@@ -33,7 +34,7 @@ class DailyReportTable extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final rows = report.reversedDays;
     if (rows.isEmpty) return const Empty(title: 'ไม่มีข้อมูลในเดือนนี้');
-    final cols = buildReportColumns(report, t);
+    final cols = buildReportColumns(report, t, colMode);
     final minRightW = cols.fold<double>(0, (a, c) => a + c.width);
     final headStyle = tt.labelSmall?.copyWith(
       color: t.muted,
@@ -47,6 +48,7 @@ class DailyReportTable extends StatelessWidget {
       color: t.ink,
       fontWeight: FontWeight.w700,
       fontSize: AppDimensions.fsSm,
+      fontFeatures: const [FontFeature.tabularFigures()],
     );
 
     return Semantics(
@@ -220,7 +222,11 @@ class DailyReportTable extends StatelessWidget {
         ),
       ),
       child: DefaultTextStyle.merge(
-        style: TextStyle(color: t.ink, fontSize: AppDimensions.fsSm),
+        style: TextStyle(
+          color: t.ink,
+          fontSize: AppDimensions.fsSm,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
         child: Row(
           children: [
             for (final col in cols) _rightCell(col.width * scale, col.cell(d)),

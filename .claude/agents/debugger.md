@@ -4,7 +4,7 @@ description: Use proactively when diagnosing bugs, test failures, build errors, 
 tools: Read, Edit, Grep, Glob, Bash
 disallowedTools: Write
 model: sonnet
-maxTurns: 10
+maxTurns: 18
 skills:
   - root-cause-debug
   - verification-before-completion

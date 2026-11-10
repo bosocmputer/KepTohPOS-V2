@@ -195,3 +195,66 @@ class OnboardingChoiceCard extends StatelessWidget {
     );
   }
 }
+
+/// Branded loading card matching the HTML boot loader during setup & load.
+class OnboardingLoadingCard extends StatelessWidget {
+  const new({required this.title, required this.subtitle, super.key});
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final tt = Theme.of(context).textTheme;
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.space6),
+      decoration: BoxDecoration(
+        color: t.surface,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        border: Border.all(color: t.line),
+        boxShadow: t.shadows,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppDimensions.space2_5),
+            decoration: BoxDecoration(
+              color: t.primarySoft,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+            ),
+            child: const BrandLogo(
+              size: AppDimensions.avatarLg,
+              radius: AppDimensions.radiusMd,
+            ),
+          ),
+          const SizedBox(height: AppDimensions.space4),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: tt.displayMedium?.copyWith(color: t.ink),
+          ),
+          const SizedBox(height: AppDimensions.space1_5),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: tt.bodySmall?.copyWith(color: t.muted),
+          ),
+          const SizedBox(height: AppDimensions.space5),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+            child: SizedBox(
+              width: 180,
+              child: LinearProgressIndicator(
+                minHeight: 5,
+                color: t.primary,
+                backgroundColor: t.primarySoft,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

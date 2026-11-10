@@ -1,3 +1,4 @@
+import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 
@@ -31,7 +32,7 @@ class _DevLowerSectionsState extends State<DevLowerSections> {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: 16,
+      spacing: AppDimensions.space4,
       children: [
         PosDataTable<(String, String, String)>(
           label: 'ตารางบิลตัวอย่าง',
@@ -52,6 +53,10 @@ class _DevLowerSectionsState extends State<DevLowerSections> {
           onChanged: (n) => setState(() => _page = n),
         ),
         PinDots(value: _pin),
+        const TickerMode(
+          enabled: false,
+          child: PinCheckingHint(label: 'กำลังตรวจสอบ PIN...'),
+        ),
         NumPad(
           value: _pin,
           maxLen: 4,
@@ -91,6 +96,26 @@ class _DevLowerSectionsState extends State<DevLowerSections> {
         MonthPicker(
           value: _month,
           onChanged: (v) => setState(() => _month = v),
+        ),
+        Wrap(
+          spacing: AppDimensions.space3,
+          runSpacing: AppDimensions.space2,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            const BrandLogo(),
+            const BrandLogoName(),
+            PendingBadge(onTap: () {}),
+          ],
+        ),
+        const ResponsiveFormRow(
+          left: Field(
+            label: 'ราคาขาย',
+            child: AppTextInput(value: '199', suffixText: '฿', readOnly: true),
+          ),
+          right: Field(
+            label: 'ต้นทุน',
+            child: AppTextInput(value: '120', suffixText: '฿', readOnly: true),
+          ),
         ),
       ],
     );

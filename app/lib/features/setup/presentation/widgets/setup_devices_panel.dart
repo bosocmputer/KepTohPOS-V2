@@ -126,9 +126,9 @@ class _SetupDevicesPanelState extends State<SetupDevicesPanel> {
         ),
         const SizedBox(height: AppDimensions.space3),
         if (session == null || _shopId == null)
-          const Text('ใช้ได้เมื่อเชื่อมต่อฐานข้อมูลของร้านจริง')
+          const Empty(title: 'ใช้ได้เมื่อเชื่อมต่อฐานข้อมูลของร้านจริง')
         else if (!session.isOwnerSignedIn)
-          const Text('เข้าสู่ระบบบัญชีเจ้าของร้านด้านบนก่อน')
+          const Empty(title: 'เข้าสู่ระบบบัญชีเจ้าของร้านด้านบนก่อน')
         else ...[
           _createRow(),
           if (_link != null) _linkCard(_link!),
@@ -176,7 +176,11 @@ class _SetupDevicesPanelState extends State<SetupDevicesPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          QrImageView(data: link, size: 160, backgroundColor: Colors.white),
+          QrImageView(
+            data: link,
+            size: 160,
+            backgroundColor: AppRawTokens.qrBg,
+          ),
           const SizedBox(height: AppDimensions.space2),
           SelectableText(
             link,
@@ -216,10 +220,12 @@ class _SetupDevicesPanelState extends State<SetupDevicesPanel> {
     future: _devices,
     builder: (context, snapshot) {
       if (snapshot.connectionState != ConnectionState.done) {
-        return const Center(child: CircularProgressIndicator());
+        return Center(
+          child: CircularProgressIndicator(color: context.tokens.primary),
+        );
       }
       if (snapshot.hasError) {
-        return const Text('โหลดรายชื่อเครื่องไม่ได้');
+        return const Empty(title: 'โหลดรายชื่อเครื่องไม่ได้');
       }
       return SetupDeviceTable(
         devices: snapshot.data!,
