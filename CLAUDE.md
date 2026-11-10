@@ -25,7 +25,7 @@ Inspect root manifest files (including monorepo subfolders such as `app/`, `supa
 
 | User Request / Task Pattern | Scope | Mandatory Subagent (`Agent` Tool) & Model Routing |
 | :--- | :--- | :--- |
-| **"โปรเจกต์นี้ใช้ React / NestJS / สร้าง PDF / MCP..."** | Stack setup / Skill install | Load `tech-stack-skills` and install 2–4 matching skills via `bash .claude/hooks/install-skill.sh` |
+| **Document / Tooling Capability (`pdf`, `docx`, `xlsx`, `pptx`, `mcp-builder`, `webapp-testing`)** | Specialized Tooling Skill | Load `tech-stack-skills` and install via `bash .claude/hooks/install-skill.sh` (do NOT install generic language skills like `react-expert` or `flutter-expert` unless explicitly requested) |
 | **"ทำต่อจากที่ค้างไว้ / โควต้าอีกฝั่งหมด"** | Cross-agent handoff | Load `auto-resume-handoff`, inspect `.agent-last-state.log` + `git status` + `TASK_STATE.md` (if present), and resume immediately |
 | **"สร้างระบบ... / เพิ่มฟีเจอร์..." (Broad/Ambiguous)** | Architectural / Multi-option | Load `common-ground` and confirm 3–4 concise assumptions in Thai before writing code |
 | **Trivial Edit (1–2 known files)** | **Trivial Task (1–2 files)** | Execute directly in the main window via surgical `Edit` + Tier 1 single-file test (do NOT spawn subagents for 1–2 file edits) |
@@ -70,11 +70,16 @@ Inspect root manifest files (including monorepo subfolders such as `app/`, `supa
 
 ---
 
-## 4. Evidence-Based Reporting (No Over-Claiming) & Session Proof Summary
-- Report only what was actually executed and verified in the current turn, citing the **exact command run** and **real terminal output**.
-- Explicitly state **"ยังไม่ได้รันทดสอบ"** for anything not executed (e.g., server not running or E2E skipped).
-- Never use exaggerated claims such as `"เสร็จสมบูรณ์ 100%"`, `"สมบูรณ์แบบ"`, or `"ไม่มีบั๊กแน่นอน"`.
-- **End-of-Task / Milestone Session Proof Report:** Whenever finishing a milestone, merging a PR, or running `/verify` or `/handoff` (do NOT run on trivial mid-task turns), execute `bash .claude/hooks/audit-session-proof.sh --brief` and include its 3-line `### 📊 ผลชี้วัด Agent Guard Template` output at the bottom of your final response.
+## 4. Evidence-Based Reporting (No Over-Claiming) & No Ceremony Overhead
+1. **No Over-Claiming (รายงานตามจริง):**
+   - Report only what was actually executed and verified in the current turn, citing the **exact command run** and **real terminal output**.
+   - Explicitly state **"ยังไม่ได้รันทดสอบ"** for anything not executed, unverified, or assumed.
+   - Never use exaggerated claims such as `"100%"`, `"สมบูรณ์แบบ"`, `"ไม่มีบั๊ก"`, or claim cached data is live.
+2. **No Ceremony Overhead (ไม่เพิ่มพิธีกรรม):**
+   - Do only what the task requires. Never create unrequested documentation files, extra approval steps, redundant checks, or unnecessary AI/subagent calls.
+   - Do not write long preambles or repetitive summaries. If a deterministic script or CLI command can do the job, use the script instead of calling AI.
+3. **End-of-Task / Milestone Session Proof Report:**
+   - Whenever finishing a milestone, merging a PR, or running `/verify` or `/handoff` (do NOT run on trivial mid-task turns), execute `bash .claude/hooks/audit-session-proof.sh --brief` and include its 3-line `### 📊 ผลชี้วัด Agent Guard Template` output at the bottom of your final response.
 
 ---
 

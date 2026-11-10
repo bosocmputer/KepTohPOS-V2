@@ -590,8 +590,8 @@ def scan_ag_transcript_file(t_path):
                                 info["firstPrompt"] = txt_c[:80]
                         except Exception:
                             pass
-                    elif not has_user_explicit and '"SYSTEM_MESSAGE"' in line and "sender=" in line:
-                        m_snd = re.search(r"sender=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", line)
+                    elif not has_user_explicit and (('"SYSTEM_MESSAGE"' in line and "sender=" in line) or ("You are a subagent" in line)):
+                        m_snd = re.search(r"(?:sender=|conversation_id is )([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", line)
                         if m_snd:
                             info["parentCid"] = m_snd.group(1)
                             info["isSubagent"] = True
@@ -646,7 +646,10 @@ def update_ag_session_cache(state_obj, cid, tpath):
                 break
 
     if scanned.get("isSubagent") or parent_cid:
+        ag_map.pop(cid, None)
         p_key = parent_cid or state_obj.get("lastConversationId") or "unknown"
+        if state_obj.get("lastConversationId") == cid and p_key != cid:
+            state_obj["lastConversationId"] = p_key
         p_entry = ag_map.setdefault(p_key, {"cid": p_key, "isParent": True, "subagents": {}})
         subs = p_entry.setdefault("subagents", {})
         s_entry = subs.setdefault(cid, {"cid": cid, "desk": "implementer", "model": "inherit"})
@@ -681,6 +684,7 @@ def update_ag_session_cache(state_obj, cid, tpath):
     subs = p_entry.setdefault("subagents", {})
     for idx, sp in enumerate(scanned["spawnedSubs"]):
         scid = sp["cid"]
+        ag_map.pop(scid, None)
         s_entry = subs.setdefault(scid, {"cid": scid})
         if sp.get("uri"):
             s_entry["uri"] = sp["uri"]
