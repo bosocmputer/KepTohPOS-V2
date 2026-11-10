@@ -1,11 +1,11 @@
 {
-    "name": "KepToh POS — จ่าโบ้หมูกะทะ",
-    "short_name": "KepToh POS",
+    "name": "เก็บโต๊ะ POS (KepToh POS)",
+    "short_name": "เก็บโต๊ะ POS",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#F97316",
-    "theme_color": "#F97316",
-    "description": "ระบบจัดการหน้าร้านและคำนวณกำไรบุฟเฟต์ KepToh POS (จ่าโบ้หมูกะทะ)",
+    "background_color": "#F4F4F5",
+    "theme_color": "#FF7A00",
+    "description": "เก็บโต๊ะ POS ระบบจัดการหน้าร้าน คุมสต็อกวัตถุดิบ และคำนวณกำไรรายวัน",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
