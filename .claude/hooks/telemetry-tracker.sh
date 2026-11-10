@@ -544,9 +544,165 @@ def extract_live_session_thoughts(root_dir, ag_conv_id="", active_eng="claude", 
     thoughts.reverse()
     return thoughts[:12], desk_thoughts
 
-def extract_session_proof_metrics(root_dir):
+def classify_ag_desk(sub_type, sub_role):
+    comb = (str(sub_type or "") + " " + str(sub_role or "")).lower()
+    if any(k in comb for k in ("explor", "research", "auditor", "scout")):
+        return "explorer"
+    if any(k in comb for k in ("debug", "fix", "strike")):
+        return "debugger"
+    if any(k in comb for k in ("review", "qa", "verif", "browser", "security")):
+        return "reviewer"
+    return "implementer"
+
+def scan_ag_transcript_file(t_path):
+    info = {
+        "turns": 0,
+        "steps": 0,
+        "tokens": 0,
+        "firstPrompt": "",
+        "parentCid": "",
+        "isSubagent": False,
+        "invokeSpecs": [],
+        "spawnedSubs": [],
+    }
+    if not t_path:
+        return info
+    cand = os.path.join(os.path.dirname(t_path), "transcript.jsonl")
+    use_p = cand if os.path.isfile(cand) else t_path
+    if not os.path.isfile(use_p):
+        return info
+    try:
+        has_user_explicit = False
+        with open(use_p, "r", encoding="utf-8", errors="ignore") as fp:
+            for idx, line in enumerate(fp):
+                info["steps"] += 1
+                if idx < 8:
+                    if '"USER_EXPLICIT"' in line and '"USER_INPUT"' in line:
+                        has_user_explicit = True
+                        try:
+                            uo = json.loads(line)
+                            raw_c = str(uo.get("content") or "")
+                            m_req = re.search(r"<USER_REQUEST>(.*?)</USER_REQUEST>", raw_c, flags=re.S)
+                            txt_c = m_req.group(1) if m_req else raw_c
+                            txt_c = re.sub(r"<[^>]+>.*?</[^>]+>", " ", txt_c, flags=re.S)
+                            txt_c = " ".join(txt_c.split()).strip()
+                            if txt_c:
+                                info["firstPrompt"] = txt_c[:80]
+                        except Exception:
+                            pass
+                    elif not has_user_explicit and '"SYSTEM_MESSAGE"' in line and "sender=" in line:
+                        m_snd = re.search(r"sender=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", line)
+                        if m_snd:
+                            info["parentCid"] = m_snd.group(1)
+                            info["isSubagent"] = True
+                if '"PLANNER_RESPONSE"' in line:
+                    try:
+                        obj = json.loads(line)
+                        if obj.get("type") == "PLANNER_RESPONSE":
+                            info["turns"] += 1
+                            info["tokens"] += int(obj.get("input_tokens") or 0) + int(obj.get("cache_read_tokens") or 0) + int(obj.get("output_tokens") or 0)
+                            for tc in (obj.get("tool_calls") or []):
+                                if isinstance(tc, dict) and tc.get("name") == "invoke_subagent":
+                                    args = tc.get("args") or {}
+                                    st = str(args.get("TypeName") or "self").strip('"').lower()
+                                    sm = str(args.get("Model") or ("flash" if "research" in st else "inherit")).strip('"').lower()
+                                    sr = str(args.get("Role") or st).strip('"')
+                                    info["invokeSpecs"].append({
+                                        "type": st,
+                                        "model": sm,
+                                        "role": sr,
+                                        "desk": classify_ag_desk(st, sr),
+                                    })
+                    except Exception:
+                        pass
+                elif "Created the following subagent:" in line:
+                    m_scid = re.search(r'\\"conversationId\\"\s*:\s*\\"([0-9a-f-]{36})\\"', line) or re.search(r'"conversationId"\s*:\s*"([0-9a-f-]{36})"', line)
+                    m_suri = re.search(r'\\"logAbsoluteUri\\"\s*:\s*\\"([^\\"]+)\\"', line) or re.search(r'"logAbsoluteUri"\s*:\s*"([^"]+)"', line)
+                    if m_scid:
+                        info["spawnedSubs"].append({
+                            "cid": m_scid.group(1),
+                            "uri": (m_suri.group(1) if m_suri else "").replace("file://", ""),
+                        })
+    except Exception:
+        pass
+    return info
+
+def update_ag_session_cache(state_obj, cid, tpath):
+    if not cid:
+        return False, "core"
+    ag_map = state_obj.get("agSessions")
+    if not isinstance(ag_map, dict):
+        ag_map = {}
+    scanned = scan_ag_transcript_file(tpath)
+    now_s = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now_ep = int(time.time())
+
+    # ตรวจสอบว่า cid นี้อยู่ในรายชื่อ subagents ของ parent ตัวใดหรือไม่
+    parent_cid = scanned.get("parentCid") or ""
+    if not parent_cid:
+        for p_id, p_val in ag_map.items():
+            if isinstance(p_val, dict) and cid in (p_val.get("subagents") or {}):
+                parent_cid = p_id
+                break
+
+    if scanned.get("isSubagent") or parent_cid:
+        p_key = parent_cid or state_obj.get("lastConversationId") or "unknown"
+        p_entry = ag_map.setdefault(p_key, {"cid": p_key, "isParent": True, "subagents": {}})
+        subs = p_entry.setdefault("subagents", {})
+        s_entry = subs.setdefault(cid, {"cid": cid, "desk": "implementer", "model": "inherit"})
+        if scanned["turns"] > 0:
+            s_entry["turns"] = scanned["turns"]
+            s_entry["steps"] = scanned["steps"]
+            s_entry["tokens"] = scanned["tokens"]
+        s_entry["mtime"] = now_s
+        p_entry["mtime"] = now_s
+        p_entry["epoch"] = now_ep
+        state_obj["agSessions"] = ag_map
+        return True, s_entry.get("desk") or "implementer"
+
+    # กรณีเป็น Parent Session
+    state_obj["lastConversationId"] = cid
+    if tpath:
+        state_obj["lastTranscriptPath"] = tpath
+    p_entry = ag_map.setdefault(cid, {"cid": cid, "isParent": True, "subagents": {}})
+    p_entry["isParent"] = True
+    p_entry["mtime"] = now_s
+    p_entry["epoch"] = now_ep
+    if tpath:
+        p_entry["transcriptPath"] = tpath
+    if scanned["turns"] > 0:
+        p_entry["turns"] = scanned["turns"]
+        p_entry["steps"] = scanned["steps"]
+        p_entry["tokens"] = scanned["tokens"]
+    if scanned["firstPrompt"]:
+        p_entry["firstPrompt"] = scanned["firstPrompt"]
+    if scanned["invokeSpecs"]:
+        p_entry["invokeSpecs"] = scanned["invokeSpecs"]
+    subs = p_entry.setdefault("subagents", {})
+    for idx, sp in enumerate(scanned["spawnedSubs"]):
+        scid = sp["cid"]
+        s_entry = subs.setdefault(scid, {"cid": scid})
+        if sp.get("uri"):
+            s_entry["uri"] = sp["uri"]
+            if os.path.isfile(sp["uri"]):
+                s_live = scan_ag_transcript_file(sp["uri"])
+                if s_live["turns"] > 0:
+                    s_entry["turns"] = s_live["turns"]
+                    s_entry["steps"] = s_live["steps"]
+                    s_entry["tokens"] = s_live["tokens"]
+        if idx < len(scanned["invokeSpecs"]):
+            spec = scanned["invokeSpecs"][idx]
+            s_entry["type"] = spec["type"]
+            s_entry["model"] = spec["model"]
+            s_entry["role"] = spec["role"]
+            s_entry["desk"] = spec["desk"]
+    state_obj["agSessions"] = ag_map
+    return False, "core"
+
+def extract_session_proof_metrics(root_dir, state_obj=None):
     proof = {
         "sessionId": "none",
+        "engine": "claude",
         "opusTurns": 0,
         "sonnetTurns": 0,
         "haikuTurns": 0,
@@ -555,6 +711,42 @@ def extract_session_proof_metrics(root_dir):
         "subagentByDesk": {"explorer": 0, "implementer": 0, "debugger": 0, "reviewer": 0},
         "offloadPct": 0,
     }
+    state_obj = state_obj or {}
+    ag_map = state_obj.get("agSessions") if isinstance(state_obj.get("agSessions"), dict) else {}
+    last_cid = state_obj.get("lastConversationId") or ""
+    last_tpath = state_obj.get("lastTranscriptPath") or ""
+    if state_obj.get("activeEngine") == "antigravity" and (last_cid or last_tpath):
+        if last_cid and last_cid not in ag_map and last_tpath:
+            update_ag_session_cache(state_obj, last_cid, last_tpath)
+            ag_map = state_obj.get("agSessions") or {}
+        p_cid = last_cid if last_cid in ag_map else (next(iter(ag_map.keys()), "") if ag_map else "")
+        if p_cid and p_cid in ag_map:
+            p_info = ag_map[p_cid]
+            proof["sessionId"] = p_cid[:8]
+            proof["engine"] = "antigravity"
+            proof["opusTurns"] = int(p_info.get("turns") or 0)
+            specs = p_info.get("invokeSpecs") or []
+            subs = p_info.get("subagents") or {}
+            proof["subagentCalls"] = max(len(specs), len(subs))
+            proof["subagentFiles"] = len(subs)
+            for sp in specs:
+                dk = sp.get("desk") or "implementer"
+                proof["subagentByDesk"][dk] = proof["subagentByDesk"].get(dk, 0) + 1
+            for scid, sinfo in subs.items():
+                sturns = int(sinfo.get("turns") or 0)
+                if sturns == 0 and sinfo.get("uri") and os.path.isfile(sinfo["uri"]):
+                    s_scan = scan_ag_transcript_file(sinfo["uri"])
+                    sturns = s_scan["turns"]
+                smod = str(sinfo.get("model") or "inherit").lower()
+                if "flash" in smod:
+                    proof["haikuTurns"] += sturns
+                else:
+                    proof["sonnetTurns"] += sturns
+            tot_ag = proof["opusTurns"] + proof["sonnetTurns"] + proof["haikuTurns"]
+            if tot_ag > 0:
+                proof["offloadPct"] = round(((proof["sonnetTurns"] + proof["haikuTurns"]) * 100.0) / tot_ag, 1)
+            return proof
+
     slug = re.sub(r"[^A-Za-z0-9-]", "-", os.path.realpath(root_dir))
     proj_dir = os.path.expanduser(f"~/.claude/projects/{slug}")
     if not os.path.isdir(proj_dir):
@@ -658,19 +850,29 @@ if mode_type == "stdin":
     state["activeEngine"] = engine
     if payload.get("modelName") and payload.get("modelName") != "auto":
         state["activeModel"] = str(payload["modelName"])
-    if payload.get("conversationId"):
-        state["lastConversationId"] = str(payload["conversationId"])
-    if payload.get("transcriptPath"):
-        state["lastTranscriptPath"] = str(payload["transcriptPath"])
+    is_ag_sub = False
+    ag_sub_desk = "core"
+    if engine == "antigravity" and payload.get("conversationId"):
+        is_ag_sub, ag_sub_desk = update_ag_session_cache(
+            state,
+            str(payload["conversationId"]),
+            str(payload.get("transcriptPath") or ""),
+        )
+    else:
+        if payload.get("conversationId"):
+            state["lastConversationId"] = str(payload["conversationId"])
+        if payload.get("transcriptPath"):
+            state["lastTranscriptPath"] = str(payload["transcriptPath"])
+    state["lastIsSubagent"] = bool(is_ag_sub)
 
     prompt_txt = payload.get("prompt") or payload.get("lastUserInput") or ""
-    if prompt_txt:
+    if prompt_txt and not is_ag_sub:
         clean_p = clean_prompt_text(prompt_txt)
         if clean_p:
             state["currentTask"] = clean_p
 
     if stage == "prompt":
-        state["activeNode"] = "core"
+        state["activeNode"] = ag_sub_desk if is_ag_sub else "core"
         if engine == "claude" and not payload.get("modelName"):
             state["activeModel"] = "opus"
         state["systemStatus"] = "working"
@@ -1024,7 +1226,7 @@ else:
     if hook_arg:
         push_used_item("HOOK", os.path.basename(hook_arg), hook_arg.split(" ")[0], node, clean_detail or "")
 
-state["sessionProof"] = extract_session_proof_metrics(project_root)
+state["sessionProof"] = extract_session_proof_metrics(project_root, state)
 if state["sessionProof"].get("subagentCalls", 0) > int(stats.get("subagentSpawns", 0)):
     stats["subagentSpawns"] = state["sessionProof"]["subagentCalls"]
 state["stats"] = stats
@@ -1102,7 +1304,11 @@ if [ "$MODE_TYPE" = "stdin" ] && [ "$ENGINE" = "antigravity" ]; then
   if [ "$HOOK_STAGE" = "read" ] || [ "$HOOK_STAGE" = "stop" ] || [ "$HOOK_STAGE" = "agent" ]; then
     printf '{"decision":"allow"}\n'
   elif [ "$HOOK_STAGE" = "prompt" ]; then
-    printf '{"injectSteps":[{"systemMessage":{"systemMessage":"[MODEL-ROUTING AUTHORIZED]: ผู้ใช้สั่งอนุญาตให้เรียกใช้ invoke_subagent ทันทีสำหรับก้อนงานหลายขั้นตอน (สำรวจ >3 ไฟล์ ➔ TypeName=research, Model=flash, Role=Explorer | เขียนโค้ดหลายไฟล์+เทสต์ย่อย ➔ TypeName=self, Model=inherit, Role=Surgical Implementer | ซ่อมบั๊ก ➔ TypeName=self, Role=2-Strike Debugger | ทดสอบเว็บ/E2E ➔ TypeName=browser, Role=QA Verifier) เพื่อรักษา Context หน้าต่างหลัก"}}]}\n'
+    if grep -q '"lastIsSubagent"[[:space:]]*:[[:space:]]*true' "$TELEMETRY_FILE" 2>/dev/null; then
+      printf '{}\n'
+    else
+      printf '{"injectSteps":[{"systemMessage":{"systemMessage":"[MODEL-ROUTING AUTHORIZED]: ผู้ใช้สั่งอนุญาตให้เรียกใช้ invoke_subagent ทันทีสำหรับก้อนงานหลายขั้นตอน (สำรวจ >3 ไฟล์ ➔ TypeName=research, Model=flash, Role=Explorer | เขียนโค้ดหลายไฟล์+เทสต์ย่อย ➔ TypeName=self, Model=inherit, Role=Surgical Implementer | ซ่อมบั๊ก ➔ TypeName=self, Role=2-Strike Debugger | ทดสอบเว็บ/E2E ➔ TypeName=browser, Role=QA Verifier) เพื่อรักษา Context หน้าต่างหลัก"}}]}\n'
+    fi
   else
     printf '{}\n'
   fi

@@ -13,6 +13,8 @@ else
 fi
 
 if [ -n "$FILE_PATH" ]; then
+  # ล้างประวัติการรันคำสั่งซ้ำเมื่อมีการแก้ไขไฟล์โค้ดจริง เพื่อให้รัน analyze/test ซ้ำหลังแก้โค้ดได้โดยไม่ติด Circuit Breaker
+  rm -f "/tmp/claude_cmd_history_$(pwd | cksum | cut -d' ' -f1).log" 2>/dev/null || true
   DIFF_STAT=""
   if command -v git >/dev/null 2>&1; then
     DIFF_STAT=$(git --no-optional-locks diff --numstat -- "$FILE_PATH" 2>/dev/null | awk '{printf "+%s/-%s บรรทัด", $1, $2}')

@@ -28,6 +28,7 @@ fi
 # 1) ตรวจจับการเขียน/แก้ไขไฟล์ผ่านสคริปต์ใน Bash (เช่น open(...,'w'), p='...'; open(p,'w'), cat > path <<'EOF', sed -i)
 WRITE_TARGET=""
 if echo "$COMMAND" | grep -qE "(open\([^)]*,[[:space:]]*['\"]w|cat[[:space:]]*>+[[:space:]]*[^[:space:]<]+|cat[[:space:]]+<<[^>]*>[[:space:]]*[^[:space:]]+|sed[[:space:]]+-i)"; then
+  rm -f "/tmp/claude_cmd_history_$(pwd | cksum | cut -d' ' -f1).log" 2>/dev/null || true
   WRITE_TARGET=$(echo "$COMMAND" | grep -oE "[A-Za-z0-9_./-]+\.(dart|sql|ts|tsx|js|jsx|py|go|rs|sh|md|json|yaml|yml)" | head -1)
   if [ -z "$WRITE_TARGET" ]; then
     WRITE_TARGET="source-file"
@@ -44,8 +45,17 @@ if [ -z "$WRITE_TARGET" ] && echo "$COMMAND" | grep -qE '^([[:space:]]*cd[[:spac
 fi
 
 STATE_FILE="/tmp/claude_cmd_history_$(pwd | cksum | cut -d' ' -f1).log"
+# สำหรับ Antigravity แยกสถานะ Sandbox vs BypassSandbox เพื่อไม่ให้กฎ "Try Sandboxed First" ถูกนับเป็นลูปซ้ำ
+SANDBOX_PREFIX=""
+if [ "$MODE" = "antigravity" ]; then
+  if echo "$INPUT" | grep -qE '"BypassSandbox"[[:space:]]*:[[:space:]]*true'; then
+    SANDBOX_PREFIX="[unsandboxed] "
+  else
+    SANDBOX_PREFIX="[sandboxed] "
+  fi
+fi
 # บีบอัดคำสั่งหลายบรรทัดให้เป็น 1 บรรทัดก่อนบันทึกนับลูป
-ONE_LINE_CMD=$(echo "$COMMAND" | tr '\n' ' ' | sed -E 's/[[:space:]]+/ /g' | cut -c1-240)
+ONE_LINE_CMD="${SANDBOX_PREFIX}$(echo "$COMMAND" | tr '\n' ' ' | sed -E 's/[[:space:]]+/ /g' | cut -c1-240)"
 echo "$ONE_LINE_CMD" >> "$STATE_FILE"
 tail -n 6 "$STATE_FILE" > "${STATE_FILE}.tmp" && mv "${STATE_FILE}.tmp" "$STATE_FILE"
 
