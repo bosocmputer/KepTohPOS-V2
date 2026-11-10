@@ -58,6 +58,7 @@ class BusyOverlay extends StatelessWidget {
                           ),
                           child: const WalkingOrangeLoader(
                             label: 'กำลังประมวลผล…',
+                            isOverlay: true,
                           ),
                         ),
                       ),

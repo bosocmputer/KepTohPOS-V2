@@ -1,18 +1,20 @@
+import 'package:app/core/data/supabase/network_activity.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
 /// Centered walking-orange Lottie animation used across loading states.
 class WalkingOrangeLoader extends StatelessWidget {
-  const new({this.size = 210, this.label, super.key});
+  const new({this.size = 210, this.label, this.isOverlay = false, super.key});
 
   final double size;
   final String? label;
+  final bool isOverlay;
 
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    return Column(
+    final content = Column(
       key: const ValueKey('walking-orange-loader'),
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -49,6 +51,14 @@ class WalkingOrangeLoader extends StatelessWidget {
           ),
         ],
       ],
+    );
+    if (isOverlay) return content;
+    return ValueListenableBuilder<bool>(
+      valueListenable: NetworkActivity.instance.busy,
+      builder: (context, isBusy, _) {
+        if (isBusy) return SizedBox(width: size, height: size * 0.78);
+        return content;
+      },
     );
   }
 }

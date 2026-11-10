@@ -149,17 +149,20 @@ class PosDataTable<T> extends StatelessWidget {
                           child: Row(
                             children: [
                               for (var i = 0; i < footerCells!.length; i++)
-                                Expanded(
-                                  flex: footerCells!.length == columns.length
-                                      ? columns[i].flex
-                                      : 1,
-                                  child: Align(
-                                    alignment: i < columns.length
-                                        ? _alignment(columns[i].align)
-                                        : Alignment.centerLeft,
-                                    child: footerCells![i],
+                                if (footerCells!.length == columns.length)
+                                  _wrapCell(columns[i], footerCells![i])
+                                else
+                                  Expanded(
+                                    flex: i < columns.length
+                                        ? columns[i].flex
+                                        : 1,
+                                    child: Align(
+                                      alignment: i < columns.length
+                                          ? _alignment(columns[i].align)
+                                          : Alignment.centerLeft,
+                                      child: footerCells![i],
+                                    ),
                                   ),
-                                ),
                             ],
                           ),
                         ),

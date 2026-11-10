@@ -192,14 +192,14 @@ class _ReportsPageState extends State<ReportsPage> {
                 children: [
                   Toolbar(
                     end: [
-                      if (partialFixed)
+                      if (!taxTab && partialFixed)
                         const Pill(
                           key: ValueKey('reports-partial-fixed-pill'),
                           tone: PillTone.orange,
                           label: 'หักค่าคงที่ยังไม่ครบเดือน',
                         ),
                       if (taxTab) salesTaxExportButton(_taxExport),
-                      PendingBadge(onTap: widget.onGoSetupCosting),
+                      if (!taxTab) PendingBadge(onTap: widget.onGoSetupCosting),
                     ],
                     children: [
                       if (isMobile) buildReportsMonthDropdown(cubit),
