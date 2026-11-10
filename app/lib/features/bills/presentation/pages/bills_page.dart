@@ -135,12 +135,24 @@ class BillsPage extends StatelessWidget {
                 PosDataTable<BillRecord>(
                   rows: state.pagedBills,
                   onRowTap: (b) => cubit.selectBill(b.id),
-                  empty: Empty(
-                    title: 'ไม่มีบิล',
-                    text: state.olderFailed
-                        ? 'ต้องออนไลน์เพื่อดูบิลย้อนหลัง'
-                        : 'ยังไม่มีรายการขายตามเงื่อนไขที่เลือก',
-                  ),
+                  empty: state.loading
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(
+                            vertical: AppDimensions.space6,
+                          ),
+                          child: Center(
+                            child: WalkingOrangeLoader(
+                              size: 110,
+                              label: 'กำลังโหลดบิล…',
+                            ),
+                          ),
+                        )
+                      : Empty(
+                          title: 'ไม่มีบิล',
+                          text: state.olderFailed
+                              ? 'ต้องออนไลน์เพื่อดูบิลย้อนหลัง'
+                              : 'ยังไม่มีรายการขายตามเงื่อนไขที่เลือก',
+                        ),
                   columns: [
                     DataTableCol<BillRecord>(
                       key: 'no',

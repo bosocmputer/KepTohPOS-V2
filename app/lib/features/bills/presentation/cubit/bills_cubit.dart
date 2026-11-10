@@ -39,26 +39,35 @@ class BillsCubit extends Cubit<BillsState> {
   }
 
   void setDate(String date) {
+    final isOlder =
+        state.posState.rawFrom != null &&
+        date.compareTo(state.posState.rawFrom!) < 0;
     emit(
       state.copyWith(
         selectedDate: date,
         page: 1,
         olderBills: const <BillRecord>[],
         olderFailed: false,
+        loading: isOlder,
       ),
     );
-    if (state.isOlderDay) unawaited(_loadOlder(date));
+    if (isOlder) unawaited(_loadOlder(date));
   }
 
   Future<void> _loadOlder(String date) async {
+    if (!state.loading && !isClosed && state.selectedDate == date) {
+      emit(state.copyWith(loading: true));
+    }
     try {
       final bills = await _repository.billsForDay(date);
       if (!isClosed && state.selectedDate == date) {
-        emit(state.copyWith(olderBills: bills, olderFailed: false));
+        emit(
+          state.copyWith(olderBills: bills, olderFailed: false, loading: false),
+        );
       }
     } on Object {
       if (!isClosed && state.selectedDate == date) {
-        emit(state.copyWith(olderFailed: true));
+        emit(state.copyWith(olderFailed: true, loading: false));
       }
     }
   }

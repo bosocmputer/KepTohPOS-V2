@@ -1,4 +1,5 @@
 import 'package:app/core/data/local/outbox_queue.dart';
+import 'package:app/core/data/supabase/network_activity.dart';
 import 'package:app/core/data/supabase/supabase_pos_base.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/domain/pos_command_exception.dart';
@@ -23,13 +24,15 @@ mixin SupabasePosOffline on SupabasePosBase {
     if (queue != null && await queue.pendingCount() > 0) {
       return await _queue(queue, fn, id, params, local);
     }
-    try {
-      await staffRpc<Object?>(fn, params);
-    } on PosOfflineException {
-      if (queue == null) rethrow;
-      return await _queue(queue, fn, id, params, local);
-    }
-    return await reload();
+    return await NetworkActivity.instance.hold(() async {
+      try {
+        await staffRpc<Object?>(fn, params);
+      } on PosOfflineException {
+        if (queue == null) rethrow;
+        return await _queue(queue, fn, id, params, local);
+      }
+      return await reload();
+    });
   }
 
   Future<PosState> _queue(

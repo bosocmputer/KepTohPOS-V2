@@ -218,41 +218,13 @@ class OnboardingLoadingCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.all(AppDimensions.space2_5),
-            decoration: BoxDecoration(
-              color: t.primarySoft,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-            ),
-            child: const BrandLogo(
-              size: AppDimensions.avatarLg,
-              radius: AppDimensions.radiusMd,
-            ),
-          ),
-          const SizedBox(height: AppDimensions.space4),
           Text(
             title,
             textAlign: TextAlign.center,
             style: tt.displayMedium?.copyWith(color: t.ink),
           ),
-          const SizedBox(height: AppDimensions.space1_5),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: tt.bodySmall?.copyWith(color: t.muted),
-          ),
-          const SizedBox(height: AppDimensions.space5),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-            child: SizedBox(
-              width: 180,
-              child: LinearProgressIndicator(
-                minHeight: 5,
-                color: t.primary,
-                backgroundColor: t.primarySoft,
-              ),
-            ),
-          ),
+          const SizedBox(height: AppDimensions.space3),
+          WalkingOrangeLoader(size: 120, label: subtitle),
         ],
       ),
     );

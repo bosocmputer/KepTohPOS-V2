@@ -154,20 +154,28 @@ class _LoginFormPanel extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppDimensions.space1_5),
-        Dropdown<String>(
-          label: 'พนักงาน',
-          value: state.selectedStaffId,
-          options: state.staff
-              .map(
-                (x) => DropdownOption<String>(
-                  value: x.id,
-                  label: x.name,
-                  sub: kRoles[x.role] ?? x.role,
-                ),
-              )
-              .toList(),
-          leadingBuilder: (o) => Avatar(name: o.label),
-          onChanged: cubit.selectStaff,
+        IgnorePointer(
+          ignoring: state.checking,
+          child: Opacity(
+            opacity: state.checking ? 0.6 : 1,
+            child: Dropdown<String>(
+              label: 'พนักงาน',
+              value: state.selectedStaffId,
+              options: state.staff
+                  .map(
+                    (x) => DropdownOption<String>(
+                      value: x.id,
+                      label: x.name,
+                      sub: kRoles[x.role] ?? x.role,
+                    ),
+                  )
+                  .toList(),
+              leadingBuilder: (o) => Avatar(name: o.label),
+              onChanged: (id) {
+                if (!state.checking) cubit.selectStaff(id);
+              },
+            ),
+          ),
         ),
         SizedBox(height: tight ? AppDimensions.space2_5 : AppDimensions.space4),
         PinDots(

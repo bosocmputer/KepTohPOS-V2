@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:app/core/theme/tokens.dart';
+import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/sale/presentation/widgets/receipt_card.dart';
 import 'package:app/features/sale/presentation/widgets/receipt_fresh_banner.dart';
 import 'package:app/features/sale/presentation/widgets/table_summary_modal.dart';
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 
 export 'package:app/features/sale/presentation/widgets/receipt_card.dart';
 export 'package:app/features/sale/presentation/widgets/table_summary_modal.dart';
@@ -51,9 +55,40 @@ class ReceiptModal extends StatefulWidget {
   State<ReceiptModal> createState() => _ReceiptModalState();
 }
 
-class _ReceiptModalState extends State<ReceiptModal> {
+class _ReceiptModalState extends State<ReceiptModal>
+    with SingleTickerProviderStateMixin {
   bool _voiding = false;
   String _reason = '';
+  late bool _showConfetti = widget.fresh && !widget.bill.isSlipPreview;
+  Timer? _confettiTimer;
+  AnimationController? _confettiCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_showConfetti) {
+      _confettiCtrl = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 1350),
+      )..forward();
+      _confettiTimer = Timer(const Duration(milliseconds: 1350), _skipConfetti);
+    }
+  }
+
+  void _skipConfetti() {
+    _confettiTimer?.cancel();
+    _confettiCtrl?.stop();
+    if (mounted && _showConfetti) {
+      setState(() => _showConfetti = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _confettiTimer?.cancel();
+    _confettiCtrl?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,8 +128,10 @@ class _ReceiptModalState extends State<ReceiptModal> {
             child: Modal(
               title: title,
               onClose: widget.onDone,
-              footerLeading: _voiding ? _buildVoidConfirmBox(t, tt) : null,
-              footer: _voiding
+              footerLeading: !_showConfetti && _voiding
+                  ? _buildVoidConfirmBox(t, tt)
+                  : null,
+              footer: _showConfetti || _voiding
                   ? const <Widget>[]
                   : [
                       if (canCancelTable)
@@ -134,23 +171,94 @@ class _ReceiptModalState extends State<ReceiptModal> {
                         onPressed: widget.onDone,
                       ),
                     ],
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (widget.fresh && !bill.isSlipPreview) ...[
-                    ReceiptFreshBanner(bill: bill),
-                    const SizedBox(height: AppDimensions.space3),
-                  ],
-                  ReceiptCard(
-                    shop: widget.shop,
-                    bill: bill,
-                    isCopy: widget.isCopy ?? !widget.fresh,
-                    replacesNo: widget.replacesNo,
-                  ),
-                ],
-              ),
+              child: _showConfetti
+                  ? _buildConfettiView(t, tt, bill)
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (widget.fresh && !bill.isSlipPreview) ...[
+                          ReceiptFreshBanner(bill: bill),
+                          const SizedBox(height: AppDimensions.space3),
+                        ],
+                        ReceiptCard(
+                          shop: widget.shop,
+                          bill: bill,
+                          isCopy: widget.isCopy ?? !widget.fresh,
+                          replacesNo: widget.replacesNo,
+                        ),
+                      ],
+                    ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildConfettiView(AppTokens t, TextTheme tt, BillRecord bill) {
+    final methodLabel = bill.methodName.isNotEmpty
+        ? bill.methodName
+        : (bill.methodType == 'qr' ? 'พร้อมเพย์ QR' : 'เงินสด');
+    return GestureDetector(
+      key: const ValueKey('payment-success-confetti'),
+      behavior: HitTestBehavior.opaque,
+      onTap: _skipConfetti,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppDimensions.space5),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Lottie.asset(
+              'assets/success_confetti.json',
+              controller: _confettiCtrl,
+              width: 180,
+              height: 180,
+              repeat: false,
+              fit: BoxFit.contain,
+              errorBuilder: (_, _, _) =>
+                  Icon(Icons.check_circle_rounded, size: 96, color: t.success),
+            ),
+            const SizedBox(height: AppDimensions.space2),
+            Text(
+              'รับเงินเรียบร้อย',
+              style: tt.headlineSmall?.copyWith(
+                color: t.success,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: AppDimensions.space1),
+            Text(
+              'ชำระผ่าน $methodLabel · ${bahtSmart(bill.total)}',
+              style: tt.bodyMedium?.copyWith(color: t.ink),
+            ),
+            if (bill.methodType == 'cash' && bill.change > 0) ...[
+              const SizedBox(height: AppDimensions.space3),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.space4,
+                  vertical: AppDimensions.space2,
+                ),
+                decoration: BoxDecoration(
+                  color: t.successSoft,
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+                  border: Border.all(color: t.success),
+                ),
+                child: Text(
+                  'เงินทอน ${bahtSmart(bill.change)}',
+                  style: tt.titleMedium?.copyWith(
+                    color: t.success,
+                    fontWeight: FontWeight.w800,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: AppDimensions.space4),
+            Text(
+              'แตะเพื่อดูใบเสร็จทันที',
+              style: tt.bodySmall?.copyWith(color: t.muted),
+            ),
+          ],
         ),
       ),
     );

@@ -263,8 +263,8 @@ class _SalesTaxReportTabState extends State<SalesTaxReportTab> {
       );
     }
     if (rows == null) {
-      return Center(
-        child: CircularProgressIndicator(color: context.tokens.primary),
+      return const Center(
+        child: WalkingOrangeLoader(size: 110, label: 'กำลังโหลดข้อมูล…'),
       );
     }
     return Column(

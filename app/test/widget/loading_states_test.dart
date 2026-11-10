@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app/core/data/mock_pos_repository.dart';
+import 'package:app/core/data/supabase/network_activity.dart';
 import 'package:app/core/theme/app_theme.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
@@ -50,15 +51,47 @@ void main() {
         .byType(LinearProgressIndicator)
         .evaluate()
         .length;
+    final loadersWhileBusy = find.byType(WalkingOrangeLoader).evaluate().length;
     busy.value = false;
     await tester.pump();
     await tester.tap(find.text('ชำระเงิน'));
 
     // Assert
     expect(barsWhileBusy, 1);
+    expect(loadersWhileBusy, 1);
     expect(find.byType(LinearProgressIndicator), findsNothing);
+    expect(find.byType(WalkingOrangeLoader), findsNothing);
     expect(taps, 1);
   });
+
+  test(
+    'NetworkActivity.instance.hold keeps busy true across sequential gaps',
+    () async {
+      // Arrange
+      final activity = NetworkActivity();
+      addTearDown(activity.close);
+      final transitions = <bool>[];
+      activity.busy.addListener(() => transitions.add(activity.busy.value));
+
+      // Act
+      final result = await NetworkActivity.instance.hold(() async {
+        activity.begin();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        activity.end();
+        // Gap between sequential async calls (e.g. staffRpc -> reload)
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        activity.begin();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        activity.end();
+        return 'ok';
+      });
+
+      // Assert
+      expect(result, 'ok');
+      expect(activity.busy.value, isFalse);
+      expect(transitions, <bool>[true, false]);
+    },
+  );
 
   testWidgets('PIN setup shows progress while the shop is created', (
     tester,

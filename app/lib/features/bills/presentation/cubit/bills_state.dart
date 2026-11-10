@@ -19,6 +19,7 @@ class BillsState extends Equatable {
     this.now,
     this.olderBills = const <BillRecord>[],
     this.olderFailed = false,
+    this.loading = false,
   });
 
   static const int perPage = 10;
@@ -40,6 +41,9 @@ class BillsState extends Equatable {
 
   /// The on-demand fetch for [selectedDate] failed (offline).
   final bool olderFailed;
+
+  /// Whether older bills are currently being fetched for [selectedDate].
+  final bool loading;
 
   /// Whether [selectedDate] is older than the raw bills in [posState].
   bool get isOlderDay =>
@@ -178,6 +182,7 @@ class BillsState extends Equatable {
     DateTime? now,
     List<BillRecord>? olderBills,
     bool? olderFailed,
+    bool? loading,
   }) => BillsState(
     posState: posState ?? this.posState,
     selectedDate: selectedDate ?? this.selectedDate,
@@ -194,6 +199,7 @@ class BillsState extends Equatable {
     now: now ?? this.now,
     olderBills: olderBills ?? this.olderBills,
     olderFailed: olderFailed ?? this.olderFailed,
+    loading: loading ?? this.loading,
   );
 
   @override
@@ -211,5 +217,6 @@ class BillsState extends Equatable {
     now,
     olderBills,
     olderFailed,
+    loading,
   ];
 }

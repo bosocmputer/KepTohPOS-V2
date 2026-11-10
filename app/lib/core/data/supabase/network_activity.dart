@@ -8,7 +8,14 @@ import 'package:http/http.dart' as http;
 /// Every Supabase client on the device shares one instance, so the screen can
 /// show that it is waiting and block a second tap that would repeat a sale.
 class NetworkActivity extends http.BaseClient {
-  new([http.Client? inner]) : _inner = inner ?? http.Client();
+  new([http.Client? inner]) : _inner = inner ?? http.Client() {
+    instance = this;
+  }
+
+  new _default() : _inner = http.Client();
+
+  /// The active shared [NetworkActivity] instance on this device.
+  static NetworkActivity instance = NetworkActivity._default();
 
   final http.Client _inner;
   final ValueNotifier<bool> _busy = ValueNotifier<bool>(false);
@@ -27,6 +34,24 @@ class NetworkActivity extends http.BaseClient {
   /// device changed data) must not block taps, e.g. a PIN being typed.
   Future<T> quietly<T>(Future<T> Function() body) =>
       runZoned(body, zoneValues: {#networkActivityQuiet: true});
+
+  /// Holds [busy] as `true` across sequential async operations in [action] so
+  /// multi-step flows do not flicker `true -> false -> true`.
+  Future<T> hold<T>(Future<T> Function() action) async {
+    final quiet = Zone.current[#networkActivityQuiet] == true;
+    if (!quiet) begin();
+    try {
+      return await action();
+    } finally {
+      if (!quiet) end();
+    }
+  }
+
+  /// Increments the in-flight counter and marks [busy] as `true`.
+  void begin() => _start();
+
+  /// Decrements the in-flight counter and updates [busy].
+  void end() => _end();
 
   void _start() => _busy.value = ++_pending > 0;
 

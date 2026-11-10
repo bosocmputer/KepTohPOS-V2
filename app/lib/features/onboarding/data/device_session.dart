@@ -229,7 +229,7 @@ class DeviceSession {
     required String shopName,
     required String ownerName,
     required String pin,
-  }) async {
+  }) => NetworkActivity.instance.hold(() async {
     final shopId = await owner.rpc<String>(
       'create_organization_with_shop',
       params: <String, dynamic>{
@@ -251,7 +251,7 @@ class DeviceSession {
       params: <String, dynamic>{'p_staff_id': staff['id'], 'p_pin': pin},
     );
     return shopId;
-  }
+  });
 
   /// The shop's devices, oldest first, read with the owner's login.
   Future<List<ShopDevice>> shopDevices(String shopId) async {
@@ -305,13 +305,14 @@ class DeviceSession {
   }
 
   /// Registers this device with [shopId] using the owner's permission.
-  Future<void> pairThisDevice(String shopId, String deviceName) async {
-    if (await pairedShopId() == shopId) return;
-    final rows = await owner.rpc<List<dynamic>>(
-      'create_device_pairing',
-      params: <String, dynamic>{'p_shop_id': shopId, 'p_name': deviceName},
-    );
-    final first = rows.first as Map<String, dynamic>;
-    await claim(first['pairing_code'] as String);
-  }
+  Future<void> pairThisDevice(String shopId, String deviceName) =>
+      NetworkActivity.instance.hold(() async {
+        if (await pairedShopId() == shopId) return;
+        final rows = await owner.rpc<List<dynamic>>(
+          'create_device_pairing',
+          params: <String, dynamic>{'p_shop_id': shopId, 'p_name': deviceName},
+        );
+        final first = rows.first as Map<String, dynamic>;
+        await claim(first['pairing_code'] as String);
+      });
 }

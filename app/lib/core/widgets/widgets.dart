@@ -10,6 +10,7 @@ export 'package:app/core/widgets/dropdown.dart';
 export 'package:app/core/widgets/empty.dart';
 export 'package:app/core/widgets/field.dart';
 export 'package:app/core/widgets/form_modal.dart';
+export 'package:app/core/widgets/lottie_loading.dart';
 export 'package:app/core/widgets/modal.dart';
 export 'package:app/core/widgets/month_picker.dart';
 export 'package:app/core/widgets/num_pad.dart';

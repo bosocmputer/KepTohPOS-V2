@@ -1,9 +1,11 @@
 import 'package:app/core/theme/tokens.dart';
+import 'package:app/core/widgets/lottie_loading.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-/// Shows a progress bar along the top and blocks taps while [busy] is `true`,
-/// so staff can see the app is waiting and cannot submit the same thing twice.
+/// Shows a progress bar along the top, a centered walking-orange loader card,
+/// and blocks taps while [busy] is `true`, so staff can see the app is waiting
+/// and cannot submit the same thing twice.
 class BusyOverlay extends StatelessWidget {
   const new({required this.busy, required this.child, super.key});
 
@@ -18,19 +20,48 @@ class BusyOverlay extends StatelessWidget {
         valueListenable: busy,
         builder: (context, isBusy, _) {
           if (!isBusy) return const SizedBox.shrink();
+          final tokens = context.tokens;
           return Positioned.fill(
             key: const ValueKey('busy-overlay'),
             child: Stack(
               children: [
-                const ModalBarrier(dismissible: false),
+                ModalBarrier(dismissible: false, color: tokens.scrim),
                 Positioned(
                   top: 0,
                   left: 0,
                   right: 0,
                   child: LinearProgressIndicator(
                     minHeight: 3,
-                    color: context.tokens.primary,
+                    color: tokens.primary,
                     backgroundColor: Colors.transparent,
+                  ),
+                ),
+                IgnorePointer(
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: Center(
+                      child: OverflowBox(
+                        maxWidth: double.infinity,
+                        maxHeight: double.infinity,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppDimensions.space6,
+                            vertical: AppDimensions.space5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: tokens.surface,
+                            borderRadius: BorderRadius.circular(
+                              AppDimensions.radiusLg,
+                            ),
+                            border: Border.all(color: tokens.line),
+                            boxShadow: tokens.shadows,
+                          ),
+                          child: const WalkingOrangeLoader(
+                            label: 'กำลังประมวลผล…',
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],

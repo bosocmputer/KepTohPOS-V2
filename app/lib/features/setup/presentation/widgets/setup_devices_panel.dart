@@ -220,8 +220,8 @@ class _SetupDevicesPanelState extends State<SetupDevicesPanel> {
     future: _devices,
     builder: (context, snapshot) {
       if (snapshot.connectionState != ConnectionState.done) {
-        return Center(
-          child: CircularProgressIndicator(color: context.tokens.primary),
+        return const Center(
+          child: WalkingOrangeLoader(size: 110, label: 'กำลังโหลดข้อมูล…'),
         );
       }
       if (snapshot.hasError) {
