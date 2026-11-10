@@ -54,7 +54,6 @@ class ReceiptCard extends StatelessWidget {
     final eatTxt = hasLim
         ? 'ทานได้ถึงเวลา ${thTime(bill.eatUntil!)} น. (จำกัด $limTxt)'
         : 'ไม่จำกัดเวลา';
-    String fmtAmt(int v) => baht(v, v % 100 != 0 ? 2 : 0);
 
     return Container(
       key: const ValueKey('receipt-card'),
@@ -131,7 +130,7 @@ class ReceiptCard extends StatelessWidget {
           for (final l in bill.lines)
             _row(t, tt, '${l.name} × ${l.qty}', baht(l.qty * l.price), true),
           div,
-          _row(t, tt, 'ยอดรวม', baht(bill.subtotal)),
+          _row(t, tt, 'ยอดรวม', bahtSmart(bill.subtotal)),
           if (bill.service > 0)
             _row(
               t,
@@ -163,11 +162,12 @@ class ReceiptCard extends StatelessWidget {
               ),
               Text(
                 key: const ValueKey('receipt-total-amount'),
-                fmtAmt(bill.total),
+                bahtSmart(bill.total),
                 style: tt.titleLarge?.copyWith(
                   color: bill.voided ? t.muted : t.primary,
                   fontWeight: FontWeight.w700,
                   decoration: bill.voided ? TextDecoration.lineThrough : null,
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
             ],
@@ -186,7 +186,7 @@ class ReceiptCard extends StatelessWidget {
           if ((bill.bankAccountInfo ?? '').isNotEmpty)
             _row(t, tt, 'บัญชีรับโอน', bill.bankAccountInfo!, true),
           if (bill.methodType == 'cash' && !bill.isSlipPreview)
-            _row(t, tt, 'เงินทอน', fmtAmt(bill.change), true),
+            _row(t, tt, 'เงินทอน', bahtSmart(bill.change), true),
           if (showQr) ...[
             const SizedBox(height: AppDimensions.space2_5),
             ReceiptQrBox(shop: shop, bill: bill),
@@ -218,14 +218,20 @@ class ReceiptCard extends StatelessWidget {
         Flexible(
           child: Text(l, style: tt.bodySmall?.copyWith(color: t.ink)),
         ),
-        if (r.isNotEmpty)
-          Text(
-            r,
-            style: tt.bodySmall?.copyWith(
-              color: t.ink,
-              fontWeight: b ? FontWeight.w700 : FontWeight.w500,
+        if (r.isNotEmpty) ...[
+          const SizedBox(width: AppDimensions.space2),
+          Flexible(
+            child: Text(
+              r,
+              textAlign: TextAlign.end,
+              style: tt.bodySmall?.copyWith(
+                color: t.ink,
+                fontWeight: b ? FontWeight.w700 : FontWeight.w500,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
           ),
+        ],
       ],
     ),
   );

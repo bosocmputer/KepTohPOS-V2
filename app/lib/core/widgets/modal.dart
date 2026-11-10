@@ -111,13 +111,15 @@ class Modal extends StatelessWidget {
                       ? Row(
                           children: [
                             Expanded(child: footerLeading!),
-                            const SizedBox(width: AppDimensions.space3),
-                            Wrap(
-                              alignment: WrapAlignment.end,
-                              spacing: AppDimensions.space2_5,
-                              runSpacing: AppDimensions.space2,
-                              children: footer,
-                            ),
+                            if (footer.isNotEmpty) ...[
+                              const SizedBox(width: AppDimensions.space3),
+                              Wrap(
+                                alignment: WrapAlignment.end,
+                                spacing: AppDimensions.space2_5,
+                                runSpacing: AppDimensions.space2,
+                                children: footer,
+                              ),
+                            ],
                           ],
                         )
                       : Wrap(

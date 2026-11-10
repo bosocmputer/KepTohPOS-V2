@@ -62,10 +62,11 @@ class BillsMethodSummaryBar extends StatelessWidget {
                     style: tt.bodySmall?.copyWith(color: t.muted),
                   ),
                   Text(
-                    baht(entry.value),
+                    bahtSmart(entry.value),
                     style: tt.bodyMedium?.copyWith(
                       color: t.ink,
                       fontWeight: FontWeight.w700,
+                      fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
                 ],
@@ -248,7 +249,7 @@ class _MethodCheckboxTile extends StatelessWidget {
               height: 18,
               decoration: BoxDecoration(
                 color: checked ? t.primary : t.surface,
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusXs),
                 border: Border.all(
                   color: checked ? t.primary : t.line,
                   width: 1.5,

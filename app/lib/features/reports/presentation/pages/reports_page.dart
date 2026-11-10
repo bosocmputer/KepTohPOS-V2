@@ -4,7 +4,6 @@ import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/reports/presentation/cubit/reports_cubit.dart';
 import 'package:app/features/reports/presentation/widgets/daily_report_table.dart';
-import 'package:app/features/reports/presentation/widgets/pending_badge.dart';
 import 'package:app/features/reports/presentation/widgets/sales_tax_report_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,9 +11,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 export 'package:app/features/reports/presentation/cubit/reports_cubit.dart';
 export 'package:app/features/reports/presentation/widgets/daily_report_table.dart';
 export 'package:app/features/reports/presentation/widgets/pending_badge.dart';
-
-/// Active column preset mode for [DailyReportTable] (`all | profit | sales`).
-String _activeReportColMode = 'all';
 
 /// Column definition for [DailyReportTable].
 class ReportColSpec {
@@ -32,15 +28,17 @@ Widget _profitText(AppTokens t, double? v) => v == null
         style: TextStyle(
           color: v >= 0 ? t.successInk : t.dangerInk,
           fontWeight: FontWeight.w700,
+          fontFeatures: const [FontFeature.tabularFigures()],
         ),
       );
 
 /// Builds metric columns for [DailyReportTable].
 List<ReportColSpec> buildReportColumns(
   MonthlyReportSummary report,
-  AppTokens t,
-) {
-  final mode = _activeReportColMode;
+  AppTokens t, [
+  String? colMode,
+]) {
+  final mode = colMode ?? 'all';
   final showSales = mode == 'all' || mode == 'sales';
   final showProfit = mode == 'all' || mode == 'profit';
   ReportColSpec col(
@@ -54,7 +52,15 @@ List<ReportColSpec> buildReportColumns(
     double w,
     double? Function(LedgerDaySummary) v,
     double tot,
-  ) => col(l, w, (d) => Text(fmtBaht(v(d))), fmtBaht(tot));
+  ) => col(
+    l,
+    w,
+    (d) => Text(
+      fmtBaht(v(d)),
+      style: const TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+    ),
+    fmtBaht(tot),
+  );
 
   return <ReportColSpec>[
     col('บิล', 56, (d) => Text('${d.bills}'), '${report.totalBills}'),
@@ -137,14 +143,7 @@ class _ReportsPageState extends State<ReportsPage> {
   final _taxExport = ValueNotifier<VoidCallback?>(null);
 
   @override
-  void initState() {
-    super.initState();
-    _activeReportColMode = _colMode;
-  }
-
-  @override
   void dispose() {
-    _activeReportColMode = 'all';
     _taxExport.dispose();
     super.dispose();
   }
@@ -152,7 +151,6 @@ class _ReportsPageState extends State<ReportsPage> {
   void _setColMode(String mode) => setState(() {
     _colMode = mode;
     _taxExport.value = null;
-    _activeReportColMode = mode;
   });
 
   @override
@@ -275,6 +273,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     DailyReportTable(
                       key: ValueKey('daily-report-table-$_colMode'),
                       report: rep,
+                      colMode: _colMode,
                       onDayTap: widget.onSelectDateForBills,
                     ),
                     const SizedBox(height: AppDimensions.space4),

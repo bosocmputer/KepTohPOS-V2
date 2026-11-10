@@ -1,5 +1,6 @@
 import 'package:app/core/theme/tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Labeled form field wrapper (`Field` in `prototype/index.html` & Figma).
 class Field extends StatelessWidget {
@@ -54,6 +55,7 @@ class AppTextInput extends StatefulWidget {
     this.suffixText,
     this.maxLines = 1,
     this.keyboardType,
+    this.inputFormatters,
     this.readOnly = false,
     this.obscureText = false,
   });
@@ -64,6 +66,7 @@ class AppTextInput extends StatefulWidget {
   final String? suffixText;
   final int maxLines;
   final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
   final bool readOnly;
   final bool obscureText;
 
@@ -142,6 +145,7 @@ class _AppTextInputState extends State<AppTextInput> {
                   onChanged: widget.onChanged,
                   maxLines: widget.maxLines,
                   keyboardType: widget.keyboardType,
+                  inputFormatters: widget.inputFormatters,
                   readOnly: widget.readOnly,
                   textAlignVertical: isSingleLine
                       ? TextAlignVertical.center
@@ -188,6 +192,50 @@ class _AppTextInputState extends State<AppTextInput> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Renders [left] and [right] side-by-side on iPad/tablet/desktop, and
+/// stacked vertically on narrow screens (`< AppDimensions.mobileBp`).
+class ResponsiveFormRow extends StatelessWidget {
+  const new({
+    required this.left,
+    required this.right,
+    super.key,
+    this.bottomSpacing = AppDimensions.space3,
+  });
+
+  final Widget left;
+  final Widget right;
+  final double bottomSpacing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomSpacing),
+      child: LayoutBuilder(
+        builder: (context, c) {
+          if (c.maxWidth < AppDimensions.mobileBp) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                left,
+                const SizedBox(height: AppDimensions.space3),
+                right,
+              ],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: left),
+              const SizedBox(width: AppDimensions.space3_5),
+              Expanded(child: right),
+            ],
+          );
+        },
       ),
     );
   }

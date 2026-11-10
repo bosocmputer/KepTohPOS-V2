@@ -173,7 +173,11 @@ class _SalesTaxReportTabState extends State<SalesTaxReportTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text((r.buyerName ?? '').isEmpty ? '–' : r.buyerName!),
+        Text(
+          (r.buyerName ?? '').isEmpty ? '–' : r.buyerName!,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
         if (ids.isNotEmpty) Text(ids.join(' · '), style: _muted(context)),
       ],
     );
@@ -216,22 +220,13 @@ class _SalesTaxReportTabState extends State<SalesTaxReportTab> {
       rows: rows,
       empty: const Empty(title: 'ไม่มีใบกำกับภาษีในเดือนนี้'),
       columns: [
-        _cell<SalesTaxRow>(
-          'วันที่',
-          (_, r) => Text(r.businessDate),
-          width: 104,
-        ),
-        _cell<SalesTaxRow>(
-          'เลขที่',
-          (_, r) => Text(r.no, softWrap: false),
-          width: 200,
-        ),
+        _cell('วันที่', (_, r) => Text(r.businessDate), width: 104),
+        _cell('เลขที่', (_, r) => Text(r.no, softWrap: false), width: 200),
         _cell<SalesTaxRow>('ประเภท', (_, r) => _docPill(r), width: 88),
         _cell<SalesTaxRow>('ผู้ซื้อ', _buyer, flex: 3),
         _amt('มูลค่า', (r) => r.base, 112),
-        _amt('VAT', (r) => r.vat, 100),
+        _amt('VAT', (r) => r.vat, 112),
         _amt('รวม', (r) => r.total, 120),
-        _cell<SalesTaxRow>('', (_, _) => const SizedBox(), width: 12),
         _cell<SalesTaxRow>('หมายเหตุ', _note, flex: 3),
       ],
     ),
@@ -267,7 +262,9 @@ class _SalesTaxReportTabState extends State<SalesTaxReportTab> {
       );
     }
     if (rows == null) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: CircularProgressIndicator(color: context.tokens.primary),
+      );
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

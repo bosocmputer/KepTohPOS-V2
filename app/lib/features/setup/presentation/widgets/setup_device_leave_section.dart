@@ -32,23 +32,16 @@ class _SetupDeviceLeaveSectionState extends State<SetupDeviceLeaveSection> {
     if (!clear || !mounted) return;
     final ok = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('ออกจากร้านบนเครื่องนี้?'),
-        content: const Text(
-          'เครื่องนี้จะกลับไปหน้าเริ่มต้น ข้อมูลร้านไม่หาย '
-          'ถ้าจะใช้เครื่องนี้กับร้านนี้อีก ให้เข้าสู่ระบบเจ้าของร้านใหม่',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('ยกเลิก'),
-          ),
-          TextButton(
-            key: const ValueKey('device-leave-confirm-btn'),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('ออกจากร้าน'),
-          ),
-        ],
+      builder: (context) => Confirm(
+        title: 'ออกจากร้านบนเครื่องนี้?',
+        text:
+            'เครื่องนี้จะกลับไปหน้าเริ่มต้น ข้อมูลร้านไม่หาย '
+            'ถ้าจะใช้เครื่องนี้กับร้านนี้อีก ให้เข้าสู่ระบบเจ้าของร้านใหม่',
+        yesLabel: 'ออกจากร้าน',
+        danger: true,
+        yesKey: const ValueKey('device-leave-confirm-btn'),
+        onYes: () => Navigator.pop(context, true),
+        onNo: () => Navigator.pop(context, false),
       ),
     );
     if (!(ok ?? false)) return;

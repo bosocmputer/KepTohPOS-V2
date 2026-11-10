@@ -26,3 +26,4 @@ export 'package:app/core/widgets/sync_status_banner.dart';
 export 'package:app/core/widgets/tabs.dart';
 export 'package:app/core/widgets/tax_id_branch_input.dart';
 export 'package:app/core/widgets/toast.dart';
+export 'package:app/features/reports/presentation/widgets/pending_badge.dart';

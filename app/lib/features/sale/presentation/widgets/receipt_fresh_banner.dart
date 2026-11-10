@@ -14,7 +14,7 @@ class ReceiptFreshBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
-    final changeTxt = baht(bill.change, bill.change % 100 != 0 ? 2 : 0);
+    final changeTxt = bahtSmart(bill.change);
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.space4,
@@ -31,7 +31,9 @@ class ReceiptFreshBanner extends StatelessWidget {
             width: AppDimensions.space9,
             height: AppDimensions.space9,
             decoration: BoxDecoration(color: t.success, shape: BoxShape.circle),
-            child: Center(child: AppIcon('check', color: t.onPrimary)),
+            child: const Center(
+              child: AppIcon('check', color: AppRawTokens.white),
+            ),
           ),
           const SizedBox(width: AppDimensions.space3),
           Expanded(
@@ -68,6 +70,7 @@ class ReceiptFreshBanner extends StatelessWidget {
                   style: tt.headlineMedium?.copyWith(
                     color: t.success,
                     fontWeight: FontWeight.w800,
+                    fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
               ],

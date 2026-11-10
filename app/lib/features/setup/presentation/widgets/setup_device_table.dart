@@ -21,8 +21,12 @@ class SetupDeviceTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PosDataTable<ShopDevice>(
+    final table = PosDataTable<ShopDevice>(
       rows: devices,
+      empty: const Empty(
+        title: 'ยังไม่มีอุปกรณ์ในร้าน',
+        text: 'สร้างลิงก์เข้าร้านด้านบนเพื่อเชื่อมต่อเครื่องใหม่',
+      ),
       columns: [
         DataTableCol<ShopDevice>(
           key: 'device',
@@ -38,6 +42,15 @@ class SetupDeviceTable extends StatelessWidget {
           cellBuilder: _actionsCell,
         ),
       ],
+    );
+    return LayoutBuilder(
+      builder: (_, c) => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          width: c.maxWidth < 560 ? 560 : c.maxWidth,
+          child: table,
+        ),
+      ),
     );
   }
 

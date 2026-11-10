@@ -35,17 +35,7 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
     if (oldWidget.shop != widget.shop) _v = widget.shop;
   }
 
-  Widget _row(Widget l, Widget r) => Padding(
-    padding: const EdgeInsets.only(bottom: AppDimensions.space3),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(child: l),
-        const SizedBox(width: AppDimensions.space3_5),
-        Expanded(child: r),
-      ],
-    ),
-  );
+  Widget _row(Widget l, Widget r) => ResponsiveFormRow(left: l, right: r);
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +53,7 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
               kind: BtnKind.primary,
               icon: 'check',
               label: widget.isSaving ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่า',
+              loading: widget.isSaving,
               disabled: widget.isSaving || _v.name.trim().isEmpty,
               onPressed: () => widget.onSave(_v),
             ),
