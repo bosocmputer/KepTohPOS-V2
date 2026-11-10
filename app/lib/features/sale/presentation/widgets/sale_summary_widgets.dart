@@ -195,17 +195,24 @@ class OrderSummary extends StatelessWidget {
     super.key,
     this.noTotal = false,
     this.showLines = true,
+    this.roundDown,
+    this.onRoundingChanged,
   });
 
   final ShopConfig shop;
   final CalculatedOrder order;
   final bool noTotal;
   final bool showLines;
+  final bool? roundDown;
+  final ValueChanged<bool>? onRoundingChanged;
 
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
     final tt = Theme.of(context).textTheme;
+    final hasSatang = (order.total - order.rounding) % 100 != 0;
+    final canToggleRounding = onRoundingChanged != null && hasSatang;
+    final isRoundedDown = roundDown ?? (order.rounding != 0);
     return Container(
       padding: const EdgeInsets.all(AppDimensions.space3),
       decoration: BoxDecoration(
@@ -240,7 +247,9 @@ class OrderSummary extends StatelessWidget {
               baht(order.vat, 2),
             ),
           ],
-          if (order.rounding != 0)
+          if (canToggleRounding)
+            _roundingToggleRow(context, isRoundedDown)
+          else if (order.rounding != 0)
             _row(context, 'ปัดเศษ', baht(order.rounding, 2)),
           if (!noTotal) ...[
             Divider(color: t.line, height: AppDimensions.space4),
@@ -252,6 +261,53 @@ class OrderSummary extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _roundingToggleRow(BuildContext ctx, bool active) {
+    final t = ctx.tokens;
+    final tt = Theme.of(ctx).textTheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppDimensions.space1),
+      child: InkWell(
+        key: const ValueKey('sale-rounding-toggle'),
+        onTap: () => onRoundingChanged!(!active),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: AppDimensions.spaceHalf,
+          ),
+          child: Row(
+            children: [
+              IgnorePointer(
+                child: AppSwitch(
+                  value: active,
+                  onChanged: onRoundingChanged,
+                  semanticLabel: 'ปัดเศษสตางค์ลง (บาทเต็ม)',
+                ),
+              ),
+              const SizedBox(width: AppDimensions.space2),
+              Expanded(
+                child: Text(
+                  'ปัดเศษสตางค์ลง (บาทเต็ม)',
+                  style: tt.bodySmall?.copyWith(
+                    color: t.ink,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              if (active && order.rounding != 0)
+                Text(
+                  '-${baht(order.rounding.abs(), 2)}',
+                  style: tt.bodySmall?.copyWith(
+                    color: t.success,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

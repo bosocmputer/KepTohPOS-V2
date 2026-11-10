@@ -5,6 +5,7 @@ import 'package:app/core/data/local/outbox_queue.dart';
 import 'package:app/core/data/supabase/supabase_state_loader.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/domain/pos_command_exception.dart';
+import 'package:app/features/onboarding/data/device_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -22,6 +23,7 @@ abstract class SupabasePosBase {
     required this.ownerClient,
     required this.shopId,
     required SupabaseSnapshot snapshot,
+    this.staffStorage,
   }) : posState = snapshot.state,
        sessionByTable = snapshot.sessionByTable,
        organizationId = snapshot.organizationId,
@@ -39,6 +41,9 @@ abstract class SupabasePosBase {
   bool costsLoaded;
   String? staffToken;
   String? signedInStaffId;
+
+  /// Persistent storage for the signed-in staff session on this device.
+  DeviceAuthStorage? staffStorage;
 
   /// Commands made offline; set once the browser database is open.
   OutboxQueue? outbox;

@@ -15,8 +15,9 @@ CalculatedOrder calcOrder(
   int a,
   int c,
   int f,
-  List<AddonLineInput> addonLines,
-) {
+  List<AddonLineInput> addonLines, {
+  String? roundingOverride,
+}) {
   final lines = <OrderLineItem>[];
   if (pkg != null && a > 0) {
     lines.add(
@@ -79,7 +80,8 @@ CalculatedOrder calcOrder(
     vat = _percentOf(base, vatRate);
     total = base + vat;
   }
-  final roundsDown = shop.rounding == 'down' && total % 100 != 0;
+  final effectiveRounding = roundingOverride ?? shop.rounding;
+  final roundsDown = effectiveRounding == 'down' && total % 100 != 0;
   if (roundsDown) {
     rounding = -(total % 100);
     total += rounding;
@@ -154,17 +156,20 @@ bool totalsEmpty(TableTotals t) =>
     (t.a + t.c + t.f) == 0 && !t.ad.values.any((q) => q > 0);
 
 /// Calculates an order for [t] against state [s] (`orderOf`).
-CalculatedOrder orderOf(PosState s, PackageItem? pkg, TableTotals t) =>
-    calcOrder(
-      s.shop,
-      pkg,
-      t.a,
-      t.c,
-      t.f,
-      s.addons
-          .map((x) => AddonLineInput(addon: x, qty: t.ad[x.id] ?? 0))
-          .toList(),
-    );
+CalculatedOrder orderOf(
+  PosState s,
+  PackageItem? pkg,
+  TableTotals t, {
+  String? roundingOverride,
+}) => calcOrder(
+  s.shop,
+  pkg,
+  t.a,
+  t.c,
+  t.f,
+  s.addons.map((x) => AddonLineInput(addon: x, qty: t.ad[x.id] ?? 0)).toList(),
+  roundingOverride: roundingOverride,
+);
 
 /// Returns the unpaid balance for eat-before-paying table [o] (`tableDue`).
 int tableDue(PosState s, OpenTableState o) {

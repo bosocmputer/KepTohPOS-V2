@@ -284,4 +284,65 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'SalePaymentPanel allows toggling satang rounding when shop is none',
+    (tester) async {
+      tester.view.physicalSize = const Size(1366, 1024);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final repo = MockPosRepository.createFallback()
+        ..update(
+          (s) => s.shop = s.shop.copyWith(
+            vatMode: 'excluded',
+            servicePct: 5,
+            rounding: 'none',
+          ),
+        );
+      await tester.pumpWidget(KepTohApp(repository: repo));
+      await tester.pumpAndSettle();
+
+      // 1. Open free table A1 (t1), add 1 child head + 1 drink (575.23)
+      await tester.tap(find.byKey(const ValueKey('table-card-t1')));
+      await tester.pumpAndSettle();
+
+      final childPlus = find.descendant(
+        of: find.byKey(const ValueKey('people-stepper-c')),
+        matching: find.bySemanticsLabel('เพิ่ม'),
+      );
+      await tester.tap(childPlus);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('เครื่องดื่ม'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('addon-card-ad1')));
+      await tester.pumpAndSettle();
+
+      // 2. Open payment step -> verify unrounded total ฿575.23 & toggle row
+      await tester.tap(find.byKey(const ValueKey('sale-pay-btn')));
+      await tester.pumpAndSettle();
+
+      final roundingToggle = find.byKey(const ValueKey('sale-rounding-toggle'));
+      expect(roundingToggle, findsOneWidget);
+      expect(find.text('ปัดเศษสตางค์ลง (บาทเต็ม)'), findsOneWidget);
+      expect(find.text('฿575.23'), findsWidgets);
+
+      // 3. Toggle rounding ON -> shows -฿0.23 and updates total to ฿575
+      await tester.tap(roundingToggle);
+      await tester.pumpAndSettle();
+
+      expect(find.text('-฿0.23'), findsOneWidget);
+      expect(find.text('฿575'), findsWidgets);
+
+      // 4. Confirm cash payment -> settled bill is 57500 satang (-23 rounding)
+      await tester.tap(find.byKey(const ValueKey('pay-confirm-btn')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('receipt-modal')), findsOneWidget);
+      final settled = repo.state.sales.last;
+      expect(settled.total, 57500);
+      expect(settled.rounding, -23);
+    },
+  );
 }

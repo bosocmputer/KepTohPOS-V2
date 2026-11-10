@@ -1,9 +1,13 @@
 import 'dart:convert';
 
+import 'package:app/core/data/mock_pos_repository.dart';
+import 'package:app/core/data/supabase/supabase_pos_repository.dart';
+import 'package:app/core/data/supabase/supabase_state_loader.dart';
 import 'package:app/features/onboarding/data/device_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class _MemoryStorage implements DeviceAuthStorage {
   String? value;
@@ -184,5 +188,76 @@ void main() {
     // Assert
     expect(await auth.accessToken(), isNull);
     expect(requests, isEmpty);
+  });
+
+  group('staff session persistence', () {
+    SupabasePosRepository buildRepo(_MemoryStorage staffStorage) {
+      final client = SupabaseClient(
+        'https://example.test',
+        'anon-key',
+        httpClient: MockClient(
+          (_) async => throw http.ClientException('offline'),
+        ),
+      );
+      return SupabasePosRepository(
+        deviceClient: client,
+        ownerClient: null,
+        shopId: 'shop-1',
+        snapshot: SupabaseSnapshot(
+          state: MockPosRepository.createFallback().state,
+          sessionByTable: const <String, String>{},
+          organizationId: 'org-1',
+          canReadCosts: false,
+        ),
+        staffStorage: staffStorage,
+      );
+    }
+
+    test(
+      'restores a non-expired staff session and clears on signOutStaff',
+      () async {
+        final staffStorage = _MemoryStorage()
+          ..value = jsonEncode(<String, dynamic>{
+            'staff_id': 'st1',
+            'session_token': 'sess-123',
+            'offline_token': 'off-456',
+            'expires_at': DateTime.now()
+                .toUtc()
+                .add(const Duration(hours: 12))
+                .toIso8601String(),
+          });
+        final repo = buildRepo(staffStorage);
+
+        await repo.restoreStaffSession();
+
+        expect(repo.currentStaff?.id, 'st1');
+        expect(repo.staffToken, 'sess-123');
+        expect(repo.offlineToken, 'off-456');
+
+        await repo.signOutStaff();
+        expect(repo.currentStaff, isNull);
+        expect(staffStorage.value, isNull);
+      },
+    );
+
+    test('clears an expired staff session', () async {
+      final staffStorage = _MemoryStorage()
+        ..value = jsonEncode(<String, dynamic>{
+          'staff_id': 'st1',
+          'session_token': 'sess-123',
+          'offline_token': 'off-456',
+          'expires_at': DateTime.now()
+              .toUtc()
+              .subtract(const Duration(minutes: 1))
+              .toIso8601String(),
+        });
+      final repo = buildRepo(staffStorage);
+
+      await repo.restoreStaffSession();
+
+      expect(repo.currentStaff, isNull);
+      expect(repo.staffToken, isNull);
+      expect(staffStorage.value, isNull);
+    });
   });
 }

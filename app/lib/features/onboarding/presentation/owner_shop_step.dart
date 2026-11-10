@@ -107,7 +107,7 @@ class _OwnerShopStepState extends State<OwnerShopStep> {
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
       ),
       child: Text(
-        'บัญชีนี้ยังไม่มีร้าน ถ้าเคยสร้างร้านด้วย LINE, Google หรืออีเมลอื่น '
+        'บัญชีนี้ยังไม่มีร้าน ถ้าเคยสร้างร้านด้วย LINE หรือ Google '
         'กด "ออกจากระบบ / เปลี่ยนบัญชี" ด้านล่าง แล้วเข้าด้วยวิธีเดิม',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(color: t.ink),
       ),

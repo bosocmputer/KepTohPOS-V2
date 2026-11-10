@@ -5,7 +5,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:app/core/data/mock_pos_repository.dart';
 import 'package:app/domain/domain.dart';
+import 'package:app/features/sale/presentation/bloc/sale_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 PosState _loadFreshMockState(DateTime now) {
@@ -552,5 +554,109 @@ void main() {
       expect(s.openTables.containsKey('t2'), isFalse);
       expect(s.addons.firstWhere((a) => a.id == 'ad1').stock, stockBefore);
     });
+
+    test(
+      'per-bill roundingOverride in calcOrder, settle, and SaleBloc',
+      () async {
+        final fixedNow = DateTime(2026, 11, 4, 16);
+        final s = _loadFreshMockState(fixedNow);
+        s.shop = s.shop.copyWith(
+          vatMode: 'excluded',
+          servicePct: 5,
+          rounding: 'none',
+        );
+        final pkg1 = s.packages.firstWhere((p) => p.id == 'pk1');
+        final ad1 = s.addons.firstWhere((x) => x.id == 'ad1');
+
+        // 1. calcOrder with shop.rounding = 'none' vs roundingOverride = 'down'
+        final unrounded = calcOrder(s.shop, pkg1, 2, 1, 0, <AddonLineInput>[
+          AddonLineInput(addon: ad1, qty: 1),
+        ]);
+        expect(unrounded.rounding, 0);
+        expect(unrounded.total, 57523);
+
+        final overriddenDown = calcOrder(
+          s.shop,
+          pkg1,
+          2,
+          1,
+          0,
+          <AddonLineInput>[AddonLineInput(addon: ad1, qty: 1)],
+          roundingOverride: 'down',
+        );
+        expect(overriddenDown.rounding, -23);
+        expect(overriddenDown.total, 57500);
+
+        // 2. settle with rounding: 'down' records rounded bill
+        final me = s.staff.first;
+        final t1 = s.tables.firstWhere((t) => t.id == 't1');
+        final pmCash = s.payments.firstWhere((p) => p.id == 'pm1');
+        settle(
+          s,
+          t1,
+          TableTotals(a: 2, c: 1, ad: {'ad1': 1}),
+          me,
+          timing: 'before',
+          pkgId: 'pk1',
+          method: pmCash,
+          received: 57500,
+          billId: 'b_round_override',
+          rounding: 'down',
+          now: fixedNow,
+        );
+        final bill = s.sales.last;
+        expect(bill.rounding, -23);
+        expect(bill.total, 57500);
+
+        // 3. SaleBloc SaleRoundingToggled updates payOrder and cashReceived
+        final repo = MockPosRepository.fromState(_loadFreshMockState(fixedNow))
+          ..update((st) {
+            st.shop = st.shop.copyWith(
+              vatMode: 'excluded',
+              servicePct: 5,
+              rounding: 'none',
+            );
+            openShift(
+              st,
+              staffId: st.staff.first.id,
+              floatAmount: 100000,
+              now: fixedNow,
+            );
+          });
+        final bloc = SaleBloc(repo, initialTableId: 't1', now: fixedNow)
+          ..add(const SaleHeadsChanged(a: 2, c: 1))
+          ..add(const SaleAddonQtyChanged(addonId: 'ad1', qty: 1))
+          ..add(const SalePaymentStepChanged('pay'));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.roundsDown, isFalse);
+        expect(bloc.state.payOrder.total, 57523);
+        expect(bloc.state.cashReceived, '575.23');
+
+        bloc.add(const SaleRoundingToggled(roundDown: true));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.roundsDown, isTrue);
+        expect(bloc.state.payOrder.rounding, -23);
+        expect(bloc.state.payOrder.total, 57500);
+        expect(bloc.state.cashReceived, '575');
+
+        bloc.add(
+          SalePaymentSubmitted(
+            staff: repo.state.staff.first,
+            billId: 'b_bloc_round',
+            now: fixedNow,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        final settled = repo.state.sales.firstWhere(
+          (b) => b.id == 'b_bloc_round',
+        );
+        expect(settled.rounding, -23);
+        expect(settled.total, 57500);
+        await bloc.close();
+      },
+    );
   });
 }

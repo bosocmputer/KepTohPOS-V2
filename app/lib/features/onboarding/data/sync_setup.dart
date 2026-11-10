@@ -141,7 +141,9 @@ Future<SupabasePosRepository?> restoreOffline(
     ownerClient: session.owner,
     shopId: snap.shopId,
     data: snap.data,
+    staffStorage: await session.staffStorage(snap.shopId),
   );
+  await repo.restoreStaffSession();
   final queued = await OutboxQueue(
     db,
     shopId: snap.shopId,

@@ -95,10 +95,23 @@ class DeviceSession {
   /// Signs the owner out of this browser. The device pairing is not touched.
   Future<void> signOutOwner() => owner.auth.signOut();
 
+  DeviceAuthStorage? _staffStorage;
+
+  /// Persistent storage for the signed-in staff member of [shopId].
+  Future<DeviceAuthStorage> staffStorage(String shopId) async {
+    final storage = SharedPreferencesLocalStorage(
+      persistSessionKey: 'keptoh-staff-session-$shopId',
+    );
+    await storage.initialize();
+    return _staffStorage = _LocalDeviceStorage(storage);
+  }
+
   /// Unpairs this device from its shop and signs the owner out, so the
   /// first screen shows again. The shop's data stays on the server.
   Future<void> leaveShop() async {
     await device.rpc<void>('leave_device');
+    await _staffStorage?.clear();
+    _staffStorage = null;
     await _deviceAuth.signOut();
     if (isOwnerSignedIn) await owner.auth.signOut();
   }
@@ -144,7 +157,11 @@ class DeviceSession {
         .eq('auth_user_id', uid)
         .filter('revoked_at', 'is', null)
         .maybeSingle();
-    return row?['shop_id'] as String?;
+    if (row == null) {
+      await _deviceAuth.signOut();
+      return null;
+    }
+    return row['shop_id'] as String?;
   }
 
   /// Pairs this device using a one-time code and returns its shop id.
@@ -160,12 +177,13 @@ class DeviceSession {
   }
 
   /// Opens the repository for [shopId].
-  Future<SupabasePosRepository> openRepository(String shopId) =>
-      SupabasePosRepository.open(
+  Future<SupabasePosRepository> openRepository(String shopId) async =>
+      await SupabasePosRepository.open(
         deviceClient: device,
         ownerClient: owner,
         shopId: shopId,
         deviceUserId: _deviceAuth.userId,
+        staffStorage: await staffStorage(shopId),
       );
 
   /// Signs the owner in with email and password.
@@ -288,6 +306,7 @@ class DeviceSession {
 
   /// Registers this device with [shopId] using the owner's permission.
   Future<void> pairThisDevice(String shopId, String deviceName) async {
+    if (await pairedShopId() == shopId) return;
     final rows = await owner.rpc<List<dynamic>>(
       'create_device_pairing',
       params: <String, dynamic>{'p_shop_id': shopId, 'p_name': deviceName},

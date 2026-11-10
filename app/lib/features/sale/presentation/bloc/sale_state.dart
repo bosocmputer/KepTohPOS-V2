@@ -23,6 +23,7 @@ class SaleState extends Equatable {
     this.bankAccountId = '',
     this.cashReceived = '',
     this.transferStatus = 'waiting',
+    this.roundingOverride,
     this.settledBillId,
     this.toastMessage = '',
     this.now,
@@ -76,6 +77,7 @@ class SaleState extends Equatable {
   final String bankAccountId;
   final String cashReceived;
   final String transferStatus;
+  final String? roundingOverride;
   final String? settledBillId;
   final String toastMessage;
   final DateTime? now;
@@ -116,6 +118,8 @@ class SaleState extends Equatable {
 
   String get effectiveTiming => openTable?.timing ?? timing;
   String get effectiveNotes => openTable?.notes ?? notes;
+  String get effectiveRounding => roundingOverride ?? posState.shop.rounding;
+  bool get roundsDown => effectiveRounding == 'down';
 
   List<String> get categories {
     final cats = <String>[if (openTable == null) 'แพ็กเกจ'];
@@ -138,10 +142,20 @@ class SaleState extends Equatable {
   TableTotals get cartTotals =>
       TableTotals(a: a, c: c, f: f, ad: Map<String, int>.from(ad));
 
-  CalculatedOrder get cartOrder => orderOf(posState, activePackage, cartTotals);
+  CalculatedOrder get cartOrder => orderOf(
+    posState,
+    activePackage,
+    cartTotals,
+    roundingOverride: roundingOverride,
+  );
 
   CalculatedOrder get payOrder => effectiveTiming == 'after'
-      ? orderOf(posState, activePackage, mergeTotals(sentTotals, cartTotals))
+      ? orderOf(
+          posState,
+          activePackage,
+          mergeTotals(sentTotals, cartTotals),
+          roundingOverride: roundingOverride,
+        )
       : cartOrder;
 
   List<SentLineItem> get sentRows =>
@@ -203,6 +217,8 @@ class SaleState extends Equatable {
     String? bankAccountId,
     String? cashReceived,
     String? transferStatus,
+    String? roundingOverride,
+    bool clearRoundingOverride = false,
     String? settledBillId,
     bool clearSettledBill = false,
     String? toastMessage,
@@ -223,6 +239,9 @@ class SaleState extends Equatable {
     bankAccountId: bankAccountId ?? this.bankAccountId,
     cashReceived: cashReceived ?? this.cashReceived,
     transferStatus: transferStatus ?? this.transferStatus,
+    roundingOverride: clearRoundingOverride
+        ? null
+        : (roundingOverride ?? this.roundingOverride),
     settledBillId: clearSettledBill
         ? null
         : (settledBillId ?? this.settledBillId),
@@ -247,6 +266,7 @@ class SaleState extends Equatable {
     bankAccountId,
     cashReceived,
     transferStatus,
+    roundingOverride,
     settledBillId,
     toastMessage,
     now,

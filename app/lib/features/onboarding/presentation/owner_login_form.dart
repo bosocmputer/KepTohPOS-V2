@@ -4,8 +4,7 @@ import 'package:app/features/onboarding/data/device_session.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Owner sign-in: LINE first, then Google, with email and password as the
-/// fallback.
+/// Owner sign-in: LINE first, then Google.
 class OwnerLoginForm extends StatefulWidget {
   const new({required this.session, required this.onSignedIn, super.key});
 
@@ -17,8 +16,6 @@ class OwnerLoginForm extends StatefulWidget {
 }
 
 class _OwnerLoginFormState extends State<OwnerLoginForm> {
-  String _email = '';
-  String _password = '';
   String _message = '';
   bool _busy = false;
 
@@ -29,8 +26,8 @@ class _OwnerLoginFormState extends State<OwnerLoginForm> {
     });
     try {
       await action();
-    } on AuthException catch (e) {
-      if (mounted) setState(() => _message = _describe(e));
+    } on AuthException {
+      if (mounted) setState(() => _message = 'เข้าสู่ระบบไม่สำเร็จ');
     } on Object {
       if (mounted) setState(() => _message = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
     } finally {
@@ -38,34 +35,9 @@ class _OwnerLoginFormState extends State<OwnerLoginForm> {
     }
   }
 
-  String _describe(AuthException e) => switch (e.code) {
-    'invalid_credentials' => 'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
-    'email_not_confirmed' => 'กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ',
-    'user_already_exists' => 'อีเมลนี้มีบัญชีอยู่แล้ว',
-    'weak_password' => 'รหัสผ่านสั้นเกินไป',
-    _ => 'เข้าสู่ระบบไม่สำเร็จ',
-  };
-
-  Future<void> _signIn() => _run(() async {
-    await widget.session.signInOwner(_email.trim(), _password);
-    widget.onSignedIn();
-  });
-
-  Future<void> _signUp() => _run(() async {
-    final ready = await widget.session.signUpOwner(_email.trim(), _password);
-    if (ready) {
-      widget.onSignedIn();
-    } else if (mounted) {
-      setState(
-        () => _message = 'ส่งอีเมลยืนยันแล้ว กรุณายืนยันก่อนเข้าสู่ระบบ',
-      );
-    }
-  });
-
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    final filled = _email.trim().isNotEmpty && _password.isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -97,67 +69,6 @@ class _OwnerLoginFormState extends State<OwnerLoginForm> {
           block: true,
           disabled: _busy,
           onPressed: () => _run(widget.session.signInOwnerWithGoogle),
-        ),
-        const SizedBox(height: AppDimensions.space4),
-        Row(
-          children: [
-            Expanded(child: Divider(color: t.line)),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.space2,
-              ),
-              child: Text(
-                'หรือใช้อีเมล',
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: t.muted),
-              ),
-            ),
-            Expanded(child: Divider(color: t.line)),
-          ],
-        ),
-        const SizedBox(height: AppDimensions.space3),
-        Field(
-          label: 'อีเมล',
-          child: AppTextInput(
-            key: const ValueKey('owner-email-input'),
-            value: _email,
-            keyboardType: TextInputType.emailAddress,
-            onChanged: (v) => setState(() => _email = v),
-          ),
-        ),
-        const SizedBox(height: AppDimensions.space3),
-        Field(
-          label: 'รหัสผ่าน',
-          child: AppTextInput(
-            key: const ValueKey('owner-password-input'),
-            value: _password,
-            obscureText: true,
-            onChanged: (v) => setState(() => _password = v),
-          ),
-        ),
-        const SizedBox(height: AppDimensions.space3),
-        Row(
-          children: [
-            Expanded(
-              child: Btn(
-                key: const ValueKey('owner-signin-btn'),
-                label: 'เข้าสู่ระบบ',
-                block: true,
-                disabled: _busy || !filled,
-                onPressed: _signIn,
-              ),
-            ),
-            const SizedBox(width: AppDimensions.space2),
-            Expanded(
-              child: Btn(
-                key: const ValueKey('owner-signup-btn'),
-                label: 'สมัครบัญชีใหม่',
-                block: true,
-                disabled: _busy || !filled,
-                onPressed: _signUp,
-              ),
-            ),
-          ],
         ),
         if (_message.isNotEmpty) ...[
           const SizedBox(height: AppDimensions.space3),

@@ -4,7 +4,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(103);
+select plan(105);
 
 create schema tests;
 create function tests.q(p_role text, p_uid uuid, p_anon boolean, p_sql text) returns text
@@ -236,6 +236,16 @@ select is(tests.device_a(tests.settle_seq('60000000-0000-0000-0000-000000000007'
 select is(tests.device_a(tests.settle_seq('60000000-0000-0000-0000-000000000008', '70000000-0000-0000-0000-000000000006', tests.val('seq'))), 'ERR:23505', 'เลขที่ใช้แล้วใช้ซ้ำไม่ได้');
 select is(tests.device_a(tests.settle_seq('60000000-0000-0000-0000-000000000009', '70000000-0000-0000-0000-000000000006', 'null')),
   (select branch_code from shops where id = tests.val('shop')::uuid) || '-POS01-' || lpad((tests.val('seq')::int + 1)::text, 6, '0'), 'ไม่ส่งเลขมา server ออกต่อจากเลขล่าสุด');
+update shops set service_pct = 5 where id = tests.val('shop')::uuid;
+select is(tests.device_a(format(
+  $$select settle_bill(%L, '60000000-0000-0000-0000-000000000010', '70000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 'before', 1, 0, 0, '{}', '50000000-0000-0000-0000-000000000001', 31395, 31395, now(), p_rounding => 'up') ->> 'total'$$,
+  tests.val('manager')
+)), 'ERR:22023', 'ค่า p_rounding ที่ไม่รู้จักถูกปฏิเสธ');
+select is(tests.device_a(format(
+  $$select settle_bill(%L, '60000000-0000-0000-0000-000000000010', '70000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 'before', 1, 0, 0, '{}', '50000000-0000-0000-0000-000000000001', 31395, 31395, now(), p_rounding => 'none') ->> 'total'$$,
+  tests.val('manager')
+)), '31395', 'ส่ง p_rounding = none ข้ามการปัดเศษของร้านเฉพาะบิลนี้ได้');
+update shops set service_pct = 0 where id = tests.val('shop')::uuid;
 select is(tests.device_a(format($$select 1 from close_shift(%L, '90000000-0000-0000-0000-000000000001', 129900, now())$$, tests.val('manager'))), '1', 'ปิดกะได้');
 select is((select counted from shifts where id = '90000000-0000-0000-0000-000000000001'), 129900::bigint, 'บันทึกยอดนับเงิน');
 

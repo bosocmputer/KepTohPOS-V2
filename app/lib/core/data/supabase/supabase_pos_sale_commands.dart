@@ -98,6 +98,7 @@ mixin SupabasePosSaleCommands on SupabasePosBase, SupabasePosOffline
     required String billId,
     required String notes,
     BankAccountItem? bankAccount,
+    String? rounding,
     DateTime? now,
   }) async {
     final open = posState.openTables[table.id];
@@ -131,11 +132,17 @@ mixin SupabasePosSaleCommands on SupabasePosBase, SupabasePosOffline
         'p_addons': _positive(cart.ad),
         'p_method_id': method.id,
         'p_received': received,
-        'p_expected_total': orderOf(posState, pkg, totals).total,
+        'p_expected_total': orderOf(
+          posState,
+          pkg,
+          totals,
+          roundingOverride: rounding,
+        ).total,
         'p_at': _at(now),
         'p_bank_account_id': bankAccount?.id,
         'p_notes': notes,
         'p_seq': seq,
+        'p_rounding': ?rounding,
       },
       (s) {
         if (prefix == null) throw const PosOfflineException();
@@ -151,6 +158,7 @@ mixin SupabasePosSaleCommands on SupabasePosBase, SupabasePosOffline
           billId: billId,
           bankAccount: bankAccount,
           notes: notes,
+          rounding: rounding,
           now: now,
         );
         final i = s.sales.indexWhere((b) => b.id == billId);

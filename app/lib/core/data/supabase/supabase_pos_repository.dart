@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:app/core/data/local/offline_credentials.dart';
 import 'package:app/core/data/local/shop_snapshot_store.dart';
@@ -12,6 +13,7 @@ import 'package:app/core/data/supabase/supabase_pos_stock_commands.dart';
 import 'package:app/core/data/supabase/supabase_state_loader.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/domain/pos_command_exception.dart';
+import 'package:app/features/onboarding/data/device_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// [PosRepository] backed by Supabase RPCs, for a paired POS device.
@@ -31,6 +33,7 @@ class SupabasePosRepository extends SupabasePosBase
     required super.ownerClient,
     required super.shopId,
     required super.snapshot,
+    super.staffStorage,
   });
 
   /// Restarts from a snapshot saved by [toSnapshot], for opening the app
@@ -40,6 +43,7 @@ class SupabasePosRepository extends SupabasePosBase
     required String shopId,
     required Map<String, dynamic> data,
     SupabaseClient? ownerClient,
+    DeviceAuthStorage? staffStorage,
   }) =>
       SupabasePosRepository(
           deviceClient: deviceClient,
@@ -55,6 +59,7 @@ class SupabasePosRepository extends SupabasePosBase
             organizationId: data['organizationId'] as String,
             canReadCosts: false,
           ),
+          staffStorage: staffStorage,
         )
         ..receiptPrefix = data['receiptPrefix'] as String?
         ..rdMachineCode = data['rdMachineCode'] as String?
@@ -70,6 +75,7 @@ class SupabasePosRepository extends SupabasePosBase
     required String shopId,
     SupabaseClient? ownerClient,
     String? deviceUserId,
+    DeviceAuthStorage? staffStorage,
   }) async {
     final snapshot = await SupabaseStateLoader(
       deviceClient,
@@ -80,6 +86,7 @@ class SupabasePosRepository extends SupabasePosBase
       ownerClient: ownerClient,
       shopId: shopId,
       snapshot: snapshot,
+      staffStorage: staffStorage,
     );
     if (deviceUserId != null) {
       final device = await deviceClient
@@ -99,7 +106,68 @@ class SupabasePosRepository extends SupabasePosBase
           ..receiptSeq = (device['receipt_seq'] as num).toInt();
       }
     }
+    await repo.restoreStaffSession(reloadFromServer: true);
     return repo;
+  }
+
+  /// Restores a saved staff PIN session from [staffStorage], if still valid.
+  Future<void> restoreStaffSession({bool reloadFromServer = false}) async {
+    final storage = staffStorage;
+    if (storage == null) return;
+    final raw = await storage.read();
+    if (raw == null) return;
+    final String staffId;
+    final String token;
+    final String? offline;
+    final DateTime expiresAt;
+    try {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      staffId = map['staff_id'] as String;
+      token = map['session_token'] as String;
+      offline = map['offline_token'] as String?;
+      expiresAt = DateTime.parse(map['expires_at'] as String);
+    } on Object {
+      await storage.clear();
+      return;
+    }
+    final active = posState.staff.any((x) => x.id == staffId && x.active);
+    if (!active || !DateTime.now().toUtc().isBefore(expiresAt)) {
+      await storage.clear();
+      return;
+    }
+    signedInStaffId = staffId;
+    staffToken = token;
+    offlineToken = offline;
+    if (!reloadFromServer) {
+      final next = posState.copy()..currentStaffId = staffId;
+      posState = next.freeze();
+      return;
+    }
+    try {
+      await reload();
+    } on PosOfflineException {
+      rethrow;
+    } on PosCommandException {
+      signedInStaffId = null;
+      staffToken = null;
+      offlineToken = null;
+      await storage.clear();
+    }
+  }
+
+  Future<void> _saveStaffSession(DateTime expiresAt) async {
+    final storage = staffStorage;
+    final staffId = signedInStaffId;
+    final token = staffToken;
+    if (storage == null || staffId == null || token == null) return;
+    await storage.write(
+      jsonEncode(<String, dynamic>{
+        'staff_id': staffId,
+        'session_token': token,
+        'offline_token': offlineToken,
+        'expires_at': expiresAt.toUtc().toIso8601String(),
+      }),
+    );
   }
 
   /// What `restore` needs, with costs removed.
@@ -184,6 +252,12 @@ class SupabasePosRepository extends SupabasePosBase
         expiresAt: DateTime.parse(expires),
       );
     }
+    final sessionExpires = result['expires_at'] as String?;
+    await _saveStaffSession(
+      sessionExpires != null
+          ? DateTime.parse(sessionExpires)
+          : DateTime.now().toUtc().add(const Duration(hours: 12)),
+    );
     await reload();
     return PinSignInResult.success;
   }
@@ -195,6 +269,11 @@ class SupabasePosRepository extends SupabasePosBase
         staffToken = check.token;
         offlineToken = check.token;
         signedInStaffId = staffId;
+        final next = posState.copy()..currentStaffId = staffId;
+        posState = next.freeze();
+        await _saveStaffSession(
+          DateTime.now().toUtc().add(const Duration(hours: 12)),
+        );
         if (!controller.isClosed) controller.add(posState);
         return PinSignInResult.success;
       case OfflinePinResult.locked:
@@ -216,6 +295,7 @@ class SupabasePosRepository extends SupabasePosBase
     staffToken = null;
     offlineToken = null;
     signedInStaffId = null;
+    await staffStorage?.clear();
     if (token != null) {
       try {
         await deviceClient.rpc<void>(

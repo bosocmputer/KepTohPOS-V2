@@ -182,6 +182,7 @@ abstract class PosRepository implements PosSetupCommands {
     required String billId,
     required String notes,
     BankAccountItem? bankAccount,
+    String? rounding,
     DateTime? now,
   });
 

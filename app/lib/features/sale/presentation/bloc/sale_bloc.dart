@@ -80,6 +80,8 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
           emit(state.copyWith(transferStatus: e.status));
         case final SaleBankAccountSelected e:
           emit(state.copyWith(bankAccountId: e.bankAccountId));
+        case final SaleRoundingToggled e:
+          _onRoundingToggled(e, emit);
         case final SalePaymentSubmitted e:
           await _onPaymentSubmitted(e, emit);
         case final SaleSettledBillVoided e:
@@ -199,6 +201,20 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
     }
   }
 
+  void _onRoundingToggled(SaleRoundingToggled event, Emitter<SaleState> emit) {
+    final prevTotalStr = bahtInputText(state.payOrder.total);
+    final nextState = state.copyWith(
+      roundingOverride: event.roundDown ? 'down' : 'none',
+    );
+    emit(
+      state.cashReceived == prevTotalStr
+          ? nextState.copyWith(
+              cashReceived: bahtInputText(nextState.payOrder.total),
+            )
+          : nextState,
+    );
+  }
+
   Future<void> _onPaymentSubmitted(
     SalePaymentSubmitted event,
     Emitter<SaleState> emit,
@@ -233,6 +249,7 @@ class SaleBloc extends Bloc<SaleEvent, SaleState> {
       billId: billId,
       bankAccount: state.activeBankAccount,
       notes: state.notes,
+      rounding: state.roundingOverride,
       now: currentNow,
     );
     _emitReset(emit, nextPos, settledBillId: billId);

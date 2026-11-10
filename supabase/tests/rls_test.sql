@@ -4,7 +4,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(63);
+select plan(65);
 
 -- รัน SQL ในบทบาท + ผู้ใช้ที่กำหนด แล้วคืนผลเป็น text หรือ ERR:<sqlstate>
 -- กลับมาเป็น postgres ก่อนคืนค่า เพราะตารางภายในของ pgTAP ใช้ไม่ได้จากบทบาทอื่น
@@ -159,6 +159,8 @@ select is(tests.device_b('select count(*) from packages'), '0', 'เครื่
 select is(tests.owner_a('select leave_device()::text'), 'ERR:42501', 'บัญชีเจ้าของใช้ leave_device ไม่ได้');
 select lives_ok($$select tests.device_a('select leave_device()::text')$$, 'เครื่อง A ออกจากร้านได้');
 select is(tests.device_a('select count(*) from packages'), '0', 'ออกจากร้านแล้วเครื่องไม่เห็นข้อมูลร้าน');
+select is(tests.device_a(format($$select shop_id from claim_device(%L)$$, tests.owner_a(format($$select pairing_code from create_device_pairing(%L, 'เครื่อง A2')$$, tests.shop_a())))), tests.shop_a()::text, 'ออกจากร้านแล้วบัญชีเครื่องเดิมจับคู่ใหม่ได้');
+select is(tests.device_b(format($$select shop_id from claim_device(%L)$$, tests.owner_b(format($$select pairing_code from create_device_pairing(%L, 'เครื่อง B2')$$, tests.shop_b())))), tests.shop_b()::text, 'ถูกเพิกถอนแล้วบัญชีเครื่องเดิมจับคู่ใหม่ได้');
 
 -- สิทธิ์เรียกฟังก์ชัน: ฟังก์ชันใหม่ได้ EXECUTE ให้ PUBLIC โดยอัตโนมัติ จึงต้องตรวจทุกตัว
 select is(

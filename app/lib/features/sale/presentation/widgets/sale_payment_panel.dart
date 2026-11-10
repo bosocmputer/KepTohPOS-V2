@@ -116,7 +116,14 @@ class SalePaymentPanel extends StatelessWidget {
             ),
             SizedBox(height: gap),
           ],
-          OrderSummary(shop: s.shop, order: payOrder, showLines: !compactH),
+          OrderSummary(
+            shop: s.shop,
+            order: payOrder,
+            showLines: !compactH,
+            roundDown: state.roundsDown,
+            onRoundingChanged: (v) =>
+                bloc.add(SaleRoundingToggled(roundDown: v)),
+          ),
           SizedBox(height: gap),
           Text(
             'วิธีชำระเงิน',

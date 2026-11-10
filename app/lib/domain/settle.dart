@@ -171,6 +171,7 @@ CalculatedOrder settle(
   required String billId,
   BankAccountItem? bankAccount,
   String? notes,
+  String? rounding,
   DateTime? now,
 }) {
   final current = now ?? DateTime.now();
@@ -183,9 +184,9 @@ CalculatedOrder settle(
       o.rounds.add(newRound(cart, me, now: current));
       takeStock(st, cart.ad);
     }
-    order = orderOf(st, pkg, tableTotals(o));
+    order = orderOf(st, pkg, tableTotals(o), roundingOverride: rounding);
   } else {
-    order = orderOf(st, pkg, cart);
+    order = orderOf(st, pkg, cart, roundingOverride: rounding);
     takeStock(st, cart.ad);
   }
 

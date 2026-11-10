@@ -53,6 +53,7 @@ mixin MockPosCommands implements PosRepository {
     required String billId,
     required String notes,
     BankAccountItem? bankAccount,
+    String? rounding,
     DateTime? now,
   }) async => update(
     (s) => settle(
@@ -67,6 +68,7 @@ mixin MockPosCommands implements PosRepository {
       billId: billId,
       bankAccount: bankAccount,
       notes: notes,
+      rounding: rounding,
       now: now,
     ),
   );

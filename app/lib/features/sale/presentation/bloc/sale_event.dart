@@ -145,6 +145,14 @@ final class SaleBankAccountSelected extends SaleEvent {
   List<Object?> get props => [bankAccountId];
 }
 
+/// Toggles satang rounding (`'down'` vs `'none'`) for the current checkout.
+final class SaleRoundingToggled extends SaleEvent {
+  const new({required this.roundDown});
+  final bool roundDown;
+  @override
+  List<Object?> get props => [roundDown];
+}
+
 /// Voids a settled bill (e.g. when the customer changes their mind after
 /// printing the slip) and restores addon stock.
 final class SaleSettledBillVoided extends SaleEvent {
