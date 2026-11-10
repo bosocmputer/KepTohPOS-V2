@@ -28,5 +28,5 @@ description: Use ONLY when the task requires specialized document/tooling workfl
 ```bash
 bash .claude/hooks/install-skill.sh <skill-1> [skill-2]
 ```
-- Clones only the requested skill folder via Git Sparse Checkout into both `.claude/skills/<skill>/` and `.agents/skills/<skill>/`.
+- Clones only the requested skill folder via Git Sparse Checkout into `.claude/skills/<skill>/` (shared automatically with Antigravity via `.agents/skills.json`).
 - Limit installation to **1–3 capability skills maximum** per project, and read files inside `references/` only when needed.

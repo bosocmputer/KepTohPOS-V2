@@ -31,7 +31,7 @@ Randomly tweaking code ("shotgun debugging") wastes token quota and introduces n
 - **Test-Protection Gate (`Anthropic AI-Native SDLC Stage 4`):** During a bug fix, **NEVER modify an existing test file** (`*.test.*`, `*.spec.*`, `*_test.*`, `test_*.py`) to weaken assertions or make the test pass (`protect-sensitive-files.sh` blocks tampering with existing tests during debug cycles). Always fix the root cause in the implementation code.
 - **Attempt 1:** State a single hypothesis ("X fails because Y"). Apply the smallest possible `Edit` to fix Y and run **only** the failing test file.
 - **Attempt 2 (If Attempt 1 fails):** Read the new error. Use `Edit` to replace Attempt 1 with Hypothesis 2 in a single step (do not waste a tool call reverting in between) and re-run the test.
-- **2-Repeat Pitfall Memory (`Stage 3 Play 3.2`):** When a bug caused by a recurring project misunderstanding is resolved, append a concise 1-line rule to `.claude/rules/project-pitfalls.md` (and `.agents/rules/project-pitfalls.md`) so future sessions never repeat it and `rsync` template updates never overwrite it.
+- **2-Repeat Pitfall Memory (`Stage 3 Play 3.2`):** When a bug caused by a recurring project misunderstanding is resolved, append a concise 1-line rule to `.claude/rules/project-pitfalls.md` so future sessions never repeat it and `rsync` template updates never overwrite it.
 
 ### Phase 4: Hard Circuit Breaker (Stop After 2 Failed Fixes)
 If Attempt 2 fails, **DO NOT attempt Fix #3**. Multiple failed fixes indicate either an architectural issue or missing context that requires human input.

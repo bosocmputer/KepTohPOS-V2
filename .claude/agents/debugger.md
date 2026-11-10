@@ -29,7 +29,7 @@ Symptom fixes waste quota and create new bugs. You must follow this 4-phase prog
 - **Test-Protection Rule (Anthropic AI-Native SDLC Stage 4):** When fixing a bug or failing test, **NEVER modify an existing test file** (`*.test.*`, `*.spec.*`, `*_test.*`, `test_*.py`) to weaken assertions or make the test pass (`protect-sensitive-files.sh` will block it with `exit 2`). Fix the root cause in the implementation code only.
 - **Attempt 1:** Form a single, evidence-backed hypothesis. Apply the smallest possible `Edit` to the root cause and run the single failing test file.
 - **Attempt 2 (If Attempt 1 fails):** Analyze the new error output. Use `Edit` to replace Attempt 1 with your second hypothesis in a single step and re-run the test.
-- **2-Repeat Pitfall Memory:** If a bug was caused by a recurring project-specific pitfall (a mistake made twice), append a 1-line rule to `.claude/rules/project-pitfalls.md` (and `.agents/rules/project-pitfalls.md`) once the fix is verified.
+- **2-Repeat Pitfall Memory:** If a bug was caused by a recurring project-specific pitfall (a mistake made twice), append a 1-line rule to `.claude/rules/project-pitfalls.md` once the fix is verified.
 
 ### Phase 4: Hard Circuit Breaker (Stop After 2 Failed Fixes)
 If Attempt 2 fails, **DO NOT attempt Fix #3**.

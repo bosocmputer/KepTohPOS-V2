@@ -36,7 +36,7 @@ Before making any claim of success ("Done", "Fixed", "Tests pass"):
 4. **VERIFY:** Does the output confirm the claim?
    - **If NO:** State the actual status with the actual error output.
    - **If YES:** State the claim WITH the evidence (including exact count of tests run).
-5. **ONLY THEN:** Conclude the task (if closing a milestone/PR where a `[BLOCKER]` or recurring gotcha was resolved, ensure a 1-line prevention rule was distilled to `.claude/rules/project-pitfalls.md` & `.agents/rules/project-pitfalls.md`).
+5. **ONLY THEN:** Conclude the task (if closing a milestone/PR where a `[BLOCKER]` or recurring gotcha was resolved, ensure a 1-line prevention rule was distilled to `.claude/rules/project-pitfalls.md`).
 
 ## 3. Red Flags & Rationalization Prevention Table
 

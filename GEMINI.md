@@ -1,2 +1,2 @@
-# Antigravity Workspace Rules (Pointer to AGENTS.md)
-@[AGENTS.md](./AGENTS.md)
+# Antigravity Workspace Rules (Pointer to CLAUDE.md)
+@[CLAUDE.md](./CLAUDE.md)

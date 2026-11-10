@@ -1,4 +1,4 @@
-# Project Overview & Universal Agent Governance (Claude Code)
+# Project Overview & Universal Agent Governance (Claude Code & Antigravity IDE)
 > **Communication Mandate:** Always respond to the user in **Thai (ภาษาไทย)**, keeping technical terms, file paths, commands, and code identifiers in English.
 > **Upstream Architectures:** [`anthropics/skills`](https://github.com/anthropics/skills) • [Anthropic AI-Native SDLC Playbook](https://claude.com/resources/articles/the-ai-native-sdlc-playbook) • [`cloudflare/security-audit-skill`](https://github.com/cloudflare/security-audit-skill) • [`andrej-karpathy-skills`](https://github.com/forrestchang/andrej-karpathy-skills) • [`obra/superpowers`](https://github.com/obra/superpowers) • [`garrytan/gstack`](https://github.com/garrytan/gstack) • [`jeffallan/claude-skills`](https://github.com/jeffallan/claude-skills) • [`supabase/agent-skills`](https://github.com/supabase/agent-skills) • [`trailofbits/claude-code-config`](https://github.com/trailofbits/claude-code-config) • [`heydamir/unslop`](https://github.com/heydamir/unslop) • [`mrdoob/three.js`](https://github.com/mrdoob/three.js)
 
@@ -20,22 +20,22 @@ Inspect root manifest files (including monorepo subfolders such as `app/`, `supa
 ---
 
 ## 1. Zero-Command Auto-Routing & Explicit Subagent Delegation
-> **EXPLICIT USER AUTHORIZATION (OVERRIDES DEFAULT `Agent` TOOL HESITATION):**
-> The project owner explicitly mandates that the main `Opus` session act as a **Lead Orchestrator** and **proactively invoke the `Agent` tool (`explorer`, `implementer`, `debugger`, `reviewer`) with the designated `model` tier below** whenever a task spans multiple files or steps, preserving main-window context and `Opus` quota:
+> **EXPLICIT USER AUTHORIZATION (OVERRIDES DEFAULT SUBAGENT HESITATION):**
+> The project owner explicitly mandates that the main session act as a **Lead Orchestrator** and **proactively delegate multi-file or multi-step chunks to subagents** (`Agent(...)` in Claude Code / `invoke_subagent(...)` in Antigravity IDE) using the designated tier below, preserving main-window context and quota:
 
-| User Request / Task Pattern | Scope | Mandatory Subagent (`Agent` Tool) & Model Routing |
+| User Request / Task Pattern | Scope | Mandatory Subagent & Model Routing (Claude Code \| Antigravity IDE) |
 | :--- | :--- | :--- |
 | **Document / Tooling Capability (`pdf`, `docx`, `xlsx`, `pptx`, `mcp-builder`, `webapp-testing`)** | Specialized Tooling Skill | Load `tech-stack-skills` and install via `bash .claude/hooks/install-skill.sh` (do NOT install generic language skills like `react-expert` or `flutter-expert` unless explicitly requested) |
 | **"ทำต่อจากที่ค้างไว้ / โควต้าอีกฝั่งหมด"** | Cross-agent handoff | Load `auto-resume-handoff`, inspect `.agent-last-state.log` + `git status` + `TASK_STATE.md` (if present), and resume immediately |
 | **"สร้างระบบ... / เพิ่มฟีเจอร์..." (Broad/Ambiguous)** | Architectural / Multi-option | Load `common-ground` and confirm 3–4 concise assumptions in Thai before writing code |
 | **Trivial Edit (1–2 known files)** | **Trivial Task (1–2 files)** | Execute directly in the main window via surgical `Edit` + Tier 1 single-file test (do NOT spawn subagents for 1–2 file edits) |
-| **Unfamiliar codebase search / tracing (>3 files)** | **Multi-File Exploration** | `Agent(subagent_type="explorer", model="haiku")` — returns exact `file:line` coordinates and signatures |
-| **Multi-file implementation (2–5 files) + unit tests** | **Multi-Step Implementation** | `Agent(subagent_type="implementer", model="sonnet")` — applies surgical edits and runs Tier 1 tests |
-| **"เทสต์พัง / บั๊กหน้า... / Error..." (Bug investigation)** | **Root-Cause Debugging** | `Agent(subagent_type="debugger", model="sonnet")` — enforces 2-Strike limit and `Verify RED ➔ GREEN` |
-| **"ช่วยตรวจโค้ด / รีวิว / รันชุดทดสอบ E2E"** | **QA Review & E2E Suite** | `Agent(subagent_type="reviewer", model="sonnet")` — runs `git diff` review, Tier 2 checks, and E2E suites |
-| **"ตรวจความปลอดภัย / `/security-audit` / เช็ก RLS & RPC"** | **Security Audit (Cloudflare Gate)** | Load `security-audit`: spawn `explorer` (`haiku`) to map attack surface + `reviewer` (`sonnet`) to trace `entrypoint ➔ sink` (`[CONFIRMED]` vs `[NEEDS_VALIDATION]`) |
+| **Unfamiliar codebase search / tracing (>3 files)** | **Multi-File Exploration** | Claude: `Agent(subagent_type="explorer", model="haiku")` \| Antigravity: `invoke_subagent(TypeName="research", Model="flash", Role="Codebase Explorer")` |
+| **Multi-file implementation (2–5 files) + unit tests** | **Multi-Step Implementation** | Claude: `Agent(subagent_type="implementer", model="sonnet")` \| Antigravity: `invoke_subagent(TypeName="self", Model="inherit", Role="Surgical Implementer")` |
+| **"เทสต์พัง / บั๊กหน้า... / Error..." (Bug investigation)** | **Root-Cause Debugging** | Claude: `Agent(subagent_type="debugger", model="sonnet")` \| Antigravity: `invoke_subagent(TypeName="self", Model="inherit", Role="2-Strike Debugger")` |
+| **"ช่วยตรวจโค้ด / รีวิว / รันชุดทดสอบ E2E หรือ Browser"** | **QA Review & E2E Suite** | Claude: `Agent(subagent_type="reviewer", model="sonnet")` \| Antigravity: `invoke_subagent(TypeName="browser" or "self", Model="inherit", Role="QA Verifier")` |
+| **"ตรวจความปลอดภัย / `/security-audit` / เช็ก RLS & RPC"** | **Security Audit (Cloudflare Gate)** | Load `security-audit`: map attack surface with `explorer`/`research` (`haiku`/`flash`) + trace `entrypoint ➔ sink` with `reviewer`/`self` (`sonnet`/`inherit`) |
 | **"สร้าง 3D Viewer / Three.js / WebGL"** | Web 3D Visualization | Load `threejs-expert` (`mrdoob/three.js r187+`: `three/addons/*`, `HDRLoader`, `OutputPass`, `dispose()`) |
-| **"จดเป็นบทเรียน / จำไว้ว่า... / `/learn`"** | Self-Learning Memory | Distill into a 1-line rule in `.claude/rules/project-pitfalls.md` & `.agents/rules/project-pitfalls.md` (max 30 rules) |
+| **"จดเป็นบทเรียน / จำไว้ว่า... / `/learn`"** | Self-Learning Memory | Distill into a 1-line rule in `.claude/rules/project-pitfalls.md` (max 30 rules; auto-imported by `.agents/rules/project-pitfalls.md`) |
 | **"เปิดจอ 3D / เช็กหลักฐานโมเดล"** | 3D HUD / Session Proof | Run `bash .claude/hooks/open-hud.sh` (3D Monitor) or `bash .claude/hooks/audit-session-proof.sh` (`.jsonl` model audit) |
 
 ---
@@ -83,12 +83,12 @@ Inspect root manifest files (including monorepo subfolders such as `app/`, `supa
 
 ---
 
-## 5. Self-Learning Pitfall Memory (`Anthropic SDLC Playbook Stage 3 — Blocker & Correction Distillation`)
+## 5. Self-Learning Pitfall Memory (`Anthropic SDLC Playbook Stage 3 — Single Source of Truth`)
 > **Persistence & Anti-Bloat Rule (Survives Template `rsync` Upgrades):**
-> Automatically distill project-specific lessons into **`.claude/rules/project-pitfalls.md`** (and mirror to **`.agents/rules/project-pitfalls.md`**) across **3 mandatory triggers**:
+> Automatically distill project-specific lessons into **`.claude/rules/project-pitfalls.md`** (which `.agents/rules/project-pitfalls.md` automatically imports via `@[project-pitfalls]`) across **3 mandatory triggers**:
 > 1. **After Fixing a `[BLOCKER] [CONFIRMED]`:** When a blocker caught by `reviewer` or a recurring test failure is resolved, append a 1-line prevention rule so future milestones never repeat it.
-> 2. **On User Correction or `/learn`:** When the user corrects a project assumption or invokes `/learn`, record the rule immediately.
-> 3. **At Milestone Close / `/handoff`:** Before closing a milestone or writing `TASK_STATE.md`, distill any new project-specific gotchas (e.g., DB unit conventions, RLS quirks, test viewport requirements) into `project-pitfalls.md`.
+> 2. **On User Correction or `/learn`:** When the user corrects a project assumption or invokes `/learn`, record the rule in `.claude/rules/project-pitfalls.md` immediately.
+> 3. **At Milestone Close / `/handoff`:** Before closing a milestone or writing `TASK_STATE.md`, distill any new project-specific gotchas (e.g., DB unit conventions, RLS quirks, test viewport requirements) into `.claude/rules/project-pitfalls.md`.
 > - **Format & Cap:** Strictly **1 line per rule** (`- **[Category]:** <Rule + short reason>`), capped at **30 rules maximum** (merge overlapping rules if full).
 - Never weaken or edit existing test assertions (`expect`/`assert`) to make a failing test pass; fix the root cause in production code.
-- When modifying rules or skills in `.claude/`, always keep `.agents/` synchronized for seamless Claude Code ↔ Antigravity handoffs.
+- **Single Source of Truth (`.claude/` Master):** All rules (`.claude/rules/*.md`) and skills (`.claude/skills/*/SKILL.md`) are authored in `.claude/` only; `.agents/` automatically imports them via `.agents/skills.json` and `@[...]` pointers.

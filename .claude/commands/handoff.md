@@ -20,5 +20,5 @@ $ARGUMENTS
   - [Key business rules or user decisions established in this session]
 ```
 After writing `TASK_STATE.md`:
-1. **Distill Session Pitfalls (`Stage 3 Memory`):** If any new project-specific gotchas, resolved `[BLOCKER]` patterns, or user corrections occurred during this session/milestone, append them as concise 1-line rules (`- **[Category]:** <Rule>`, max 30 rules total) to `.claude/rules/project-pitfalls.md` and `.agents/rules/project-pitfalls.md`.
+1. **Distill Session Pitfalls (`Stage 3 Memory`):** If any new project-specific gotchas, resolved `[BLOCKER]` patterns, or user corrections occurred during this session/milestone, append them as concise 1-line rules (`- **[Category]:** <Rule>`, max 30 rules total) to `.claude/rules/project-pitfalls.md` (auto-imported by `.agents/rules/project-pitfalls.md`).
 2. **Session Proof Summary:** Run `bash .claude/hooks/audit-session-proof.sh --brief` to display the `### 📊 ผลชี้วัด Agent Guard Template` summary for this session, and inform the user they can now run `/clear` or switch to the other agent and type *"ทำต่อจากที่ค้างไว้"*.

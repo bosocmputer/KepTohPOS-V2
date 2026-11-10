@@ -166,7 +166,7 @@ def friendly_power_name(rel_path, meta, title):
 
 def scan_workspace_catalog(root):
     patterns = [
-        ("governance", ["CLAUDE.md", "AGENTS.md", "GEMINI.md", ".claude/settings.json", ".agents/hooks.json"]),
+        ("governance", ["CLAUDE.md", "AGENTS.md", "GEMINI.md", ".claude/settings.json", ".agents/hooks.json", ".agents/skills.json"]),
         ("agent", sorted(glob.glob(os.path.join(root, ".claude/agents/*.md")))),
         ("skill", sorted(glob.glob(os.path.join(root, ".claude/skills/*/SKILL.md")))),
         ("command", sorted(glob.glob(os.path.join(root, ".claude/commands/*.md")))),
@@ -193,12 +193,14 @@ def scan_workspace_catalog(root):
             elif kind == "command":
                 short_id = "/" + os.path.splitext(os.path.basename(rel_p))[0]
 
-            # ตรวจหาไฟล์คู่ขนานใน .agents/ บนดิสก์จริง
+            # ตรวจหาไฟล์คู่ขนานหรือตัวชี้ใน .agents/ บนดิสก์จริง
             ag_mirror = ""
             if rel_p.startswith(".claude/skills/"):
                 cand = rel_p.replace(".claude/skills/", ".agents/skills/", 1)
                 if os.path.isfile(os.path.join(root, cand)):
                     ag_mirror = cand
+                elif os.path.isfile(os.path.join(root, ".agents/skills.json")):
+                    ag_mirror = ".agents/skills.json"
             elif rel_p.startswith(".claude/rules/"):
                 cand = rel_p.replace(".claude/rules/", ".agents/rules/", 1)
                 if os.path.isfile(os.path.join(root, cand)):
