@@ -1,8 +1,26 @@
 import 'package:app/core/data/mock_pos_repository.dart';
+import 'package:app/core/data/supabase/supabase_pos_base.dart';
+import 'package:app/core/data/supabase/supabase_state_loader.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/domain/pos_command_exception.dart';
 import 'package:app/features/bills/presentation/cubit/bills_cubit.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+class _StubPosBase extends SupabasePosBase {
+  new(PosState state)
+    : super(
+        deviceClient: SupabaseClient('http://localhost', 'anon'),
+        ownerClient: null,
+        shopId: 'shop-1',
+        snapshot: SupabaseSnapshot(
+          state: state,
+          sessionByTable: const <String, String>{},
+          organizationId: 'org-1',
+          canReadCosts: true,
+        ),
+      );
+}
 
 void main() {
   final fixedNow = DateTime(2026, 11, 9, 12);
@@ -62,8 +80,23 @@ void main() {
       'date': '2026-10-31',
     });
     expect(cubit.state.canReissue(lastMonth, owner), isFalse);
+    final fullInv = BillRecord.fromJson(<String, dynamic>{
+      ...bill.toJson(),
+      'isFullInvoice': true,
+    });
+    expect(cubit.state.canReissue(fullInv, owner), isFalse);
     await cubit.reissueBill(billId: 'b1', reason: 'x');
     final voided = repo.state.sales.firstWhere((b) => b.id == 'b1');
     expect(cubit.state.canReissue(voided, owner), isFalse);
+  });
+
+  test('describeError maps PostgrestException 23514 to Thai message', () async {
+    final base = _StubPosBase(repo.state);
+    addTearDown(base.controller.close);
+    final ex = base.describeError(
+      const PostgrestException(message: 'check', code: '23514'),
+    );
+    expect(ex, isA<PosCommandException>());
+    expect(ex.message, 'ข้อมูลไม่ถูกต้องตามเงื่อนไขที่กำหนด');
   });
 }
