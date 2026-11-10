@@ -59,26 +59,34 @@ mixin SupabasePosOffline on SupabasePosBase {
     return posState;
   }
 
-  /// Sends queued commands in order, then reloads once nothing is left.
-  Future<OutboxFlushResult?> flushOutbox() async {
+  /// Sends queued commands in order in the background without blocking the
+  /// screen, then reloads once nothing is left.
+  Future<OutboxFlushResult?> flushOutbox() {
     final queue = outbox;
-    if (queue == null) return null;
-    final result = await queue.flush((fn, params) async {
-      try {
-        await deviceClient.rpc<Object?>(fn, params: params);
-      } on http.ClientException {
-        throw const OutboxOfflineException();
-      } on PostgrestException {
-        rethrow;
+    if (queue == null) return Future<OutboxFlushResult?>.value();
+    return NetworkActivity.instance.quietly(() async {
+      OutboxFlushResult result;
+      do {
+        result = await queue.flush((fn, params) async {
+          try {
+            await deviceClient.rpc<Object?>(fn, params: params);
+          } on http.ClientException {
+            throw const OutboxOfflineException();
+          } on PostgrestException {
+            rethrow;
+          }
+        });
+      } while (!result.offline &&
+          result.sent > 0 &&
+          await queue.pendingCount() > 0);
+      if (!result.offline && await queue.pendingCount() == 0) {
+        try {
+          await reload();
+        } on PosCommandException {
+          // The next command or flush reloads again.
+        }
       }
+      return result;
     });
-    if (!result.offline && await queue.pendingCount() == 0) {
-      try {
-        await reload();
-      } on PosCommandException {
-        // The next command or flush reloads again.
-      }
-    }
-    return result;
   }
 }

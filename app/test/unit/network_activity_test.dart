@@ -98,4 +98,30 @@ void main() {
       expect(activity.reachable.value, isTrue);
     },
   );
+
+  test(
+    'quietly suppresses busy across multiple sequential background sync calls',
+    () async {
+      // Arrange
+      final activity = NetworkActivity(
+        MockClient((_) async => http.Response('ok', 200)),
+      );
+      final seenBusy = <bool>[];
+      activity.busy.addListener(() => seenBusy.add(activity.busy.value));
+
+      // Act
+      await activity.quietly(() async {
+        await activity.hold(() async {
+          await activity.post(Uri.parse('https://x.test/rpc/open_table'));
+          await activity.post(Uri.parse('https://x.test/rpc/settle_bill'));
+          await activity.get(Uri.parse('https://x.test/reload'));
+        });
+      });
+
+      // Assert
+      expect(seenBusy, isEmpty);
+      expect(activity.busy.value, isFalse);
+      expect(activity.reachable.value, isTrue);
+    },
+  );
 }
