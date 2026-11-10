@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Dual-Engine Sparse Skill Installer (Claude Code .claude/skills + Antigravity IDE .agents/skills)
+# Dual-Engine Sparse Skill Installer (Single Source of Truth in .claude/skills + .agents/skills.json pointer)
 # รองรับการดึง Skill อัตโนมัติจาก 3 คลังมาตรฐาน:
 #   1. anthropics/skills (19 Official Anthropic Skills: frontend-design, webapp-testing, mcp-builder, claude-api, skill-creator, docx, pdf, pptx, xlsx, ฯลฯ)
-#   2. jeffallan/claude-skills (67 Tech Stack Skills: react-expert, nestjs-expert, golang-pro, flutter-expert, ฯลฯ)
+#   2. jeffallan/claude-skills (67 Tech Stack Skills เมื่อผู้ใช้สั่งติดตั้งเฉพาะเจาะจง)
 #   3. heydamir/unslop (unslop UI audit skill)
 set -e
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -11,8 +11,7 @@ cd "$PROJECT_ROOT"
 if [ "$#" -eq 0 ]; then
   echo "Usage: bash .claude/hooks/install-skill.sh <skill-name> [skill-name-2 ...]"
   echo "Examples:"
-  echo "  • Official Anthropic Skills : bash .claude/hooks/install-skill.sh frontend-design webapp-testing mcp-builder pdf xlsx"
-  echo "  • Framework/Stack Skills    : bash .claude/hooks/install-skill.sh react-expert nestjs-expert golang-pro"
+  echo "  • Official Anthropic Skills : bash .claude/hooks/install-skill.sh pdf xlsx webapp-testing mcp-builder"
   echo "  • UI Anti-Slop Audit Skill  : bash .claude/hooks/install-skill.sh unslop"
   exit 1
 fi
@@ -20,7 +19,16 @@ fi
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-mkdir -p .claude/skills .agents/skills
+mkdir -p .claude/skills .agents
+if [ ! -f ".agents/skills.json" ]; then
+  cat << 'EOF' > .agents/skills.json
+{
+  "entries": [
+    { "path": ".claude/skills" }
+  ]
+}
+EOF
+fi
 
 ANTHROPIC_OFFICIAL_LIST="academy-guide algorithmic-art brand-guidelines canvas-design claude-api discernment-nudge doc-coauthoring docx frontend-design internal-comms mcp-builder pdf pptx skill-creator slack-gif-creator theme-factory web-artifacts-builder webapp-testing xlsx"
 
@@ -54,15 +62,13 @@ if [ "$INSTALL_UNSLOP" -eq 1 ]; then
   echo "🎨 Fetching 'unslop' UI skill from github.com/heydamir/unslop..."
   git clone --depth 1 https://github.com/heydamir/unslop.git "$TMP_DIR/unslop" >/dev/null 2>&1
   if [ -d "$TMP_DIR/unslop/skills/unslop" ]; then
-    rm -rf ".claude/skills/unslop" ".agents/skills/unslop"
+    rm -rf ".claude/skills/unslop"
     cp -R "$TMP_DIR/unslop/skills/unslop" ".claude/skills/unslop"
-    cp -R "$TMP_DIR/unslop/skills/unslop" ".agents/skills/unslop"
-    echo "✅ Installed 'unslop' into both .claude/skills/unslop and .agents/skills/unslop"
+    echo "✅ Installed 'unslop' into .claude/skills/unslop (shared with Antigravity via .agents/skills.json)"
   elif [ -f "$TMP_DIR/unslop/SKILL.md" ]; then
-    mkdir -p ".claude/skills/unslop" ".agents/skills/unslop"
+    mkdir -p ".claude/skills/unslop"
     cp -R "$TMP_DIR/unslop/"* ".claude/skills/unslop/"
-    cp -R "$TMP_DIR/unslop/"* ".agents/skills/unslop/"
-    echo "✅ Installed 'unslop' into both .claude/skills/unslop and .agents/skills/unslop"
+    echo "✅ Installed 'unslop' into .claude/skills/unslop (shared with Antigravity via .agents/skills.json)"
   fi
 fi
 
@@ -80,10 +86,9 @@ if [ "${#ANTHROPIC_SKILLS[@]}" -gt 0 ]; then
 
   for SKILL in "${ANTHROPIC_SKILLS[@]}"; do
     if [ -d "$TMP_DIR/anthropic-repo/skills/$SKILL" ]; then
-      rm -rf ".claude/skills/$SKILL" ".agents/skills/$SKILL"
+      rm -rf ".claude/skills/$SKILL"
       cp -R "$TMP_DIR/anthropic-repo/skills/$SKILL" ".claude/skills/$SKILL"
-      cp -R "$TMP_DIR/anthropic-repo/skills/$SKILL" ".agents/skills/$SKILL"
-      echo "✅ Installed official Anthropic skill '$SKILL' into both .claude/skills/$SKILL and .agents/skills/$SKILL"
+      echo "✅ Installed official Anthropic skill '$SKILL' into .claude/skills/$SKILL (shared via .agents/skills.json)"
     else
       echo "⚠️ Skill '$SKILL' not found in anthropics/skills/skills/" >&2
     fi
@@ -104,10 +109,9 @@ if [ "${#JEFFALLAN_SKILLS[@]}" -gt 0 ]; then
 
   for SKILL in "${JEFFALLAN_SKILLS[@]}"; do
     if [ -d "$TMP_DIR/jeffallan-repo/skills/$SKILL" ]; then
-      rm -rf ".claude/skills/$SKILL" ".agents/skills/$SKILL"
+      rm -rf ".claude/skills/$SKILL"
       cp -R "$TMP_DIR/jeffallan-repo/skills/$SKILL" ".claude/skills/$SKILL"
-      cp -R "$TMP_DIR/jeffallan-repo/skills/$SKILL" ".agents/skills/$SKILL"
-      echo "✅ Installed '$SKILL' into both .claude/skills/$SKILL and .agents/skills/$SKILL"
+      echo "✅ Installed '$SKILL' into .claude/skills/$SKILL (shared via .agents/skills.json)"
     else
       echo "⚠️ Skill '$SKILL' not found in jeffallan/claude-skills/skills/ or anthropics/skills/skills/" >&2
     fi
@@ -122,5 +126,5 @@ if [ -x "$PROJECT_ROOT/.claude/hooks/telemetry-tracker.sh" ]; then
     --status "working" \
     --skill "tech-stack-skills" \
     --hook ".claude/hooks/install-skill.sh" \
-    --detail "📦 ติดตั้ง Skill เสริม ($*) ลงทั้ง .claude/skills/ และ .agents/skills/ สำเร็จ" >/dev/null 2>&1 || true
+    --detail "📦 ติดตั้ง Skill เสริม ($*) ลง .claude/skills/ (เชื่อม .agents/skills.json) สำเร็จ" >/dev/null 2>&1 || true
 fi

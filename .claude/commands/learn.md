@@ -14,5 +14,5 @@ Distill the lesson, resolved `[BLOCKER]`, or user correction from `$ARGUMENTS` (
 3. **Enforce Anti-Bloat Cap (Max 30 Rules):**
    - If a similar rule already exists, update that single line instead of adding a duplicate.
    - If the file already has 30 rules, merge the 2 most closely related rules so the file never exceeds 30 lines of rules.
-4. **Dual-Engine Sync:** Apply the exact same update to both `.claude/rules/project-pitfalls.md` and `.agents/rules/project-pitfalls.md`.
+4. **Single Source of Truth:** Write the update to `.claude/rules/project-pitfalls.md` only (`.agents/rules/project-pitfalls.md` automatically imports it via `@[project-pitfalls]`).
 5. **Confirm in Thai:** Report the exact 1-line rule added/updated and the current rule count (`X/30`).
