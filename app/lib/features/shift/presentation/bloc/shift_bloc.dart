@@ -82,6 +82,7 @@ class ShiftState extends Equatable {
     required this.owingTables,
     required this.owedTotal,
     required this.floatInput,
+    this.openTablesList = const [],
     this.activeShift,
     this.activeStats,
     this.countedInput = '',
@@ -93,6 +94,7 @@ class ShiftState extends Equatable {
   final ShiftRecord? activeShift;
   final ShiftStats? activeStats;
   final List<ShiftRecord> history;
+  final List<DiningTable> openTablesList;
   final List<DiningTable> owingTables;
   final int owedTotal;
   final String floatInput;
@@ -131,6 +133,7 @@ class ShiftState extends Equatable {
     activeShift: activeShift,
     activeStats: activeStats,
     history: history,
+    openTablesList: openTablesList,
     owingTables: owingTables,
     owedTotal: owedTotal,
     floatInput: floatInput ?? this.floatInput,
@@ -154,6 +157,7 @@ class ShiftState extends Equatable {
     history.length,
     history.firstOrNull?.id,
     history.firstOrNull?.closedAt,
+    openTablesList.length,
     owingTables.length,
     owedTotal,
     floatInput,
@@ -190,11 +194,13 @@ class ShiftBloc extends Bloc<ShiftEvent, ShiftState> {
       ..sort((a, b) => b.openedAt.compareTo(a.openedAt));
     final history = closedShifts.take(14).toList();
 
+    final openList = <DiningTable>[];
     final owing = <DiningTable>[];
     var owed = 0;
     for (final tb in s.tables) {
       final ot = s.openTables[tb.id];
       if (ot != null) {
+        openList.add(tb);
         final due = tableDue(s, ot);
         if (due > 0) {
           owing.add(tb);
@@ -209,6 +215,7 @@ class ShiftBloc extends Bloc<ShiftEvent, ShiftState> {
       activeShift: active,
       activeStats: activeStats,
       history: history,
+      openTablesList: openList,
       owingTables: owing,
       owedTotal: owed,
       floatInput: floatInput ?? defFloat,
@@ -266,6 +273,16 @@ class ShiftBloc extends Bloc<ShiftEvent, ShiftState> {
   }
 
   Future<void> _onClosed(ShiftClosed event, Emitter<ShiftState> emit) async {
+    if (_repository.state.openTables.isNotEmpty) {
+      emit(
+        state.copyWith(
+          confirmClose: false,
+          toastMessage:
+              'ยังมีโต๊ะเปิดอยู่ กรุณาเช็กบิลและเก็บโต๊ะให้ครบก่อนปิดกะ',
+        ),
+      );
+      return;
+    }
     final cnt = event.counted ?? state.countedValue;
     if (cnt == null) return;
     final nextPos = await _repository.closeCashShift(

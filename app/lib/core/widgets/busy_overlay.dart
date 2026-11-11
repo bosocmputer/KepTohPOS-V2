@@ -36,30 +36,17 @@ class BusyOverlay extends StatelessWidget {
                     backgroundColor: Colors.transparent,
                   ),
                 ),
-                IgnorePointer(
+                const IgnorePointer(
                   child: Material(
                     type: MaterialType.transparency,
                     child: Center(
                       child: OverflowBox(
                         maxWidth: double.infinity,
                         maxHeight: double.infinity,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppDimensions.space6,
-                            vertical: AppDimensions.space5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: tokens.surface,
-                            borderRadius: BorderRadius.circular(
-                              AppDimensions.radiusLg,
-                            ),
-                            border: Border.all(color: tokens.line),
-                            boxShadow: tokens.shadows,
-                          ),
-                          child: const WalkingOrangeLoader(
-                            label: 'กำลังประมวลผล…',
-                            isOverlay: true,
-                          ),
+                        child: WalkingOrangeLoader(
+                          label: 'กำลังประมวลผล…',
+                          isOverlay: true,
+                          onScrim: true,
                         ),
                       ),
                     ),

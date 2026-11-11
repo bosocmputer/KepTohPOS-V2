@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:app/app.dart';
 import 'package:app/core/data/mock_pos_repository.dart';
+import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -152,13 +153,22 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('shift-clear-counted-btn')));
       await tester.pumpAndSettle();
 
-      // Enter counted cash and close shift
+      // Enter counted cash while tables are still open -> banner shows &
+      // close-shift-btn stays disabled
       await tester.enterText(
         find.byKey(const ValueKey('shift-counted-input')),
         '5446',
       );
       await tester.pumpAndSettle();
       expect(find.text('ยอดตรง'), findsOneWidget);
+      expect(find.byKey(const ValueKey('shift-owing-banner')), findsOneWidget);
+      expect(tester.widget<Btn>(closeBtnFinder).disabled, isTrue);
+
+      // Clear open tables -> banner disappears and close-shift-btn enables
+      repo.update((s) => s.openTables.clear());
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('shift-owing-banner')), findsNothing);
+      expect(tester.widget<Btn>(closeBtnFinder).disabled, isFalse);
 
       await tester.tap(find.byKey(const ValueKey('close-shift-btn')));
       await tester.pumpAndSettle();

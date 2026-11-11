@@ -141,10 +141,7 @@ class BillsPage extends StatelessWidget {
                             vertical: AppDimensions.space6,
                           ),
                           child: Center(
-                            child: WalkingOrangeLoader(
-                              size: 180,
-                              label: 'กำลังโหลดบิล…',
-                            ),
+                            child: WalkingOrangeLoader(label: 'กำลังโหลดบิล…'),
                           ),
                         )
                       : Empty(

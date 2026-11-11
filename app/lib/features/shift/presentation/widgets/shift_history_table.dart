@@ -151,7 +151,14 @@ class OwingTablesBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final names = state.owingTables.map((x) => x.name).join(', ');
+    final allNames = state.openTablesList.map((x) => x.name).join(', ');
+    final bannerText = state.owingTables.isNotEmpty
+        ? 'ยังมีโต๊ะเปิดอยู่ ${state.openTablesList.length} โต๊ะ '
+              '($allNames · ค้างชำระ ${baht(state.owedTotal)}) · '
+              'กรุณาเช็กบิลและเก็บโต๊ะให้ครบก่อนปิดกะ'
+        : 'ยังมีโต๊ะที่ยังไม่ได้เก็บโต๊ะ '
+              '${state.openTablesList.length} โต๊ะ ($allNames) · '
+              'กรุณาเก็บโต๊ะให้ครบก่อนปิดกะ';
     return Container(
       key: const ValueKey('shift-owing-banner'),
       padding: const EdgeInsets.symmetric(
@@ -173,9 +180,7 @@ class OwingTablesBanner extends StatelessWidget {
           const SizedBox(width: AppDimensions.space3),
           Expanded(
             child: Text(
-              'มีโต๊ะค้างชำระ (กินก่อนจ่าย) $names รวม '
-              '${baht(state.owedTotal)} · ปิดกะได้ '
-              'แต่ยอดนี้จะยังไม่อยู่ในกะนี้',
+              bannerText,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: tokens.primaryInk,
                 fontWeight: FontWeight.w600,
