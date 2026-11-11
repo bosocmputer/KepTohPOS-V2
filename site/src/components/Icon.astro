@@ -1,0 +1,18 @@
+---
+// Inlines an icon from lucide-static at build time (no hand-drawn SVG).
+import fs from 'node:fs';
+import path from 'node:path';
+
+interface Props { name: string; size?: number; class?: string }
+const { name, size = 24, class: cls = '' } = Astro.props;
+const file = path.join(process.cwd(), 'node_modules/lucide-static/icons', `${name}.svg`);
+const svg = fs
+  .readFileSync(file, 'utf8')
+  .replace(/<!--[\s\S]*?-->/, '')
+  .replace(/<svg\s+class="[^"]*"/, `<svg class="icon ${cls}" aria-hidden="true" focusable="false"`)
+  .replace('width="24"', `width="${size}"`)
+  .replace('height="24"', `height="${size}"`)
+  .replace(/\s+/g, ' ')
+  .trim();
+---
+<Fragment set:html={svg} />

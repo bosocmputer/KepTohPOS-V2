@@ -1,0 +1,21 @@
+---
+import Icon from './Icon.astro';
+import { APP_URL } from '../config';
+import { copy, type Locale } from '../i18n';
+const t = copy[Astro.props.locale];
+const f = t.founding;
+---
+<section class="sec sec--deep founding" id="founding">
+  <div class="wrap">
+    <div class="founding__box" data-reveal>
+      <div>
+        <h2 class="h2">{f.title}</h2>
+        <p class="lead">{f.body}</p>
+        <a class="btn btn--primary btn--lg" href={APP_URL}>{t.cta.trial}</a>
+      </div>
+      <ul class="ticks">
+        {f.points.map((p) => <li><Icon name="check" size={20} />{p}</li>)}
+      </ul>
+    </div>
+  </div>
+</section>

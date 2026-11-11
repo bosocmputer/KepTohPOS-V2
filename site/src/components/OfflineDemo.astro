@@ -1,0 +1,49 @@
+---
+import Icon from './Icon.astro';
+import { copy, type Locale } from '../i18n';
+const t = copy[Astro.props.locale].offline;
+---
+<section class="sec sec--dark" id="offline">
+  <div class="wrap offline">
+    <div class="offline__copy" data-reveal>
+      <p class="eyebrow">{t.eyebrow}</p>
+      <h2 class="h2">{t.title}</h2>
+      <p class="lead">{t.sub}</p>
+    </div>
+
+    <div class="demo" id="offline-demo" data-state="online"
+      data-bill={t.billLabel} data-pending={t.pending} data-synced={t.synced}
+      data-msg-added={t.msgAdded} data-msg-offline={t.msgOffline} data-msg-syncing={t.msgSyncing}
+      data-msg-done={t.msgDone} data-msg-online={t.msgOnline}
+      data-label-online={t.online} data-label-offline={t.offlineState}>
+      <div class="demo__bar">
+        <button type="button" class="switch" id="net-toggle" aria-pressed="false">
+          <span class="switch__track"><span class="switch__knob"></span></span>
+          <span class="switch__label">{t.toggle}</span>
+        </button>
+        <span class="net" aria-hidden="true">
+          <span class="net__on"><Icon name="wifi" size={16} /></span>
+          <span class="net__off"><Icon name="wifi-off" size={16} /></span>
+          <span id="net-state">{t.online}</span>
+        </span>
+      </div>
+
+      <div class="demo__body">
+        <div class="pos">
+          <button type="button" class="btn btn--primary btn--lg" id="bill-btn"><Icon name="receipt" size={20} />{t.bill}</button>
+          <h3 class="demo__h">{t.queueTitle}</h3>
+          <ul class="queue" id="queue">
+            <li class="queue__empty" id="queue-empty">{t.empty}</li>
+          </ul>
+        </div>
+        <div class="cloud" id="cloud">
+          <span class="cloud__ico"><Icon name="cloud" size={44} /></span>
+          <span class="cloud__label">{t.cloud}</span>
+          <span class="cloud__count"><b id="cloud-count">0</b> {t.synced}</span>
+        </div>
+      </div>
+      <p class="demo__live" id="demo-live" role="status" aria-live="polite"></p>
+      <noscript><p class="demo__live">{t.noJs}</p></noscript>
+    </div>
+  </div>
+</section>

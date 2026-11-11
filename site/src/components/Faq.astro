@@ -1,0 +1,20 @@
+---
+import Icon from './Icon.astro';
+import { copy, type Locale } from '../i18n';
+const t = copy[Astro.props.locale].faq;
+---
+<section class="sec sec--light" id="faq">
+  <div class="wrap wrap--narrow">
+    <div class="sec__head" data-reveal>
+      <h2 class="h2">{t.title}</h2>
+    </div>
+    <div class="faq" data-stagger>
+      {t.items.map((f) => (
+        <details>
+          <summary><span>{f.q}</span><Icon name="chevron-down" size={22} /></summary>
+          <p>{f.a}</p>
+        </details>
+      ))}
+    </div>
+  </div>
+</section>

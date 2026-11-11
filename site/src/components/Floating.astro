@@ -1,0 +1,14 @@
+---
+import Icon from './Icon.astro';
+import { APP_URL, LINE_URL } from '../config';
+import { copy, type Locale } from '../i18n';
+interface Props { locale: Locale; bar?: boolean }
+const { locale, bar = true } = Astro.props;
+const t = copy[locale];
+---
+<a class="line-fab" href={LINE_URL} aria-label={t.ui.lineLabel} rel="noopener"><Icon name="message-circle" size={26} /></a>
+{bar && (
+  <div class="sticky-cta" id="sticky-cta" aria-hidden="true">
+    <a class="btn btn--primary btn--lg" href={APP_URL} tabindex="-1">{t.cta.trial}</a>
+  </div>
+)}

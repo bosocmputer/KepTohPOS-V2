@@ -1,0 +1,48 @@
+---
+import { Image } from 'astro:assets';
+import logoName from '../assets/logo_name.jpg';
+import Icon from './Icon.astro';
+import { APP_URL } from '../config';
+import { copy, locales, langName, langShort, pagePath, htmlLang, type Locale, type Page } from '../i18n';
+
+interface Props { locale: Locale; page?: Page }
+const { locale, page = 'home' } = Astro.props;
+const t = copy[locale];
+const home = pagePath(locale);
+const nav = [
+  ['features', t.nav.features],
+  ['offline', t.nav.offline],
+  ['tax', t.nav.tax],
+  ['start', t.nav.start],
+  ['faq', t.nav.faq],
+];
+---
+<header class="header" id="top">
+  <div class="wrap header__in">
+    <a class="logo" href={home} aria-label="KepToh POS">
+      <Image src={logoName} width={120} height={40} densities={[1, 2]} alt="KepToh" loading="eager" />
+    </a>
+    <nav class="nav" aria-label="Main">
+      {nav.map(([id, label]) => <a href={`${home}#${id}`}>{label}</a>)}
+    </nav>
+    <div class="header__end">
+      <details class="lang">
+        <summary aria-label={`${langShort[locale]} · ${t.ui.language}`}>
+          <Icon name="languages" size={18} /><span>{langShort[locale]}</span>
+        </summary>
+        <ul>
+          {locales.map((l) => (
+            <li>
+              <a href={pagePath(l, page)} hreflang={htmlLang[l]} lang={htmlLang[l]} aria-current={l === locale ? 'true' : undefined}>{langName[l]}</a>
+            </li>
+          ))}
+        </ul>
+      </details>
+      <a class="btn btn--primary btn--sm" href={APP_URL}>{t.cta.trial}</a>
+    </div>
+  </div>
+  <div class="progress" aria-hidden="true" role="presentation">
+    <div class="progress__bar" id="progress-bar"></div>
+    <div class="progress__walker" id="walker"></div>
+  </div>
+</header>

@@ -1,0 +1,28 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from './Header.astro';
+import Footer from './Footer.astro';
+import Floating from './Floating.astro';
+import { copy, pagePath, type Locale } from '../i18n';
+const { locale } = Astro.props as { locale: Locale };
+const p = copy[locale].privacy;
+---
+<Base locale={locale} page="privacy">
+  <Header locale={locale} page="privacy" />
+  <main id="main" class="sec sec--light legal">
+    <div class="wrap wrap--narrow">
+      <p class="draft-banner" role="note"><strong>{p.draft}</strong></p>
+      <h1 class="h2">{p.title}</h1>
+      <p class="muted">{p.updated}</p>
+      {p.sections.map((s) => (
+        <section>
+          <h2>{s.h}</h2>
+          {s.p.map((line) => <p>{line}</p>)}
+        </section>
+      ))}
+      <p><a class="link" href={pagePath(locale)}>{p.back}</a></p>
+    </div>
+  </main>
+  <Footer locale={locale} />
+  <Floating locale={locale} bar={false} />
+</Base>

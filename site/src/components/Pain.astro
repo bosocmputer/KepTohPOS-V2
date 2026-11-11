@@ -1,0 +1,17 @@
+---
+import { copy, type Locale } from '../i18n';
+const t = copy[Astro.props.locale];
+---
+<section class="sec sec--light pain" id="pain">
+  <div class="wrap">
+    <h2 class="h2" data-reveal>{t.pain.title}</h2>
+    <ul class="pain__list" data-stagger>
+      {t.pain.items.map((p) => (
+        <li>
+          <h3>{p.title}</h3>
+          <p>{p.body}</p>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>

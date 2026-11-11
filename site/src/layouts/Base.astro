@@ -1,0 +1,110 @@
+---
+import { getImage } from 'astro:assets';
+import logo from '../assets/logo.jpg';
+import '../styles/global.css';
+import { SITE_URL, CF_ANALYTICS_TOKEN, APP_URL } from '../config';
+import { copy, locales, htmlLang, ogLocale, pagePath, type Locale, type Page } from '../i18n';
+
+interface Props { locale: Locale; page?: Page }
+const { locale, page = 'home' } = Astro.props;
+const t = copy[locale];
+const isPrivacy = page === 'privacy';
+const title = isPrivacy ? t.meta.privacyTitle : t.meta.title;
+const description = isPrivacy ? t.meta.privacyDescription : t.meta.description;
+const url = SITE_URL + pagePath(locale, page);
+// TODO: create real OG images at public/og/{th,en,zh}.png (1200x630).
+const ogImage = `${SITE_URL}/og/${locale}.png`;
+
+const fav32 = await getImage({ src: logo, width: 32, height: 32, format: 'png' });
+const fav180 = await getImage({ src: logo, width: 180, height: 180, format: 'png' });
+const logo512 = await getImage({ src: logo, width: 512, height: 512, format: 'png' });
+
+const fonts =
+  'https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600' +
+  (locale === 'zh' ? '&family=Noto+Sans+SC:wght@400;500;700' : '') +
+  '&display=swap';
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'KepToh POS',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    description: t.meta.appDescription,
+    url,
+    inLanguage: htmlLang[locale],
+    image: SITE_URL + logo512.src,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'THB' },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'KepToh',
+    url: SITE_URL + '/',
+    logo: SITE_URL + logo512.src,
+  },
+  ...(isPrivacy
+    ? []
+    : [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: t.faq.items.map((f) => ({
+            '@type': 'Question',
+            name: f.q,
+            acceptedAnswer: { '@type': 'Answer', text: f.a },
+          })),
+        },
+      ]),
+];
+const jsonLdString = JSON.stringify(jsonLd).replace(/</g, '\\u003c');
+---
+<!doctype html>
+<html lang={htmlLang[locale]}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={url} />
+    {locales.map((l) => <link rel="alternate" hreflang={htmlLang[l]} href={SITE_URL + pagePath(l, page)} />)}
+    <link rel="alternate" hreflang="x-default" href={SITE_URL + pagePath('th', page)} />
+    <meta name="theme-color" content="#16181D" />
+    <link rel="icon" type="image/png" sizes="32x32" href={fav32.src} />
+    <link rel="apple-touch-icon" href={fav180.src} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="KepToh POS" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={url} />
+    <meta property="og:locale" content={ogLocale[locale]} />
+    {locales.filter((l) => l !== locale).map((l) => <meta property="og:locale:alternate" content={ogLocale[l]} />)}
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={t.meta.ogAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href={fonts} media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href={fonts} /></noscript>
+
+    <script type="application/ld+json" set:html={jsonLdString} />
+    {CF_ANALYTICS_TOKEN && (
+      <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token: CF_ANALYTICS_TOKEN })} />
+    )}
+  </head>
+  <body data-app-url={APP_URL}>
+    <a class="skip" href="#main">{t.ui.skip}</a>
+    <slot />
+    <script>
+      import '../scripts/main.ts';
+    </script>
+  </body>
+</html>

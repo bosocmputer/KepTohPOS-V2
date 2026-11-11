@@ -1,0 +1,316 @@
+{
+  "meta": {
+    "title": "KepToh POS | POS for Thai BBQ & Buffet Restaurants , Per-Head Billing, Works Offline",
+    "description": "POS built for Thai BBQ (mu kratha) and buffet restaurants. Per-head pricing, table timers, tax invoices, and it keeps selling when the internet drops. Works on iPad and tablets. Free to try during launch.",
+    "privacyTitle": "Privacy Policy (Draft) | KepToh POS",
+    "privacyDescription": "Draft privacy policy for KepToh POS, written with Thailand's PDPA in mind. Pending legal review.",
+    "appDescription": "A POS for Thai BBQ and buffet restaurants: per-head billing, table timers, tax invoices, and offline-first selling.",
+    "ogAlt": "KepToh POS for Thai BBQ restaurants"
+  },
+  "ui": {
+    "skip": "Skip to content",
+    "menu": "Menu",
+    "language": "Language",
+    "lineLabel": "Contact us on LINE",
+    "scrollProgress": "Page scroll progress",
+    "sample": "Sample"
+  },
+  "nav": {
+    "features": "Features",
+    "offline": "Offline",
+    "tax": "Tax invoice",
+    "start": "Get started",
+    "faq": "FAQ"
+  },
+  "cta": {
+    "trial": "Try it free",
+    "features": "See real screens"
+  },
+  "hero": {
+    "h1a": "Packed house?",
+    "h1b": "Your POS keeps up.",
+    "sub": "Open a table, pick the package, enter adults and kids. KepToh runs the timer and the bill, and keeps taking payments when the Wi-Fi drops.",
+    "note": "Free during launch. No card needed. Runs on the tablet or iPad you already have.",
+    "alert": "A7 is 3 min over time",
+    "syncOff": "Offline · 3 bills saved on device",
+    "syncOn": "Back online · 3 bills synced",
+    "posterAlt": "KepToh POS table map on a tablet; the demo shop has 12 of 20 tables seated",
+    "slipTitle": "Table A6 · 3 guests",
+    "slipLines": [
+      [
+        "Buffet 329 × 3",
+        "987.00"
+      ],
+      [
+        "Chang beer × 2",
+        "180.00"
+      ],
+      [
+        "Ice × 2",
+        "40.00"
+      ],
+      [
+        "Cheese dip",
+        "59.00"
+      ],
+      [
+        "Extra pork",
+        "89.00"
+      ]
+    ],
+    "slipTotalLabel": "Total",
+    "slipTotal": "฿1,355.00"
+  },
+  "pain": {
+    "title": "What a busy mookata night usually looks like",
+    "items": [
+      {
+        "title": "Head counts on paper",
+        "body": "How many adults, how many kids, what time they sat down. Once the room fills up, things get missed and tables run over time."
+      },
+      {
+        "title": "Wi-Fi drops at checkout",
+        "body": "The online POS freezes while guests wait to pay. You write bills by hand, then type them in again after closing."
+      },
+      {
+        "title": "No idea what you made today",
+        "body": "You know the sales. You don't know how much pork, veg and charcoal went out. The leak shows up at month end."
+      }
+    ]
+  },
+  "offline": {
+    "eyebrow": "Try it",
+    "title": "Wi-Fi down? Keep taking payments.",
+    "sub": "Bills are saved on the device first and sent up when the connection comes back. Nothing to re-type. Switch the internet off below and issue a few bills.",
+    "toggle": "Cut internet",
+    "online": "Online",
+    "offlineState": "Offline",
+    "bill": "Issue bill",
+    "queueTitle": "Bills on this device",
+    "empty": "No bills yet. Tap “Issue bill”.",
+    "pending": "Pending",
+    "synced": "Synced",
+    "cloud": "Cloud",
+    "billLabel": "Bill #{n} · Table {t}",
+    "msgAdded": "Bill #{n} saved on device. {count} pending sync.",
+    "msgOffline": "Internet cut. You can still issue bills.",
+    "msgSyncing": "Back online. Syncing {count} bills.",
+    "msgDone": "All bills synced.",
+    "msgOnline": "Online. Bills sync right away.",
+    "noJs": "This demo needs JavaScript."
+  },
+  "features": {
+    "title": "Built for buffet restaurants",
+    "sub": "Every screen below is a real screenshot from the demo shop.",
+    "items": [
+      {
+        "key": "per-head",
+        "icon": "timer",
+        "title": "Per-head pricing with a timer",
+        "body": "Pick a package, enter adults, kids and toddlers. Prices and the countdown are automatic; tables over time turn red."
+      },
+      {
+        "key": "tables",
+        "icon": "layout-grid",
+        "title": "Every zone on one screen",
+        "body": "See which tables are free and which are waiting for the bill, split by indoor, terrace and VIP."
+      },
+      {
+        "key": "tax",
+        "icon": "file-text",
+        "title": "Abbreviated and full tax invoices",
+        "body": "VAT-registered shops can issue both. Pre-tax amounts are split out, and voids or replacements keep their history."
+      },
+      {
+        "key": "stock",
+        "icon": "package-check",
+        "title": "Closing stock count",
+        "body": "Count only what's left. Usage is worked out for you, and low or out-of-stock items are flagged."
+      },
+      {
+        "key": "shift",
+        "icon": "wallet",
+        "title": "Shifts and cash drawer",
+        "body": "Enter the float when the shift opens, count the drawer when it closes, and see the over or short."
+      },
+      {
+        "key": "report",
+        "icon": "trending-up",
+        "title": "Daily profit",
+        "body": "Close the day and see sales, ingredient cost and profit for that day. No waiting for month end."
+      }
+    ]
+  },
+  "tax": {
+    "title": "Tax invoices from the checkout screen",
+    "sub": "Walk-in guests get an abbreviated invoice. Company guests can get a full one at the table with their tax ID and branch.",
+    "points": [
+      "Tax ID, branch code and machine code printed on every invoice",
+      "VAT 7% included, with the pre-tax amount split out",
+      "Voids and replacements reference the original"
+    ],
+    "disclaimer": "Figures and items on this receipt are fictional, for demonstration only.",
+    "shop": "Sample BBQ Restaurant",
+    "docTitle": "Receipt / Abbreviated Tax Invoice",
+    "lines": [
+      {
+        "name": "Adult buffet × 4",
+        "amount": "1,196.00"
+      },
+      {
+        "name": "Kids buffet × 2",
+        "amount": "298.00"
+      },
+      {
+        "name": "Drinks × 3",
+        "amount": "135.00"
+      }
+    ],
+    "beforeVat": "Amount before VAT",
+    "vat": "VAT 7%",
+    "total": "Total",
+    "thanks": "Thank you"
+  },
+  "start": {
+    "title": "Up and running in 3 steps",
+    "steps": [
+      {
+        "icon": "user-plus",
+        "title": "Sign up",
+        "body": "Use email, or sign in with LINE or Google."
+      },
+      {
+        "icon": "settings",
+        "title": "Set up the shop",
+        "body": "Shop name, buffet packages, prices and tax details."
+      },
+      {
+        "icon": "link-2",
+        "title": "Pair the tablet",
+        "body": "Create a pairing code on the owner's device and enter it on the front-of-house tablet."
+      }
+    ]
+  },
+  "founding": {
+    "title": "Open to the first 50 shops",
+    "body": "Free during launch, with a direct LINE chat to the people building it. Tell us what breaks and what you need next.",
+    "points": [
+      "Free during launch",
+      "Report issues on LINE, straight to the builders",
+      "Early shops help decide what gets built next"
+    ]
+  },
+  "faq": {
+    "title": "Common questions",
+    "items": [
+      {
+        "q": "Does it work for a mookata restaurant out of the box?",
+        "a": "Yes. It is built for buffet restaurants: adult, child and toddler pricing, table timers and table zones."
+      },
+      {
+        "q": "Does it work offline? What happens if the internet drops?",
+        "a": "Yes. If the connection drops you can still open tables and issue bills. Bills are stored on the device and sync automatically when the internet returns."
+      },
+      {
+        "q": "Can it issue abbreviated and full tax invoices?",
+        "a": "Yes. It supports both. Full tax invoices record buyer details such as tax ID and branch. Please confirm real-world usage with your shop's accountant."
+      },
+      {
+        "q": "Does it work on iPad and tablets?",
+        "a": "Yes. KepToh runs in the browser and its layout is tuned for iPad and tablets. You can pair several devices to one shop."
+      },
+      {
+        "q": "How much does it cost?",
+        "a": "It's free to try during the launch period, with no credit card. If we introduce paid plans later, we'll tell you well in advance."
+      },
+      {
+        "q": "Is my shop's data safe?",
+        "a": "Each shop's data is kept separate and access requires authentication. We're preparing a PDPA-style privacy policy, which is currently a draft pending legal review."
+      }
+    ]
+  },
+  "final": {
+    "title": "Open your first table",
+    "sub": "Free during launch. No card needed."
+  },
+  "footer": {
+    "tagline": "POS for Thai BBQ and buffet restaurants",
+    "contact": "Contact",
+    "line": "LINE",
+    "phone": "Phone",
+    "email": "Email",
+    "placeholderNote": "Contact details are placeholders and will be updated before launch.",
+    "privacy": "Privacy policy",
+    "rights": "All rights reserved"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "draft": "DRAFT , pending legal review. This is not a binding legal text.",
+    "updated": "Last drafted: November 2026",
+    "back": "Back to home",
+    "sections": [
+      {
+        "h": "1. Data controller",
+        "p": [
+          "KepToh POS (“we”) is the controller of personal data of users of this website and service. Contact: [legal entity name and address , to be added], email hello@keptoh.example (placeholder)."
+        ]
+      },
+      {
+        "h": "2. Data we collect",
+        "p": [
+          "Account data such as name, email and LINE profile when you sign up.",
+          "Shop data such as shop name, tax details, menu and the sales data you record in the system.",
+          "Technical data such as device type, browser, and aggregated visit statistics."
+        ]
+      },
+      {
+        "h": "3. Purposes of use",
+        "p": [
+          "To provide the service and manage accounts, to improve and fix the system, to communicate about the service, and to comply with applicable law."
+        ]
+      },
+      {
+        "h": "4. Legal bases",
+        "p": [
+          "We process data under contract, consent (where required), legitimate interests and legal obligations. [To be confirmed by legal counsel]"
+        ]
+      },
+      {
+        "h": "5. Disclosure and transfers",
+        "p": [
+          "We may use third-party providers such as cloud infrastructure and analytics, disclosing only what is necessary. Data may be stored outside Thailand. [Providers and countries to be specified]"
+        ]
+      },
+      {
+        "h": "6. Retention",
+        "p": [
+          "We keep data while your account is active and for periods required by law. [Retention periods to be specified]"
+        ]
+      },
+      {
+        "h": "7. Your rights",
+        "p": [
+          "Under the PDPA you may request access, correction, deletion, restriction, objection, portability, and withdraw consent, and lodge a complaint with the competent authority."
+        ]
+      },
+      {
+        "h": "8. Security",
+        "p": [
+          "We apply appropriate safeguards such as per-shop data separation and authentication. No system is completely secure."
+        ]
+      },
+      {
+        "h": "9. Cookies and analytics",
+        "p": [
+          "The website may use privacy-friendly traffic analytics. [Details to be confirmed before activation]"
+        ]
+      },
+      {
+        "h": "10. Changes to this policy",
+        "p": [
+          "We may update this policy and will post notice on the website for material changes."
+        ]
+      }
+    ]
+  }
+}

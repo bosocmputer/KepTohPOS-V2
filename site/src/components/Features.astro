@@ -1,0 +1,24 @@
+---
+import { copy, type Locale } from '../i18n';
+const shotFor: Record<string, string> = { 'per-head': 'buffet', tables: 'tables', tax: 'tax', stock: 'stock', shift: 'shift', report: 'profit' };
+const t = copy[Astro.props.locale];
+---
+<section class="sec sec--light" id="features">
+  <div class="wrap">
+    <div class="sec__head" data-reveal>
+      <h2 class="h2">{t.features.title}</h2>
+      <p class="sub">{t.features.sub}</p>
+    </div>
+    <ul class="grid grid--feat" data-stagger>
+      {t.features.items.map((f) => (
+        <li class="card card--feat">
+          <div class="shot">
+            <img src={`/shots/${shotFor[f.key]}.webp`} srcset={`/shots/${shotFor[f.key]}-800.webp 800w, /shots/${shotFor[f.key]}.webp 1280w`} sizes="(max-width: 700px) 92vw, 400px" width="1280" height="800" loading="lazy" decoding="async" alt={f.title} />
+          </div>
+          <h3>{f.title}</h3>
+          <p>{f.body}</p>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>

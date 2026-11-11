@@ -1,0 +1,38 @@
+---
+import Icon from './Icon.astro';
+import { copy, type Locale } from '../i18n';
+const t = copy[Astro.props.locale];
+const x = t.tax;
+---
+<section class="sec sec--dark tax" id="tax">
+  <div class="wrap tax__in">
+    <div class="tax__copy" data-reveal>
+      <h2 class="h2">{x.title}</h2>
+      <p class="lead">{x.sub}</p>
+      <ul class="ticks">
+        {x.points.map((p) => <li><Icon name="check" size={20} />{p}</li>)}
+      </ul>
+    </div>
+
+    <figure class="receipt-fig">
+      <div class="printer" aria-hidden="true"><span></span></div>
+      <div class="receipt-wrap">
+        <div class="receipt" id="receipt">
+          <span class="stamp">{t.ui.sample}</span>
+          <p class="receipt__shop">{x.shop}</p>
+          <p class="receipt__doc">{x.docTitle}</p>
+          <hr />
+          <ul class="receipt__lines">
+            {x.lines.map((l) => <li><span>{l.name}</span><span class="num">{l.amount}</span></li>)}
+          </ul>
+          <hr />
+          <p class="receipt__row"><span>{x.beforeVat}</span><span class="num" data-count="1522.43">1,522.43</span></p>
+          <p class="receipt__row"><span>{x.vat}</span><span class="num" data-count="106.57">106.57</span></p>
+          <p class="receipt__row receipt__row--total"><span>{x.total}</span><span class="num" data-count="1629">1,629.00</span></p>
+          <p class="receipt__thanks">{x.thanks}</p>
+        </div>
+      </div>
+      <figcaption>{x.disclaimer}</figcaption>
+    </figure>
+  </div>
+</section>

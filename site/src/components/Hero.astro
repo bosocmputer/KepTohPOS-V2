@@ -1,0 +1,39 @@
+---
+import Icon from './Icon.astro';
+import { APP_URL } from '../config';
+import { copy, type Locale } from '../i18n';
+
+interface Props { locale: Locale }
+const t = copy[Astro.props.locale];
+const h = t.hero;
+---
+<section class="hero sec sec--deep" id="hero">
+  <div class="wrap hero__in">
+    <div class="hero__copy">
+      <h1><span class="ib">{h.h1a}</span><br /><span class="hero__accent ib">{h.h1b}</span></h1>
+      <p class="lead">{h.sub}</p>
+      <div class="hero__cta">
+        <a class="btn btn--primary btn--lg" href={APP_URL}>{t.cta.trial}<Icon name="arrow-right" size={20} /></a>
+        <a class="btn btn--ghost btn--lg" href="#features">{t.cta.features}</a>
+      </div>
+      <p class="hero__note">{h.note}</p>
+    </div>
+
+    <!-- Real screenshot in a tablet frame; tags and slip are plain DOM + CSS animation. -->
+    <div class="tablet" id="hero-scene">
+      <div class="tablet__frame">
+        <img class="tablet__screen" src="/shots/hero.webp" srcset="/shots/hero-800.webp 800w, /shots/hero.webp 1024w" sizes="(max-width: 960px) 92vw, 600px" width="1024" height="768" fetchpriority="high" decoding="async" alt={h.posterAlt} />
+      </div>
+      <p class="tag tag--alert" aria-hidden="true"><i></i>{h.alert}</p>
+      <p class="tag tag--sync" aria-hidden="true">
+        <span class="tag__off"><Icon name="wifi-off" size={16} />{h.syncOff}</span>
+        <span class="tag__on"><Icon name="check" size={16} />{h.syncOn}</span>
+      </p>
+      <div class="slip" aria-hidden="true">
+        <b>{h.slipTitle}</b>
+        {h.slipLines.map(([l, r]) => <span><em>{l}</em><em class="num">{r}</em></span>)}
+        <strong><em>{h.slipTotalLabel}</em><em class="num">{h.slipTotal}</em></strong>
+      </div>
+    </div>
+  </div>
+</section>

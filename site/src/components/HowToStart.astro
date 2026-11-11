@@ -1,0 +1,18 @@
+---
+import { copy, type Locale } from '../i18n';
+const t = copy[Astro.props.locale].start;
+---
+<section class="sec sec--light" id="start">
+  <div class="wrap">
+    <h2 class="h2 sec__title" data-reveal>{t.title}</h2>
+    <ol class="steps" data-stagger>
+      {t.steps.map((s, i) => (
+        <li>
+          <span class="steps__n" aria-hidden="true">{i + 1}</span>
+          <h3>{s.title}</h3>
+          <p>{s.body}</p>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>

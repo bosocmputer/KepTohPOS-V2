@@ -1,0 +1,31 @@
+---
+import { Image } from 'astro:assets';
+import logoName from '../assets/logo_name.jpg';
+import { LINE_ID, LINE_URL, PHONE, EMAIL } from '../config';
+import { copy, pagePath, type Locale } from '../i18n';
+const { locale } = Astro.props as { locale: Locale };
+const t = copy[locale].footer;
+---
+<footer class="footer">
+  <div class="wrap footer__in">
+    <div>
+      <a class="logo" href={pagePath(locale)} aria-label="KepToh POS">
+        <Image src={logoName} width={120} height={40} densities={[1, 2]} alt="KepToh" loading="lazy" />
+      </a>
+      <p class="footer__tag">{t.tagline}</p>
+    </div>
+    <div>
+      <h3>{t.contact}</h3>
+      <ul>
+        <li>{t.line}: <a href={LINE_URL}>{LINE_ID}</a></li>
+        <li>{t.phone}: <a href={`tel:${PHONE.replace(/-/g, '')}`}>{PHONE}</a></li>
+        <li>{t.email}: <a href={`mailto:${EMAIL}`}>{EMAIL}</a></li>
+      </ul>
+      <p class="footer__note">{t.placeholderNote}</p>
+    </div>
+    <div>
+      <a href={pagePath(locale, 'privacy')}>{t.privacy}</a>
+    </div>
+  </div>
+  <p class="wrap footer__copy">© 2026 KepToh POS · {t.rights}</p>
+</footer>
