@@ -44,7 +44,7 @@ class ZoneTablesSection extends StatelessWidget {
         LayoutBuilder(
           builder: (context, constraints) {
             final w = constraints.maxWidth;
-            final cols = w >= 1100 ? 5 : (w >= 840 ? 4 : (w >= 560 ? 3 : 2));
+            final cols = w >= 1440 ? 5 : (w >= 960 ? 4 : (w >= 640 ? 3 : 2));
             const spacing = AppDimensions.space3;
             final itemW = (w - (cols - 1) * spacing) / cols;
 
