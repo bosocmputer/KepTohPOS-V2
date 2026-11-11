@@ -344,13 +344,74 @@ def scan_pitfalls(r_dir):
         "latest": short_rule(rules[-1]) if rules else "",
     }
 
+def sync_task_state(r_dir):
+    ts_path = os.path.join(r_dir, "TASK_STATE.md")
+    marker = "## 🔄 Auto-Synced Git & Session State"
+    branch = "main"
+    head_sha = ""
+    commits = []
+    dirty = []
+    try:
+        branch = subprocess.check_output(["git", "--no-optional-locks", "rev-parse", "--abbrev-ref", "HEAD"], cwd=r_dir, stderr=subprocess.DEVNULL, timeout=1.5).decode("utf-8", errors="ignore").strip() or "main"
+        head_sha = subprocess.check_output(["git", "--no-optional-locks", "rev-parse", "--short", "HEAD"], cwd=r_dir, stderr=subprocess.DEVNULL, timeout=1.5).decode("utf-8", errors="ignore").strip()
+        log_out = subprocess.check_output(["git", "--no-optional-locks", "log", "--oneline", "-n", "5"], cwd=r_dir, stderr=subprocess.DEVNULL, timeout=1.5).decode("utf-8", errors="ignore").strip()
+        commits = [c.strip() for c in log_out.splitlines() if c.strip()]
+        st_out = subprocess.check_output(["git", "--no-optional-locks", "status", "--short"], cwd=r_dir, stderr=subprocess.DEVNULL, timeout=1.5).decode("utf-8", errors="ignore").strip()
+        dirty = [d.strip() for d in st_out.splitlines() if d.strip() and not d.strip().endswith("TASK_STATE.md")][:6]
+    except Exception:
+        pass
+    last_ckpt = ""
+    ckpt_file = os.path.join(r_dir, ".agent-last-state.log")
+    if os.path.isfile(ckpt_file):
+        try:
+            with open(ckpt_file, "r", encoding="utf-8", errors="ignore") as f:
+                last_ckpt = f.read().strip().replace("\n", " ")
+        except Exception:
+            pass
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    auto_lines = [
+        f"{marker} (Updated: {now_str})",
+        f"- **Branch & HEAD:** `{branch}` (`{head_sha or 'uncommitted'}`)",
+    ]
+    if last_ckpt:
+        auto_lines.append(f"- **Last Edit Checkpoint:** `{last_ckpt}`")
+    if dirty:
+        auto_lines.append(f"- **Uncommitted Changes:** `{'; '.join(dirty)}`")
+    else:
+        auto_lines.append("- **Working Tree:** `clean`")
+    if commits:
+        auto_lines.append("- **Recent Commits (`git log -n 5`):**")
+        for c in commits:
+            auto_lines.append(f"  - `{c}`")
+    auto_block = "\n".join(auto_lines) + "\n"
+    base_content = ""
+    if os.path.isfile(ts_path):
+        try:
+            with open(ts_path, "r", encoding="utf-8", errors="ignore") as f:
+                raw = f.read()
+            if marker in raw:
+                base_content = raw.split(marker)[0].rstrip()
+            else:
+                base_content = raw.rstrip()
+        except Exception:
+            base_content = ""
+    if not base_content:
+        base_content = "# Active Task Handoff State\n- **Objective:** Resume from the latest Git state and checkpoints below."
+    try:
+        with open(ts_path, "w", encoding="utf-8") as f:
+            f.write(base_content + "\n\n" + auto_block)
+    except Exception:
+        pass
+    return f"`{branch}@{head_sha}`" if head_sha else "`synced`"
+
+ts_badge = sync_task_state(root_dir)
 pf_info = scan_pitfalls(root_dir)
 if pf_info["added_recent"]:
-    pf_brief_line = f"- **บทเรียนสะสม (Pitfall Memory):** `{pf_info['count']}/30` ข้อ — **สกัดใหม่ล่าสุด:** {pf_info['added_recent'][-1]}"
+    pf_brief_line = f"- **ความจำ & ส่งต่องาน:** Pitfalls `{pf_info['count']}/30` (**สกัดใหม่:** {pf_info['added_recent'][-1]}) | `TASK_STATE.md`: ✅ ซิงก์อัตโนมัติ ({ts_badge})"
 elif pf_info["latest"]:
-    pf_brief_line = f"- **บทเรียนสะสม (Pitfall Memory):** `{pf_info['count']}/30` ข้อ (ล่าสุด: {pf_info['latest']})"
+    pf_brief_line = f"- **ความจำ & ส่งต่องาน:** Pitfalls `{pf_info['count']}/30` (ล่าสุด: {pf_info['latest']}) | `TASK_STATE.md`: ✅ ซิงก์อัตโนมัติ ({ts_badge})"
 else:
-    pf_brief_line = "- **บทเรียนสะสม (Pitfall Memory):** `0/30` ข้อ (ยังไม่มีบทเรียนเฉพาะโปรเจกต์)"
+    pf_brief_line = f"- **ความจำ & ส่งต่องาน:** Pitfalls `0/30` ข้อ | `TASK_STATE.md`: ✅ ซิงก์อัตโนมัติ ({ts_badge})"
 
 if brief_mode:
     if not all_sessions:
