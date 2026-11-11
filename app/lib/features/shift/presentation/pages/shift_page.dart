@@ -74,7 +74,7 @@ class ShiftPage extends StatelessWidget {
                         ],
                       ),
                     ),
-                  if (shift != null && state.owingTables.isNotEmpty) ...[
+                  if (shift != null && state.openTablesList.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     OwingTablesBanner(
                       state: state,
@@ -166,7 +166,7 @@ class _ActiveShiftCard extends StatelessWidget {
       key: const ValueKey('close-shift-btn'),
       label: 'ปิดกะ',
       kind: BtnKind.dark,
-      disabled: state.countedValue == null,
+      disabled: state.countedValue == null || state.openTablesList.isNotEmpty,
       onPressed: () async {
         if (await confirmWithPendingSync(context, action: 'ปิดกะ')) {
           bloc.add(const ShiftConfirmCloseToggled(show: true));

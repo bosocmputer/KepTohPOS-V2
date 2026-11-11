@@ -28,10 +28,10 @@ When switching sessions or agents (e.g., Claude Code quota hits 100% and the use
 2. Complete only the remaining unfinished logic following `code-simplicity.md` without rewriting already-passing functions.
 3. Verify the completed work via `verification-before-completion`.
 
-### Phase 3: Handoff / Shift-Note Ritual (เมื่อผู้ใช้สั่งพักงานหรือ `/handoff`)
-Write or overwrite `TASK_STATE.md` (under 15 lines) with:
+### Phase 3: Continuous Handoff / Shift-Note Ritual (ทุกครั้งที่จบงานย่อย หรือเมื่อสั่ง `/handoff`)
+Update the top summary section of `TASK_STATE.md` (`<= 20` lines above `## 🔄 Auto-Synced Git & Session State`) at the end of **every completed task** (do not wait for `/handoff`), then run `bash .claude/hooks/audit-session-proof.sh --brief` so the script automatically appends the live Git branch, latest 5 commits, working tree, and checkpoint:
 - **Completed:** Files and functions verified passing.
-- **In Progress / Broken:** Exact `file:line` and current error output.
+- **In Progress / Broken:** Exact `file:line` and current error output (if any).
 - **Next Immediate Step:** The single exact action the next session should take first.
 
 ## 3. Constraints (`MUST DO` / `MUST NOT DO`)

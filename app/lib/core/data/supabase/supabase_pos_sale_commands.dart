@@ -289,6 +289,11 @@ mixin SupabasePosSaleCommands on SupabasePosBase, SupabasePosOffline
     required int counted,
     DateTime? now,
   }) async {
+    if (posState.openTables.isNotEmpty) {
+      throw const PosCommandException(
+        'ยังมีโต๊ะเปิดอยู่ กรุณาเช็กบิลและเก็บโต๊ะให้ครบก่อนปิดกะ',
+      );
+    }
     final shift = openShiftOf(posState);
     if (shift == null) return posState;
     return await runCommand('close_shift', newId(), <String, dynamic>{

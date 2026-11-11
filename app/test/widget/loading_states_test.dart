@@ -6,9 +6,11 @@ import 'package:app/core/theme/app_theme.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
 import 'package:app/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:app/features/onboarding/presentation/onboarding_shell.dart';
 import 'package:app/features/onboarding/presentation/owner_pin_setup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lottie/lottie.dart';
 
 /// Holds the PIN check open until the test completes [reply].
 class _SlowPinRepository extends MockPosRepository {
@@ -129,5 +131,32 @@ void main() {
     expect(whileWaiting, isTrue);
     expect(cubit.state.checking, isFalse);
     expect(cubit.state.error, isNotEmpty);
+  });
+
+  testWidgets('OnboardingLoadingCard keeps Lottie and subtitle while busy', (
+    tester,
+  ) async {
+    // Arrange
+    final activity = NetworkActivity();
+    addTearDown(activity.close);
+    NetworkActivity.instance.begin();
+
+    // Act
+    await tester.pumpWidget(
+      _wrap(
+        const OnboardingLoadingCard(
+          title: 'เก็บโต๊ะ POS',
+          subtitle: 'กำลังจัดเตรียมข้อมูลร้าน...',
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Assert
+    expect(NetworkActivity.instance.busy.value, isTrue);
+    expect(find.byKey(const ValueKey('walking-orange-loader')), findsOneWidget);
+    expect(find.byType(LottieBuilder), findsOneWidget);
+    expect(find.text('เก็บโต๊ะ POS'), findsOneWidget);
+    expect(find.text('กำลังจัดเตรียมข้อมูลร้าน...'), findsOneWidget);
   });
 }

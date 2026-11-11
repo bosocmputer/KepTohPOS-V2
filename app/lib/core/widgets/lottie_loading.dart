@@ -5,11 +5,18 @@ import 'package:lottie/lottie.dart';
 
 /// Centered walking-orange Lottie animation used across loading states.
 class WalkingOrangeLoader extends StatelessWidget {
-  const new({this.size = 210, this.label, this.isOverlay = false, super.key});
+  const new({
+    this.size = 260,
+    this.label,
+    this.isOverlay = false,
+    this.onScrim = false,
+    super.key,
+  });
 
   final double size;
   final String? label;
   final bool isOverlay;
+  final bool onScrim;
 
   @override
   Widget build(BuildContext context) {
@@ -46,8 +53,19 @@ class WalkingOrangeLoader extends StatelessWidget {
           Text(
             label!,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium
-                ?.copyWith(color: t.muted, fontWeight: FontWeight.w600),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: onScrim ? Colors.white : t.muted,
+              fontWeight: onScrim ? FontWeight.w700 : FontWeight.w600,
+              shadows: onScrim
+                  ? const [
+                      Shadow(
+                        color: Color(0x8A000000),
+                        blurRadius: 8,
+                        offset: Offset(0, 1),
+                      ),
+                    ]
+                  : null,
+            ),
           ),
         ],
       ],

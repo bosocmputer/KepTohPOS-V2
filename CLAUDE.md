@@ -80,8 +80,10 @@ Inspect root manifest files (including monorepo subfolders such as `app/`, `supa
    - Do not write long preambles or repetitive summaries. If a deterministic script or CLI command can do the job, use the script instead of calling AI.
 3. **Actionable Next Steps (`### ⏭️ ขั้นตอนถัดไป (Next Steps)`):**
    - At the end of every completed task, include a concise **`### ⏭️ ขั้นตอนถัดไป (Next Steps)`** section (**1–3 bullet points max**) stating only real remaining actions (e.g., pending `supabase db push` for a new migration, a specific manual check, or the next logical feature).
-4. **End-of-Task / Milestone Session Proof Report (`### 📊 ผลชี้วัด Agent Guard Template`):**
-   - Whenever finishing a feature/task, closing a milestone, merging a PR, or running `/verify` or `/handoff`, execute `bash .claude/hooks/audit-session-proof.sh --brief` and append its 4-line `### 📊 ผลชี้วัด Agent Guard Template` output (Model Offload, Subagents & Tokens, Hooks, and Pitfall Memory) at the bottom of your final response.
+4. **Always-Current Handoff State (`TASK_STATE.md`) & Session Proof (`### 📊 ผลชี้วัด Agent Guard Template`):**
+   - Whenever finishing a feature/task that modified code or state, closing a milestone, merging a PR, or running `/verify` or `/handoff`:
+     1. **Update `TASK_STATE.md` (`<= 20` lines above `## 🔄 Auto-Synced Git & Session State`):** Keep the top summary current (Current Phase/Objective, Recent Completed Work, Active Constraints, and Next Immediate Step) **every time a task completes — do not wait for `/handoff`**, so switching between Claude Code and Antigravity is seamless at any moment.
+     2. **Run Session Proof (`0-Token Auto-Sync`):** Execute `bash .claude/hooks/audit-session-proof.sh --brief` (which also auto-syncs the latest Git branch, 5 commits, working tree, and checkpoint into `TASK_STATE.md`) and append its 4-line `### 📊 ผลชี้วัด Agent Guard Template` output at the bottom of your final response.
 
 ---
 

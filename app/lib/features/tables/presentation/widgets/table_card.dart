@@ -53,22 +53,19 @@ class _TableCardState extends State<TableCard> {
     final isLate = (tm?.late ?? false) || (o != null && _liveOvertime);
     final isAfterPaid =
         o != null && o.timing == 'after' && due == 0 && o.billIds.isNotEmpty;
-    final (borderColor, statusBg, statusFg, statusTxt) = isLate
-        ? (t.danger, t.dangerSoft, t.dangerInk, 'มีลูกค้า · เกินเวลา')
-        : (due > 0
-              ? (t.primary, t.primary, t.onPrimary, 'เช็กบิล ${baht(due)}')
+    final borderColor = isLate
+        ? t.danger
+        : (due > 0 ? t.primary : (isAfterPaid ? t.success : t.line));
+    final (statusBg, statusFg, statusTxt) = due > 0
+        ? (t.primary, t.onPrimary, 'เช็กบิล ${baht(due)}')
+        : (isLate
+              ? (t.dangerSoft, t.dangerInk, 'เกินเวลา')
               : (isAfterPaid
-                    ? (
-                        t.success,
-                        t.successSoft,
-                        t.successInk,
-                        'ชำระแล้ว · เก็บโต๊ะ',
-                      )
-                    : (t.line, t.surface2, t.ink, 'มีลูกค้า')));
+                    ? (t.successSoft, t.successInk, 'ชำระแล้ว · เก็บโต๊ะ')
+                    : (t.surface2, t.ink, 'มีลูกค้า')));
     final headTone = isLate
         ? PillTone.red
         : (o?.timing == 'after' ? PillTone.orange : PillTone.green);
-    final timingTone = o?.timing == 'after' ? PillTone.orange : PillTone.green;
     return Material(
       color: t.surface,
       shape: RoundedRectangleBorder(
@@ -142,48 +139,26 @@ class _TableCardState extends State<TableCard> {
                   ),
                 ),
               ] else ...[
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        pkg?.name ?? '',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: tt.bodySmall?.copyWith(color: t.muted),
-                      ),
-                    ),
-                    const SizedBox(width: AppDimensions.space1),
-                    Pill(
-                      label: o.timing == 'after'
-                          ? 'กินก่อนจ่าย'
-                          : 'จ่ายก่อนกิน',
-                      tone: timingTone,
-                    ),
-                  ],
+                Text(
+                  [
+                    if ((pkg?.name ?? '').isNotEmpty) pkg!.name,
+                    if (o.timing == 'after') 'กินก่อนจ่าย' else 'จ่ายก่อนกิน',
+                  ].join(' · '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: tt.bodySmall?.copyWith(color: t.muted),
                 ),
                 const SizedBox(height: AppDimensions.space1),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
-                      child: TableLiveTimer(
-                        posState: posState,
-                        tableId: table.id,
-                        openTable: o,
-                        fixedNow: widget.now,
-                        onOvertimeReached: () =>
-                            setState(() => _liveOvertime = true),
-                      ),
-                    ),
-                    if (due > 0)
-                      Text(
-                        'รอชำระ ${baht(due)}',
-                        style: tt.labelSmall?.copyWith(
-                          color: t.primaryInk,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                  ],
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TableLiveTimer(
+                    posState: posState,
+                    tableId: table.id,
+                    openTable: o,
+                    fixedNow: widget.now,
+                    onOvertimeReached: () =>
+                        setState(() => _liveOvertime = true),
+                  ),
                 ),
                 const SizedBox(height: AppDimensions.space3),
                 Row(
@@ -200,6 +175,8 @@ class _TableCardState extends State<TableCard> {
                         alignment: Alignment.center,
                         child: Text(
                           statusTxt,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: tt.bodySmall?.copyWith(
                             color: statusFg,
                             fontWeight: FontWeight.w700,
@@ -207,7 +184,7 @@ class _TableCardState extends State<TableCard> {
                         ),
                       ),
                     ),
-                    if (due > 0 || isAfterPaid)
+                    if (due > 0 || isAfterPaid || isLate)
                       const SizedBox.shrink(child: Text('มีลูกค้า')),
                     if (widget.onViewSlip != null) ...[
                       const SizedBox(width: AppDimensions.space1_5),
@@ -215,7 +192,7 @@ class _TableCardState extends State<TableCard> {
                         key: ValueKey('table-slip-btn-${table.id}'),
                         size: BtnSize.sm,
                         icon: 'receipt',
-                        label: 'สลิป POS',
+                        label: 'สลิป',
                         onPressed: widget.onViewSlip,
                       ),
                     ],

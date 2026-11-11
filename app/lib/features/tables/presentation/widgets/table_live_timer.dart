@@ -117,6 +117,7 @@ class _TableLiveTimerState extends State<TableLiveTimer> {
           style: tt.labelSmall?.copyWith(
             color: t.muted,
             fontWeight: FontWeight.w500,
+            fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
       );
@@ -132,7 +133,6 @@ class _TableLiveTimerState extends State<TableLiveTimer> {
 
     if (remSec <= 0) {
       final overMin = mins - lim;
-      final overClock = _fmtClock(-remSec);
       return RepaintBoundary(
         child: Container(
           padding: const EdgeInsets.symmetric(
@@ -146,12 +146,13 @@ class _TableLiveTimerState extends State<TableLiveTimer> {
           ),
           child: Text(
             key: ValueKey('table-overtime-${widget.tableId}'),
-            'เกินเวลา $overMin น. (+$overClock · $deadline)',
+            'เกินเวลา $overMin น. · ครบ $deadline',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: tt.labelSmall?.copyWith(
               color: t.dangerInk,
               fontWeight: FontWeight.w700,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
         ),
@@ -179,6 +180,7 @@ class _TableLiveTimerState extends State<TableLiveTimer> {
           style: tt.labelSmall?.copyWith(
             color: isWarn ? t.primaryInk : t.ink,
             fontWeight: FontWeight.w700,
+            fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
       ),

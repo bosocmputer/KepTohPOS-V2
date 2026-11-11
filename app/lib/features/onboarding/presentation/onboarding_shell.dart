@@ -212,7 +212,7 @@ class OnboardingLoadingCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          WalkingOrangeLoader(label: subtitle),
+          WalkingOrangeLoader(label: subtitle, isOverlay: true),
           const SizedBox(height: AppDimensions.space3),
           Text(
             title,

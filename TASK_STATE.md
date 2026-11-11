@@ -1,47 +1,27 @@
-# Active Task Handoff State
-- **Objective:** ทำ KepToh POS ให้พร้อมขายเป็นสินค้า ตามแผน M0–M6 (M0 ฐานการทดสอบ → M1 งานค้าง F1 → M2 ออฟไลน์ → M3 หลายเครื่อง → M4 รายงาน SQL + backup → M5 VAT → M6 ทดสอบเต็ม + คุณอัยทดสอบบน staging)
-- **Completed & Verified (2026-11-07):**
-  - F1 merge แล้ว (PR #11) · migration 000100–001200 อยู่บนโปรเจกต์ `pbujdexhdzglymgnbsuw` ครบ · Production บน Vercel ยังเป็น mock (ตัวแปร Supabase ตั้งเฉพาะ Preview)
-  - M0 merge แล้ว (PR #12): `.github/workflows/ci.yml` · E2E `app/integration_test/{sale,setup,shift}_flow_test.dart` รันด้วย `scripts/e2e.sh` · `docs/test_matrix.md` → CI ผ่านทั้งหมด, unit/bloc/widget 136/136, pgTAP 197, integration 9
-- **M1 progress (2026-11-08, branch `m1/f1-leftovers`, draft PR #13):**
-  - Done: SA-04 QR without PromptPay (`f98ae58`) · pgTAP per-shop counts (`fc6289a`) · E2E `cashier_flow_test` (`e57693e`) · ledger test uses business day (`25797eb`) · Google button + Turnstile captcha code (`dd582e1`) · setup tab "เครื่องและลิงก์เข้าร้าน" + 24h pairing links + revoke, E2E `device_link_flow_test` (`c773b83`, migration pushed to remote)
-  - Staging domain now follows `m1/f1-leftovers` · Google provider enabled in Supabase (GCP project `keptoh-pos`, account bosnontawat.ai@gmail.com, consent screen in Testing) · Turnstile widget "KepToh POS" (Cloudflare Bos_catdog@hotmail.com) · Vercel Preview env `CAPTCHA_SITE_KEY` added
-- **Done later on 2026-11-08:** Google + captcha live on staging (Turnstile secret verified: no token → 400, real token → 200) · owner sign-out / leave device / redesigned first screens (`ffa0c54`) · build script fix (`32458cf`) · manager cost switch `staff.can_view_costs` (migration `20261108000300`, needs `db push`)
-- **M2 (branch `m2/offline`, draft PR #14) — parts 1–4 done, all migrations pushed to remote (000400 receipt seq, 000500 offline staff tokens):**
-  - Drift `LocalDb` (outbox, snapshots, offline PIN creds) · `OutboxQueue` · `ConnectionMonitor` + `SyncStatusBanner` · `SyncEngine` (flush on reconnect + every 15 s, snapshot autosave 1 s, costs stripped)
-  - Sale commands via `runCommand` (queue + local domain apply) · device receipt numbers (`settle_bill` p_seq) · 7-day offline tokens (survive another sign-in) · offline PIN (PBKDF2 Web Crypto, 5 misses → 5 min) · offline voids · offline app start from snapshot
-  - Tests: `offline_sync_test` (3 scenarios, real local Supabase), `local_db_web_test` (Chrome), unit 165, pgTAP PASS, E2E 7 suites
-- **M2 merged (PR #14, 2026-11-08). M3 merged (PR #15, 2026-11-09, merge `a9fc842`):**
-  - Realtime: statement triggers on sales tables → private broadcast `shop:<id>` (no row data), RLS via `can_read_shop`; `RealtimeSync` debounces 500 ms → `reload()` run in `NetworkActivity.quietly` (background reloads must not trip `BusyOverlay`, which dropped PIN taps)
-  - Same table opened on two devices → merged via `table_session_aliases`; `cancel_table` rejects alias ids (user-approved rule (2))
-  - Tests: pgTAP 234, `test/integration/realtime_two_devices_test.dart` (~0.5–0.7 s, cross-shop refused), CI all green incl. 7 E2E. Migrations 20261109000100/000200 pushed to staging; Realtime "Allow public access" OFF
-- **M4 merged (PR #16, 2026-11-09, merge `3e34194`):** app loads raw bills only for last 7 business days (`PosState.rawFrom`); older days via RPC `get_daily_sales_totals` (000300, ledger) + `get_addon_sales` (000400, dashboard month/30) + bills page fetches old days on demand (offline → "ต้องออนไลน์เพื่อดูบิลย้อนหลัง"); trigger blocks deleting bank accounts used by bills. Migrations 000300/000400 pushed to staging. Staging checked in browser (reports/dashboard/bills agree), but old-day RPC path not yet exercised on staging (shop only 3 days old). Future delete-shop feature must handle the bank-account trigger
-- **M5 DONE (2026-11-09):** PR #17 VAT · #18 VAT switch · #19 UI polish (merge `d8db233`: FormModal, TaxIdBranchInput, MonthPicker, thai_tax utils, sales tax as reports tab, devices list like staff list). Staging browser-checked at 1512px + 1024px.
-- **M6 DONE (2026-11-10, branch `m6/go-live` pushed & live on `https://keptoh-staging.vercel.app`):**
-  - **Batch 1 (M6-C & M5 Leftovers, `e461136`):** `BillsState.canReissue` blocks `isFullInvoice` (`reissue_bill_dialog.dart` also hides button) · Postgres `23514` (`check_violation`) mapped to `'ข้อมูลไม่ถูกต้องตามเงื่อนไขที่กำหนด'` in `describeError` · compacted 4 files (`shell_placeholder_page.dart` 277L, `shell_bars.dart` 287L, `shift_page.dart` 290L, `sale_bloc.dart` 290L) so all `app/lib/**/*.dart` (excl. `*.g.dart`) are `<= 300` lines · updated `docs/llms/keptoh-blueprint.md` void-roles (`cashier` may void while table session is open; `owner`/`manager` any bill + reissue)
-  - **Boot Loader & Onboarding Loading UI Redesign (`20e2182`):** removed hardcoded `"จ่าโบ้หมูกะทะ"` from `app/web/index.html` and `app/web/manifest.json`, replaced with **`เก็บโต๊ะ POS (KepToh POS)`** and unified `#keptoh-boot-loader` + `OnboardingLoadingCard` (`onboarding_shell.dart`, `onboarding_app.dart`)
-  - **Batch 2 (Full Automated Verification & Goldens):** `flutter analyze app/lib app/test` 0 issues · Unit/BLoC/Sync/Widget 256/256 PASS · Golden baselines updated & verified 54/54 PASS (6 files) · pgTAP 356/356 PASS (13 files) · Supabase integration 21/21 PASS (6 files) · Browser E2E `scripts/e2e.sh` 7/7 suites PASS
-  - **Batch 3 (Playwright UAT 5 ข้อ + Manual 3 ข้อ & Go-Live Checklist):** verified LINE Login on live `https://keptoh-staging.vercel.app` + ran full Playwright UAT & Manual Verification suite against Local Supabase Docker (`keptoh-pos`, 14 proof screenshots `uat_01..14.png` + `uat_sales_tax_export.csv` covering `ON-06`, `ON-12`, all 5 VAT UAT cases for คุณอัย, 2-browser Realtime `991 ms`, Offline sync + close-shift guard, and >7-day older-day reports/bills). Updated `docs/test_matrix.md` (`78/83` cases + Section 9.1 & Section 11 marked `✅`; Nightly Backup deferred per user decision)
-- **M5 history:**
-  - M5 VAT (branch `m5/vat`) — decisions confirmed by user 2026-11-09 (research-based, คุณอัย to re-check in M6 UAT):
-    1. Abbreviated invoice no = existing `branch-device-seq`, continuous per device lifetime (RD Notice 46 cl.5(3)); print RD machine code (`devices.rd_machine_code`) as its own line; no machine code → plain receipt, never the words "ใบกำกับภาษี"
-    2. Full tax invoice = exchange from abbreviated (ruling กค 0811/พ.9254): void abbreviated (number kept), new full invoice with own per-shop series `00000-F-000001`, buyer name/address/tax id/branch, dated issue day, note "ออกแทนใบกำกับภาษีอย่างย่อเลขที่ …"
-    3. Cancel & reissue (ป.86/2542 ข้อ 25): void keeps number; new bill gets new number + `replaces_bill_id`; prints "ยกเลิกและออกฉบับใหม่แทนเลขที่ …"
-    4. Rounding: VAT shops may round down to baht; rounding = discount; VAT always computed AFTER rounding (vat=round(total*rate/(100+rate)), base=total-vat) — fixes excluded mode (SQL calc_bill_amounts + Dart order calc)
-    5. Sales tax report per branch per month: per-invoice list (abbr + full, voids noted) + daily per-device summary (no range, totals); CSV/Excel export. DTJ = immutable bills + audit; daily per-device summary report. Out: e-Tax, RD submission, credit notes, ESC/POS
-    6. `vat_registered=false` → only `vat_mode=none`
-    - Batches: (1) schema+rules+rounding+abbr header (2) cancel&reissue (3) full invoice (4) sales tax report + daily per-device summary
-    - **All 4 batches committed on `m5/vat` (2026-11-09):** `c2d4faf` VAT rules/RD code · `2452eca` reissue · `f021133` full invoice (+trigger blocking full→plain downgrade) · `2d73b6d` sales tax report + CSV. Reviewer APPROVE on each. Migrations 20261109000500–000900 NOT pushed to staging; branch not pushed; no PR. Not tested in a browser: CSV download, reissue/full-invoice dialogs on staging. Stray root `package.json`/`package-lock.json` (from `npm i -g vercel`) untracked — user to delete
-    - **M5 merged (PR #17) + VAT switch merged (PR #18). Staging browser check 2026-11-09 PASSED:** VAT switch, RD code save, sale → abbreviated invoice header with machine code/branch/VAT 52.21 of 798, reissue (POS10-000002 replaces -000001), full invoice 00000-F-000001 with buyer block, sales tax report totals (7,373.79 + 52.21 = 7,426.00, voids excluded), daily summary incl. FULL row, CSV download. Staging shop is now VAT-registered (test tax id 0105500000001, device POS10 RD code E0000000000001)
-    - **Small UI fixes left:** (a) "ออกใบใหม่แทน" button still shows on a full invoice (server rejects; hide when bill.isFullInvoice) (b) sales tax report notes column is cut off at the right edge on a 1512px screen (c) server 23514 shows generic error text
-    - Batch 1 committed `c2d4faf` (reviewer APPROVE). Known limit: offline receipt may use stale cached rd_machine_code if edited while device offline (server snapshot is truth online)
-    - Batch 2 design (user chose option A, 2026-11-09): RPC `reissue_bill` voids old bill + creates copy (same lines/amounts, new no., `replaces_bill_id`, payment method editable) atomically; no table/stock changes; owner/manager only; online only; old bill must be in the same tax month (rule set by us, คุณอัย to confirm). Batch 3 full invoice reuses this RPC (+buyer, doc type). Item/qty mistakes = void + re-ring (no link). Void roles: keep code behaviour (SQL lets cashier void while session open); blueprint doc line 30 differs
-  - **Nightly backup moved out of M4 (user decision 2026-11-09) → must be done before go-live in M6.** Plan then: Supabase Pro if there is revenue, else GitHub Actions `pg_dump` → encrypt → Cloudflare R2 (keep 30). Repo is PUBLIC: never store dumps as repo files or Actions artifacts
-  - Known gaps: two-browser test on staging not done (Turnstile blocks automated browsers); golden tests fail locally (50, not in CI, not checked on main); stock/expense/setup writes still need online; staging domain follows `m4/reports-backup` (Vercel CLI 65 logged in as boscatdog-6895, project `keptohpos-v2-prototype`; change via `vercel api /v9/projects/keptohpos-v2-prototype/domains/keptoh-staging.vercel.app -X PATCH -f gitBranch=<branch>` then `vercel alias set` for an existing deployment)
-- **Known Constraints / Decisions:**
-  - Staging = https://keptoh-staging.vercel.app (ผู้ใช้อนุญาตให้ใส่ PIN ทดสอบ 1234) · Supabase Site URL ชี้ staging · Redirect: staging, Preview เดิม, localhost
-  - merge เข้า `main` ผ่าน PR บน GitHub เท่านั้น (คำสั่ง `git merge`/`git checkout main` ถูกระบบสิทธิ์บล็อก) · ผู้ใช้เลือก Create a merge commit
-  - อนุมัติแพ็กเกจแล้ว: `integration_test`, `drift`, `drift_flutter`, `connectivity_plus` · ChromeDriver 156 อยู่ที่ `~/.local/bin`
-  - VAT (M5): ต้องพิมพ์ "เลขรหัสประจำเครื่อง" ที่สรรพากรให้บนใบกำกับอย่างย่อ (ประกาศฯ ฉบับ 46) → ช่องต่อเครื่อง + Serial · สาขา/สำนักงานใหญ่ (ฉบับ 196) · ยกเลิกออกใบใหม่ตาม ป.86/2542 ข้อ 25 · ยังต้องยืนยันเรื่อง DTJ กับฝ่ายบัญชี
-  - เงินเก็บเป็นสตางค์ · ไฟล์ `app/lib/**/*.dart` ≤ 300 บรรทัด · ห้ามอ่าน `.env*` · CLI `~/.local/bin/supabase` v2.121.0 · Docker ที่ `/Applications/Docker.app/Contents/Resources/bin`
-  - หน้าภาพรวมกำไรไม่คิดกำไรของวันที่ยังไม่นับของ (ตั้งใจไว้) · E2E หน้าสต็อกทำพร้อม M2
+# Active Task Handoff State (Updated: 2026-11-11)
+- **Current Phase:** Post-Go-Live / UI Polish on `main` (`M0–M6 DONE`, Production Live on `main`)
+- **Production & Backend Status:**
+  - **Git Branch:** `main` (`71f5b50` — Agent Guard Template synced; `TableCard` UI density refinement in progress)
+  - **Vercel Production URLs:** `https://keptoh-staging.vercel.app` (Primary) and `https://keptohpos-v2-prototype.vercel.app`
+  - **Supabase Project:** `pbujdexhdzglymgnbsuw` (All migrations `000100` through `20261110000100_fix_FullTaxInvoice_exchange_rounding.sql` pushed)
+- **Recent Feedback Fixes Completed (`2026-11-11`, on `main`):**
+  - **Shift Close Guard (`ShiftBloc` / `ShiftPage` / `OwingTablesBanner` / `closeCashShift`):** Blocked closing a shift whenever `openTables.isNotEmpty` (both unpaid `กินก่อนจ่าย` and paid `จ่ายก่อนกิน` tables waiting for `เก็บโต๊ะ`), disabling `close-shift-btn` and displaying a clear banner with open table names.
+  - **UI Item 3 (`BusyOverlay` / `WalkingOrangeLoader`):** Removed the white box container from `BusyOverlay` (`onScrim: true`), enlarged the central default `size` from `210` to `260`, and removed hardcoded `size: 180` overrides across sub-pages.
+  - **UI Item 2 (`d2d74bc` — `OnboardingLoadingCard` / `index.html`):** Unified boot loader to the single Flutter `WalkingOrangeLoader` across Web/Android/iOS.
+  - **UI Item 1 (`57701cb` — `TableCard` / `TableLiveTimer` / `ZoneTablesSection`):** De-cluttered occupied table card and widened zone grid breakpoints to 4 columns below `1440px`.
+- **Active Project Constraints (See `.claude/rules/project-pitfalls.md` — `11/30` rules):**
+  - Money stored in satang (`int`) · Every `app/lib/**/*.dart` (excl. `*.g.dart`) `<= 300` lines · Never read/edit `.env*`
+  - Test commands: `cd app && flutter analyze lib test` and `cd app && flutter test <target_test_file>`
+- **Next Immediate Step:**
+  - Verify live Vercel deployment (`https://keptoh-staging.vercel.app`) for frameless `WalkingOrangeLoader(size: 260)` and shift-close open-table guard.
+
+## 🔄 Auto-Synced Git & Session State (Updated: 2026-11-11 14:31:26)
+- **Branch & HEAD:** `main` (`d2d74bc`)
+- **Last Edit Checkpoint:** `last_agent=antigravity | last_edited_file=/Users/nontawatwongnuk/dev_bos/KepTohPOS-V2/TASK_STATE.md | diff=+7/-7 บรรทัด | updated_at=2026-11-11T07:31:24Z`
+- **Uncommitted Changes:** `M app/lib/core/widgets/busy_overlay.dart; M app/lib/core/widgets/lottie_loading.dart; M app/lib/features/bills/presentation/pages/bills_page.dart; M app/lib/features/onboarding/presentation/owner_shop_step.dart; M app/lib/features/reports/presentation/widgets/sales_tax_report_tab.dart; M app/lib/features/setup/presentation/widgets/setup_devices_panel.dart`
+- **Recent Commits (`git log -n 5`):**
+  - `d2d74bc refactor(web): remove duplicate HTML boot loader so Flutter WalkingOrangeLoader is the single cross-platform loader`
+  - `5211397 fix(onboarding): keep WalkingOrangeLoader visible throughout boot and browser refresh`
+  - `57701cb feat(tables): declutter occupied TableCard UI and widen zone grid breakpoints`
+  - `71f5b50 chore(agent): sync governance rules, verify command, and handoff state`
+  - `94ce7cf chore(agent-guard): upgrade to Single Source of Truth + Pitfall Memory & Next Steps reporting`

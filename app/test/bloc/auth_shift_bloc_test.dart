@@ -193,8 +193,29 @@ void main() {
     });
 
     blocTest<ShiftBloc, ShiftState>(
-      'counts cash, computes variance, closes shift, and opens new shift',
+      'blocks ShiftClosed with toast when openTables is not empty',
       build: () => ShiftBloc(_createSeededRepo()),
+      act: (bloc) {
+        bloc
+          ..add(const ShiftCountedInputChanged('5446'))
+          ..add(ShiftClosed(staffId: 'st3', now: DateTime(2026, 11, 4, 22)));
+      },
+      verify: (bloc) {
+        expect(bloc.state.isShiftOpen, isTrue);
+        expect(bloc.state.openTablesList, isNotEmpty);
+        expect(
+          bloc.state.toastMessage,
+          'ยังมีโต๊ะเปิดอยู่ กรุณาเช็กบิลและเก็บโต๊ะให้ครบก่อนปิดกะ',
+        );
+      },
+    );
+
+    blocTest<ShiftBloc, ShiftState>(
+      'counts cash, computes variance, closes shift, and opens new shift',
+      build: () {
+        final repo = _createSeededRepo()..update((s) => s.openTables.clear());
+        return ShiftBloc(repo);
+      },
       act: (bloc) {
         bloc
           ..add(const ShiftCountedInputChanged('5406'))
