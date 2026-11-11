@@ -19,6 +19,7 @@
 
   <title>เก็บโต๊ะ POS (KepToh POS) — ระบบจัดการหน้าร้านและคำนวณกำไร</title>
   <link rel="manifest" href="manifest.json">
+  <link rel="preload" href="assets/assets/Walking_Orange.json" as="fetch" crossorigin>
   <style>
     html, body {
       margin: 0;
@@ -26,120 +27,10 @@
       width: 100%;
       height: 100%;
       background-color: #F4F4F5;
-      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans Thai", "Segoe UI", Roboto, sans-serif;
-    }
-    #keptoh-boot-loader {
-      position: fixed;
-      inset: 0;
-      z-index: 99999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      background: radial-gradient(circle at 50% 35%, rgba(255, 122, 0, 0.08) 0%, #F4F4F5 68%);
-      transition: opacity 0.2s ease-out;
-    }
-    #keptoh-boot-loader.fade-out {
-      opacity: 0;
-      pointer-events: none;
-    }
-    .boot-center {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      width: 100%;
-      max-width: 340px;
-      padding: 24px;
-    }
-    .boot-lottie-wrap {
-      width: 220px;
-      height: 172px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: visible;
-    }
-    #boot-lottie {
-      width: 220px;
-      height: 220px;
-      transform: scale(1.35);
-      transform-origin: center center;
-    }
-    .boot-sub {
-      font-size: 15px;
-      font-weight: 600;
-      color: #354055;
-      margin: 4px 0 12px 0;
-    }
-    .boot-title {
-      font-size: 20px;
-      font-weight: 800;
-      color: #172033;
-      margin: 0;
-      letter-spacing: -0.01em;
     }
   </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js" defer></script>
 </head>
 <body>
-  <div id="keptoh-boot-loader" role="status" aria-live="polite">
-    <div class="boot-center">
-      <div class="boot-lottie-wrap">
-        <div id="boot-lottie"></div>
-      </div>
-      <p class="boot-sub">กำลังเตรียมระบบหน้าร้าน...</p>
-      <p class="boot-title">เก็บโต๊ะ POS</p>
-    </div>
-  </div>
-
-  <script>
-    (function () {
-      function initBootLottie() {
-        var el = document.getElementById('boot-lottie');
-        if (!el || !window.lottie) return;
-        var anim = window.lottie.loadAnimation({
-          container: el,
-          renderer: 'svg',
-          loop: true,
-          autoplay: true,
-          path: 'assets/assets/Walking_Orange.json'
-        });
-        anim.addEventListener('data_failed', function () {
-          window.lottie.loadAnimation({
-            container: el,
-            renderer: 'svg',
-            loop: true,
-            autoplay: true,
-            path: 'assets/Walking_Orange.json'
-          });
-        });
-      }
-      if (window.lottie) {
-        initBootLottie();
-      } else {
-        window.addEventListener('DOMContentLoaded', initBootLottie, { once: true });
-      }
-      function dismissBootLoader() {
-        var loader = document.getElementById('keptoh-boot-loader');
-        if (!loader) return;
-        loader.classList.add('fade-out');
-        setTimeout(function () {
-          if (loader && loader.parentNode) {
-            loader.parentNode.removeChild(loader);
-          }
-        }, 220);
-      }
-      window.addEventListener('flutter-first-frame', function () { setTimeout(dismissBootLoader, 180); }, { once: true });
-      var observer = new MutationObserver(function () {
-        if (document.querySelector('flutter-view, flt-glass-pane')) {
-          observer.disconnect();
-          setTimeout(dismissBootLoader, 80);
-        }
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-    })();
-  </script>
   <script>
     // Keeps the app's files on this device so it opens without internet.
     if ('serviceWorker' in navigator) {
