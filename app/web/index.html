@@ -130,7 +130,7 @@
           }
         }, 220);
       }
-      window.addEventListener('flutter-first-frame', dismissBootLoader, { once: true });
+      window.addEventListener('flutter-first-frame', function () { setTimeout(dismissBootLoader, 180); }, { once: true });
       var observer = new MutationObserver(function () {
         if (document.querySelector('flutter-view, flt-glass-pane')) {
           observer.disconnect();
