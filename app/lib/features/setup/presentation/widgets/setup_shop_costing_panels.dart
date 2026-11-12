@@ -1,3 +1,4 @@
+import 'package:app/core/printer/printer_hub.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
@@ -27,12 +28,25 @@ class SetupShopPanel extends StatefulWidget {
 }
 
 class _SetupShopPanelState extends State<SetupShopPanel> {
-  late ShopConfig _v = widget.shop;
+  late ShopConfig _v = _hydrateLogo(widget.shop);
+
+  ShopConfig _hydrateLogo(ShopConfig s) {
+    final stored = PrinterHub.instance.settings.customLogoDataUrl;
+    return s.logoDataUrl.isEmpty && stored.isNotEmpty
+        ? s.copyWith(logoDataUrl: stored)
+        : s;
+  }
 
   @override
   void didUpdateWidget(covariant SetupShopPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.shop != widget.shop) _v = widget.shop;
+    if (oldWidget.shop != widget.shop) _v = _hydrateLogo(widget.shop);
+  }
+
+  void _updateLogo(String nextUrl) {
+    final hub = PrinterHub.instance;
+    hub.updateSettings(hub.settings.copyWith(customLogoDataUrl: nextUrl));
+    setState(() => _v = _v.copyWith(logoDataUrl: nextUrl));
   }
 
   Widget _row(Widget l, Widget r) => ResponsiveFormRow(left: l, right: r);
@@ -55,7 +69,13 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
               label: widget.isSaving ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่า',
               loading: widget.isSaving,
               disabled: widget.isSaving || _v.name.trim().isEmpty,
-              onPressed: () => widget.onSave(_v),
+              onPressed: () {
+                final hub = PrinterHub.instance;
+                hub.updateSettings(
+                  hub.settings.copyWith(customLogoDataUrl: _v.logoDataUrl),
+                );
+                widget.onSave(_v);
+              },
             ),
           ],
         ),
@@ -66,6 +86,11 @@ class _SetupShopPanelState extends State<SetupShopPanel> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  ShopLogoPickerField(
+                    logoDataUrl: _v.logoDataUrl,
+                    onChanged: _updateLogo,
+                  ),
+                  const SizedBox(height: AppDimensions.space3),
                   _row(
                     _txt('ชื่อร้าน *', _v.name, (s) => _v.copyWith(name: s)),
                     _txt(

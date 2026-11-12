@@ -1,4 +1,5 @@
 import 'package:app/core/theme/tokens.dart';
+import 'package:app/core/widgets/app_icon.dart';
 import 'package:flutter/material.dart';
 
 /// Visual tone for a [SegItem] when selected.
@@ -8,12 +9,16 @@ enum SegTone { surface, green, orange }
 class SegItem<T> {
   const new({
     required this.value,
-    required this.label,
+    this.label = '',
+    this.icon,
+    this.tooltip,
     this.tone = SegTone.surface,
   });
 
   final T value;
   final String label;
+  final String? icon;
+  final String? tooltip;
   final SegTone tone;
 }
 
@@ -44,7 +49,37 @@ class Seg<T> extends StatelessWidget {
         ? tokens.primary
         : tokens.surface.withValues(alpha: 0);
     final fgColor = selected ? tokens.onPrimary : tokens.muted;
-    return Container(
+    final hasIcon = (item.icon ?? '').isNotEmpty;
+    final hasLabel = item.label.isNotEmpty;
+    final content = Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: expanded ? AppDimensions.space1_5 : AppDimensions.space3_5,
+        vertical: AppDimensions.space2,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (hasIcon) AppIcon(item.icon!, color: fgColor),
+          if (hasIcon && hasLabel) const SizedBox(width: AppDimensions.space1),
+          if (hasLabel)
+            Flexible(
+              child: Text(
+                item.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: fgColor,
+                  fontSize: AppDimensions.fsSm,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+    final btn = Container(
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
@@ -56,26 +91,13 @@ class Seg<T> extends StatelessWidget {
         child: InkWell(
           onTap: () => onChanged(item.value),
           borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: expanded
-                  ? AppDimensions.space2
-                  : AppDimensions.space3_5,
-              vertical: AppDimensions.space2,
-            ),
-            child: Text(
-              item.label,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: fgColor,
-                fontSize: AppDimensions.fsSm,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-              ),
-            ),
-          ),
+          child: content,
         ),
       ),
     );
+    return (item.tooltip ?? '').isNotEmpty
+        ? Tooltip(message: item.tooltip, child: btn)
+        : btn;
   }
 
   @override

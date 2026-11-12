@@ -67,6 +67,8 @@ class BillsPage extends StatelessWidget {
     final boldInk = tabular?.copyWith(fontWeight: FontWeight.w700);
     TextStyle? rowBold(BillRecord b) =>
         boldInk?.copyWith(color: b.voided ? t.muted : t.ink);
+    Widget oneLine(String v, [TextStyle? st]) =>
+        Text(v, maxLines: 1, overflow: TextOverflow.ellipsis, style: st);
 
     return BlocListener<BillsCubit, BillsState>(
       listenWhen: (p, c) =>
@@ -137,9 +139,7 @@ class BillsPage extends StatelessWidget {
                   onRowTap: (b) => cubit.selectBill(b.id),
                   empty: state.loading
                       ? const Padding(
-                          padding: EdgeInsets.symmetric(
-                            vertical: AppDimensions.space6,
-                          ),
+                          padding: EdgeInsets.symmetric(vertical: 28),
                           child: Center(
                             child: WalkingOrangeLoader(label: 'กำลังโหลดบิล…'),
                           ),
@@ -183,21 +183,14 @@ class BillsPage extends StatelessWidget {
                     DataTableCol<BillRecord>(
                       key: 'table',
                       label: 'โต๊ะ',
-                      cellBuilder: (_, b) => Text(
-                        b.tableName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: rowBold(b),
-                      ),
+                      cellBuilder: (_, b) => oneLine(b.tableName, rowBold(b)),
                     ),
                     DataTableCol<BillRecord>(
                       key: 'heads',
                       label: 'ลูกค้า',
-                      cellBuilder: (_, b) => Text(
+                      cellBuilder: (_, b) => oneLine(
                         '${b.heads.a + b.heads.c + b.heads.f} คน',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: tabular,
+                        tabular,
                       ),
                     ),
                     DataTableCol<BillRecord>(
@@ -227,11 +220,7 @@ class BillsPage extends StatelessWidget {
                     DataTableCol<BillRecord>(
                       key: 'staff',
                       label: 'แคชเชียร์',
-                      cellBuilder: (_, b) => Text(
-                        b.staffName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      cellBuilder: (_, b) => oneLine(b.staffName),
                     ),
                     DataTableCol<BillRecord>(
                       key: 'total',

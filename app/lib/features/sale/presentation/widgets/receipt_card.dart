@@ -70,7 +70,12 @@ class ReceiptCard extends StatelessWidget {
             ReceiptVoidStamp(bill: bill),
             const SizedBox(height: AppDimensions.space3),
           ],
-          const Center(child: BrandLogo(size: AppDimensions.space10)),
+          Center(
+            child: BrandLogo(
+              size: AppDimensions.space10,
+              logoDataUrl: shop.logoDataUrl,
+            ),
+          ),
           const SizedBox(height: AppDimensions.space1_5),
           Text(
             shop.name,

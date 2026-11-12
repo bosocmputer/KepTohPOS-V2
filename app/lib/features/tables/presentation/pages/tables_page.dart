@@ -205,8 +205,6 @@ class _TablesPageState extends State<TablesPage> {
                   _slipTableId!,
                   now: state.now,
                 ),
-                onPrint: () =>
-                    showAppToast(context, 'ส่งพิมพ์สลิป POS แล้ว (จำลอง)'),
                 onVoid: defaultStaff == null
                     ? null
                     : (reason) => _runSlipAction(

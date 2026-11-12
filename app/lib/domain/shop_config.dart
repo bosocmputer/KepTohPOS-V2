@@ -29,6 +29,7 @@ class ShopConfig {
     this.themeMode = 'light',
     this.themePalette = 'orange',
     this.bankAccounts = kDefaultBankAccounts,
+    this.logoDataUrl = '',
   });
 
   factory fromJson(Map<String, dynamic> json) => ShopConfig(
@@ -62,6 +63,7 @@ class ShopConfig {
               .map(BankAccountItem.fromJson)
               .toList()
         : kDefaultBankAccounts,
+    logoDataUrl: (json['logoDataUrl'] as String?) ?? '',
   );
 
   final String name;
@@ -93,6 +95,7 @@ class ShopConfig {
   final String themeMode;
   final String themePalette;
   final List<BankAccountItem> bankAccounts;
+  final String logoDataUrl;
 
   List<BankAccountItem> get activeBankAccounts =>
       bankAccounts.where((b) => b.active).toList();
@@ -124,6 +127,7 @@ class ShopConfig {
     String? themeMode,
     String? themePalette,
     List<BankAccountItem>? bankAccounts,
+    String? logoDataUrl,
   }) => ShopConfig(
     name: name ?? this.name,
     branch: branch ?? this.branch,
@@ -151,6 +155,7 @@ class ShopConfig {
     themeMode: themeMode ?? this.themeMode,
     themePalette: themePalette ?? this.themePalette,
     bankAccounts: bankAccounts ?? this.bankAccounts,
+    logoDataUrl: logoDataUrl ?? this.logoDataUrl,
   );
 
   /// Serializes this [ShopConfig] to a JSON map matching `shop.json`.
@@ -180,5 +185,6 @@ class ShopConfig {
     'themeMode': themeMode,
     'themePalette': themePalette,
     'bankAccounts': bankAccounts.map((b) => b.toJson()).toList(),
+    if (logoDataUrl.isNotEmpty) 'logoDataUrl': logoDataUrl,
   };
 }

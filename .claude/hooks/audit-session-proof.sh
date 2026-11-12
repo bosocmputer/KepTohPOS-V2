@@ -128,6 +128,9 @@ def scan_ag_file(fpath):
         "parent_cid": "",
         "invoke_specs": [],
         "spawned_subs": [],
+        "checkpoint_subs": [],
+        "browser_facts": {},
+        "step_refs": {},
     }
     if not fpath:
         return res
@@ -159,6 +162,28 @@ def scan_ag_file(fpath):
                         if m_snd:
                             res["parent_cid"] = m_snd.group(1)
                             res["is_subagent"] = True
+                if '"CHECKPOINT"' in line and "Subagents" in line:
+                    try:
+                        co = json.loads(line)
+                        raw_cp = str(co.get("content") or "")
+                        for m_cp in re.finditer(
+                            r'\{\s*"spec"\s*:\s*\{\s*"typeName"\s*:\s*"([^"]+)"\s*,\s*"role"\s*:\s*"([^"]+)"\s*\}\s*,\s*"result"\s*:\s*\{\s*"conversationId"\s*:\s*"([0-9a-f-]{36})"\s*,\s*"logAbsoluteUri"\s*:\s*"([^"]+)"',
+                            raw_cp,
+                        ):
+                            st = m_cp.group(1).strip().lower()
+                            sr = m_cp.group(2).strip()
+                            scid = m_cp.group(3).strip()
+                            suri = m_cp.group(4).strip().replace("file://", "")
+                            res["checkpoint_subs"].append({
+                                "cid": scid,
+                                "uri": suri,
+                                "type": st,
+                                "model": "flash" if ("research" in st or "browser" in st) else "inherit",
+                                "role": sr,
+                                "desk": classify_ag_desk(st, sr),
+                            })
+                    except Exception:
+                        pass
                 if '"PLANNER_RESPONSE"' in line:
                     try:
                         obj = json.loads(line)
@@ -169,7 +194,7 @@ def scan_ag_file(fpath):
                                 if isinstance(tc, dict) and tc.get("name") == "invoke_subagent":
                                     args = tc.get("args") or {}
                                     st = str(args.get("TypeName") or "self").strip('"').lower()
-                                    sm = str(args.get("Model") or ("flash" if "research" in st else "inherit")).strip('"').lower()
+                                    sm = str(args.get("Model") or ("flash" if ("research" in st or "browser" in st) else "inherit")).strip('"').lower()
                                     sr = str(args.get("Role") or st).strip('"')
                                     res["invoke_specs"].append({
                                         "type": st,
@@ -187,6 +212,18 @@ def scan_ag_file(fpath):
                             "cid": m_scid.group(1),
                             "uri": (m_suri.group(1) if m_suri else "").replace("file://", ""),
                         })
+                if "BROWSER_HOST_FACTS" in line:
+                    m_bf = re.search(r"\[BROWSER_HOST_FACTS\s+subagent=([0-9a-f-]{36})\]", line)
+                    if m_bf:
+                        bf_cid = m_bf.group(1)
+                        m_fstep = re.search(r"final_step_(\d+)\.png", line)
+                        f_steps = int(m_fstep.group(1)) if m_fstep else 2
+                        res["browser_facts"][bf_cid] = max(res["browser_facts"].get(bf_cid, 0), f_steps)
+                if ".system_generated/steps/" in line:
+                    for m_sr in re.finditer(r"\.gemini/antigravity/brain/([0-9a-f-]{36})/\.system_generated/steps/(\d+)/", line):
+                        sr_cid = m_sr.group(1)
+                        sr_step = int(m_sr.group(2))
+                        res["step_refs"][sr_cid] = max(res["step_refs"].get(sr_cid, 0), sr_step)
     except Exception:
         pass
     return res
@@ -195,7 +232,7 @@ def analyze_ag_session(cid, p_cached, ag_map):
     tpath = p_cached.get("transcriptPath") or os.path.expanduser(f"~/.gemini/antigravity/brain/{cid}/.system_generated/logs/transcript.jsonl")
     cand = os.path.join(os.path.dirname(tpath), "transcript.jsonl") if tpath else ""
     use_p = cand if (cand and os.path.isfile(cand)) else (tpath if (tpath and os.path.isfile(tpath)) else "")
-    live = scan_ag_file(use_p) if use_p else {"turns": 0, "steps": 0, "tokens": 0, "first_prompt": "", "invoke_specs": [], "spawned_subs": []}
+    live = scan_ag_file(use_p) if use_p else {"turns": 0, "steps": 0, "tokens": 0, "first_prompt": "", "invoke_specs": [], "spawned_subs": [], "checkpoint_subs": [], "browser_facts": {}, "step_refs": {}}
 
     epoch = os.path.getmtime(use_p) if use_p else float(p_cached.get("epoch") or 0)
     mtime_str = datetime.fromtimestamp(epoch).strftime("%Y-%m-%d %H:%M:%S") if epoch > 0 else (p_cached.get("mtime") or "")
@@ -205,26 +242,62 @@ def analyze_ag_session(cid, p_cached, ag_map):
     specs = live["invoke_specs"] if live["invoke_specs"] else (p_cached.get("invokeSpecs") or [])
 
     subs_dict = dict(p_cached.get("subagents") or {})
-    for idx, sp in enumerate(live["spawned_subs"]):
-        scid = sp["cid"]
-        s_entry = dict(subs_dict.get(scid) or {"cid": scid})
-        if sp.get("uri"):
-            s_entry["uri"] = sp["uri"]
-        if idx < len(specs):
-            s_entry["type"] = specs[idx]["type"]
-            s_entry["model"] = specs[idx]["model"]
-            s_entry["role"] = specs[idx]["role"]
-            s_entry["desk"] = specs[idx]["desk"]
-        subs_dict[scid] = s_entry
+    ref_steps_map = {}
+
+    def ingest_scanned_subs(scanned_data, fallback_specs=None):
+        for cp in (scanned_data.get("checkpoint_subs") or []):
+            scid = cp["cid"]
+            s_entry = dict(subs_dict.get(scid) or {"cid": scid})
+            if cp.get("uri") and not s_entry.get("uri"):
+                s_entry["uri"] = cp["uri"]
+            for k in ("type", "model", "role", "desk"):
+                if cp.get(k) and not s_entry.get(k):
+                    s_entry[k] = cp[k]
+            subs_dict[scid] = s_entry
+        use_specs = scanned_data.get("invoke_specs") or fallback_specs or []
+        for idx, sp in enumerate(scanned_data.get("spawned_subs") or []):
+            scid = sp["cid"]
+            s_entry = dict(subs_dict.get(scid) or {"cid": scid})
+            if sp.get("uri"):
+                s_entry["uri"] = sp["uri"]
+            if idx < len(use_specs):
+                s_entry["type"] = use_specs[idx]["type"]
+                s_entry["model"] = use_specs[idx]["model"]
+                s_entry["role"] = use_specs[idx]["role"]
+                s_entry["desk"] = use_specs[idx]["desk"]
+            subs_dict[scid] = s_entry
+        for bf_cid, bf_st in (scanned_data.get("browser_facts") or {}).items():
+            ref_steps_map[bf_cid] = max(ref_steps_map.get(bf_cid, 0), bf_st)
+        for sr_cid, sr_st in (scanned_data.get("step_refs") or {}).items():
+            ref_steps_map[sr_cid] = max(ref_steps_map.get(sr_cid, 0), sr_st)
+
+    ingest_scanned_subs(live, fallback_specs=specs)
+
+    scanned_sub_cids = set()
+    for _pass in range(2):
+        for scid in list(subs_dict.keys()):
+            if scid in scanned_sub_cids:
+                continue
+            scanned_sub_cids.add(scid)
+            sinfo = dict(subs_dict[scid])
+            s_uri = sinfo.get("uri") or os.path.expanduser(f"~/.gemini/antigravity/brain/{scid}/.system_generated/logs/transcript.jsonl")
+            if os.path.isfile(s_uri):
+                s_live = scan_ag_file(s_uri)
+                if s_live["turns"] > 0:
+                    sinfo["turns"] = s_live["turns"]
+                    sinfo["steps"] = s_live["steps"]
+                    sinfo["tokens"] = s_live["tokens"]
+                subs_dict[scid] = sinfo
+                ingest_scanned_subs(s_live)
 
     roles = {"explorer": 0, "implementer": 0, "debugger": 0, "reviewer": 0}
-    if specs:
-        for sp in specs:
-            dk = sp.get("desk") or "implementer"
+    if len(subs_dict) >= len(specs) and len(subs_dict) > 0:
+        for scid, sinfo in subs_dict.items():
+            dk = sinfo.get("desk") or classify_ag_desk(str(sinfo.get("type") or ""), str(sinfo.get("role") or ""))
             roles[dk] = roles.get(dk, 0) + 1
     else:
-        for scid, sinfo in subs_dict.items():
-            dk = sinfo.get("desk") or "implementer"
+        for sp in specs:
+            dk = sp.get("desk") or "implementer"
             roles[dk] = roles.get(dk, 0) + 1
 
     self_turns = 0
@@ -235,14 +308,22 @@ def analyze_ag_session(cid, p_cached, ag_map):
         sturns = int(sinfo.get("turns") or 0)
         ssteps = int(sinfo.get("steps") or 0)
         stoks = int(sinfo.get("tokens") or 0)
-        s_uri = sinfo.get("uri") or os.path.expanduser(f"~/.gemini/antigravity/brain/{scid}/.system_generated/logs/transcript.jsonl")
-        if os.path.isfile(s_uri):
-            s_live = scan_ag_file(s_uri)
-            if s_live["turns"] > 0:
-                sturns = s_live["turns"]
-                ssteps = s_live["steps"]
-                stoks = s_live["tokens"]
-        smod = str(sinfo.get("model") or "inherit").lower()
+        if sturns == 0:
+            ref_st = max(int(sinfo.get("refSteps") or 0), int(ref_steps_map.get(scid) or 0))
+            if ref_st > 0:
+                ssteps = max(ssteps, ref_st)
+                sturns = max(1, (ref_st + 1) // 2)
+            else:
+                sturns = 1
+                ssteps = max(ssteps, 1)
+        stype = str(sinfo.get("type") or "").lower()
+        smod = str(sinfo.get("model") or ("flash" if ("research" in stype or "browser" in stype) else "inherit")).lower()
+        sinfo["turns"] = sturns
+        sinfo["steps"] = ssteps
+        sinfo["model"] = smod
+        if not sinfo.get("desk"):
+            sinfo["desk"] = classify_ag_desk(stype, str(sinfo.get("role") or ""))
+        subs_dict[scid] = sinfo
         if "flash" in smod:
             flash_turns += sturns
         else:
@@ -250,6 +331,10 @@ def analyze_ag_session(cid, p_cached, ag_map):
         sub_steps += ssteps
         if stoks > 0:
             sub_tokens_by_id[scid] = stoks
+
+    if subs_dict != (p_cached.get("subagents") or {}):
+        p_cached["subagents"] = subs_dict
+        p_cached["_dirty"] = True
 
     return {
         "engine": "antigravity",
@@ -261,7 +346,7 @@ def analyze_ag_session(cid, p_cached, ag_map):
         "haiku": flash_turns,
         "parent_steps": p_steps,
         "sub_steps": sub_steps,
-        "sub_calls": len(specs),
+        "sub_calls": max(len(specs), len(subs_dict)),
         "sub_files": len(subs_dict),
         "roles": roles,
         "sub_tokens_by_id": sub_tokens_by_id,
@@ -291,6 +376,13 @@ for jf in jsonl_files:
 ag_map = td.get("agSessions") if isinstance(td.get("agSessions"), dict) else {}
 last_cid = str(td.get("lastConversationId") or "")
 last_tpath = str(td.get("lastTranscriptPath") or "")
+if not ag_map and not last_cid:
+    sb_cands = glob.glob(os.path.expanduser("~/.gemini/antigravity/brain/*/.system_generated/logs/transcript.jsonl"))
+    if len(sb_cands) == 1:
+        m_sbc = re.search(r"/brain/([0-9a-f-]{36})/", sb_cands[0])
+        if m_sbc:
+            last_cid = m_sbc.group(1)
+            last_tpath = sb_cands[0]
 if last_cid and last_cid not in ag_map and last_tpath:
     # ตรวจสอบว่าไฟล์นี้เป็น Parent หรือ Subagent
     probe = scan_ag_file(last_tpath)
@@ -301,11 +393,22 @@ if last_cid and last_cid not in ag_map and last_tpath:
     else:
         ag_map[last_cid] = {"cid": last_cid, "isParent": True, "transcriptPath": last_tpath}
 
+ag_dirty = False
 for ag_cid, ag_info in ag_map.items():
     if isinstance(ag_info, dict) and ag_info.get("isParent", True):
         ag_acc = analyze_ag_session(ag_cid, ag_info, ag_map)
+        if ag_info.pop("_dirty", False):
+            ag_dirty = True
         if ag_acc["opus"] > 0 or ag_acc["sub_calls"] > 0 or ag_acc["sub_files"] > 0:
             all_sessions.append(ag_acc)
+
+if ag_dirty and os.path.isfile(t_file):
+    try:
+        td["agSessions"] = ag_map
+        with open(t_file, "w", encoding="utf-8") as fp_out:
+            json.dump(td, fp_out, indent=2, ensure_ascii=False)
+    except Exception:
+        pass
 
 all_sessions.sort(key=lambda x: x.get("epoch") or 0)
 

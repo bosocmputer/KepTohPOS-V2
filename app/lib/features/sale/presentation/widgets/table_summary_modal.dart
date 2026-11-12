@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:app/core/printer/printer_hub_modal.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
@@ -6,6 +9,105 @@ import 'package:app/features/sale/presentation/widgets/table_summary_card.dart';
 import 'package:flutter/material.dart';
 
 export 'package:app/features/sale/presentation/widgets/table_summary_card.dart';
+
+/// Shared void-reason confirmation box used inside the receipt and
+/// [TableSummaryModal] dialogs.
+class VoidReasonConfirmBox extends StatelessWidget {
+  const new({
+    required this.title,
+    required this.reason,
+    required this.onReasonChanged,
+    required this.onCancel,
+    required this.onConfirm,
+    this.placeholder = 'เช่น ลูกค้าเปลี่ยนใจไม่รับประทาน',
+    super.key,
+  });
+
+  final String title;
+  final String reason;
+  final ValueChanged<String> onReasonChanged;
+  final VoidCallback onCancel;
+  final VoidCallback onConfirm;
+  final String placeholder;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final tt = Theme.of(context).textTheme;
+    return Container(
+      key: const ValueKey('void-confirm-box'),
+      padding: const EdgeInsets.all(AppDimensions.space3),
+      decoration: BoxDecoration(
+        color: t.dangerSoft,
+        borderRadius: BorderRadius.circular(AppDimensions.r),
+        border: Border.all(color: t.danger),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            title,
+            style: tt.bodyMedium?.copyWith(
+              color: t.danger,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppDimensions.space2),
+          Wrap(
+            spacing: AppDimensions.space1_5,
+            runSpacing: AppDimensions.space1,
+            children: [
+              for (final preset in const <String>[
+                'ลูกค้าเปลี่ยนใจไม่รับประทาน',
+                'คีย์จำนวนคนผิด',
+                'เปลี่ยนช่องทางชำระเงิน',
+              ])
+                Btn(
+                  key: ValueKey('void-preset-$preset'),
+                  size: BtnSize.sm,
+                  kind: reason == preset ? BtnKind.primary : BtnKind.normal,
+                  label: preset,
+                  onPressed: () => onReasonChanged(preset),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppDimensions.space2),
+          Field(
+            label: 'เหตุผล',
+            child: AppTextInput(
+              key: const ValueKey('void-reason-input'),
+              value: reason,
+              onChanged: onReasonChanged,
+              placeholder: placeholder,
+            ),
+          ),
+          const SizedBox(height: AppDimensions.space2_5),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Btn(
+                key: const ValueKey('cancel-void-btn'),
+                size: BtnSize.sm,
+                label: 'ไม่ยกเลิก',
+                onPressed: onCancel,
+              ),
+              const SizedBox(width: AppDimensions.space2),
+              Btn(
+                key: const ValueKey('confirm-void-btn'),
+                kind: BtnKind.dangerSolid,
+                size: BtnSize.sm,
+                icon: 'trash',
+                label: 'ยืนยันยกเลิกบิล',
+                onPressed: onConfirm,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 /// Modal dialog displaying the combined table summary slip (`ใบสรุปยอดโต๊ะ`)
 /// alongside tabs for each individual sub-bill in the current dining session.
@@ -49,7 +151,6 @@ class _TableSummaryModalState extends State<TableSummaryModal> {
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    final tt = Theme.of(context).textTheme;
     final sum = widget.summary;
     final bill = _selectedBill;
     final canVoid =
@@ -74,7 +175,22 @@ class _TableSummaryModalState extends State<TableSummaryModal> {
               sub: 'รวม ${sum.bills.length} บิลย่อย$voidSub',
               onClose: widget.onDone,
               footerLeading: _voiding && bill != null
-                  ? _buildVoidConfirmBox(t, tt, bill)
+                  ? VoidReasonConfirmBox(
+                      title:
+                          'ยกเลิกบิลย่อย #${bill.no} — '
+                          'โต๊ะยังคงเปิดอยู่สำหรับบิลอื่น',
+                      reason: _reason,
+                      placeholder: 'เช่น คีย์จำนวนคนผิด',
+                      onReasonChanged: (v) => setState(() => _reason = v),
+                      onCancel: () => setState(() => _voiding = false),
+                      onConfirm: () {
+                        widget.onVoidSubBill?.call(bill.id, _reason);
+                        setState(() {
+                          _voiding = false;
+                          _tab = 'summary';
+                        });
+                      },
+                    )
                   : null,
               footer: _voiding
                   ? const <Widget>[]
@@ -93,7 +209,28 @@ class _TableSummaryModalState extends State<TableSummaryModal> {
                         label: bill == null
                             ? 'พิมพ์ใบสรุปโต๊ะ'
                             : 'พิมพ์ใบเสร็จ',
-                        onPressed: widget.onPrint ?? () {},
+                        onPressed:
+                            widget.onPrint ??
+                            () {
+                              if (bill == null) {
+                                unawaited(
+                                  printTableSummaryWithHub(
+                                    context,
+                                    shop: widget.shop,
+                                    summary: sum,
+                                  ),
+                                );
+                              } else {
+                                unawaited(
+                                  printBillWithHub(
+                                    context,
+                                    shop: widget.shop,
+                                    bill: bill,
+                                    isCopy: true,
+                                  ),
+                                );
+                              }
+                            },
                       ),
                       Btn(
                         key: const ValueKey('receipt-done-btn'),
@@ -143,84 +280,4 @@ class _TableSummaryModalState extends State<TableSummaryModal> {
       ),
     );
   }
-
-  Widget _buildVoidConfirmBox(AppTokens t, TextTheme tt, BillRecord bill) =>
-      Container(
-        key: const ValueKey('void-confirm-box'),
-        padding: const EdgeInsets.all(AppDimensions.space3),
-        decoration: BoxDecoration(
-          color: t.dangerSoft,
-          borderRadius: BorderRadius.circular(AppDimensions.r),
-          border: Border.all(color: t.danger),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'ยกเลิกบิลย่อย #${bill.no} — โต๊ะยังคงเปิดอยู่สำหรับบิลอื่น',
-              style: tt.bodyMedium?.copyWith(
-                color: t.danger,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: AppDimensions.space2),
-            Wrap(
-              spacing: AppDimensions.space1_5,
-              runSpacing: AppDimensions.space1,
-              children: [
-                for (final preset in const <String>[
-                  'ลูกค้าเปลี่ยนใจไม่รับประทาน',
-                  'คีย์จำนวนคนผิด',
-                  'เปลี่ยนช่องทางชำระเงิน',
-                ])
-                  Btn(
-                    key: ValueKey('void-preset-$preset'),
-                    size: BtnSize.sm,
-                    kind: _reason == preset ? BtnKind.primary : BtnKind.normal,
-                    label: preset,
-                    onPressed: () => setState(() => _reason = preset),
-                  ),
-              ],
-            ),
-            const SizedBox(height: AppDimensions.space2),
-            Field(
-              label: 'เหตุผล',
-              child: AppTextInput(
-                key: const ValueKey('void-reason-input'),
-                value: _reason,
-                onChanged: (v) => setState(() => _reason = v),
-                placeholder: 'เช่น คีย์จำนวนคนผิด',
-              ),
-            ),
-            const SizedBox(height: AppDimensions.space2_5),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Btn(
-                  key: const ValueKey('cancel-void-btn'),
-                  size: BtnSize.sm,
-                  label: 'ไม่ยกเลิก',
-                  onPressed: () => setState(() => _voiding = false),
-                ),
-                const SizedBox(width: AppDimensions.space2),
-                Btn(
-                  key: const ValueKey('confirm-void-btn'),
-                  kind: BtnKind.dangerSolid,
-                  size: BtnSize.sm,
-                  icon: 'trash',
-                  label: 'ยืนยันยกเลิกบิล',
-                  onPressed: () {
-                    widget.onVoidSubBill?.call(bill.id, _reason);
-                    setState(() {
-                      _voiding = false;
-                      _tab = 'summary';
-                    });
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
 }

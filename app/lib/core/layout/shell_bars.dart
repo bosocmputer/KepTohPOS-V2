@@ -1,3 +1,4 @@
+import 'package:app/core/printer/printer_status_button.dart';
 import 'package:app/core/sync/sync_widgets.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/widgets/widgets.dart';
@@ -95,6 +96,9 @@ class _ShellHeaderBarState extends State<ShellHeaderBar> {
           compact: widget.isMobile || maxW < 640,
           onTap: widget.onOpenDrawer,
         );
+        final printerChip = PrinterStatusButton(
+          compact: widget.isMobile || maxW < 640,
+        );
         final syncChip = SyncStatusButton(
           compact: widget.isMobile || maxW < 640,
         );
@@ -121,6 +125,7 @@ class _ShellHeaderBarState extends State<ShellHeaderBar> {
                         const SizedBox(width: 12),
                         Expanded(child: titleNode),
                         const SizedBox(width: 12),
+                        printerChip,
                         syncChip,
                         userChip,
                       ],
@@ -182,6 +187,7 @@ class _ShellHeaderBarState extends State<ShellHeaderBar> {
                         const SizedBox(width: 10),
                       ],
                     ],
+                    printerChip,
                     syncChip,
                     userChip,
                   ],

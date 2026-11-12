@@ -20,3 +20,12 @@ node_modules/
 .claude/.telemetry.json*
 .claude/.quota_cache.json*
 .playwright-mcp/
+
+# Video automation
+video/node_modules/
+video/.venv/
+video/frames/
+video/snapshots/
+video/verification_frames/
+video/*.tmp*
+

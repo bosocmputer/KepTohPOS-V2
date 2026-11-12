@@ -1,3 +1,4 @@
+import 'package:app/core/printer/printer_status_button.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/widgets/widgets.dart';
 import 'package:app/domain/domain.dart';
@@ -135,6 +136,7 @@ class _SetupPageState extends State<SetupPage> {
           canEditVat: widget.staffRole == 'owner',
           onSave: cubit.saveShop,
         ),
+        'printer' => SetupPrinterPanel(shop: s.shop),
         'costing' => SetupCostingPanel(
           shop: s.shop,
           totalMonthlyFixedCost: state.totalMonthlyFixedCost,

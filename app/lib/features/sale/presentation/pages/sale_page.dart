@@ -258,7 +258,6 @@ class _SalePageState extends State<SalePage> {
                   state.openTable != null
               ? 'เสร็จสิ้น · เก็บโต๊ะ'
               : null,
-          onPrint: () => showAppToast(context, 'ส่งพิมพ์ใบเสร็จแล้ว (จำลอง)'),
           onVoid: (reason) {
             bloc.add(
               SaleSettledBillVoided(

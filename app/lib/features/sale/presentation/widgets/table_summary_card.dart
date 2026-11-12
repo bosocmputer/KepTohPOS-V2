@@ -35,7 +35,12 @@ class TableSummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Center(child: BrandLogo(size: AppDimensions.space10)),
+          Center(
+            child: BrandLogo(
+              size: AppDimensions.space10,
+              logoDataUrl: shop.logoDataUrl,
+            ),
+          ),
           const SizedBox(height: AppDimensions.space1_5),
           Text(
             shop.name,

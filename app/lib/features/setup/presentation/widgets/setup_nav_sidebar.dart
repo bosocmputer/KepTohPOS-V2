@@ -40,6 +40,7 @@ class SetupTabSpec {
 /// Ordered list of all 13 `/setup` sections grouped into 4 categories.
 const List<SetupTabSpec> kSetupTabs = [
   SetupTabSpec('shop', 'ร้านและใบเสร็จ', 'setup', 'ร้านและต้นทุน'),
+  SetupTabSpec('printer', 'เครื่องพิมพ์ใบเสร็จ', 'printer', 'ร้านและต้นทุน'),
   SetupTabSpec('costing', 'สูตรกำไรและต้นทุน', 'dashboard', 'ร้านและต้นทุน'),
   SetupTabSpec('packages', 'แพ็กเกจบุฟเฟต์', 'buffet', 'เมนูและพื้นที่ขาย'),
   SetupTabSpec('addons', 'สินค้าขายเสริม', 'plus', 'เมนูและพื้นที่ขาย'),

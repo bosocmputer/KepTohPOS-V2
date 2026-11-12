@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:app/core/printer/printer_hub_modal.dart';
 import 'package:app/core/theme/tokens.dart';
 import 'package:app/core/utils/formatters.dart';
 import 'package:app/core/widgets/widgets.dart';
@@ -72,14 +73,28 @@ class _ReceiptModalState extends State<ReceiptModal>
       )..forward();
       _confettiTimer = Timer(const Duration(milliseconds: 1350), _skipConfetti);
     }
+    final hub = PrinterHub.instance;
+    if (widget.fresh &&
+        !widget.bill.isSlipPreview &&
+        hub.settings.autoPrintOnSettle &&
+        hub.isReadyToPrint) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(
+          hub.printBill(
+            widget.shop,
+            widget.bill,
+            replacesNo: widget.replacesNo,
+          ),
+        );
+      });
+    }
   }
 
   void _skipConfetti() {
     _confettiTimer?.cancel();
     _confettiCtrl?.stop();
-    if (mounted && _showConfetti) {
-      setState(() => _showConfetti = false);
-    }
+    if (mounted && _showConfetti) setState(() => _showConfetti = false);
   }
 
   @override
@@ -156,7 +171,15 @@ class _ReceiptModalState extends State<ReceiptModal>
                         label: bill.isSlipPreview
                             ? 'พิมพ์ใบแจ้งยอด QR'
                             : 'พิมพ์ใบเสร็จ',
-                        onPressed: widget.onPrint ?? () {},
+                        onPressed:
+                            widget.onPrint ??
+                            () => printBillWithHub(
+                              context,
+                              shop: widget.shop,
+                              bill: bill,
+                              isCopy: widget.isCopy ?? !widget.fresh,
+                              replacesNo: widget.replacesNo,
+                            ),
                       ),
                       Btn(
                         key: const ValueKey('receipt-done-btn'),
@@ -254,79 +277,15 @@ class _ReceiptModalState extends State<ReceiptModal>
     );
   }
 
-  Widget _buildVoidConfirmBox(AppTokens t, TextTheme tt) => Container(
-    key: const ValueKey('void-confirm-box'),
-    padding: const EdgeInsets.all(AppDimensions.space3),
-    decoration: BoxDecoration(
-      color: t.dangerSoft,
-      borderRadius: BorderRadius.circular(AppDimensions.r),
-      border: Border.all(color: t.danger),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          'ยกเลิกบิลนี้ — ยอดจะไม่ถูกนับในยอดขายวันนี้ และคืนสถานะโต๊ะ',
-          style: tt.bodyMedium?.copyWith(
-            color: t.danger,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: AppDimensions.space2),
-        Wrap(
-          spacing: AppDimensions.space1_5,
-          runSpacing: AppDimensions.space1,
-          children: [
-            for (final preset in const <String>[
-              'ลูกค้าเปลี่ยนใจไม่รับประทาน',
-              'คีย์จำนวนคนผิด',
-              'เปลี่ยนช่องทางชำระเงิน',
-            ])
-              Btn(
-                key: ValueKey('void-preset-$preset'),
-                size: BtnSize.sm,
-                kind: _reason == preset ? BtnKind.primary : BtnKind.normal,
-                label: preset,
-                onPressed: () => setState(() => _reason = preset),
-              ),
-          ],
-        ),
-        const SizedBox(height: AppDimensions.space2),
-        Field(
-          label: 'เหตุผล',
-          child: AppTextInput(
-            key: const ValueKey('void-reason-input'),
-            value: _reason,
-            onChanged: (v) => setState(() => _reason = v),
-            placeholder: 'เช่น ลูกค้าเปลี่ยนใจไม่รับประทาน',
-          ),
-        ),
-        const SizedBox(height: AppDimensions.space2_5),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Btn(
-              key: const ValueKey('cancel-void-btn'),
-              size: BtnSize.sm,
-              label: 'ไม่ยกเลิก',
-              onPressed: () => setState(() => _voiding = false),
-            ),
-            const SizedBox(width: AppDimensions.space2),
-            Btn(
-              key: const ValueKey('confirm-void-btn'),
-              kind: BtnKind.dangerSolid,
-              size: BtnSize.sm,
-              icon: 'trash',
-              label: 'ยืนยันยกเลิกบิล',
-              onPressed: () {
-                widget.onVoid?.call(_reason);
-                setState(() => _voiding = false);
-              },
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
+  Widget _buildVoidConfirmBox(AppTokens t, TextTheme tt) =>
+      VoidReasonConfirmBox(
+        title: 'ยกเลิกบิลนี้ — ยอดจะไม่ถูกนับในยอดขายวันนี้ และคืนสถานะโต๊ะ',
+        reason: _reason,
+        onReasonChanged: (v) => setState(() => _reason = v),
+        onCancel: () => setState(() => _voiding = false),
+        onConfirm: () {
+          widget.onVoid?.call(_reason);
+          setState(() => _voiding = false);
+        },
+      );
 }
