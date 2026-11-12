@@ -78,8 +78,8 @@ a { color: inherit; }
 /* ---------- Header ---------- */
 .header { position: sticky; top: 0; z-index: 50; background: var(--charcoal); border-bottom: 1px solid var(--charcoal-3); color: var(--on-dark); }
 .header__in { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; height: var(--header-h); }
-.logo { display: inline-flex; background: var(--white); border-radius: var(--r-sm); padding: 3px 8px; line-height: 0; }
-.logo img { height: 32px; width: auto; }
+.logo { display: inline-flex; align-items: center; line-height: 0; }
+.logo img { height: 34px; width: auto; }
 .nav { display: none; gap: 2px; }
 .nav a { padding: 10px 12px; border-radius: var(--r-sm); text-decoration: none; font-weight: 500; font-size: 0.95rem; color: var(--on-dark-muted); }
 .nav a:hover { color: var(--white); }
@@ -102,7 +102,7 @@ a { color: inherit; }
 /* ---------- Hero ---------- */
 .hero { padding-block: clamp(40px, 7vw, 88px) clamp(56px, 8vw, 104px); overflow: hidden; }
 .hero__in { display: grid; gap: clamp(36px, 6vw, 56px); align-items: center; }
-.hero h1 { font-weight: 700; font-size: clamp(2.2rem, 8.4vw, 4.6rem); line-height: 1.12; letter-spacing: -0.015em; }
+.hero h1 { font-weight: 700; font-size: clamp(2rem, 7.5vw, 3.8rem); line-height: 1.12; letter-spacing: -0.015em; }
 :lang(zh-Hans) .hero h1 { line-height: 1.2; }
 :is(:lang(th), :lang(zh-Hans)) .hero h1 .ib { white-space: nowrap; }
 .hero__accent { color: var(--orange); }
@@ -233,6 +233,9 @@ a { color: inherit; }
 .footer li { padding: 4px 0; }
 .footer a { color: var(--on-dark); text-underline-offset: 3px; }
 .footer__tag { margin-top: 16px; }
+.footer__contact { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.footer__qr { display: inline-flex; padding: 6px; background: var(--white); border-radius: var(--r-sm); line-height: 0; flex: none; }
+.footer__qr img { width: 88px; height: 88px; display: block; }
 .footer__note { margin-top: 12px; font-size: 0.85rem; }
 .footer__copy { margin-top: 40px; font-size: 0.85rem; }
 
@@ -280,7 +283,7 @@ body.has-bar .footer { padding-bottom: 96px; }
 @media (min-width: 960px) {
   .nav { display: flex; }
   .hero__in { grid-template-columns: 0.95fr 1.05fr; }
-  .hero h1 { font-size: clamp(3rem, 4.4vw, 4.6rem); }
+  .hero h1 { font-size: clamp(2.6rem, 3.8vw, 3.8rem); }
   .offline { grid-template-columns: 0.9fr 1.1fr; }
   .tax__in { grid-template-columns: 1fr 1fr; }
   .grid--feat { grid-template-columns: repeat(3, 1fr); }

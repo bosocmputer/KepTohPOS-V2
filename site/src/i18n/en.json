@@ -1,11 +1,11 @@
 {
   "meta": {
-    "title": "KepToh POS | POS for Thai BBQ & Buffet Restaurants , Per-Head Billing, Works Offline",
-    "description": "POS built for Thai BBQ (mu kratha) and buffet restaurants. Per-head pricing, table timers, tax invoices, and it keeps selling when the internet drops. Works on iPad and tablets. Free to try during launch.",
+    "title": "KepToh POS | POS for Buffet, Shabu & BBQ Restaurants · Per-Head Billing, Works Offline",
+    "description": "POS built for buffet restaurants of every kind: Thai BBQ, shabu, grill, steak and salad buffets. Per-head pricing, table timers, tax invoices, and offline-first selling on iPad and tablets.",
     "privacyTitle": "Privacy Policy (Draft) | KepToh POS",
     "privacyDescription": "Draft privacy policy for KepToh POS, written with Thailand's PDPA in mind. Pending legal review.",
-    "appDescription": "A POS for Thai BBQ and buffet restaurants: per-head billing, table timers, tax invoices, and offline-first selling.",
-    "ogAlt": "KepToh POS for Thai BBQ restaurants"
+    "appDescription": "A POS for all buffet restaurants: per-head billing, table timers, tax invoices, and offline-first selling.",
+    "ogAlt": "KepToh POS for buffet restaurants"
   },
   "ui": {
     "skip": "Skip to content",
@@ -27,9 +27,9 @@
     "features": "See real screens"
   },
   "hero": {
-    "h1a": "Packed house?",
+    "h1a": "Buffet full house?",
     "h1b": "Your POS keeps up.",
-    "sub": "Open a table, pick the package, enter adults and kids. KepToh runs the timer and the bill, and keeps taking payments when the Wi-Fi drops.",
+    "sub": "Whether you run Thai BBQ, shabu, grill, steak, salad bar or any buffet format, manage everything in one place. Open a table, pick a package, split adult and child pricing, track table time and take payments even when Wi-Fi drops.",
     "note": "Free during launch. No card needed. Runs on the tablet or iPad you already have.",
     "alert": "A7 is 3 min over time",
     "syncOff": "Offline · 3 bills saved on device",
@@ -62,7 +62,7 @@
     "slipTotal": "฿1,355.00"
   },
   "pain": {
-    "title": "What a busy mookata night usually looks like",
+    "title": "What a busy buffet rush usually looks like",
     "items": [
       {
         "title": "Head counts on paper",
@@ -74,7 +74,7 @@
       },
       {
         "title": "No idea what you made today",
-        "body": "You know the sales. You don't know how much pork, veg and charcoal went out. The leak shows up at month end."
+        "body": "You know the sales. You don't know how much meat, produce and fresh ingredients went out. The leak shows up at month end."
       }
     ]
   },
@@ -150,7 +150,7 @@
       "Voids and replacements reference the original"
     ],
     "disclaimer": "Figures and items on this receipt are fictional, for demonstration only.",
-    "shop": "Sample BBQ Restaurant",
+    "shop": "Sample Buffet Restaurant",
     "docTitle": "Receipt / Abbreviated Tax Invoice",
     "lines": [
       {
@@ -204,8 +204,8 @@
     "title": "Common questions",
     "items": [
       {
-        "q": "Does it work for a mookata restaurant out of the box?",
-        "a": "Yes. It is built for buffet restaurants: adult, child and toddler pricing, table timers and table zones."
+        "q": "What types of buffet restaurants does it support?",
+        "a": "Every kind of buffet: Thai BBQ (mookata), shabu, grill, steak buffet, salad bar or general food buffets. It is built for per-head pricing (adult, child, toddler), table timers and table zones."
       },
       {
         "q": "Does it work offline? What happens if the internet drops?",
@@ -234,7 +234,7 @@
     "sub": "Free during launch. No card needed."
   },
   "footer": {
-    "tagline": "POS for Thai BBQ and buffet restaurants",
+    "tagline": "POS for all types of buffet restaurants",
     "contact": "Contact",
     "line": "LINE",
     "phone": "Phone",
@@ -252,7 +252,7 @@
       {
         "h": "1. Data controller",
         "p": [
-          "KepToh POS (“we”) is the controller of personal data of users of this website and service. Contact: [legal entity name and address , to be added], email hello@keptoh.example (placeholder)."
+          "KepToh POS (“we”) is the controller of personal data of users of this website and service. Contact: email contact@orderone.co.th, phone 082-929-5566, LINE @428wicvw."
         ]
       },
       {

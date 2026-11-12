@@ -3,8 +3,8 @@ export const SITE_URL = 'https://keptoh.pages.dev';
 export const APP_URL = 'https://keptoh-staging.vercel.app';
 // Cloudflare Web Analytics token. Empty string = beacon is not rendered.
 export const CF_ANALYTICS_TOKEN = '';
-// PLACEHOLDER contacts
-export const LINE_ID = '@keptoh';
-export const LINE_URL = 'https://line.me/R/ti/p/@keptoh';
-export const PHONE = '0X-XXX-XXXX';
-export const EMAIL = 'hello@keptoh.example';
+// Contact channels
+export const LINE_ID = '@428wicvw';
+export const LINE_URL = 'https://line.me/R/ti/p/@428wicvw';
+export const PHONE = '082-929-5566';
+export const EMAIL = 'contact@orderone.co.th';
