@@ -2,6 +2,8 @@
   "permissions": {
     "allow": [
       "Agent",
+      "WebSearch",
+      "WebFetch",
       "Bash(node --test*)",
       "Bash(npm test*)",
       "Bash(npm run build*)",

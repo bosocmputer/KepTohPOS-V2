@@ -541,3 +541,7 @@ select pg_temp.uid('orn:' || r.session_id || ':' || r.round_no), pg_temp.shop_id
 from t_orounds r;
 
 commit;
+
+-- Ensure PostgREST queries on the 1,951-bill demo dataset never hit default statement_timeout
+alter role authenticated set statement_timeout = '60s';
+analyze;

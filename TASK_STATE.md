@@ -14,5 +14,13 @@
 - **Next Immediate Step:**
   - Review updated marketing site preview on Cloudflare Pages (`branch: review`) and merge `feat/marketing-site` when ready.
 
-## 🔄 Auto-Synced Git & Session State (Updated: 2026-11-11 23:07:30)
-- **Branch & HEAD:** `feat/marketing-site` (`e1c4fdd`)
+## 🔄 Auto-Synced Git & Session State (Updated: 2026-11-11 23:54:51)
+- **Branch & HEAD:** `feat/marketing-site` (`a85431c`)
+- **Last Edit Checkpoint:** `last_agent=antigravity | last_edited_file=/Users/nontawatwongnuk/dev_bos/KepTohPOS-V2/.claude/rules/project-pitfalls.md | diff=+1/-0 บรรทัด | updated_at=2026-11-11T16:52:50Z`
+- **Uncommitted Changes:** `M .claude/agents/explorer.md; M .claude/rules/model-routing.md; M .claude/rules/project-pitfalls.md; M .claude/settings.json`
+- **Recent Commits (`git log -n 5`):**
+  - `a85431c chore(site): update hero, tables, and shift screenshots with latest POS UI`
+  - `e1c4fdd Merge branch 'main' into feat/marketing-site`
+  - `a224e34 feat(shift,ui): block shift close while tables are open and make WalkingOrangeLoader frameless at size 260`
+  - `d2d74bc refactor(web): remove duplicate HTML boot loader so Flutter WalkingOrangeLoader is the single cross-platform loader`
+  - `5211397 fix(onboarding): keep WalkingOrangeLoader visible throughout boot and browser refresh`
