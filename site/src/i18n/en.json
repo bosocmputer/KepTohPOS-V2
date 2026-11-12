@@ -2,8 +2,8 @@
   "meta": {
     "title": "KepToh POS | POS for Buffet, Shabu & BBQ Restaurants · Per-Head Billing, Works Offline",
     "description": "POS built for buffet restaurants of every kind: Thai BBQ, shabu, grill, steak and salad buffets. Per-head pricing, table timers, tax invoices, and offline-first selling on iPad and tablets.",
-    "privacyTitle": "Privacy Policy (Draft) | KepToh POS",
-    "privacyDescription": "Draft privacy policy for KepToh POS, written with Thailand's PDPA in mind. Pending legal review.",
+    "privacyTitle": "Privacy Policy | KepToh POS",
+    "privacyDescription": "Privacy policy for KepToh POS in accordance with Thailand's Personal Data Protection Act (PDPA).",
     "appDescription": "A POS for all buffet restaurants: per-head billing, table timers, tax invoices, and offline-first selling.",
     "ogAlt": "KepToh POS for buffet restaurants"
   },
@@ -225,7 +225,7 @@
       },
       {
         "q": "Is my shop's data safe?",
-        "a": "Each shop's data is kept separate and access requires authentication. We're preparing a PDPA-style privacy policy, which is currently a draft pending legal review."
+        "a": "Each shop's data is kept separate and access requires authentication in accordance with our PDPA privacy policy."
       }
     ]
   },
@@ -245,8 +245,8 @@
   },
   "privacy": {
     "title": "Privacy Policy",
-    "draft": "DRAFT , pending legal review. This is not a binding legal text.",
-    "updated": "Last drafted: November 2026",
+    "draft": "",
+    "updated": "Last updated: November 2026",
     "back": "Back to home",
     "sections": [
       {
@@ -272,19 +272,19 @@
       {
         "h": "4. Legal bases",
         "p": [
-          "We process data under contract, consent (where required), legitimate interests and legal obligations. [To be confirmed by legal counsel]"
+          "We process data under contract, consent (where required by law), legitimate interests and legal obligations."
         ]
       },
       {
         "h": "5. Disclosure and transfers",
         "p": [
-          "We may use third-party providers such as cloud infrastructure and analytics, disclosing only what is necessary. Data may be stored outside Thailand. [Providers and countries to be specified]"
+          "We use international-standard cloud infrastructure providers (such as Supabase, Cloudflare and Vercel), disclosing only what is necessary to provide the service. Data may be stored and processed on servers outside Thailand with appropriate data protection safeguards."
         ]
       },
       {
         "h": "6. Retention",
         "p": [
-          "We keep data while your account is active and for periods required by law. [Retention periods to be specified]"
+          "We keep data for as long as your account remains active, and retain accounting and tax records for the period required by tax law (at least 5 years)."
         ]
       },
       {
@@ -300,9 +300,9 @@
         ]
       },
       {
-        "h": "9. Cookies and analytics",
+        "h": "9. Cookies and browser storage",
         "p": [
-          "The website may use privacy-friendly traffic analytics. [Details to be confirmed before activation]"
+          "We use only cookies and browser storage (Local Storage / IndexedDB) strictly necessary for authentication, session state and offline operation."
         ]
       },
       {
